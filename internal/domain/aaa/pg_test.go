@@ -228,9 +228,9 @@ func TestPGStore_ListAuthLogs(t *testing.T) {
 	}
 	defer mock.Close()
 
-	mock.ExpectQuery(`SELECT id, loid, result, COALESCE\(reason, ''\), created_at FROM auth_logs`).
+	mock.ExpectQuery(`SELECT id, loid, result, fail_reason, created_at FROM auth_logs`).
 		WithArgs("LOID-88A1").
-		WillReturnRows(mock.NewRows([]string{"id", "loid", "result", "reason", "created_at"}).
+		WillReturnRows(mock.NewRows([]string{"id", "loid", "result", "fail_reason", "created_at"}).
 			AddRow(int64(1), "LOID-88A1", "FAILED", "CONCURRENT_LIMIT", ts))
 
 	s := NewPGStore(mock)
@@ -238,7 +238,7 @@ func TestPGStore_ListAuthLogs(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ListAuthLogs: %v", err)
 	}
-	if len(got) != 1 || got[0].Result != "FAILED" || got[0].Reason != "CONCURRENT_LIMIT" {
+	if len(got) != 1 || got[0].Result != "FAILED" || got[0].FailReason != "CONCURRENT_LIMIT" {
 		t.Fatalf("got=%+v", got)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {

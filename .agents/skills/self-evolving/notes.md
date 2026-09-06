@@ -1832,3 +1832,8 @@
 - 哪个坑浪费了最多时间?收尾 ff-only 失败被管道 tail 掩码,链式 worktree remove 照跑——管道吞退出码+破坏性清理挂 && 链,recidivism L118 第 2 犯(先 push 过远端,commit 双份无损,重建 worktree rebase 即愈);另 edit 锚点误选 23 号条目开头整段被替换,靠 read 复核当场修复。
 - skill 有没有提前警告?红线 9(删 worktree)、红线 11(引号 token 法)、L118(tail 掩码)全部在案;本轮仍踩 tail——管道命令退出码肉眼不可见,必须制度性禁止在破坏性步骤前用管道看结果。
 - 重来一次怎么做?①收尾合并固定模板:merge 输出写临时文件+显式 mrc 变量+if 判定后才能进清理段;②运行器有硬超时的需求,先问清时限再设计(冷/热指纹分离+ssh 批处理按连接数优化);③验收计时对基线:连续两轮,以第二轮为准报告。
+
+## 2026-09-06 AAA-A2 在线会话与强制下线(feat/aaa-a2-session,迁移 000195)
+- 哪个坑浪费了最多时间? ①契约门禁 D 项撞号——开工时 a1 分支还没占号,中途它提交了 000194,make check 才拦下,让号改名+四处引用同步+重跑门禁一轮;②run_code 程序体一处语法错致 handlers 没写盘,误判已执行,build 才暴露;③14 个生成的 Go 文件没跑 gofmt,make lint 挂一轮+补 style 提交;④worktree 副本 terms.md 凭主树 read 直接 edit 被拒。
+- skill 有没有提前警告? 撞号是任务单点名+协议设计内(让号规则一次过);红线 1(跨树 read)、11/14(引号/键名自检)在案仍犯变体;gofmt 与「parse 失败=零执行」是全新坑,已回填 recidivism 33/34。
+- 重来一次怎么做? ①Go 文件写完立刻 gofmt -w 再 build/test/commit(写文件的 run_code 程序收尾统一带上);②run_code parse 失败后,该程序全部工具调用视为未发生,整体重跑;③迁移号在最终 commit 前再 fetch 核对一次,把「让号」当必经路径而非意外;④迁移上真库前用 BEGIN+ROLLBACK 剥壳演练(本次 102 实库验证通过零残留),比部署时发现语法错便宜得多。

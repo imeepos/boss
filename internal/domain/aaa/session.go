@@ -25,9 +25,6 @@ const (
 	CloseReasonOfflineFailed = "OFFLINE_FAILED" // 下线重试耗尽
 )
 
-// 认证失败原因(auth_logs.reason)。
-const AuthFailReasonConcurrent = "CONCURRENT_LIMIT"
-
 // RADIUS Acct-Status-Type(rfc2866):会话维护按此分流。
 const (
 	AcctStatusStart   = 1

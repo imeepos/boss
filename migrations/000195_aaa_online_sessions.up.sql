@@ -21,9 +21,8 @@ CREATE TABLE aaa_online_sessions (
 CREATE INDEX idx_aaa_online_sessions_loid_status ON aaa_online_sessions(loid, status);
 CREATE INDEX idx_aaa_online_sessions_last_update ON aaa_online_sessions(last_update);
 
--- 认证日志失败原因标注(并发超限等),可空兼容存量行。
-ALTER TABLE auth_logs ADD COLUMN reason VARCHAR(64);
--- 话单关闭原因标记(僵尸清理补录本地 Stop 等),可空兼容存量行。
+-- 话单关闭原因标记(僵尸清理补录本地 Stop 等),可空兼容存量行;
+-- 认证日志失败原因列由 000194(auth_logs.fail_reason,NOT NULL DEFAULT '')承担,本迁移不重复。
 ALTER TABLE cdrs ADD COLUMN close_reason VARCHAR(32);
 
 COMMIT;

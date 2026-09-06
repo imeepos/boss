@@ -60,6 +60,7 @@
 | 告警 alarm.status | OPEN / ACKED / CLOSED | 待处理 / 已确认 / 已关闭 |
 | 话单 cdr.billing_status | UNBILLED / BILLED | 未入账 / 已入账 |
 | 认证日志 auth_log.result | SUCCESS / FAILED | 成功 / 失败 |
+| 认证日志 auth_log.fail_reason | BAD_CREDENTIAL / LOCKED / NOT_FOUND / SUSPENDED / CLOSED（空=成功或存量行） | 认证失败原因码（000194，A1）；LOCKED=连续失败达阈值锁定窗口内（默认 5 次锁 15 分钟，可配），期间一律拒绝 |
 | 设备 resource.status | ONLINE / OFFLINE / FAULT | 在线 / 离线 / 故障 |
 | 认证账号 lo_account.status | ACTIVE / SUSPENDED / CLOSED | 在服 / 停服 / 注销 |
 | 在线会话 aaa_online_sessions.status | ONLINE / PENDING_OFFLINE / OFFLINE / OFFLINE_FAILED | 在线 / 下线待确认(Disconnect 未确认,重试中) / 已下线(终态) / 下线失败(重试耗尽,终态);迁移 000195(AAA-A2,fields.md §8I) |

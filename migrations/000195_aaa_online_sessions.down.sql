@@ -1,5 +1,4 @@
 BEGIN;
 DROP TABLE IF EXISTS aaa_online_sessions;
 ALTER TABLE cdrs DROP COLUMN IF EXISTS close_reason;
-ALTER TABLE auth_logs DROP COLUMN IF EXISTS reason;
 COMMIT;

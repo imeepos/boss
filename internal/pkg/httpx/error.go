@@ -135,6 +135,7 @@ func RespondErr(c *gin.Context, err error) {
 		errors.Is(err, monthly.ErrInvalidInput):
 		Respond(c, apitypes.CodeInvalidParam, nil)
 	case errors.Is(err, user.ErrNotFound),
+		errors.Is(err, aaa.ErrNotFound),
 		errors.Is(err, resource.ErrNotFound),
 		errors.Is(err, aaa.ErrSessionNotFound),
 		errors.Is(err, asset.ErrNotFound),

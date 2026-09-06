@@ -1,8 +1,13 @@
 package radius
 
 import (
+	"bytes"
 	"context"
+	"crypto/md5"
+	"errors"
+	"log"
 	"net"
+	"os"
 	"testing"
 
 	"layeh.com/radius"
@@ -17,10 +22,12 @@ type authStub struct {
 	decision aaa.Decision
 	err      error
 	loid     string
+	creds    aaa.Credentials
 }
 
-func (s *authStub) Decide(_ context.Context, loid string) (aaa.Decision, error) {
+func (s *authStub) Authenticate(_ context.Context, loid string, creds aaa.Credentials) (aaa.Decision, error) {
 	s.loid = loid
+	s.creds = creds
 	return s.decision, s.err
 }
 
@@ -43,9 +50,13 @@ func (s *responseStub) Write(p *radius.Packet) error {
 
 type authLogStub struct {
 	logs []aaa.AuthLog
+	err  error
 }
 
 func (s *authLogStub) AppendAuthLog(_ context.Context, l aaa.AuthLog) (int64, error) {
+	if s.err != nil {
+		return 0, s.err
+	}
 	s.logs = append(s.logs, l)
 	return int64(len(s.logs)), nil
 }
@@ -95,7 +106,7 @@ func TestServeAuthWritesLog(t *testing.T) {
 	if w.packet == nil || w.packet.Code != radius.CodeAccessAccept {
 		t.Fatalf("accept failed: %v", w.packet)
 	}
-	if len(logger.logs) != 1 || logger.logs[0].Loid != "LOID-1" || logger.logs[0].Result != "SUCCESS" {
+	if len(logger.logs) != 1 || logger.logs[0].Loid != "LOID-1" || logger.logs[0].Result != "SUCCESS" || logger.logs[0].FailReason != "" {
 		t.Fatalf("auth log: %+v", logger.logs)
 	}
 
@@ -103,8 +114,86 @@ func TestServeAuthWritesLog(t *testing.T) {
 	logger2 := &authLogStub{}
 	h2 := &Handler{Auth: &authStub{err: aaa.ErrNotFound}, Log: logger2}
 	h2.ServeRADIUS(&responseStub{}, accessRequest("LOID-2"))
-	if len(logger2.logs) != 1 || logger2.logs[0].Loid != "LOID-2" || logger2.logs[0].Result != "FAILED" {
+	if len(logger2.logs) != 1 || logger2.logs[0].Loid != "LOID-2" || logger2.logs[0].Result != "FAILED" || logger2.logs[0].FailReason != aaa.FailReasonNotFound {
 		t.Fatalf("reject auth log: %+v", logger2.logs)
+	}
+}
+
+// TestServeAuthParseCredentials A1:凭据属性提取(PAP 明文 / CHAP ident+challenge+摘要)。
+func TestServeAuthParseCredentials(t *testing.T) {
+	t.Run("PAP", func(t *testing.T) {
+		a := &authStub{decision: aaa.Decision{Authorize: true}}
+		h := &Handler{Auth: a}
+		r := accessRequest("LOID-PA")
+		_ = rfc2865.UserPassword_SetString(r.Packet, "pap-secret")
+		h.ServeRADIUS(&responseStub{}, r)
+		if a.creds.PAP != "pap-secret" || a.creds.CHAP != nil {
+			t.Fatalf("creds=%+v", a.creds)
+		}
+	})
+
+	t.Run("CHAP 带 Challenge", func(t *testing.T) {
+		a := &authStub{decision: aaa.Decision{Authorize: true}}
+		h := &Handler{Auth: a}
+		r := accessRequest("LOID-CH")
+		sum := md5.Sum([]byte("anything"))
+		_ = rfc2865.CHAPPassword_Set(r.Packet, append([]byte{9}, sum[:]...))
+		challenge := []byte{0xAA, 0xBB, 0xCC}
+		_ = rfc2865.CHAPChallenge_Set(r.Packet, challenge)
+		h.ServeRADIUS(&responseStub{}, r)
+		if a.creds.CHAP == nil || a.creds.CHAP.Ident != 9 || string(a.creds.CHAP.Challenge) != string(challenge) || len(a.creds.CHAP.Response) != 16 {
+			t.Fatalf("creds=%+v", a.creds.CHAP)
+		}
+	})
+
+	t.Run("CHAP 无 Challenge 缺省 Request Authenticator", func(t *testing.T) {
+		a := &authStub{decision: aaa.Decision{Authorize: true}}
+		h := &Handler{Auth: a}
+		r := accessRequest("LOID-CN")
+		sum := md5.Sum([]byte("x"))
+		_ = rfc2865.CHAPPassword_Set(r.Packet, append([]byte{1}, sum[:]...))
+		h.ServeRADIUS(&responseStub{}, r)
+		if a.creds.CHAP == nil || string(a.creds.CHAP.Challenge) != string(r.Packet.Authenticator[:]) {
+			t.Fatalf("challenge=%v want authenticator", a.creds.CHAP)
+		}
+	})
+}
+
+// TestServeAuthFailReasonLogged A1:失败原因码写入认证日志(fields.md §8A 枚举)。
+func TestServeAuthFailReasonLogged(t *testing.T) {
+	cases := []struct {
+		err  error
+		want string
+	}{
+		{aaa.ErrLocked, aaa.FailReasonLocked},
+		{aaa.ErrNotFound, aaa.FailReasonNotFound},
+		{aaa.ErrSuspended, aaa.FailReasonSuspended},
+		{aaa.ErrClosed, aaa.FailReasonClosed},
+		{aaa.ErrBadCredential, aaa.FailReasonBadCredential},
+		{errors.New("db down"), aaa.FailReasonBadCredential},
+	}
+	for _, tc := range cases {
+		logger := &authLogStub{}
+		h := &Handler{Auth: &authStub{err: tc.err}, Log: logger}
+		h.ServeRADIUS(&responseStub{}, accessRequest("LOID-R"))
+		if len(logger.logs) != 1 || logger.logs[0].FailReason != tc.want {
+			t.Fatalf("err=%v logs=%+v want %s", tc.err, logger.logs, tc.want)
+		}
+	}
+}
+
+// TestServeAuthLogWriteFailureObservable A1 留痕红线:认证日志写失败不得静默,
+// 必须输出带 [aaa] 前缀与 FAILED 的可 grep 日志并附 LOID 上下文。
+func TestServeAuthLogWriteFailureObservable(t *testing.T) {
+	var buf bytes.Buffer
+	log.SetOutput(&buf)
+	defer log.SetOutput(os.Stderr)
+	logger := &authLogStub{err: errors.New("pg connection refused")}
+	h := &Handler{Auth: &authStub{decision: aaa.Decision{Authorize: true}}, Log: logger}
+	h.ServeRADIUS(&responseStub{}, accessRequest("LOID-9X"))
+	out := buf.String()
+	if !bytes.Contains([]byte(out), []byte("[aaa]")) || !bytes.Contains([]byte(out), []byte("FAILED")) || !bytes.Contains([]byte(out), []byte("LOID-9X")) {
+		t.Fatalf("log output missing red line markers: %q", out)
 	}
 }
 

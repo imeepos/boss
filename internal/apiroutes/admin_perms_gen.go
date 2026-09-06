@@ -379,6 +379,7 @@ var AdminRoutePerms = map[string][]string{
 	"POST /api/admin/v1/legal-entities":                                           {"menu:company"},
 	"POST /api/admin/v1/legal-entities/{legalEntityId}/staff":                     {"menu:company"},
 	"POST /api/admin/v1/license/activate":                                         {},
+	"POST /api/admin/v1/lo-accounts/{loid}/reset-password":                        {"menu:loaccount"},
 	"POST /api/admin/v1/loy/expire/run":                                           {"menu:userdata"},
 	"POST /api/admin/v1/loy/levels":                                               {"menu:userdata"},
 	"POST /api/admin/v1/loy/levels/{id}/disable":                                  {"menu:userdata"},

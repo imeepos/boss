@@ -7,6 +7,8 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+
+	"github.com/ymm-001/boss/internal/domain/aaa/credential"
 )
 
 // ErrForeignKeyViolation 关联实体不存在(孤儿数据防护:lo_accounts 无外键约束)。
@@ -32,12 +34,19 @@ func (s *PGStore) exists(ctx context.Context, table string, id int64) (bool, err
 
 // PGStore 是 AaaService 接口的 PostgreSQL 实现(阶段7:LO账号/话单/认证日志)。
 type PGStore struct {
-	db dbtx
+	db   dbtx
+	cred *credential.Codec // 凭据编解码器(管理端重置密码用;WithCredentialCodec 注入)
 }
 
 // NewPGStore 构造 PGStore;db 传 *pgxpool.Pool 或测试 mock。
 func NewPGStore(db dbtx) *PGStore {
 	return &PGStore{db: db}
+}
+
+// WithCredentialCodec 注入凭据编解码器(A1:ResetLoPassword 落库密文需要)。
+func (s *PGStore) WithCredentialCodec(c *credential.Codec) *PGStore {
+	s.cred = c
+	return s
 }
 
 const loAccountCols = `id, loid, customer_id, legal_entity_id, legal_entity_name, region_id, region_name, COALESCE(region_path,''), offer_id, qos_template_id, status, billing_mode`
@@ -216,7 +225,7 @@ func (s *PGStore) ListCdrs(ctx context.Context, loid string) ([]CdrRecord, error
 func (s *PGStore) AppendAuthLog(ctx context.Context, l AuthLog) (int64, error) {
 	var id int64
 	err := s.db.QueryRow(ctx,
-		`INSERT INTO auth_logs(loid, result, reason) VALUES($1,$2, NULLIF($3,'')) RETURNING id`, l.Loid, l.Result, l.Reason).Scan(&id)
+		`INSERT INTO auth_logs(loid, result, fail_reason) VALUES($1,$2,$3) RETURNING id`, l.Loid, l.Result, l.FailReason).Scan(&id)
 	if err != nil {
 		return 0, fmt.Errorf("aaa: append auth log: %w", err)
 	}
@@ -226,7 +235,7 @@ func (s *PGStore) AppendAuthLog(ctx context.Context, l AuthLog) (int64, error) {
 // ListAuthLogs 列出认证日志;loid 为空返回全部,否则按账号过滤。
 func (s *PGStore) ListAuthLogs(ctx context.Context, loid string) ([]AuthLog, error) {
 	rows, err := s.db.Query(ctx,
-		`SELECT id, loid, result, COALESCE(reason, ''), created_at FROM auth_logs WHERE ($1 = '' OR loid = $1) ORDER BY created_at, id`, loid)
+		`SELECT id, loid, result, fail_reason, created_at FROM auth_logs WHERE ($1 = '' OR loid = $1) ORDER BY created_at, id`, loid)
 	if err != nil {
 		return nil, fmt.Errorf("aaa: list auth logs: %w", err)
 	}
@@ -234,7 +243,7 @@ func (s *PGStore) ListAuthLogs(ctx context.Context, loid string) ([]AuthLog, err
 	out := make([]AuthLog, 0)
 	for rows.Next() {
 		var l AuthLog
-		if err := rows.Scan(&l.ID, &l.Loid, &l.Result, &l.Reason, &l.CreatedAt); err != nil {
+		if err := rows.Scan(&l.ID, &l.Loid, &l.Result, &l.FailReason, &l.CreatedAt); err != nil {
 			return nil, fmt.Errorf("aaa: scan auth log: %w", err)
 		}
 		out = append(out, l)

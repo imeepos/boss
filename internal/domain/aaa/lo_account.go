@@ -43,13 +43,13 @@ type CdrRecord struct {
 	StartedAt     time.Time `json:"startedAt"`
 }
 
-// AuthLog 认证日志(认证成功/失败)。
+// AuthLog 认证日志(认证成功/失败;失败原因码见 auth.go 常量,000194)。
 type AuthLog struct {
-	ID        int64     `json:"id"`
-	Loid      string    `json:"loid"`
-	Result    string    `json:"result"` // SUCCESS/FAILED
-	Reason    string    `json:"reason"` // 失败原因(并发超限等;空=无)
-	CreatedAt time.Time `json:"createdAt"`
+	ID         int64     `json:"id"`
+	Loid       string    `json:"loid"`
+	Result     string    `json:"result"`     // SUCCESS/FAILED
+	FailReason string    `json:"failReason"` // 失败原因码,空=成功或存量(000194;并发超限=CONCURRENT_LIMIT,A2)
+	CreatedAt  time.Time `json:"createdAt"`
 }
 
 // AdminScope 管理端 AAA 查询范围；空公司和区域表示全集团。
@@ -111,4 +111,7 @@ type AaaService interface {
 	// SuspendLoAccount/ResumeLoAccount 停复机即时生效(状态迁移,仅合法前置态可迁)。
 	SuspendLoAccount(ctx context.Context, loAccountID int64) error
 	ResumeLoAccount(ctx context.Context, loAccountID int64) error
+
+	// ResetLoPassword 重置 LOID 接入密码(A1:随机生成,明文一次性返回;清防爆破计数)。
+	ResetLoPassword(ctx context.Context, loid string) (string, error)
 }

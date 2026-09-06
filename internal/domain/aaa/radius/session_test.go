@@ -129,7 +129,7 @@ func TestServeAuthConcurrentLimitReject(t *testing.T) {
 	if gate.limit != 1 || gate.loid != "LOID-1" {
 		t.Fatalf("闸口参数不符: %+v", gate)
 	}
-	if len(logger.logs) != 1 || logger.logs[0].Result != "FAILED" || logger.logs[0].Reason != aaa.AuthFailReasonConcurrent {
+	if len(logger.logs) != 1 || logger.logs[0].Result != "FAILED" || logger.logs[0].FailReason != aaa.FailReasonConcurrent {
 		t.Fatalf("认证日志须标注并发超限: %+v", logger.logs)
 	}
 }
