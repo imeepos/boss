@@ -170,7 +170,7 @@ export interface Translations {
       statTitle: string
       distTitle: string
       todoTitle: string
-      trendTitle: string
+      trendTitles: { week: string; month: string; quarter: string; year: string; all: string }
       trendUnit: string
       trendTooltip: string
       trendStatusToggle: string
@@ -189,6 +189,15 @@ export interface Translations {
       todoGo: string
       loadFail: string
       empty: string
+      refresh: string
+      refreshing: string
+      updatedAt: string
+      retry: string
+      copyError: string
+      statHint: string
+      distRowHint: string
+      percentHint: string
+      todoEmpty: string
     }
     placeholder: {
       building: string
