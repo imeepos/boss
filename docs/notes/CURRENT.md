@@ -11,6 +11,7 @@
 - geo(国际地理基础数据)与 gis(联动/实体同步)分立两域(2026-08-18, geo-vs-gis-split)
 - 附件删除一律软删(attachments.deleted_at),引用面不可穷举禁物理删(2026-08-25, attachment-soft-delete)
 - API 文档 = 契约运行时聚合 openapidoc + Swagger UI(/base/apidocs),契约 YAML 即权威(2026-09-06, api-docs-openapidoc)
+- ODN 物理层升级业务基础:地址覆盖关联→端口占用态→逻辑物理绑定三阶段推进;编码命名空间仍独立,桥接走关系表(2026-09-06, odn-business-linkage)
 
 ## 订单与状态机
 

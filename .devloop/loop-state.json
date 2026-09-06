@@ -1,41 +1,31 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-06T09:14:24.867Z",
+  "updatedAt": "2026-09-06T12:06:54.447Z",
   "project": "boss",
   "tasks": [
     {
       "id": "T1",
-      "title": "MAC 规范化存储+表达式唯一(P4-A, 000190)",
-      "goal": "写入归一大写冒号形;迁移重建表达式唯一索引(防直写绕过);e2e 断言归一/跨格式 409/非法 400",
+      "title": "资源容量视图与预警(P5-W1,对标C6)",
+      "goal": "容量聚合API+阈值预警+视图页",
       "priority": "P1",
       "status": "done",
-      "acceptanceCommand": "bash scripts/e2e/verify-asset-mac-normalize-e2e.sh"
+      "acceptanceCommand": "bash scripts/e2e/verify-oss-capacity-e2e.sh"
     },
     {
       "id": "T2",
-      "title": "类型归一 ONU+白名单(P4-B, 000191)",
-      "goal": "49 行光猫 UPDATE 归一;type 写入白名单 400;前端与 fields.md 同步;e2e 断言光猫被拒/ONU 成功/存量无光猫",
+      "title": "PON端到端链路反查(P5-W2,对标C4)",
+      "goal": "逐跳链路API+链路视图",
       "priority": "P1",
       "status": "done",
-      "acceptanceCommand": "bash scripts/e2e/verify-asset-type-canonical-e2e.sh"
+      "acceptanceCommand": "bash scripts/e2e/verify-oss-pon-path-e2e.sh"
     },
     {
       "id": "T3",
-      "title": "巡检两查+造数残留清理(P4-B)",
-      "goal": "patrol 加非法 EPC 计数与非权威 type 计数两查;SMOKE/MI-ONU 残留 6 行确认无引用后清理;verify-patrol-extended.sh 幂等",
-      "priority": "P2",
+      "title": "资源台账稽核(P5-W3,对标C7)",
+      "goal": "三类稽核+每日快照;脚本已批量合并SQL提速至2.4s",
+      "priority": "P1",
       "status": "done",
-      "acceptanceCommand": "bash scripts/ops/verify-patrol-extended.sh",
-      "failCount": 1
-    },
-    {
-      "id": "T4",
-      "title": "102 每日 e2e 冒烟 cron+runner 凭据卷(P4-C)",
-      "goal": "四脚本每日串行 cron 登记 patrol-cron.md;runner compose 凭据卷挂载落地;verify-smoke-cron.sh --check 双过",
-      "priority": "P2",
-      "status": "done",
-      "acceptanceCommand": "bash scripts/ops/verify-smoke-cron.sh",
-      "failCount": 1
+      "acceptanceCommand": "bash scripts/e2e/verify-oss-inventory-audit-e2e.sh"
     }
   ]
 }
