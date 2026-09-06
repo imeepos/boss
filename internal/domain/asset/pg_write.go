@@ -44,6 +44,13 @@ func (s *PGStore) CreateBatch(ctx context.Context, b AssetBatch) (int64, error) 
 // - 资产已被其他标签绑定 → ErrBindingConflict(回滚整单)
 // - 资产已被本标签占用 → 幂等(PG 16 命中同值仍返 1 行)
 func (s *PGStore) CreateTag(ctx context.Context, t Tag) (int64, error) {
+	// 法人存在性校验(P2-W2-T1 建标签端点):tags.legal_entity_id NOT NULL FK,
+	// 0 或不存在一律拒绝,防 23503 裸 500。
+	if ok, err := s.exists(ctx, "legal_entities", t.LegalEntityID); err != nil {
+		return 0, err
+	} else if !ok {
+		return 0, fmt.Errorf("asset: legal entity %d: %w", t.LegalEntityID, ErrForeignKeyViolation)
+	}
 	// 预绑定前先校验资产存在(防孤儿标签)
 	if t.BoundAssetID > 0 {
 		ok, err := s.exists(ctx, "assets", t.BoundAssetID)
@@ -249,28 +256,6 @@ func (s *PGStore) AssignAsset(ctx context.Context, a AssetAssignment) (int64, er
 		return 0, fmt.Errorf("asset: assign asset: %w", err)
 	}
 	return id, nil
-}
-
-// classifyTagInsertErr 把 tags INSERT 23505 拆解为双绑冲突或普通唯一冲突:
-//   - uq_tags_bound_asset_notnull → 双绑冲突(ErrBindingConflict)
-//   - uq_tags_tag_no_key / uq_tags_epc_code_key → tag_no/epc_code 重复(原 error 透传,
-//     httpx.RespondErr 不映射 23505,返回 50000;若需精确业务码后续在 httpx 增加 23505 通用映射)
-//
-// 其他错误原样返回。
-func classifyTagInsertErr(ctx context.Context, err error, t Tag) error {
-	var pgErr *pgconn.PgError
-	if !errors.As(err, &pgErr) || pgErr.Code != "23505" {
-		return err
-	}
-	switch pgErr.ConstraintName {
-	case "uq_tags_bound_asset_notnull":
-		slog.WarnContext(ctx, "[asset] TAG BIND CONFLICT",
-			"asset_id", t.BoundAssetID, "new_tag_no", t.TagNo,
-			"reason", "DB uq_tags_bound_asset_notnull violation")
-		return fmt.Errorf("asset: bound asset %d already bound to another tag: %w",
-			t.BoundAssetID, ErrBindingConflict)
-	}
-	return err
 }
 
 // classifyAssetInsertErr 把 assets INSERT 23505 拆解为双绑冲突或普通唯一冲突:

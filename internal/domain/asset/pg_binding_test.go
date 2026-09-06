@@ -109,6 +109,10 @@ func TestPGStore_CreateTag_AssetNotFound(t *testing.T) {
 	}
 	defer mock.Close()
 
+	// 法人存在性校验(P2-W2-T1 建标签端点)。
+	mock.ExpectQuery(`SELECT EXISTS`).
+		WithArgs(int64(1)).
+		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
 	mock.ExpectQuery(`SELECT EXISTS`).
 		WithArgs(int64(99)).
 		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(false))
@@ -134,6 +138,10 @@ func TestPGStore_CreateTag_BackfillAssetBinding(t *testing.T) {
 	}
 	defer mock.Close()
 
+	// 法人存在性校验(P2-W2-T1 建标签端点)。
+	mock.ExpectQuery(`SELECT EXISTS`).
+		WithArgs(int64(1)).
+		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
 	// 资产存在性预检
 	mock.ExpectQuery(`SELECT EXISTS`).
 		WithArgs(int64(5)).
@@ -177,6 +185,10 @@ func TestPGStore_CreateTag_AssetAlreadyBound(t *testing.T) {
 	}
 	defer mock.Close()
 
+	// 法人存在性校验(P2-W2-T1 建标签端点)。
+	mock.ExpectQuery(`SELECT EXISTS`).
+		WithArgs(int64(1)).
+		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
 	mock.ExpectQuery(`SELECT EXISTS`).
 		WithArgs(int64(5)).
 		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
@@ -211,6 +223,10 @@ func TestPGStore_CreateTag_DBUniqueViolation_AssetBound(t *testing.T) {
 	}
 	defer mock.Close()
 
+	// 法人存在性校验(P2-W2-T1 建标签端点)。
+	mock.ExpectQuery(`SELECT EXISTS`).
+		WithArgs(int64(1)).
+		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
 	mock.ExpectQuery(`SELECT EXISTS`).
 		WithArgs(int64(5)).
 		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
@@ -274,7 +290,8 @@ func TestPGStore_CreateAsset_DBUniqueViolation_TagBound(t *testing.T) {
 	}
 }
 
-// CreateTag INSERT 触发非双绑的 23505(tag_no 重复)→ 仍透传原 err,不被映射成 ErrBindingConflict。
+// CreateTag INSERT 触发非双绑的 23505(tag_no 重复)→ ErrCodeDuplicate(40900,
+// P2-W2-T1 建标签端点口径:编号唯一)。EPG 键 tags_epc_code_key 同通道(pg_tag_admin_test)。
 func TestPGStore_CreateTag_DBUniqueViolation_TagNoDup(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -282,6 +299,10 @@ func TestPGStore_CreateTag_DBUniqueViolation_TagNoDup(t *testing.T) {
 	}
 	defer mock.Close()
 
+	// 法人存在性校验(P2-W2-T1 建标签端点)。
+	mock.ExpectQuery(`SELECT EXISTS`).
+		WithArgs(int64(1)).
+		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
 	mock.ExpectBegin()
 	mock.ExpectQuery(`INSERT INTO tags`).
 		WithArgs(int64(1), "DUP-NO", "EPC-NEW", "UHF", nil, "UNBOUND", "95%").
@@ -297,8 +318,8 @@ func TestPGStore_CreateTag_DBUniqueViolation_TagNoDup(t *testing.T) {
 		LegalEntityID: 1, TagNo: "DUP-NO", EpcCode: "EPC-NEW", Band: "UHF",
 		Status: "UNBOUND", Battery: "95%",
 	})
-	if errors.Is(err, ErrBindingConflict) {
-		t.Fatalf("tag_no 重复不应映射为 ErrBindingConflict, got %v", err)
+	if !errors.Is(err, ErrCodeDuplicate) {
+		t.Fatalf("tag_no 重复应映射 ErrCodeDuplicate, got %v", err)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Fatalf("unmet: %v", err)

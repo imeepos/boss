@@ -25,6 +25,7 @@ func registerAssetRoutes(g *gin.RouterGroup, a *app.Application) {
 	ams.POST("/asset-models", modelCreateHandler(a))
 
 	g.GET("/tags", requirePerm(a.User, "menu:tag"), tagListHandler(a))
+	g.POST("/tags", requirePerm(a.User, "menu:tag"), tagCreateHandler(a))               // P2-W2-T1 建标签(编号+EPC+频段必填唯一)
 	g.POST("/tags/:tagId/unbind", requirePerm(a.User, "menu:tag"), tagUnbindHandler(a)) // P1-T2 解绑回收
 
 	g.POST("/stocktakes", requirePerm(a.User, "menu:stock"), stocktakeCreateHandler(a))

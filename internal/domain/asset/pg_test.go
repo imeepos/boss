@@ -97,6 +97,10 @@ func TestPGStore_CreateTag(t *testing.T) {
 	defer mock.Close()
 
 	// bound_asset_id=0 → nil(事务化:CreateTag 全程包 tx)
+	// 法人存在性校验(P2-W2-T1 建标签端点)。
+	mock.ExpectQuery(`SELECT EXISTS`).
+		WithArgs(int64(1)).
+		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
 	mock.ExpectBegin()
 	mock.ExpectQuery(`INSERT INTO tags`).
 		WithArgs(int64(1), "TAG-0003", "EPC-0003", "UHF", nil, "UNBOUND", "95%").
@@ -431,6 +435,9 @@ func TestPGStore_CreateTag_ResubmitIdempotent(t *testing.T) {
 	}
 	defer mock.Close()
 
+	mock.ExpectQuery(`SELECT EXISTS`).
+		WithArgs(int64(1)).
+		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
 	mock.ExpectQuery(`SELECT EXISTS`).
 		WithArgs(int64(5)).
 		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
