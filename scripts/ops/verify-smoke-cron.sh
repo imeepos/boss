@@ -35,6 +35,9 @@ check_log_writable() { # $1=日志路径 -> 0=可写(缺失则试建)
 
 run_check() {
   local st=0 cron_text
+  if [ ! -f "$COMPOSE_FILE" ]; then
+    echo "[verify-smoke] HINT: $COMPOSE_FILE 不存在——本检查须在 102 宿主执行(主树上请 ssh imeepos@192.168.0.102 后运行,或 SMOKE_RUNNER_COMPOSE 指定路径)"
+  fi
   cron_text="$(crontab -l 2>/dev/null || true)"
   if check_cron_line "$cron_text"; then
     echo "[verify-smoke] check1 OK: crontab 含 $CRON_MARK 行"
