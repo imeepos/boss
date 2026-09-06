@@ -60,7 +60,7 @@ action 白名单多值过滤。UI:一行一事件(时间/操作人/徽标/对象
 合并顺序:B、A 先行合入;P2-W1 合入后再重派 C。
 
 ### R-A3 端到端实测落地(会话 A,2026-09-06)
-脚本:scripts/ops/e2e-asset-linkage.sh(+伴生 e2e-asset-linkage-residue.sql),102 真实部署
+脚本:scripts/e2e/verify-asset-linkage-e2e.sh(+伴生 ...-residue.sql;首参 BASE_URL,默认 102),102 真实部署
 可重复执行(acceptance-lock 防并行)。断言集:L0 基线/S1-S12 环节(order.stage、
 order_stages、四码、认证账号)/L1-L4 装机联动(资产 DEPLOYED+绑地址、asset_lifecycles
 DEPLOYED 行、scan_logs MATCH、quad_links LINKED)/D1-D3 拆机联动(IN_STOCK+清地址、

@@ -5,10 +5,10 @@
 #       L4 quad_links LINKED;D1-D3 拆机回 IN_STOCK+清地址/IN_STOCK 轨迹行/UNLINKED。
 #       拆机链路不可达时输出 "SKIP: [D*] ..." 与原因,不假装通过。
 # 造数: acc_ 前缀族隔离(口径同 mainchain-acceptance.sh);收尾 acceptance-cleanup --apply 全量回收
-#       + e2e-asset-linkage-residue.sql 逐类残留断言为零 + db-patrol-gate 孤儿门禁,不留孤儿。
+#       + verify-asset-linkage-e2e-residue.sql 逐类残留断言为零 + db-patrol-gate 孤儿门禁,不留孤儿。
 # 信号: 每条断言独立输出 "PASS: [编号] ..." / "FAIL: [编号] 期望=.. 实际=.. 上下文=..";
 #       收尾汇总 "E2E-ASSET-LINKAGE RESULT: ..." 可 grep。
-# 用法: scripts/ops/e2e-asset-linkage.sh [RUNS]   # 缺省 1 轮;幂等,可连续重复执行
+# 用法: scripts/e2e/verify-asset-linkage-e2e.sh [BASE_URL] [RUNS]   # 首参 http 开头=BASE_URL(默认 102),否则=轮数;缺省 1 轮
 # 环境: BASE_URL ADMIN_API_KEY CUSTOMER_ID OFFER_ID CHANNEL_ID MASTER_ID SSH_HOST
 #       PROVISION_WAIT SKIP_CLEANUP=1 SKIP_PATROL=1
 #       E2E_INJECT_FAIL=1  (A2 演练: 故意把 L1 期望改成 MAINTENANCE,脚本必须变红)
@@ -22,10 +22,12 @@ trap release_acceptance_lock EXIT
 
 env_or() { local v; v=$(printenv "$1" 2>/dev/null); if [ -n "$v" ]; then echo "$v"; else echo "$2"; fi; }
 
-RUNS="1"; if [ $# -ge 1 ]; then RUNS="$1"; fi
+ARG1=""; RUNS2=""; if [ $# -ge 1 ]; then ARG1="$1"; fi; if [ $# -ge 2 ]; then RUNS2="$2"; fi
 BASE_URL=$(env_or BASE_URL "http://192.168.0.102:28080")
+case "$ARG1" in http*) BASE_URL="$ARG1" ;; esac  # 首参 BASE_URL 覆盖(env/默认)
 API="$BASE_URL/api/admin/v1"
 KEY=$(env_or ADMIN_API_KEY "$(python3 -c "import json;print(json.load(open('$ROOT/.agents/skills/bossctl-cli/test-accounts.json'))['admin']['apiKeys'][0]['key'])")")
+RUNS=$(env_or RUNS "1"); if [ -n "$ARG1" ] && echo "$ARG1" | grep -qv "^http"; then RUNS="$ARG1"; fi; if [ -n "$RUNS2" ]; then RUNS="$RUNS2"; fi
 CUSTOMER_ID=$(env_or CUSTOMER_ID "214")   # 已实名客户(test-accounts.json)
 OFFER_ID=$(env_or OFFER_ID "101"); CHANNEL_ID=$(env_or CHANNEL_ID "102")  # PUBLISHED 产品/HALL
 MASTER_ID=$(env_or MASTER_ID "7")  # 师傅(区域1 集团): 工单区域强匹配
@@ -59,15 +61,13 @@ print(json.dumps(d.get('data',d)) if d.get('code') in (0,200) else '')" "$body")
 }
 
 j() { python3 -c "import json,sys;print(json.loads(sys.argv[1]).get(sys.argv[2],''))" "$1" "$2"; }
-# order_field ORDER_NO FIELD -> orders 详情里的字段(stage/status)
 order_field() {
   local d; d=$(api GET "/orders/$1") || { echo ""; return 1; }
   python3 -c "import json,sys;print(json.loads(sys.argv[1])['order'].get(sys.argv[2],''))" "$d" "$2"
 }
 
 PASS_N=0; FAIL_N=0; SKIP_N=0; FAILED_IDS=""
-ok()   { PASS_N=$((PASS_N+1)); echo "PASS: [$1] $2"; }
-skip() { SKIP_N=$((SKIP_N+1)); echo "SKIP: [$1] $2"; }
+ok() { PASS_N=$((PASS_N+1)); echo "PASS: [$1] $2"; }; skip() { SKIP_N=$((SKIP_N+1)); echo "SKIP: [$1] $2"; }
 bad() {
   FAIL_N=$((FAIL_N+1)); FAILED_IDS="$FAILED_IDS $1"
   echo "FAIL: [$1] $2" >&2
