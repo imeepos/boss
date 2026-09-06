@@ -233,6 +233,34 @@ func TestPGStore_UpdateAsset_Idempotent(t *testing.T) {
 	}
 }
 
+// 零值=保持回归:type-only 编辑在带型号/标签资产上必须保留 model/tag/batch,
+// 且不触发型号类别查询与标签换绑(曾因裸比较误入批次换绑查批次 0 → FK 42200)。
+func TestPGStore_UpdateAsset_TypeOnlyKeepsRefs(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	mock.ExpectBegin()
+	mock.ExpectQuery(`FOR UPDATE`).WithArgs(pgxmock.AnyArg()).
+		WillReturnRows(mock.NewRows([]string{"status", "type", "batch_id", "model_id", "tag_id", "le_id", "le_name"}).
+			AddRow("IN_STOCK", "光猫", int64(1), int64(77), int64(5), int64(1), "主品牌·企业"))
+	mock.ExpectExec(`UPDATE assets`).
+		WithArgs(int64(3), "ROUTER-X", int64(77), int64(5), int64(1), int64(1), "主品牌·企业").
+		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+	mock.ExpectCommit()
+
+	s := NewPGStore(mock)
+	err = s.UpdateAsset(context.Background(), 3, AssetUpdate{Type: "ROUTER-X"}, 42)
+	if err != nil {
+		t.Fatalf("UpdateAsset: %v", err)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet: %v", err)
+	}
+}
+
 // 删除命中引用:ErrAssetReferenced message 全量列阻断项。
 func TestPGStore_DeleteAsset_Blocked(t *testing.T) {
 	mock, err := pgxmock.NewPool()
