@@ -13,7 +13,7 @@ import (
 
 // vsaKey 响应包中一个 VSA 属性的定位(厂商 ID + 厂商属性类型)。
 type vsaKey struct {
-	vid  uint32
+	vid   uint32
 	vtype byte
 }
 

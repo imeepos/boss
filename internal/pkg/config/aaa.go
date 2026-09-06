@@ -8,22 +8,22 @@ import "time"
 
 // AAAConfig RADIUS/凭据/会话/per-NAS/VSA 配置。
 type AAAConfig struct {
-	AuthAddr        string        // RADIUS 认证端口(1812)
-	AcctAddr        string        // RADIUS 计费端口(1813)
-	Secret          string        // NAS 共享密钥(A5 起为兼容回退项,默认仅未注册 NAS 兜底用)
-	AuthTTL         int           // 授权缓存 TTL 秒(默认 60)
-	CDRTopic        string        // 话单 Kafka topic
-	CredKey         string        // 凭据落库密钥材料(BOSS_AAA_CRED_KEY/文件;空=从 Secret 派生,生产应显式设置)
-	AllowNoCred     bool          // BOSS_AAA_ALLOW_NO_CRED=true:未设密账号放行(迁移缓冲,默认关)
-	LockThreshold   int           // BOSS_AAA_LOCK_THRESHOLD:连续失败锁定阈值(默认 5)
-	LockWindow      time.Duration // BOSS_AAA_LOCK_WINDOW:锁定时长(默认 15m)
-	SessionLimit    int           // 同一 LOID 并发会话上限(全局,默认 1;A2)
-	CoAPort         int           // NAS CoA/DM 端口(RFC 5176,默认 3799;A2;per-NAS 注册表可覆盖)
-	OfflineRetryMax int           // Disconnect 不可达重试上限(默认 3;A2)
-	ZombieAfter     time.Duration // 会话超时未更新判僵尸阈值(默认 2h;A2)
-	GlobalSecretCompat bool       // BOSS_AAA_GLOBAL_SECRET_COMPAT=true:未注册 NAS 回退全局密钥(迁移缓冲,默认关)
-	VSAHuawei       string        // BOSS_AAA_VSA_HUAWEI=上行属性名,下行属性名(默认 input-average-rate,output-average-rate)
-	VSAZTE          string        // BOSS_AAA_VSA_ZTE=上行属性名,下行属性名(同默认对)
+	AuthAddr           string        // RADIUS 认证端口(1812)
+	AcctAddr           string        // RADIUS 计费端口(1813)
+	Secret             string        // NAS 共享密钥(A5 起为兼容回退项,默认仅未注册 NAS 兜底用)
+	AuthTTL            int           // 授权缓存 TTL 秒(默认 60)
+	CDRTopic           string        // 话单 Kafka topic
+	CredKey            string        // 凭据落库密钥材料(BOSS_AAA_CRED_KEY/文件;空=从 Secret 派生,生产应显式设置)
+	AllowNoCred        bool          // BOSS_AAA_ALLOW_NO_CRED=true:未设密账号放行(迁移缓冲,默认关)
+	LockThreshold      int           // BOSS_AAA_LOCK_THRESHOLD:连续失败锁定阈值(默认 5)
+	LockWindow         time.Duration // BOSS_AAA_LOCK_WINDOW:锁定时长(默认 15m)
+	SessionLimit       int           // 同一 LOID 并发会话上限(全局,默认 1;A2)
+	CoAPort            int           // NAS CoA/DM 端口(RFC 5176,默认 3799;A2;per-NAS 注册表可覆盖)
+	OfflineRetryMax    int           // Disconnect 不可达重试上限(默认 3;A2)
+	ZombieAfter        time.Duration // 会话超时未更新判僵尸阈值(默认 2h;A2)
+	GlobalSecretCompat bool          // BOSS_AAA_GLOBAL_SECRET_COMPAT=true:未注册 NAS 回退全局密钥(迁移缓冲,默认关)
+	VSAHuawei          string        // BOSS_AAA_VSA_HUAWEI=上行属性名,下行属性名(默认 input-average-rate,output-average-rate)
+	VSAZTE             string        // BOSS_AAA_VSA_ZTE=上行属性名,下行属性名(同默认对)
 }
 
 // loadAAA 从环境变量装载 AAA 配置。

@@ -8,9 +8,9 @@ import (
 
 func TestParseBandwidthKbps(t *testing.T) {
 	cases := []struct {
-		in      string
-		want    uint32
-		wantOK  bool
+		in     string
+		want   uint32
+		wantOK bool
 	}{
 		{in: "100M", want: 100000, wantOK: true},
 		{in: "1000M", want: 1000000, wantOK: true},

@@ -54,11 +54,11 @@ type VSASpec struct {
 }
 
 type vendorRateSpec struct {
-	vendorID      uint32
-	upType        byte
-	downType      byte
-	upName        string
-	downName      string
+	vendorID uint32
+	upType   byte
+	downType byte
+	upName   string
+	downName string
 }
 
 // BuildVSASpec 启动期解析配置;非法属性名直接报错(配置错误应在启动期暴露)。

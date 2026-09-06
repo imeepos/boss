@@ -112,7 +112,7 @@ func startTestRadius(t *testing.T, src radius.SecretSource) (string, *logBuf) {
 	t.Helper()
 	buf := &logBuf{}
 	srv := &radius.PacketServer{
-		Handler: &Handler{Auth: &authStub{decision: aaa.Decision{Authorize: true, Bandwidth: "100M", SessionTTL: 60}}},
+		Handler:      &Handler{Auth: &authStub{decision: aaa.Decision{Authorize: true, Bandwidth: "100M", SessionTTL: 60}}},
 		SecretSource: src,
 		ErrorLog:     log.New(buf, "", 0), // log.Logger 内部互斥,底层 logBuf 并发读安全
 	}
