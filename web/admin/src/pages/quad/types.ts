@@ -49,6 +49,7 @@ export interface AuthLogRow {
   id: number
   loid: string
   result: string // SUCCESS/FAILED
+  failReason: string // 失败原因码(fields.md §8A),空=成功或存量行
   createdAt: string
 }
 

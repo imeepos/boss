@@ -6,6 +6,7 @@ import { PageHead, pagerTexts } from '../org/shared'
 import { Pagination } from '../../components/Pagination'
 import { fmtTime } from '../../lib/format'
 import { type AuthLogRow, type CdrRow } from '../quad/types'
+import { failReasonText } from './failReason'
 import { TableStateRow, TabBar } from '../../components/business'
 
 export default function AaaLogPage() {
@@ -87,10 +88,11 @@ export default function AaaLogPage() {
                   <tr key={x.id}>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.loid}</td>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.result === 'SUCCESS' ? a.success : a.failed}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]" data-testid="auth-fail-reason">{failReasonText(x, a)}</td>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{fmtTime(x.createdAt)}</td>
                   </tr>
                 ))}
-                {!slice.length && <TableStateRow colSpan={3} loading={busy} text={a.empty} />}
+                {!slice.length && <TableStateRow colSpan={4} loading={busy} text={a.empty} />}
               </tbody>
             </table>
           </div>

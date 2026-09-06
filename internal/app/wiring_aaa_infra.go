@@ -4,9 +4,13 @@ package app
 // 与 Application struct 内字段顺序一一对应(平移自 wiring.go,零行为变更)。
 
 import (
+	"fmt"
+	"log"
+
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/ymm-001/boss/internal/domain/aaa"
+	"github.com/ymm-001/boss/internal/domain/aaa/credential"
 	"github.com/ymm-001/boss/internal/domain/ai"
 	"github.com/ymm-001/boss/internal/domain/apikey"
 	"github.com/ymm-001/boss/internal/domain/asset"
@@ -17,8 +21,23 @@ import (
 	"github.com/ymm-001/boss/internal/domain/provision"
 	pushdomain "github.com/ymm-001/boss/internal/domain/push"
 	"github.com/ymm-001/boss/internal/domain/quadlink"
+	"github.com/ymm-001/boss/internal/pkg/config"
 	"github.com/ymm-001/boss/internal/pkg/push"
 )
+
+// newAAAStoreWithCred 构造 AAA store 并注入凭据编解码器(admin 重置 LOID 密码的
+// 密文落库依赖;密钥 BOSS_AAA_CRED_KEY/FILE 显式注入,空则从 Secret 派生并留 ALERT)。
+// server 与 cmd/aaa 必须同一密钥材料,否则跨进程密文互不可解。
+func newAAAStoreWithCred(pool *pgxpool.Pool, cfg *config.Config) (*aaa.PGStore, error) {
+	codec, derived, err := credential.NewResolved(cfg.AAA.CredKey, cfg.AAA.Secret)
+	if err != nil {
+		return nil, fmt.Errorf("aaa: credential codec: %w", err)
+	}
+	if derived {
+		log.Println("[aaa] CRED KEY ALERT: BOSS_AAA_CRED_KEY 未设置,使用 Secret 派生密钥(生产必须显式配置)")
+	}
+	return aaa.NewPGStore(pool).WithCredentialCodec(codec), nil
+}
 
 func wireAAAInfra(app *Application, pool *pgxpool.Pool, aaastore *aaa.PGStore, pushSender push.Sender, provStore *provision.PGStore) {
 	app.Aaa = aaastore

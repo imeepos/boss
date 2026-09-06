@@ -2,6 +2,19 @@
 
 <!-- 排查技巧、工具命令、调试手法。格式：什么场景 → 怎么用。 -->
 
+## CDP 断言操作自研 Dropdown(web/admin components/Dropdown.tsx)
+
+场景 → 用 cdp-capture --eval 驱动全站唯一下拉选择器(Dropdown.tsx)做自动化验证。
+怎么用 → 选项的 onChange 绑在 **onMouseDown**(line ~106),onClick 被 preventDefault——eval 必须
+`opt.dispatchEvent(new MouseEvent('mousedown',{bubbles:true,cancelable:true}))`,`opt.click()` 静默无效(2026-09-07 报告中心轮实测连废两轮)。
+触发器用 click() 开合即可;定位用 button[aria-label="唯一标签"],别用 querySelectorAll 下标猜。
+
+## sonner toast action 按钮点击后 toast 即消失
+
+场景 → 断言 toast 上的失败原因/复制动作。
+怎么用 → 只断言存在性与文案(toast.innerText 含标题+description+动作label);点击 action 后 sonner 默认收起 toast,「已复制」翻转变不可观测,勿把点击后状态当断言点(2026-09-07 报告中心轮)。
+失败链路无法造真实后端错误时,页面内 `window.fetch` 打补丁对特定 URL reject,再走真实 UI 流程验证 toast——零后端副作用。
+
 ## 无 Playwright 时给 Web 页面（含需登录页）截图
 
 场景 → 前端改动要可视化验证，环境无 playwright/puppeteer，但 macOS 有系统 Chrome。

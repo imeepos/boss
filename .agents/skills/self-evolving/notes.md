@@ -1,5 +1,12 @@
 # Notes
 
+## 2026-09-07 报告中心(intel/report)打磨轮
+
+- 最耗时坑:vite dev/preview 在新 worktree cwd 静默挂起(零输出不绑端口),烧了约 15 分钟才绕道主树 cwd 起静态服务器;skill 无预警,已记 known-issues。
+- skill 有没有预警:红线 4(edit 不对称)与红线 14(缺 new_string)都预警了但仍然犯——两次都发生在赶进度连发编辑的节奏里;必填键默念应在起草时执行,不是发车时。
+- 重来一次:开工先批量 read 全部待改 worktree 文件,编辑全部发车后再统一跑门禁;CDP 驱动 Dropdown 先读组件源码确认事件绑定(onMouseDown),能省两轮试错。
+- 额外收获:测试断言失败揪出一个真 a11y 缺陷(aria-label 撞名)——自动化验证与可达性共用同一份「唯一语义标签」前提。
+
 ## 2026-09-06 Interim 累计口径修正(AAA-A4,feat/aaa-a4-interim)
 
 - 哪个坑浪费了最多时间?三次自伤全是红线 4 变体:重写 import 块漏抄既有 fmt 行(vet 红)、接口注释第二行漏 tab(gofmt 红)、修 tab 时又给原本有 tab 的第一行多加一个(二次红)。均在一次 gofmt/vet 验证轮内定位,约 3 分钟,零扩散。
@@ -1855,3 +1862,25 @@
 - 哪个坑浪费了最多时间?静态审计(i18n 三语闭环+令牌 grep 全定义+无裸色值)全绿,差点直接报「已适配」——幸而按红线 6 先跑 CDP 计算样式断言,逮住激活页签亮色白字白底/暗色深底深字(TAB_BTN+TAB_ACTIVE 同元素 bg-*/text-* 重复,Tailwind 按产物顺序裁决,bg 与 text 各被对方赢走)。
 - skill 有没有提前警告?红线 6(无断言不得声称已适配)直接救命;knowledge「颜色问题同时检查全部主题」在案,但「冲突 utility 由 CSS 产物顺序裁决」机制是新坑,已回填 lessons/known-issues。
 - 重来一次怎么做?①页面适配任务的证伪步骤必须是 getComputedStyle 断言,grep 三连通过不等于视觉正确;②同一元素的状态类切换,互斥类组纯函数(monthlyTabClass)+互斥回归测试是标准姿势;③修完在 dev 双主题断言 bg/color 等于令牌字面值,再走部署 marker 轮询确认线上。
+
+## 2026-09-06 AAA-A6 admin 前端补齐(feat/aaa-a6-admin-frontend)
+
+- 哪个坑浪费了最多时间?①i18n locale 大文件用「页尾 pageUnit/jumpText+下节名」做 edit 锚,此类尾锚全仓 51 处出现,一次 matched-2-times 把 zh-CN aaaLogPage 尾部键弄丢+幽灵 provisionPage 残段,靠 git diff 机械盘点损伤才修净;②cdp eval 断言串凭记忆写 ConfirmDialog 标题 '操作确认',实际被 opts.title 覆盖成 '重置密码',断言假阴性一轮;③联调只看 HTTP 200 判接口可用,实则信封 code=50000(102 凭据编解码未配置,A3 部署收口未完成),再耗一轮才定位。
+- skill 有没有提前警告?红线 1(worktree 先 read)拦下一次;红线 24(tail 吞退出码)在 pnpm install 'No projects found' 时靠显式 RC 复验兜住;高频尾锚、断言串对照 i18n 实值、信封层探测三坑是新坑,已回填 recidivism 35-37。
+- 重来一次怎么做?①大 locale/types 编辑锚一律选目标页独有行(columns/billed/title 等),edit 前 grep -c 验全仓恰 1 次;②DOM/网络断言的期望字符串先 grep locale 源码拿实值再写;③接口可用性结论必须打到信封 code/msg 层,HTTP 200 ≠ 可用;④联调假阴性先看页面错误横幅与网络日志,再怀疑组件逻辑。
+
+## 2026-09-06 AAA-A5 per-NAS 注册表与 VSA 限速(feat/aaa-a5-per-nas-vsa)
+
+- 哪个坑浪费了最多时间?两处:① make check 三连跑才绿——第一轮测试期 -race 拦到测试日志缓冲 strings.Builder 被
+  服务端 goroutine 异步写/断言读并发(数据竞争),第二轮 lint 后备分支拦 13 个文件 gofmt 差异,第三轮
+  bossctl routes_gen 在 yaml 补路径后未再生成;② pgxmock v4 对带占位符 SQL 的 ExpectQuery 必须显式 WithArgs,
+  否则报 expected 0 arguments,裸断言路径让错误吞进业务 error 包装,定位多绕一圈。
+- skill 有没有提前警告?红线 11/22 的引号/反引号禁令全程零踩坑(行数组+fromCharCode 策略稳定);
+  「先查库再定迁移号」(fetch+merge main 再定号)兑现——main 三次前进(7db0cfbf/db8b20b3)均无撞号。
+- 重来一次会怎么做?写完 Go 文件立刻 gofmt -w 再 build(把格式化前置);测试里凡涉及异步 goroutine 写日志、
+  主线程读断言的,直接上互斥缓冲不要事后补;契约 yaml 这类「行敏感」文件用 edit 拼接后立刻跑 YAML 解析类检查。
+
+## 2026-09-06 AAA-A3 部署与数据收口(运维+数据安全敏感任务)
+- 哪个坑浪费了最多时间?三次并行竞态:①ff 合并两次被并行会话推进 main 挡住(7db0cfbf/db8b20b3/069dafc1 三次外漂),②第二次 ff 失败后我仍按旧习惯在同一批跑 worktree remove+push --delete,幸 branch -d 安全拒保住 commit(红线 9 第 4 犯,教训已入台账:清理必须等合并复核后的独立步骤);③收尾时主树又出现别人未提交文件,git add 必须点名文件。
+- skill 有没有提前警告?红线 9/24 全程在手边但仍把清理链和合并链打包发车——警告存在≠流程拆分,以后「合并成功」必须落成独立工具调用再谈清理。新沉淀:heredoc 脚本内 docker exec -i 吞 stdin(静默 RC=0 全空输出)、共享仓库 stash 是全局共享禁 pop、镜像 USER app 使 root 0600 文件容器不可读(bind mount 密钥属主必须对齐容器 UID)。
+- 重来一次会怎么做?每一步收口动作先拆「验证步骤」与「变更步骤」两个工具调用;长脚本写完先 echo 冒烟首尾行;对并行会话的领域文件(A5 的 NAS 门)变更保持只读+上报,不代做决策。

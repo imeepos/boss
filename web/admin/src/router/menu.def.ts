@@ -88,6 +88,7 @@ export const MENU_GROUPS: MenuGroup[] = [
   { id: 'aaa', label: '认证与告警', items: [
     { key: 'aaadashboard', label: 'AAA 运行总览', path: '/aaa/dashboard' },
     { key: 'aaalog', label: '话单与认证日志', path: '/aaa/aaalog' },
+    { key: 'aaasession', label: '在线会话', path: '/aaa/aaasession', perm: 'loaccount' },
     { key: 'alarm', label: '告警列表', path: '/alarm/alarm' },
   ]},
   { id: 'cms', label: '内容与消息', items: [
