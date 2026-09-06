@@ -1259,6 +1259,32 @@ export interface Translations {
       jumpText: string
       pageUnit: string
     }
+    capacityPage: {
+      title: string
+      desc: string
+      dimAll: string
+      dimOlt: string
+      dimSplitter: string
+      colObject: string
+      colType: string
+      colTotal: string
+      colUsed: string
+      colUsage: string
+      alertMark: string
+      alertHint: string
+      scan: string
+      scanDone: string
+      scanFail: string
+      empty: string
+      loadFail: string
+      total: string
+      prev: string
+      next: string
+      perPage: string
+      rangeText: string
+      jumpText: string
+      pageUnit: string
+    }
     reservePage: {
       title: string
       desc: string

@@ -60,14 +60,14 @@ export function canAccess(role: string, pageKey: string, permCodes?: string[]): 
   const page = PAGE_BY_KEY.get(pageKey)
   if (!page) return false
   if (ROLE_GROUPS[role as RoleCode]) return visibleGroupIds(role).includes(page.groupId)
-  return new Set(permCodes ?? []).has(`menu:${pageKey}`)
+  return new Set(permCodes ?? []).has(`menu:${page.item.perm ?? pageKey}`)
 }
 
-/** 自定义角色:按持有 menu:<key> 过滤菜单项,空组剔除(无独立权限码的项不出现)。 */
+/** 自定义角色:按持有权限码过滤菜单项(perm 覆盖优先),空组剔除(无独立权限码的项不出现)。 */
 export function filterGroupsByPerms(permCodes: string[]): MenuGroup[] {
   const held = new Set(permCodes)
   return MENU_GROUPS
-    .map((g) => ({ ...g, items: g.items.filter((it) => held.has(`menu:${it.key}`)) }))
+    .map((g) => ({ ...g, items: g.items.filter((it) => held.has(`menu:${it.perm ?? it.key}`)) }))
     .filter((g) => g.items.length > 0)
 }
 

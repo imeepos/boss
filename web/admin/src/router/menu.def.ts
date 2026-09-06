@@ -9,6 +9,8 @@ export interface MenuItem {
   key: string
   label: string
   path: string
+  /** 越权判定权限码后缀,缺省=key(即 menu:<key>);复用他人权限码的页面在此登记。 */
+  perm?: string
 }
 
 export interface MenuGroup {
@@ -65,6 +67,7 @@ export const MENU_GROUPS: MenuGroup[] = [
   ]},
   { id: 'oss', label: '网络资源', items: [
     { key: 'resource', label: '端口台账', path: '/oss/resource' },
+    { key: 'capacity', label: '容量视图', path: '/oss/capacity', perm: 'resource' },
     { key: 'odn', label: 'ODN 无源网络', path: '/oss/odn' },
     { key: 'device', label: 'OLT 设备', path: '/oss/device' },
     { key: 'reserve', label: '预占与释放', path: '/oss/reserve' },

@@ -16,6 +16,7 @@
     },
     "resource_admin": {
       "feOnly": [
+        "capacity",
         "dashboard",
         "provision",
         "provlog"
@@ -68,7 +69,9 @@
       "beOnly": []
     },
     "sysadmin": {
-      "feOnly": [],
+      "feOnly": [
+        "capacity"
+      ],
       "beOnly": [
         "menu:ai",
         "menu:partner-audit",

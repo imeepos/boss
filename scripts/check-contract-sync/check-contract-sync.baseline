@@ -17,6 +17,12 @@
 mig:000044
 mig:000095
 
+# ---- E. menu.def 权限码复用豁免(检查 E:menuperm.go) ----
+# capacity(容量视图,P5-W1)复用端口台账权限码 menu:resource——任务书裁定
+# 「菜单注册与权限码对齐 menu:resource」,不新增权限码;前端 MenuItem.perm='resource',
+# 越权判定/自定义角色推导均按 menu:resource 判定(role-menu.ts perm 覆盖)。
+menu:capacity
+
 # ---- A2. 方法级对账存量:2026-09-07 首扫登记 6 条,当日全部清零 ----
 # geo names ×2 / stripe done,cancel ×2:系扫描器与提取器盲区(引号路径键、
 # for-range 字面量循环注册,见 alignment-audit.md §13 A5/A6),修复后假阳性
