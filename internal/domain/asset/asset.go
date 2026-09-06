@@ -152,7 +152,12 @@ type AssetService interface {
 	CreateBatch(ctx context.Context, b AssetBatch) (int64, error)
 	ListTags(ctx context.Context) ([]Tag, error)
 	CreateTag(ctx context.Context, t Tag) (int64, error)
-	ListAssets(ctx context.Context) ([]Asset, error)
+	// ListTagsPage 标签分页列表(P3-T1):offset/limit+status/q(tag_no 前缀)+排序白名单,
+	// 返回过滤后 total;worker 端下拉仍走 ListTags 全量。
+	ListTagsPage(ctx context.Context, q ListQuery) (*TagPage, error)
+	// ListAssetsPage 资产分页列表(P3-T1):offset/limit+status/type/modelId/q(asset_code
+	// 前缀)+排序白名单,返回过滤后 total;取代全量 ListAssets(调用方仅前端资产页一处)。
+	ListAssetsPage(ctx context.Context, q ListQuery) (*AssetPage, error)
 	CreateAsset(ctx context.Context, a Asset) (int64, error)
 	GetAsset(ctx context.Context, id int64) (*Asset, error)
 	// UpdateAsset 受限编辑(P2-W1-T1):仅 类型/型号/标签/批次 四键;标签换绑同一

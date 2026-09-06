@@ -14,18 +14,6 @@ import (
 	"github.com/ymm-001/boss/pkg/apitypes"
 )
 
-// assetListHandler GET /assets:资产主档列表。
-func assetListHandler(a *app.Application) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		list, err := a.Asset.ListAssets(c.Request.Context())
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		respond(c, apitypes.CodeOK, gin.H{"items": list})
-	}
-}
-
 // assetListLifecyclesHandler GET /assets/{assetId}/lifecycle:资产生命周期记录。
 func assetListLifecyclesHandler(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -58,18 +46,6 @@ func assetListBatchesHandler(a *app.Application) gin.HandlerFunc {
 func assetListAssignmentsHandler(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		list, err := a.Asset.ListAssignments(c.Request.Context(), queryInt64(c, "assetId"))
-		if err != nil {
-			respondErr(c, err)
-			return
-		}
-		respond(c, apitypes.CodeOK, gin.H{"items": list})
-	}
-}
-
-// tagListHandler GET /tags:标签字典列表。
-func tagListHandler(a *app.Application) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		list, err := a.Asset.ListTags(c.Request.Context())
 		if err != nil {
 			respondErr(c, err)
 			return

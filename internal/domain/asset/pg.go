@@ -116,28 +116,7 @@ func (s *PGStore) ListTags(ctx context.Context) ([]Tag, error) {
 
 // CreateTag 新建电子标签,返回自增 id。
 
-// ListAssets 列出全部资产台账。
-func (s *PGStore) ListAssets(ctx context.Context) ([]Asset, error) {
-	rows, err := s.db.Query(ctx,
-		`SELECT id, asset_code, batch_id, legal_entity_id, legal_entity_name,
-		        COALESCE(tag_id, 0), COALESCE(address_id, 0), COALESCE(region_id, 0),
-		        COALESCE(region_name, ''), type, status, COALESCE(model_id, 0)
-		 FROM assets ORDER BY id`)
-	if err != nil {
-		return nil, fmt.Errorf("asset: list assets: %w", err)
-	}
-	defer rows.Close()
-	out := make([]Asset, 0)
-	for rows.Next() {
-		var a Asset
-		if err := rows.Scan(&a.AssetID, &a.AssetCode, &a.BatchID, &a.LegalEntityID, &a.LegalEntityName,
-			&a.TagID, &a.AddressID, &a.RegionID, &a.RegionName, &a.Type, &a.Status, &a.ModelID); err != nil {
-			return nil, fmt.Errorf("asset: scan asset: %w", err)
-		}
-		out = append(out, a)
-	}
-	return out, rows.Err()
-}
+// ListAssetsPage/ListTagsPage 分页列表见 pg_page.go(P3-T1,取代全量 ListAssets)。
 
 // CreateAsset 新建资产,返回自增 id。
 
