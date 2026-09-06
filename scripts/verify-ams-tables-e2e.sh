@@ -28,7 +28,7 @@ step 'T-2 model create/edit/disable'
 OUT=$($B call POST /asset-models --data "{\"vendor\":\"AMS-E2E\",\"model\":\"M$TS\",\"category\":\"ONU\"}")
 MID=$(printf '%s' "$OUT" | idof)
 [ -n "$MID" ] || bad "model create: $OUT"
-$B call PUT /asset-models/$MID --data '{"partNumber":"E2E-PN"}' >/dev/null 2>&1 && ok 'model edit ok' || bad 'model edit'
+$B call PUT /asset-models/$MID --data '{"vendor":"AMS-E2E","model":"M$TS","category":"ONU","partNumber":"E2E-PN"}' >/dev/null 2>&1 && ok 'model edit ok' || bad 'model edit'
 $B call POST /asset-models/$MID/disable >/dev/null 2>&1 && ok 'model disable ok' || bad 'model disable'
 
 step 'T-3 batch create'
