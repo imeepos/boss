@@ -799,6 +799,19 @@ App 本地留痕后启动补传；服务端入库即视为成功，App 端成功
 > `OLT_UNREACHABLE`（归属资源缺失无法上溯）。端口不存在返回 40400（resource: not found），不返回断链视图。
 > 区域/企业锚点（TS 实体）：`region_id`/`region_name`（地址所在经营区域）、`legal_entity_id`/`legal_entity_name`（所属设备企业），按地区/企业统计端口；`lo_accounts` 同挂 `region_id`/`region_name`（客户所在经营区域）。
 
+### 4.2.2 资源台账稽核 inventory-audit（P5-W3，GET /inventory-audit + 每日快照 period=oss-audit-daily）
+
+| 类别标识 | 中文 | 检查码 | 口径 |
+|:---------|:-----|:-------|:-----|
+| `ownership` | 归属断裂 | PORT_SPLITTER_MISSING | 端口引用的分光器不存在 |
+| `ownership` | 归属断裂 | SPLITTER_UPSTREAM_MISSING | 分光器引用的上游不存在（parent 缺失/悬空） |
+| `state` | 状态机违例 | USED_PORT_NO_QUAD_LINK | USED 态端口无四码 LINKED 关联 |
+| `state` | 状态机违例 | RESERVED_PORT_STALE | RESERVED 态超阈值未推进未释放（阈值 biz_params `resource.audit.reservedStaleHours` 默认 48 小时，000193） |
+| `coding` | 编码规范违例 | RESOURCE_CODE_BAD | 设备编码不符 `OLT-*`/`SPL-*`（按 type 前缀强校验，中缀横杠合法，如 OLT-MNL-01） |
+| `coding` | 编码规范违例 | PORT_CODE_BAD | 端口编码不符 `P-<设备码去横杠>-<序号>`（如 SPL-01 → P-SPL01-01）或 `P-<设备码全码>-<序号>`（如 OLT-MNL-01 → P-OLT-MNL-01-01）任一形态 |
+
+> 只读只报不修，不改状态机语义；`GET /inventory-audit?category=`（menu:resource）返回 counts/items/total，明细每检查采样 ≤50 条、计数为全量；每日 04:00 循环落 `report_snapshots(period=oss-audit-daily)` 同日覆盖，失败留 `[oss-audit] ... FAILED` 可 grep 日志。
+
 ### 4.2.1 stocktakes / stocktake_items（盘点任务与差异明细，迁移 000007/000156，S10 流程）
 
 stocktakes（盘点任务，页面 `/ams/stock`「盘点管理」）：

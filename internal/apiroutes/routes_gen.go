@@ -328,6 +328,7 @@ var Portals = []Portal{
 		{"GET", "/menu-perms", "菜单权限矩阵(三层权限模型 + 角色×菜单组可见性)"},
 		{"GET", "/data-scopes", "数据权限清单(账号级授权策略)"},
 		{"PUT", "/regions/{regionId}/coverage", "区域覆盖主体划分(子公司划经营区域;legalEntityId=0 摘除回落祖先/总公司兜底)"},
+		{"GET", "/inventory-audit", "资源台账稽核(P5-W3,三类计数+明细,只报不修;permCode menu:resource;每日快照 period=oss-audit-daily)"},
 		{"GET", "/resources", "网络资源清单(OSS/OLT/分光器;对齐 Go 实现 GET /resources,permCode menu:resource)"},
 		{"GET", "/resources/capacity", "端口容量聚合(OLT/分光器维度;usageRate=USED/(USED+IDLE) 百分比两位小数,DISABLED/RESERVED 不入分母;对齐 Go 实现 GET /resources/capacity,permCode menu:resource)"},
 		{"POST", "/resources/capacity/alert-scan", "容量阈值预警扫描(使用率>=80% 产生 WARNING 容量告警入告警体系;同一对象阈值状态变化才重复告警,周期重跑幂等;对齐 Go 实现 POST /resources/capacity/alert-scan,permCode menu:resource)"},

@@ -136,6 +136,7 @@ var AdminRoutePerms = map[string][]string{
 	"GET /api/admin/v1/hall-items":                                                {"menu:dispatch"},
 	"GET /api/admin/v1/import-tasks":                                              {"menu:importer"},
 	"GET /api/admin/v1/install-logs":                                              {"menu:install-board"},
+	"GET /api/admin/v1/inventory-audit":                                           {"menu:resource"},
 	"GET /api/admin/v1/invite-config":                                             {"menu:userdata"},
 	"GET /api/admin/v1/invoices":                                                  {"menu:billing"},
 	"GET /api/admin/v1/invoices/{id}/tax-events":                                  {"menu:billing"},
