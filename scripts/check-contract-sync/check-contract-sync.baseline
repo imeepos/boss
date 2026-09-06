@@ -29,3 +29,8 @@ menu:capacity
 # 自然消失,豁免条目移除;
 # products ×1:契约幻影块(见 §13 A7)删除后消除。
 # 豁免规则不变:新增差异必须凭「存量债务 + 整改方向」登记。
+
+# ---- E. menu.def 权限码复用豁免(A6 在线会话页,2026-09-06 随 main 合并带入) ----
+# aaasession(在线会话,A6)复用账号权限码 menu:loaccount——MenuItem.perm='loaccount',
+# 后端 /aaa/sessions* 路由同挂 menu:loaccount(A2 先例);不新增权限码,越权判定按 menu:loaccount。
+menu:aaasession
