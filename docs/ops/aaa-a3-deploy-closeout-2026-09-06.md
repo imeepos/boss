@@ -10,21 +10,29 @@
 - PG:`boss-infra-postgres-1`,库 boss,用户 boss(25432 对外)。
 - boss-aaa 容器同镜像 entrypoint `boss-aaa`,UDP 1812/1813;服务器为多人共享环境,动手前已核查无他人部署进行中。
 
-## 2. 迁移(000194/000195)
+## 2. 迁移(000194/000195/000196,按序)
 
 102 实库由当日 CI 部署的应用启动自迁移应用(早于本任务执行窗口),本任务以直查留证并复核对象完整性:
 
 ```
 schema_migrations: 000194_aaa_credential_lockout applied_at=2026-09-06 13:40:40+00
                     000195_aaa_online_sessions applied_at=2026-09-06 13:50:29+00
+                    000196_aaa_nas_clients       applied_at=2026-09-06(A5 随 069dafc 部署自迁移,本任务复核)
 lo_accounts.password_credential TEXT NULL          # 存在
 auth_logs.fail_reason VARCHAR(32) DEFAULT ''       # 存在
 lo_auth_lockouts(loid,fail_count,locked_until,updated_at)   # 存在
 aaa_online_sessions 全列 + uq_aaa_online_sessions_loid_session + 2 索引   # 存在
 cdrs.close_reason VARCHAR(32) NULL                 # 存在
+aaa_nas_clients(id,name,nas_ip,secret_enc,vendor,coa_port,enabled,时间戳)   # 存在,0 行
 ```
 
 回滚:`scripts/ops/migrate-102.sh down 000193_oss_inventory_audit`(down 前自动 backup-102.sh)。
+
+### 2.1 A5 per-NAS/VSA 配置面(负责人通知后补记,2026-09-06)
+
+- NAS 注册:`aaa_nas_clients` 当前 **0 行**;未注册 NAS 来源的 RADIUS 包被丢弃并留痕(`[aaa] NAS REJECT UNREGISTERED ip=...` + `nas not registered`)。真实 NAS 接入前必须先登记,或由负责人裁定开启兼容开关。
+- 兼容开关:`BOSS_AAA_GLOBAL_SECRET_COMPAT=true` 时未注册 NAS 回退全局密钥(compose 未设=关,默认严格)。
+- VSA 属性名 env(可后配,未设即用内置默认):`BOSS_AAA_VSA_HUAWEI`(默认 input-average-rate,output-average-rate → 华为 VID 2011 类型码 78/80 平均速率)、`BOSS_AAA_VSA_ZTE`(覆盖 ZTE VID 3902 属性对,默认语义名映射 84/86,以目标设备规范为准,fields.md §8J)。后续需要调整时把对应 env 追加进 `deployments/docker-compose.102.app.yml` 的 aaa 服务即可,随下次部署生效。
 
 ## 3. 凭据密钥 BOSS_AAA_CRED_KEY(值不入仓库)
 
@@ -66,7 +74,7 @@ cdrs.close_reason VARCHAR(32) NULL                 # 存在
 
 ## 9. 遗留风险与移交项
 
-1. **A5 per-NAS 严格门已随并行会话上线 102**(069dafc 起):未注册 NAS 来源的 RADIUS 包一律丢弃(默认全局密钥兼容开关关)。任何真实 NMS/oltsim 演练/探针需先在 A5 注册表登记 NAS,或由负责人裁定开启兼容开关;oltsim 相关 E2E 脚本可能受影响,属 A5 移交事项。
+1. **A5 per-NAS 严格门已随并行会话上线 102**(069dafc 起):未注册 NAS 来源的 RADIUS 包一律丢弃(默认全局密钥兼容开关关)。任何真实 NMS/oltsim 演练/探针需先在 A5 注册表登记 NAS,或由负责人裁定开启兼容开关(compose aaa 服务加 `BOSS_AAA_GLOBAL_SECRET_COMPAT: "true"`);oltsim 相关 E2E 脚本可能受影响,属 A5 移交事项。
 2. 密钥异地备份未落(见 §3),建议纳入密钥托管流程。
 3. LOID-E2E-RESUME-001 为 E2E 遗留账号,已随批量重置获得凭据;其口令无人持有,如需复用请重置。
 4. 102 为共享环境,当日并行会话(A4/A5/A6)多次推进 main;本任务三次合并均按 worktree 协议 rebase 后 ff-only 完成。
