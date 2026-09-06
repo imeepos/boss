@@ -537,7 +537,8 @@ const enUS: Translations = {
     },
     odn: {
       title: 'ODN Passive Network', subtitle: 'Grids · Infrastructure · Sites & Core Devices',
-      tabs: { grids: 'Grids', facilities: 'Infrastructure', sites: 'Sites', devices: 'Core Devices' },
+      tabs: { grids: 'Grids', facilities: 'Infrastructure', sites: 'Sites', devices: 'Core Devices', coverage: 'Coverage' },
+      addressId: 'Address ID', addressName: 'Address', covFacility: 'Serving Facility', covDevice: 'Serving Device ID', covStatus: 'Installability', covNote: 'Note', updatedAt: 'Updated', resolveBtn: 'Check Installability', distance: 'Distance', covServed: 'Servable', covPending: 'In Build', covUnserved: 'Unserved',
       add: 'Add', cancel: 'Cancel', save: 'Save', saving: 'Saving…', loadFail: 'Load failed', saveFail: 'Save failed', empty: 'No data', retire: 'Retire', retireConfirm: 'Retire this ODN resource? This cannot be undone.', warn: 'Capacity warning',
       gridCode: 'Grid code', name: 'Name', coverage: 'Coverage', usage: 'Usage', status: 'Status', actions: 'Actions', code: 'Code', kind: 'Type', nodeCode: 'NodeCode', siteNo: 'Site number', parentId: 'Parent ID', deviceCode: 'Device code', deviceKind: 'Device type', lat: 'Latitude', lng: 'Longitude',
     },
