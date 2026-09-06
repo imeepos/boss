@@ -53,4 +53,7 @@
 - **【已犯 1 次】禁止手动部署 102(push main 即 CI 自动部署 Build-Deploy-to-ECS)** —— 2026-08-29 柜面收款轮:手动 docker build+compose up,compose 项目名不同导致挂了新建空卷,license.json"丢失",授权失效(P2 事故,见 docs/postmortem/0010)。部署类操作只允许 push main;动手前必读 docs/deploy/oncall-102.md。
 - **【已犯 1 次】禁止解完冲突补编辑后直接 commit(merge commit 只含已暂存内容)** —— 2026-09-01 死循环修复轮:冲突解完 git add 后又补了三处编辑再 commit,门禁跑在「工作区文件」上全绿而 commit 里没有它们,main 短暂带着缺参组件;最后靠 worktree remove 报脏才兜住。解冲突的顺序固定「编辑→git status 必须空→add→commit」,门禁以 commit 后的干净树为准。
 - **【已犯 1 次】禁止在前台跑长耗时 git/go 操作(git worktree add/remove 大仓 checkout、go build 全仓冷/失效缓存)** —— 2026-09-04 T18 轮:前台默认超时把 worktree add 杀在 checkout 半路,worktree 未注册+残目录挡路,连环 6 轮才定位;正解 run_in_background: true + job_output 等待,大 checkout 另选 .worktrees/ 仓内路径 + .git/info/exclude 避开并行会话竞争。
+- 禁止经 run_code 生成代码时把多行 old_string/new_string 写成内联断行字符串——JS 串在首个换行处截断直接 parse error;一律行数组 + join("\n"),SQL 裸串用 fromCharCode(96) 包裹(2026-09-06 AAA-A1 轮两次踩中)。
+- 禁止让生成器包装函数(q/bt 等)漏进产物——JS 侧拼接辅助名残留在 Go 源里就是未定义函数+括号失衡,写完立刻 gofmt+go build 秒杀(2026-09-06 AAA-A1 轮,漏检靠编译兜底白耗一轮)。
+- 禁止 write 后经 bash 跑 gofmt/sed 改写同一文件再 edit——文件已非工具观察态必报 file changed;凡 bash 动过待编辑文件先 read 再 edit(2026-09-06 AAA-A1 轮三次)。
 
