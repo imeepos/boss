@@ -65,7 +65,11 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 	dev := device.NewPGStore(pool)
 	wrk := worker.NewPGStore(pool)
 	usr := user.NewPGStore(pool)
-	aaastore := aaa.NewPGStore(pool)
+	aaastore, err := newAAAStoreWithCred(pool, cfg)
+	if err != nil {
+		pool.Close()
+		return nil, err
+	}
 	// 审计必须与业务请求同步落库，避免进程崩溃或队列满时丢失关键操作留痕。
 	aw := audit.NewPGWriter(pool)
 	// E14:预建当月起 2 个月的审计分区(见 wiring_events.go)。

@@ -110,3 +110,31 @@ func TestRandom(t *testing.T) {
 		t.Fatal("two random passwords identical")
 	}
 }
+
+func TestNewResolved(t *testing.T) {
+	explicit, derived, err := NewResolved("hex-key-a", "nas-secret")
+	if err != nil || derived {
+		t.Fatalf("explicit: derived=%v err=%v", derived, err)
+	}
+	direct, _ := New("hex-key-a")
+	stored, _ := direct.Encode("pw-1234")
+	if !explicit.Equal(stored, "pw-1234") {
+		t.Fatal("explicit codec mismatch with New(same material)")
+	}
+	fallback, derived, err := NewResolved("", "nas-secret")
+	if err != nil || !derived {
+		t.Fatalf("fallback: derived=%v err=%v", derived, err)
+	}
+	want, _ := New("boss-aaa-cred-key|nas-secret")
+	stored2, _ := want.Encode("pw-5678")
+	if !fallback.Equal(stored2, "pw-5678") {
+		t.Fatal("fallback material derivation changed")
+	}
+	bothEmpty, derived, err := NewResolved("", "")
+	if err != nil || !derived {
+		t.Fatalf("both empty: derived=%v err=%v", derived, err)
+	}
+	if bothEmpty == nil {
+		t.Fatal("both empty codec nil")
+	}
+}

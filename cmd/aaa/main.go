@@ -55,17 +55,15 @@ func main() {
 	log.Println("aaa: shutting down")
 }
 
-// buildCodec 凭据编解码器:BOSS_AAA_CRED_KEY 显式配置优先;空则从 AAA.Secret 派生
-// (开发兜底;派生时打 ALERT 供运维感知,生产必须显式设置独立密钥)。
+// buildCodec 凭据编解码器装配(共享 credential.NewResolved):BOSS_AAA_CRED_KEY 显式
+// 配置优先;空则从 AAA.Secret 派生(开发兜底;派生时打 ALERT 供运维感知,生产必须显式设置独立密钥)。
 func buildCodec(cfg *config.Config) *credential.Codec {
-	material := cfg.AAA.CredKey
-	if material == "" {
-		material = "boss-aaa-cred-key|" + cfg.AAA.Secret
-		log.Println("[aaa] CRED KEY ALERT: BOSS_AAA_CRED_KEY 未设置,使用 Secret 派生密钥(生产必须显式配置)")
-	}
-	codec, err := credential.New(material)
+	codec, derived, err := credential.NewResolved(cfg.AAA.CredKey, cfg.AAA.Secret)
 	if err != nil {
 		log.Fatalf("[aaa] credential codec: %v", err)
+	}
+	if derived {
+		log.Println("[aaa] CRED KEY ALERT: BOSS_AAA_CRED_KEY 未设置,使用 Secret 派生密钥(生产必须显式配置)")
 	}
 	return codec
 }
