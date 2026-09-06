@@ -272,6 +272,22 @@
 > 恢复语义 = 只补不删：逐行 `INSERT ... ON CONFLICT DO NOTHING`，冲突行跳过；进程内串行执行（同时至多一条任务）。backup_jobs / schema_migrations 不入备份候选集。
 
 
+### 1.5.7 address_coverage（ODN 覆盖关联，迁移 000197，internal/domain/odn）
+
+> 落地 adopted note 2026-09-06-odn-business-linkage（「网络规划是业务基础」P1 覆盖关联）：地址 ↔ 服务设施/核心设备 1:1 关联 + 可装状态，P1 只「可查可判」不做下单硬校验。管理面 `menu:odn`，REST `/odn/coverage*`（契约 admin/odn.yaml）。
+
+| 页面列名 | 字段名 | DB 列 | 枚举/说明 |
+|:---------|:-------|:------|:----------|
+| 地址 | `AddressID` | address_id | BIGINT → addresses，UNQ 一址一覆盖 |
+| 服务设施 | `FacilityCode` | facility_code | 可空 → odn_facility(code)（ODB/SDB/分纤点） |
+| 服务设备 | `DeviceID` | device_id | 可空 → odn_device(id)（核心链路设备） |
+| 可装状态 | `Status` | status | SERVED 可装 / PENDING 规划在建 / UNSERVED 未覆盖；默认 UNSERVED |
+| 备注 | `Note` | note | 可空 |
+| 更新时间 | `UpdatedAt` | updated_at | TIMESTAMPTZ |
+
+> 校验：`address_coverage_target_chk`——SERVED/PENDING 必须至少挂一个目标（设施或设备），UNSERVED 允许全空。
+
+
 ### 1.6 audit_logs（审计日志）· biz_params（业务参数）
 
 | 页面列名 | 字段名 | DB 列 | 枚举/说明 |
