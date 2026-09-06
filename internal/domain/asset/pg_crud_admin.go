@@ -98,6 +98,15 @@ func (s *PGStore) UpdateAsset(ctx context.Context, assetID int64, in AssetUpdate
 	} else if newType == "" {
 		newType = atype
 	}
+	// 类型写入白名单(P4-T2):显式给定或型号派生的新值必须命中受控字典;
+	// 保持现值(newType==atype)不校验,避免存量合法值被后续编辑误伤。
+	if newType != atype {
+		if err := ValidateType(newType); err != nil {
+			slog.WarnContext(ctx, "[asset] TYPE NOT ALLOWED",
+				"type", newType, "asset_id", assetID, "reason", "update: type outside whitelist")
+			return err
+		}
+	}
 
 	// 批次换绑:仅 IN_STOCK 可改;企业归属快照随新批次回填(与建档同口径)。
 	if effBatchID != batchID {

@@ -102,6 +102,13 @@ func (s *PGStore) CreateAsset(ctx context.Context, a Asset) (int64, error) {
 			a.Type = category
 		}
 	}
+	// 类型写入白名单(P4-T2):建档最终 type(含型号派生)必须命中受控字典,
+	// 白名单外 ErrTypeNotAllowed(42200),禁自由文本新方言。
+	if err := ValidateType(a.Type); err != nil {
+		slog.WarnContext(ctx, "[asset] TYPE NOT ALLOWED",
+			"type", a.Type, "asset_code", a.AssetCode, "reason", "create: type outside whitelist")
+		return 0, err
+	}
 
 	tx, err := s.db.Begin(ctx)
 	if err != nil {

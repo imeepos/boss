@@ -246,13 +246,14 @@ func TestPGStore_UpdateAsset_TypeOnlyKeepsRefs(t *testing.T) {
 	mock.ExpectQuery(`FOR UPDATE`).WithArgs(pgxmock.AnyArg()).
 		WillReturnRows(mock.NewRows([]string{"status", "type", "batch_id", "model_id", "tag_id", "le_id", "le_name", "sn", "mac", "loid"}).
 			AddRow("IN_STOCK", "光猫", int64(1), int64(77), int64(5), int64(1), "主品牌·企业", "", "", ""))
+	// P4-T2 起为显式白名单值(ROUTER-X 曾为自由文本方言,P4-T2 后 42200)。
 	mock.ExpectExec(`UPDATE assets`).
-		WithArgs(int64(3), "ROUTER-X", int64(77), int64(5), int64(1), int64(1), "主品牌·企业", nil, nil, nil).
+		WithArgs(int64(3), "ROUTER", int64(77), int64(5), int64(1), int64(1), "主品牌·企业", nil, nil, nil).
 		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 	mock.ExpectCommit()
 
 	s := NewPGStore(mock)
-	err = s.UpdateAsset(context.Background(), 3, AssetUpdate{Type: "ROUTER-X"}, 42)
+	err = s.UpdateAsset(context.Background(), 3, AssetUpdate{Type: "ROUTER"}, 42)
 	if err != nil {
 		t.Fatalf("UpdateAsset: %v", err)
 	}

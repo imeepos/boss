@@ -82,6 +82,10 @@ func RespondErr(c *gin.Context, err error) {
 		errors.Is(err, asset.ErrInvalidEPC):
 		// 身份/EPC 格式非法(P3-T2):42200 + 原因透传,操作员可见哪个字段不合规范。
 		Respond(c, apitypes.CodeInvalidParam, gin.H{"reason": err.Error()})
+	case errors.As(err, new(*asset.ErrTypeNotAllowed)):
+		// 类型白名单外写入(P4-T2 类型归一):42200 + 原因透传(含合法集合),
+		// 操作员/调用方能直接改用权威类型码。
+		Respond(c, apitypes.CodeInvalidParam, gin.H{"reason": err.Error()})
 	case errors.Is(err, asset.ErrInvalidSort):
 		// 列表排序白名单越界(P3-T1):42200;正常路径由 adminapi 解析层 400 拦截,此处兜底。
 		Respond(c, apitypes.CodeInvalidParam, gin.H{"reason": err.Error()})
