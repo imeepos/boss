@@ -150,3 +150,8 @@
 26. **【已犯 3 次】run_code 程序内工具调用引用了未声明的程序变量(如 workdir: w 而 const w 声明缺失/顺序在后)** —— 2026-09-06 P3-E 轮三犯(复制上轮程序段改内容时丢声明行),整段 ReferenceError 全不执行。正解=发车前把程序当函数读一遍:每个标识符先声明后使用;复制旧程序时优先保留头部声明区不动。
 27. **【已犯 1 次】长命令输出经管道(2>&1 | tail)让后台 job 误报 completed/exit 0** —— 2026-09-06 P3-E 轮:make check 全红但 tail 吞了退出码,job 通知 exit 0 差点当全绿收口。正解=长命令重定向到日志文件再单独 echo [exit $?](退出码来自命令而非管道尾),收尾时 grep 日志计数 FAIL 复核。
 
+
+28. **【已犯 1 次】run_code 模板串里的反斜杠转义被宿主解码 + heredoc 分隔符未与 << 同行粘连** —— 2026-09-06 P4-C 轮:ssh 远端 python heredoc 拼成 << 后跟换行再跟体,远程 bash -c 整段语法错白跑一轮;文件内容里的 printf 转义序列同理会被解码成真实字符。正解=脚本内容设计期避开反斜杠(printf 改 echo、chr() 构造引号),行数组用 String.fromCharCode(10) join,heredoc 分隔符与 << 硬连同一字符串后接体。
+29. **【已犯 1 次】DOCKER_CONFIG 指到凭据文件而非目录** —— 2026-09-06 P4-C 轮:验证 runner 凭据时 DOCKER_CONFIG 指向 docker-config.json 文件本身,docker CLI 找 <dir>/config.json 落空退回无凭据,daemon 报 no basic auth credentials,差点误判 P2 遗留凭据无效。正解=mktemp 目录放副本命名为 config.json 再指目录;验真三件套=容器内文件与宿主 cmp 一致 + curl Basic 直测注册表 200 + 指目录 pull 成功。
+30. **【已犯 1 次】重建 compose 容器前未 diff 容器实况 vs compose 渲染** —— 2026-09-06 P4-C 轮:gitea-runner 系手工 docker run 创建(无 compose labels),运行 env 多 deploy-102 label、少 7900 端口,直接按文件重建会瞬间打断 deploy-102 部署通道。正解=改 compose 前先全量 inspect 备份并对照 rendered config,把线上实况补进文件(deploy-102 label),再 stop+rm+up -d --no-deps 回归 compose 管理。
+
