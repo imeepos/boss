@@ -35,8 +35,8 @@ var epcPattern = regexp.MustCompile("^[0-9A-F]{24}$")
 
 // NormalizeMAC 归一 MAC 为大写冒号规范形 AA:BB:CC:DD:EE:FF(P4-T1):冒号/横杠/
 // 裸 hex 三形态均可输入;空串归空(存储层 strOrNil 转 NULL);非法 ErrInvalidMAC
-// (42200)。归一空间与迁移 000190 表达式唯一索引 upper(regexp_replace(mac,
-// '[:. -]','','g')) 一致,直写 SQL 绕过应用层也撞同一唯一约束(双保险)。
+// (42200)。归一空间与迁移 000190 表达式唯一索引一致(regexp_replace 去冒号/
+// 横杠/点/空格分隔符后取 upper),直写 SQL 绕过应用层也撞同一唯一约束(双保险)。
 func NormalizeMAC(mac string) (string, error) {
 	v := strings.TrimSpace(mac)
 	if v == "" {
