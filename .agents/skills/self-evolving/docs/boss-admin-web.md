@@ -137,3 +137,8 @@
 - 冒烟账号:test-accounts.json cashier_wang(ops→已切 counter_cashier 柜面收款岗,含 menu:payment:cash/menu:daily-close);sysadmin 全量。
 - 网点主数据:biz_params/counter.sites(JSON 字符串数组),业务参数页维护;上线配置=旗舰店/二店/城北营业厅(102)。
 - 上线验收:模板 N(templates.md)。
+
+## 月度填报页(/intel/monthly,2026-09-06 页签主题修复)
+
+- 三页签事实表+KPI+CSV 导入导出;i18n 三语闭环与全令牌化本就完整,唯一缺陷是激活页签 TAB_BTN/TAB_ACTIVE 的 bg-*/text-* 冲突类(亮色白字白底/暗色深底深字),已抽 tabClass.ts monthlyTabClass(active) 互斥类+vitest 回归(commit 2edcd51d)。
+- 部署态验证 marker:bundle 含 'rounded-t-sm border border-b-0 px-4 text-[13px] transition-colors'(新 TAB_BASE);激活页签断言 bg 亮=rgb(39,63,112)/暗=rgb(213,166,58)。
