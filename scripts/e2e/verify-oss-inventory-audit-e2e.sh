@@ -200,6 +200,21 @@ else
   bad "P3" "GET /inventory-audit http=$HTTP_CODE"
 fi
 
+# P3A 造数标记作用域: 每个检查码都命中至少一条带 acc_w3ia-/ACCE2EW3 标记的造数明细。
+# 只对采样上限(50)内的检查做标记断言;PORT_CODE_BAD 存量 101>50,明细样本
+# 不保证含造数行,其造数证据由 P1 类别差值(coding +2)承载。
+if req GET "/inventory-audit" && [ "$HTTP_CODE" = "200" ]; then
+  MARKHIT=$(jget "','.join(sorted(set(i['check'] for i in d['data']['items'] if i['code'].startswith('acc_w3ia-') or 'ACCE2EW3' in i['code'])))")
+  MARKED_CHECKS="PORT_SPLITTER_MISSING SPLITTER_UPSTREAM_MISSING USED_PORT_NO_QUAD_LINK RESERVED_PORT_STALE RESOURCE_CODE_BAD"
+  MISS2=""
+  for c in $MARKED_CHECKS; do
+    case ",$MARKHIT," in *$c,*) ;; *) MISS2="$MISS2 $c" ;; esac
+  done
+  assert_eq "P3A" "" "$MISS2" "标记作用域五码全命中(PORT_CODE_BAD 走 P1 差值)"
+else
+  bad "P3A" "GET /inventory-audit http=$HTTP_CODE"
+fi
+
 # P4 重跑幂等(只读,不重复计数)
 if req GET "/inventory-audit" && [ "$HTTP_CODE" = "200" ]; then
   assert_eq "P4" "$((OWN_BASE+2))/$((STATE_BASE+2))/$((CODING_BASE+2))" "$(cat_count ownership)/$(cat_count state)/$(cat_count coding)" "重跑计数不变"
