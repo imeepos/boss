@@ -1,41 +1,39 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-05T23:14:27.325Z",
-  "project": "boss 资产与标签 P1 波次(调研报告 asset-tag-research-mature-designs.md + 计划 asset-tag-p1-plan.md)",
+  "updatedAt": "2026-09-06T01:31:51.108Z",
+  "project": "boss 资产台账 CRUD 补全波次(P2-W1):admin 建档/详情/受限编辑/守卫删除 + 前端操作列与表单",
   "tasks": [
     {
       "id": "T1",
-      "title": "装机/拆机资产联动",
-      "goal": "quadlink 声明 AssetStateSink 窄接口,asset.PGStore 实现 MarkDeployed/MarkReleased(幂等轨迹);VerifyScan 三联动点+UnbindRequireScan;000185 存量补账;wiring 注入",
+      "title": "后端:资产主档 CRUD 端点+契约同步",
+      "goal": "POST /assets 建档(事务化建档+初始轨迹+绑定事件)/GET /assets/{id} 详情/PUT 受限编辑(换绑成对事件,批次仅入库态)/DELETE 守卫删除(引用阻断 40900,SCRAPPED 拒硬删);openapi asset.yaml + fields.md §4.1 同步",
       "priority": "P1",
-      "status": "done",
-      "acceptanceCommand": "go build ./... && go vet ./internal/domain/quadlink/... ./internal/domain/asset/... && go test ./internal/domain/quadlink/... ./internal/domain/asset/... && test -z \"$(gofmt -l internal/domain)\""
+      "status": "doing",
+      "acceptanceCommand": "go build ./... && go vet ./internal/domain/asset/... ./internal/httpapi/admin/... && go test ./internal/domain/asset/... ./internal/httpapi/admin/... && node scripts/gen-bossctl-routes.mjs --check && go run ./scripts/genrouteperms --check"
     },
     {
       "id": "T2",
-      "title": "标签回收闭环+事件流+报废路径",
-      "goal": "tag_events(000186)+报废端点 POST /assets/{assetId}/scrap+解绑端点 POST /tags/{tagId}/unbind;CreateTag/CreateAsset 同事务写 BIND 事件;openapi+两生成器重跑",
+      "title": "前端:资产台账页操作列与表单",
+      "goal": "工具栏新增建档抽屉(批次/型号/类型/标签)+操作列扩为 生命周期/详情/编辑/报废/删除+报废必填原因+删除确认与 40900 展示+i18n zh/en+Dropdown 组件约束",
       "priority": "P1",
-      "status": "done",
-      "acceptanceCommand": "go build ./... && go test ./internal/domain/asset/... ./internal/httpapi/admin/... && node scripts/gen-bossctl-routes.mjs --check && go run ./scripts/genrouteperms --check",
-      "failCount": 1
+      "status": "doing",
+      "acceptanceCommand": "cd web/admin && pnpm typecheck && pnpm test && pnpm build"
     },
     {
       "id": "T3",
-      "title": "型号字典 asset_models",
-      "goal": "000187:UNIQUE(vendor,model)+assets.model_id+存量播种回填;CreateAsset 支持 ModelID(Type 空取 category);GET/POST /asset-models;fields.md 同步",
+      "title": "集成:双分支合并 main+全量门禁",
+      "goal": "按 worktree 合并协议逐支反同步合并;ff-only;合并后全量门禁;清理 worktree 与老分支(先 push gitea 再删)",
       "priority": "P1",
-      "status": "done",
-      "acceptanceCommand": "go build ./... && go test ./internal/domain/asset/... ./internal/httpapi/admin/... && node scripts/gen-bossctl-routes.mjs --check && go run ./scripts/genrouteperms --check",
-      "failCount": 1
+      "status": "todo",
+      "acceptanceCommand": "make check"
     },
     {
       "id": "T4",
-      "title": "巡检扩展两查",
-      "goal": "quad_links.LINKED 但资产非 DEPLOYED;资产 SCRAPPED 但标签仍绑;复用 orphanChecks 注册表形状",
+      "title": "E2E:102 部署后资产 CRUD 冒烟",
+      "goal": "触发 deploy-102;bossctl 冒烟脚本 建档→列表可见→编辑→报废→删除守卫→孤儿巡检; acc_ 造数清理不过夜",
       "priority": "P1",
-      "status": "done",
-      "acceptanceCommand": "go build ./... && go test ./internal/domain/report/..."
+      "status": "todo",
+      "acceptanceCommand": "bash scripts/verify-asset-crud-e2e.sh"
     }
   ]
 }
