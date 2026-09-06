@@ -1405,6 +1405,15 @@ export interface Translations {
       rangeText: string
       jumpText: string
       pageUnit: string
+      colActions: string
+      resetPwd: string
+      resetConfirm: string
+      resetTitle: string
+      resetOnceHint: string
+      resetCopy: string
+      resetCopied: string
+      resetClose: string
+      resetFail: string
     }
     expandPage: {
       title: string
@@ -2067,6 +2076,39 @@ export interface Translations {
       unbilled: string
       success: string
       failed: string
+      total: string
+      empty: string
+      loadFail: string
+      prev: string
+      next: string
+      perPage: string
+      rangeText: string
+      jumpText: string
+      pageUnit: string
+      failReasonCol: string
+      failReasonOK: string
+      failReasonNA: string
+      failBadCredential: string
+      failLocked: string
+      failNotFound: string
+      failSuspended: string
+      failClosed: string
+      failConcurrent: string
+    }
+    aaaSessionPage: {
+      title: string
+      desc: string
+      filterLoid: string
+      filterNasIp: string
+      allStatus: string
+      statusOnline: string
+      statusPendingOffline: string
+      columns: string[]
+      forceOffline: string
+      disconnectConfirm: string
+      accepted: string
+      acceptedDesc: string
+      disconnectFail: string
       total: string
       empty: string
       loadFail: string

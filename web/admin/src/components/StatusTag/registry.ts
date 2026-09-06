@@ -15,6 +15,7 @@ export type StatusDomain =
   | 'accountStatus' | 'message' | 'realName' | 'recon' | 'reserve' | 'ledgerRecon'
   | 'backupStatus'
   | 'procurement' | 'receipt' | 'installLog' | 'userdata'
+  | 'aaaSession'
 
 type Registry = Partial<Record<StatusDomain, Record<string, string>>>
 
@@ -99,6 +100,10 @@ export const REGISTRY: Registry = {
     ACTIVE: GREEN,
     SUSPENDED: ORANGE,
     CLOSED: GRAY,
+  },
+  aaaSession: {
+    ONLINE: GREEN,
+    PENDING_OFFLINE: ORANGE,
   },
   ticket: {
     PENDING: ORANGE,
