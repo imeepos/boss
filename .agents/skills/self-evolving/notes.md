@@ -1,5 +1,11 @@
 # Notes
 
+## 2026-09-06 类型归一+巡检扩展(P4-B,feat/p4-b)
+
+- 哪个坑浪费了最多时间?(1)e2e 脚本 cleanup_data 的 echo 进 stdout,seed_data 被命令替换捕获后 batchId 变成多行脏值,造数直奔服务端自动编码全漏 cleanup 前缀——两坑叠加一次跑出真实造数泄漏(102 上四个孤儿资产+FK 卡批次删除),手工清场后才修;教训:e2e 造数必须显式带业务侧唯一编码前缀,不能指望回收模式兜住服务端生成编码。(2)main 在会话中途前进(P4-A 合入),make check 与 merge 并发差点互踩——先 job_kill 再合并,合并后重跑全套。
+- skill 有没有提前警告?红线 11(${ 未转义炸模板串,改行数组 join 一次过)、红线 1(file changed since read,重读即过)、红线 14(description 键手滑带引号整程序 parse error 两次)全部应验;响应码口径 notes 里已有「Respond 恒 200」教训,但本轮裁定走 respondBadRequest 字面 400 形态(与 sort 白名单同型),两形态并存,断言前先 grep 确认目标路径真实形态。
+- 重来一次怎么做?①并行共享资源(102 DB)的造数/清理脚本,首次实跑后必立刻 SQL 直查残留再继续;②分支开工后定期 git fetch 对比 main 前进,发现被超尽早反向同步;③对「写路径校验」类需求,先查测试夹具里已有的方言取值(本轮 OLT 藏在 pg_model_test.go),白名单少一个合法值=红一片存量测试。
+
 ## 2026-09-06 报废三要素确认(P3-F,feat/p3-f)
 
 - 哪个坑浪费了最多时间?run_code 单引号 JS 串内联 bash JSON 体,转义引号被 JS 解码成裸引号,e2e 脚本 14 行 JSON 载荷全 mangled——bash -n 对引号重排照样过,靠 sed 抽查才逮住(累犯 #24)。另 e2e 造数编码 A-ACC2- 逃离 cleanup 的 A-ACC-% 回收模式,残留四类在 102 实测复现(累犯 #25),手工清场+改尾缀重跑闭环。
