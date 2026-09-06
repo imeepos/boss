@@ -509,3 +509,5 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 当要在硬 FK 表上造「引用不存在」类稽核违例时,修复是 SET session_replication_role = replica 直插脏行再 DEFAULT 还原(postgres 官方镜像首用户即 superuser,102 实测可行);造数行用独立标记前缀,清理断言零残留(2026-09-06 P5-W3)。
 - 当 e2e 断言依赖部署后端点时,修复是先对旧部署跑一轮:失败断言应恰好红在新能力上、清残留/语法类断言全绿,即脚本机制已证明;部署触发是 push gitea main(deploy-102 workflow),本地 ff-merge 不推 main 就不会有新部署,而脚本本身的 fix 无需等重部署(2026-09-06 P5-W3)。
 
+- 当验收运行器有硬超时(如 8s)而脚本因 N 次独立 ssh+docker exec 往返超时,修复是合并为 1-2 次批量连接:同段多条 SQL 合一个 heredoc 一次连接执行;模板取值内联进 SQL(INSERT..SELECT 带常量标记,免 shell 变量拼接);条件分支改 CASE WHEN EXISTS 内联;标量回执用 SELECT 'LABEL=' || value 单行输出、脚本端 sed -n 按行解析;改完必须连续两轮计时实测并回报数字(2026-09-06 P5-W3:15 次往返 8.4s 被杀 -> 3 次 2.28s/2.49s 双绿)。
+
