@@ -102,6 +102,8 @@ req POST "/odn/ports/$P1ID/release"
 [ "${HTTP_CODE:-}" = "200" ] && ok "P3" "port1 释放" || bad "P3" "HTTP=${HTTP_CODE:-} body=${BODY:-}"
 
 # P4 按地址分配(覆盖关联兑现) → 复用 port1
+# 前置:地址 288 覆盖挂接本设备(SERVED),allocate-for-address 才有判据
+req POST "/odn/coverage" "{\"addressId\":288,\"deviceId\":$DEVID,\"status\":\"SERVED\",\"note\":\"acc_opn\"}"
 req POST "/odn/ports/allocate-for-address" "{\"addressId\":288,\"orderId\":888}"
 assert_eq "P4.port" "1" "$(jf "$BODY" "d['data']['portNo']")" "按地址分配命中已释放口"
 
@@ -117,9 +119,10 @@ req POST "/odn/ports/$P1ID/release"
 req GET "/odn/devices/$DEVID/ports"
 assert_eq "P6.status" "IDLE" "$(jf "$BODY" "[x['status'] for x in d['data'] if x['portNo']==1][0]")" "拆机释放"
 
-# P7 分配耗尽报错
+# P7 分配耗尽报错(3 口全占:779→1, 780→3, 781 无空闲)
 req POST "/odn/devices/$DEVID/ports/allocate" "{\"orderId\":779}"
 req POST "/odn/devices/$DEVID/ports/allocate" "{\"orderId\":780}"
+req POST "/odn/devices/$DEVID/ports/allocate" "{\"orderId\":781}"
 C=$(jf "$BODY" "d['code']")
 if [ "$C" != "0" ]; then ok "P7" "耗尽报错 code=$C"; else bad "P7" "端口耗尽未报错 body=$BODY"; fi
 

@@ -178,6 +178,16 @@ func RespondErr(c *gin.Context, err error) {
 		Respond(c, apitypes.CodeInvalidParam, nil)
 	case errors.Is(err, odn.ErrDuplicate):
 		Respond(c, apitypes.CodeConflict, nil)
+	case errors.Is(err, odn.ErrInvalidLifecycle),
+		errors.Is(err, odn.ErrInvalidPortState),
+		errors.Is(err, odn.ErrInvalidProjStatus),
+		errors.Is(err, odn.ErrItemLocked),
+		errors.Is(err, odn.ErrNoFreePort):
+		// 状态冲突(生命周期/端口/施工单):40900,管理员可见转移被拒。
+		Respond(c, apitypes.CodeConflict, nil)
+	case errors.Is(err, odn.ErrNoCoverageDevice):
+		// 覆盖未挂设备(下单门控判据):40400,前端提示先补覆盖关联。
+		Respond(c, apitypes.CodeNotFound, nil)
 	case errors.Is(err, odn.ErrInvalidCode),
 		errors.Is(err, odn.ErrGridMissing),
 		errors.Is(err, odn.ErrGridFull),
