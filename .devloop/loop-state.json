@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-06T12:06:54.447Z",
+  "updatedAt": "2026-09-07T01:07:30.000+08:00",
   "project": "boss",
   "tasks": [
     {
@@ -22,10 +22,66 @@
     {
       "id": "T3",
       "title": "资源台账稽核(P5-W3,对标C7)",
-      "goal": "三类稽核+每日快照;脚本已批量合并SQL提速至2.4s",
+      "goal": "三类稽核+每日快照",
       "priority": "P1",
       "status": "done",
       "acceptanceCommand": "bash scripts/e2e/verify-oss-inventory-audit-e2e.sh"
+    },
+    {
+      "id": "T4",
+      "title": "ODN P1 覆盖关联:迁移与契约同步(T4)",
+      "goal": "address_coverage 迁移 000197+fields.md/data-relations V1.6;make check 全绿",
+      "priority": "P1",
+      "status": "done",
+      "acceptanceCommand": "make check"
+    },
+    {
+      "id": "T5",
+      "title": "ODN P1 覆盖关联:coverage 后端域(T5)",
+      "goal": "Upsert/Get/List/Resolve 四端点+单测+[odn-coverage] 留痕;已合 main c26f7e12",
+      "priority": "P1",
+      "status": "done",
+      "acceptanceCommand": "go build ./... && go test ./internal/domain/odn/..."
+    },
+    {
+      "id": "T6",
+      "title": "ODN P1 覆盖关联:admin 前端(T6)",
+      "goal": "覆盖页签+三语言 i18n+时区用例修复+gitignore 白名单;typecheck/test481/build/oss 90% 过",
+      "priority": "P1",
+      "status": "done",
+      "acceptanceCommand": "make web-admin-check"
+    },
+    {
+      "id": "T7",
+      "title": "ODN P1 覆盖关联:102 端到端验收(T7)",
+      "goal": "第 4 次尝试(部署窗口后)RESULT: PASS——保存/回读/就近 31m/远点/列表/幂等/非法拒绝全过,清尾残留为零",
+      "priority": "P1",
+      "status": "done",
+      "acceptanceCommand": "bash scripts/e2e/verify-odn-coverage-e2e.sh"
+    },
+    {
+      "id": "T8",
+      "title": "ODN P6 设计-施工:设施状态机(T8)",
+      "goal": "lifecycle_status PLANNED/IN_BUILD/IN_SERVICE/RETIRED+变更审计;详见 docs/plan/odn-lifecycle-roadmap.md",
+      "priority": "P2",
+      "status": "todo",
+      "acceptanceCommand": "go build ./... && go test ./internal/domain/odn/..."
+    },
+    {
+      "id": "T9",
+      "title": "ODN P6 设计-施工:施工项目与竣工回填(T9)",
+      "goal": "construction_projects+批量竣工回填+GIS 分色",
+      "priority": "P2",
+      "status": "todo",
+      "acceptanceCommand": "bash scripts/e2e/verify-odn-construction-e2e.sh"
+    },
+    {
+      "id": "T10",
+      "title": "ODN P7 运维影响面(T10)",
+      "goal": "impact 接口:故障→链路反查→受影响 coverage→客户清单;报障挂 odn 实体",
+      "priority": "P2",
+      "status": "todo",
+      "acceptanceCommand": "bash scripts/e2e/verify-odn-impact-e2e.sh"
     }
   ]
 }
