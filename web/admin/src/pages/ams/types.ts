@@ -25,6 +25,19 @@ export interface TagRow {
   battery: string
 }
 
+// TagEventRow 标签绑定事件行(P2-T4):对齐 internal/domain/asset.TagEvent,append-only。
+export interface TagEventRow {
+  id: number
+  eventId: string
+  tagId: number
+  assetId: number
+  action: string // BIND/UNBIND/RECYCLE
+  actorAccountId: number
+  detail: string
+  changed?: Record<string, unknown>
+  createdAt: string
+}
+
 export interface LifecycleRow {
   id: number
   assetId: number

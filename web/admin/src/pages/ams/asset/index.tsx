@@ -6,12 +6,16 @@ import { PageHead, pagerTexts } from '../../org/shared'
 import { StatusTag } from '../../../components/StatusTag'
 import { Pagination } from '../../../components/Pagination'
 import { pageSlice, type AssetRow, type TagRow } from '../types'
+import { Dropdown } from '../../../components/Dropdown'
+import { EventDrawer } from '../EventDrawer'
+import { ScrapConfirmDialog } from '../DangerOps'
 import { AssetTrailDrawer } from './TrailDrawer'
 import { TableStateRow } from '../../../components/business'
 
 export default function AssetPage() {
   const t = useT()
   const a = t.pages.assetPage
+  const eo = t.pages.eventOps
   const [rows, setRows] = useState<AssetRow[]>([])
   const [tags, setTags] = useState<TagRow[]>([])
   const [error, setError] = useState('')
@@ -20,6 +24,9 @@ export default function AssetPage() {
   const [pageSize, setPageSize] = useState(10)
   const [busy, setBusy] = useState(false)
   const [trail, setTrail] = useState<AssetRow | null>(null)
+  const [eventsFor, setEventsFor] = useState<AssetRow | null>(null)
+  const [scrapFor, setScrapFor] = useState<AssetRow | null>(null)
+  const [opBusy, setOpBusy] = useState(false)
 
   const load = () => {
     setError('')
@@ -35,6 +42,24 @@ export default function AssetPage() {
   useEffect(load, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const tagOf = (tagId: number) => tags.find((x) => x.tagId === tagId)
+  const scrapAsset = (reason: string) => {
+    if (!scrapFor) return
+    setOpBusy(true)
+    apiFetch('/assets/' + scrapFor.assetId + '/scrap', { method: 'POST', body: { reason } })
+      .then(() => { setScrapFor(null); load() })
+      .catch(() => setError(eo.opFail))
+      .finally(() => setOpBusy(false))
+  }
+  const actionOpts = (r: AssetRow) => [
+    { value: 'trail', label: a.lifecycle },
+    { value: 'events', label: eo.actEvents },
+    { value: 'scrap', label: eo.actScrap, disabled: r.status === 'SCRAPPED' },
+  ]
+  const onAction = (r: AssetRow, v: string) => {
+    if (v === 'trail') setTrail(r)
+    else if (v === 'events') setEventsFor(r)
+    else if (v === 'scrap') setScrapFor(r)
+  }
   const filtered = useMemo(
     () => rows.filter((r) => r.assetCode.toLowerCase().includes(keyword.trim().toLowerCase())),
     [rows, keyword],
@@ -65,10 +90,8 @@ export default function AssetPage() {
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">#{r.batchId}</td>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.addressId ? `#${r.addressId}` : '—'}</td>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><StatusTag domain="asset" value={r.status} /></td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">
-                      <span className="inline-flex items-center">
-                        <button onClick={() => setTrail(r)}>{a.lifecycle}</button>
-                      </span>
+                    <td className="h-11 px-3 border-b border-[var(--shell-side-border)] hover:bg-[var(--shell-menu-hover-bg)]">
+                      <Dropdown value="" options={actionOpts(r)} onChange={(v) => onAction(r, v)} ariaLabel={eo.menu} placeholder={eo.colAction} />
                     </td>
                   </tr>
                 ))}
@@ -83,6 +106,8 @@ export default function AssetPage() {
         </div>
       </div>
       {trail && <AssetTrailDrawer asset={trail} tag={tagOf(trail.tagId)} onClose={() => setTrail(null)} />}
+      {eventsFor && <EventDrawer kind="asset" id={eventsFor.assetId} code={eventsFor.assetCode} onClose={() => setEventsFor(null)} />}
+      {scrapFor && <ScrapConfirmDialog assetCode={scrapFor.assetCode} assetId={scrapFor.assetId} tag={tagOf(scrapFor.tagId)} busy={opBusy} onClose={() => setScrapFor(null)} onConfirm={scrapAsset} />}
     </div>
   )
 }

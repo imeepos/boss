@@ -926,6 +926,54 @@ export interface Translations {
       jumpText: string
       pageUnit: string
     }
+    eventOps: {
+      colAction: string
+      menu: string
+      actTrail: string
+      actEvents: string
+      actUnbind: string
+      actScrapAsset: string
+      actScrap: string
+      tagEventsTitle: string
+      assetEventsTitle: string
+      evTime: string
+      evAction: string
+      evActor: string
+      evObject: string
+      evChanged: string
+      evAsset: string
+      evTag: string
+      actBIND: string
+      actUNBIND: string
+      actRECYCLE: string
+      loadFail: string
+      empty: string
+      unbindTitle: string
+      unbindImpactTag: string
+      unbindImpactAsset: string
+      unbindImpactStatus: string
+      unbindImpactEvent: string
+      unbindStatusTo: string
+      unbindEventNote: string
+      unbindRecover: string
+      unbindReason: string
+      scrapTitle: string
+      scrapImpactAsset: string
+      scrapImpactStatus: string
+      scrapImpactTag: string
+      scrapImpactEvent: string
+      scrapImpactTrail: string
+      scrapStatusTo: string
+      scrapTagNote: string
+      scrapTrailNote: string
+      scrapIrreversible: string
+      scrapReason: string
+      scrapCode: string
+      eReason: string
+      eCode: string
+      confirm: string
+      opFail: string
+    }
     stock: {
       title: string
       desc: string
