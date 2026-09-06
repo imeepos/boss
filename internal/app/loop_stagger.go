@@ -13,9 +13,11 @@ import (
 // startupDelays 含"启动即首轮"的循环 → 首轮延迟。
 // reserve_timeout 不登记,保持启动立即补偿(释放超时预占最时效敏感)。
 var startupDelays = map[string]time.Duration{
-	"cdr_compensation": 20 * time.Second,
-	"etl_executor":     40 * time.Second,
-	"patrol":           60 * time.Second,
+	"cdr_compensation":  20 * time.Second,
+	"etl_executor":      40 * time.Second,
+	"patrol":            60 * time.Second,
+	"aaa_offline_retry": 15 * time.Second,
+	"aaa_zombie_reap":   80 * time.Second,
 }
 
 // staggeredFirstRun 等待 offset(或 ctx 取消)后执行 fn;返回是否已执行。

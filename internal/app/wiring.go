@@ -3,8 +3,10 @@ package app
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/ymm-001/boss/internal/domain/aaa"
+	"github.com/ymm-001/boss/internal/domain/aaa/radius"
 	"github.com/ymm-001/boss/internal/domain/apprelease"
 	"github.com/ymm-001/boss/internal/domain/attachment"
 	"github.com/ymm-001/boss/internal/domain/billing"
@@ -213,12 +215,18 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 	em := wireEmitters(aaastore, cfg)
 	app.Cdr = em.cdr
 	app.pubEvents = em.pub
+
+	// AAA-A2 在线会话控制:CoA 下发器(NAS 3799 可配)+ 有限次重试 + 僵尸清理。
+	app.SessCtl = aaa.NewSessionControlService(aaastore,
+		radius.NewCoAClient([]byte(cfg.AAA.Secret), cfg.AAA.CoAPort, 5*time.Second), cfg.AAA.OfflineRetryMax)
 	app.Automation = NewAutomation(app.Order, em.pub)
 	app.ReconAuto = &billing.AutoReconciler{Recon: app.Recon, Sources: app.ReconSources}
 
 	stopPatrol := startPatrolLoop(app)
 	stopReserveTimeout := startReserveTimeoutLoop(app)
 	stopCdrComp := startCdrCompensationLoop(aaastore, em.cdrRT, app.Notify)
+	stopOfflineRetry := startAAAOfflineRetryLoop(app.SessCtl)
+	stopZombieReap := startZombieReapLoop(app.SessCtl, cfg.AAA.ZombieAfter)
 	stopDailyRecon := startDailyReconLoop(app)
 	stopOSSAudit := startOSSAuditLoop(app)
 	stopPointsExpire := startPointsExpireLoop(points)
@@ -230,6 +238,8 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 		stopPatrol()          // 巡检循环
 		stopReserveTimeout()  // 预占超时释放循环(Q2)
 		stopCdrComp()         // 话单补偿循环(Q2)
+		stopOfflineRetry()    // Disconnect 重试循环(AAA-A2)
+		stopZombieReap()      // 僵尸会话清理循环(AAA-A2)
 		stopDailyRecon()      // 每日数据对账循环(Q2)
 		stopOSSAudit()        // 资源台账稽核每日快照循环(P5-W3)
 		stopPointsExpire()    // 积分过期清算循环(2028 Q2)

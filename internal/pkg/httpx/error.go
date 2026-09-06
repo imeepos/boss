@@ -11,6 +11,7 @@ import (
 
 	"github.com/ymm-001/boss/internal/app"
 	"github.com/ymm-001/boss/internal/domain/ai"
+	"github.com/ymm-001/boss/internal/domain/aaa"
 	"github.com/ymm-001/boss/internal/domain/asset"
 	"github.com/ymm-001/boss/internal/domain/backup"
 	"github.com/ymm-001/boss/internal/domain/billing"
@@ -135,6 +136,7 @@ func RespondErr(c *gin.Context, err error) {
 		Respond(c, apitypes.CodeInvalidParam, nil)
 	case errors.Is(err, user.ErrNotFound),
 		errors.Is(err, resource.ErrNotFound),
+		errors.Is(err, aaa.ErrSessionNotFound),
 		errors.Is(err, asset.ErrNotFound),
 		errors.Is(err, procurement.ErrNotFound),
 		errors.Is(err, customer.ErrCustomerNotFound),
@@ -187,6 +189,7 @@ func RespondErr(c *gin.Context, err error) {
 		Respond(c, apitypes.CodeNotFound, nil)
 	case errors.Is(err, resource.ErrIllegalTransition),
 		errors.Is(err, resource.ErrPortNotAvailable),
+		errors.Is(err, aaa.ErrIllegalTransition),
 		errors.Is(err, order.ErrIllegalTransition),
 		errors.Is(err, provision.ErrIllegalTransition),
 		errors.Is(err, asset.ErrIllegalTransition),

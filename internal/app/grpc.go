@@ -23,7 +23,7 @@ const defaultPacketLossAlarmPct = 5.0
 // RegisterGRPC 在 grpc.Server 上注册全部服务间契约;每个服务仅依赖域接口,便于单测注入。
 func RegisterGRPC(s *grpc.Server, a *Application) {
 	quadlinkv1.RegisterQuadLinkServiceServer(s, &quadlinkGRPC{work: a.WorkOrder, quad: a.QuadLink, ord: a.Order})
-	aaav1.RegisterAaaServiceServer(s, &aaaGRPC{aaaSvc: a.Aaa, auth: a.AaaAuth, cdr: a.Cdr})
+	aaav1.RegisterAaaServiceServer(s, &aaaGRPC{aaaSvc: a.Aaa, auth: a.AaaAuth, cdr: a.Cdr, sessCtl: a.SessCtl})
 	devicev1.RegisterDeviceIngestServiceServer(s, &deviceGRPC{
 		dev: a.Device, alarm: a.Alarm, res: a.Resource, packetLossAlarmPct: defaultPacketLossAlarmPct,
 	})

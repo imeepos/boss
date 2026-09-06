@@ -18,9 +18,10 @@ import (
 // aaaGRPC AaaService 实现(仅依赖域接口,便于单测注入)。
 type aaaGRPC struct {
 	aaav1.UnimplementedAaaServiceServer
-	aaaSvc aaa.AaaService
-	auth   aaa.Authorizer
-	cdr    aaability.Emitter
+	aaaSvc  aaa.AaaService
+	auth    aaa.Authorizer
+	cdr     aaability.Emitter
+	sessCtl *aaa.SessionControlService // 可空:停机成功联动下线全部在线会话(AAA-A2)
 }
 
 // aaaErrMap AAA 域错误 → 契约错误码。
@@ -29,9 +30,13 @@ var aaaErrMap = map[error]apitypes.Code{
 	aaa.ErrIllegalTransition: apitypes.CodeStateInvalid,
 }
 
-// Suspend 停机(欠费/人工):ACTIVE→SUSPENDED,即时生效。
+// Suspend 停机(欠费/人工):ACTIVE→SUSPENDED,即时生效;装配会话控制时联动下线全部在线会话。
 func (s *aaaGRPC) Suspend(ctx context.Context, req *aaav1.SuspendRequest) (*aaav1.OpResponse, error) {
-	if err := s.aaaSvc.SuspendLoAccount(ctx, req.LoAccountId); err != nil {
+	suspend := s.aaaSvc.SuspendLoAccount
+	if s.sessCtl != nil {
+		suspend = s.sessCtl.SuspendWithOffline
+	}
+	if err := suspend(ctx, req.LoAccountId); err != nil {
 		return &aaav1.OpResponse{Code: grpcCodeFor(err, aaaErrMap)}, nil
 	}
 	return &aaav1.OpResponse{Code: commonv1.Code_CODE_OK, Effective: true}, nil

@@ -180,6 +180,9 @@ type Application struct {
 	AaaAuth aaa.Authorizer
 	Cdr     aaability.Emitter
 
+	// SessCtl 在线会话控制(AAA-A2):CoA 强制下线/重试/僵尸清理;admin 路由与 gRPC 停机联动消费。
+	SessCtl *aaa.SessionControlService
+
 	Worker         worker.WorkerService
 	WorkerTeam     worker.TeamService
 	WorkerLedger   worker.WorkerLedgerService
