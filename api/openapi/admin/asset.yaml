@@ -18,11 +18,11 @@ paths:
               type: object
               required: [batchId]
               properties:
-                assetCode: { type: string, maxLength: 32, description: 资产编码(可空,缺省 A-{批次8位}-{序号5位} 自动生成) }
-                batchId: { type: integer, format: int64, description: 入库批次 ID(必填,缺失 42200) }
-                modelId: { type: integer, format: int64, description: 型号 ID(可选,须存在且未停用) }
-                tagId: { type: integer, format: int64, description: 标签 ID(可选,绑定成功写 BIND,占用 40900) }
-                type: { type: string, maxLength: 32, description: 类型(可选,未给定时由型号类别派生) }
+                assetCode: { type: string, maxLength: 32, description: '资产编码(可空,缺省 A-批次8位-序号5位 自动生成)' }
+                batchId: { type: integer, format: int64, description: '入库批次 ID(必填,缺失 42200)' }
+                modelId: { type: integer, format: int64, description: '型号 ID(可选,须存在且未停用)' }
+                tagId: { type: integer, format: int64, description: '标签 ID(可选,绑定成功写 BIND,占用 40900)' }
+                type: { type: string, maxLength: 32, description: '类型(可选,未给定时由型号类别派生)' }
       responses:
         '200':
           description: 资产已建档(data 返回新 id)
@@ -82,10 +82,10 @@ paths:
               type: object
               required: [batchId]
               properties:
-                type: { type: string, maxLength: 32, description: 类型(可空=由型号派生或保持现值) }
-                modelId: { type: integer, format: int64, description: 型号 ID(0=不挂型号) }
-                tagId: { type: integer, format: int64, description: 标签 ID(0=解绑,解绑写 UNBIND 事件) }
-                batchId: { type: integer, format: int64, description: 入库批次 ID(必填;仅 IN_STOCK 可改,同步企业归属快照) }
+                type: { type: string, maxLength: 32, description: '类型(可空=由型号派生或保持现值)' }
+                modelId: { type: integer, format: int64, description: '型号 ID(0=不挂型号)' }
+                tagId: { type: integer, format: int64, description: '标签 ID(0=解绑,解绑写 UNBIND 事件)' }
+                batchId: { type: integer, format: int64, description: '入库批次 ID(必填;仅 IN_STOCK 可改,同步企业归属快照)' }
       responses:
         '200':
           description: 编辑成功(data 返回更新后主档;无变化亦 200)
