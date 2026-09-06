@@ -110,4 +110,7 @@ type AaaService interface {
 	// SuspendLoAccount/ResumeLoAccount 停复机即时生效(状态迁移,仅合法前置态可迁)。
 	SuspendLoAccount(ctx context.Context, loAccountID int64) error
 	ResumeLoAccount(ctx context.Context, loAccountID int64) error
+
+	// ResetLoPassword 重置 LOID 接入密码(A1:随机生成,明文一次性返回;清防爆破计数)。
+	ResetLoPassword(ctx context.Context, loid string) (string, error)
 }

@@ -344,6 +344,7 @@ var Portals = []Portal{
 		{"GET", "/device/metrics", "设备指标时序(对齐 Go 实现 GET /device/metrics,permCode menu:device;原 /olt-devices 的 OLT 设备监控语义(状态/丢包率/光功率/告警)合并于此,按 resourceId 过滤)"},
 		{"GET", "/device/maintenances", "设备维护记录(对齐 Go 实现 GET /device/maintenances,permCode menu:device)"},
 		{"GET", "/lo-accounts", "认证账号 LOID 分页列表(AAA 域,挂 oss 页面)"},
+		{"POST", "/lo-accounts/{loid}/reset-password", "重置 LOID 接入密码(A1:随机生成,明文仅本次响应返回;menu:loaccount)"},
 		{"GET", "/expansions", "扩容申请单列表"},
 		{"POST", "/expansions", "新建扩容申请(对齐 Go 实现 POST /expansions,必填 legalEntityId/regionId,expansionNo/status 缺省自动补)"},
 		{"GET", "/expansions/qos-templates", "扩容 QoS 模板(对齐 Go 实现 GET /expansions/qos-templates)"},

@@ -10,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/ymm-001/boss/internal/app"
+	"github.com/ymm-001/boss/internal/domain/aaa"
 	"github.com/ymm-001/boss/internal/domain/ai"
 	"github.com/ymm-001/boss/internal/domain/asset"
 	"github.com/ymm-001/boss/internal/domain/backup"
@@ -134,6 +135,7 @@ func RespondErr(c *gin.Context, err error) {
 		errors.Is(err, monthly.ErrInvalidInput):
 		Respond(c, apitypes.CodeInvalidParam, nil)
 	case errors.Is(err, user.ErrNotFound),
+		errors.Is(err, aaa.ErrNotFound),
 		errors.Is(err, resource.ErrNotFound),
 		errors.Is(err, asset.ErrNotFound),
 		errors.Is(err, procurement.ErrNotFound),

@@ -30,9 +30,10 @@ func main() {
 	}
 	defer pool.Close()
 
-	store := aaa.NewPGStore(pool)
+	codec := buildCodec(cfg)
+	store := aaa.NewPGStore(pool).WithCredentialCodec(codec) // 管理端重置密码:密文落库
 	auth := aaa.NewCredentialAuthorizer(pool, aaa.CredentialConfig{
-		Codec:         buildCodec(cfg),
+		Codec:         codec,
 		AllowNoCred:   cfg.AAA.AllowNoCred,
 		LockThreshold: cfg.AAA.LockThreshold,
 		LockWindow:    cfg.AAA.LockWindow,

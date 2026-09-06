@@ -138,6 +138,7 @@ func (f *fakeAaa) AppendAuthLog(context.Context, aaa.AuthLog) (int64, error)   {
 func (f *fakeAaa) ListAuthLogs(context.Context, string) ([]aaa.AuthLog, error) { return nil, nil }
 func (f *fakeAaa) SuspendLoAccount(context.Context, int64) error               { return nil }
 func (f *fakeAaa) ResumeLoAccount(context.Context, int64) error                { return nil }
+func (f *fakeAaa) ResetLoPassword(context.Context, string) (string, error)     { return "", nil }
 
 func newBillingRouter(b *fakeBilling, ar *fakeArrears, aa *fakeAaa, mgr *auth.Manager) *gin.Engine {
 	gin.SetMode(gin.TestMode)

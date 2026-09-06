@@ -7,6 +7,8 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+
+	"github.com/ymm-001/boss/internal/domain/aaa/credential"
 )
 
 // ErrForeignKeyViolation 关联实体不存在(孤儿数据防护:lo_accounts 无外键约束)。
@@ -32,12 +34,19 @@ func (s *PGStore) exists(ctx context.Context, table string, id int64) (bool, err
 
 // PGStore 是 AaaService 接口的 PostgreSQL 实现(阶段7:LO账号/话单/认证日志)。
 type PGStore struct {
-	db dbtx
+	db   dbtx
+	cred *credential.Codec // 凭据编解码器(管理端重置密码用;WithCredentialCodec 注入)
 }
 
 // NewPGStore 构造 PGStore;db 传 *pgxpool.Pool 或测试 mock。
 func NewPGStore(db dbtx) *PGStore {
 	return &PGStore{db: db}
+}
+
+// WithCredentialCodec 注入凭据编解码器(A1:ResetLoPassword 落库密文需要)。
+func (s *PGStore) WithCredentialCodec(c *credential.Codec) *PGStore {
+	s.cred = c
+	return s
 }
 
 const loAccountCols = `id, loid, customer_id, legal_entity_id, legal_entity_name, region_id, region_name, COALESCE(region_path,''), offer_id, qos_template_id, status, billing_mode`
