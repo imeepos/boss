@@ -683,6 +683,9 @@ App 本地留痕后启动补传；服务端入库即视为成功，App 端成功
 | 入库批次 | `BatchID` | batch_id | BIGINT → asset_batches |
 | 部署地址 | `AddressID` | address_id | BIGINT → addresses（可空，未部署为空） |
 | 状态 | `Status` | status | IN_STOCK/DEPLOYED/MAINTENANCE/SCRAPPED（见 terms.md 第 4 节） |
+| 序列号 | `SN` | sn | 可空 text；全网唯一（部分唯一索引 uq_assets_sn，000188；存量不回填不强制） |
+| MAC 地址 | `MAC` | mac | 可空 text；六组十六进制冒号或横杠分隔（整串一致），入库原样（uq_assets_mac，000188） |
+| LOID | `LOID` | loid | 可空 text；电信 LOID 鉴权标识（uq_assets_loid，000188） |
 
 > 页面 asset.html 的「标签编号/EPC 码」经 `tag_id → tags` 反查展示，「位置」= `address_id`，「生命周期」= `status`。
 > 状态轨迹（TS 实体）：`asset_lifecycles`，资产每次状态/位置变更一行，含事发时 `address_id` + `address_name` 快照 + `changed_at`，历史不随当前状态漂移。
@@ -700,6 +703,9 @@ App 本地留痕后启动补传；服务端入库即视为成功，App 端成功
 > not DEPLOYED」「SCRAPPED but tag still bound」两查兜底（只报不修）。
 > 标签绑定事件流（000186+P1-T2）：`tag_events`（tag_id,asset_id,action
 > BIND/UNBIND/RECYCLE,actor_account_id,detail,changed JSONB;event_id UUID 唯一,append-only）。
+> 历史回填（000189+P3-T4）：零事件资产各补一条 CREATE 事件（tag_id=0 哨兵）、
+> 在绑但缺当前绑定对 BIND 事件的标签各补一条 BIND 事件；changed 带 backfill=000189
+> 来源标记（down 仅删回填行；NOT EXISTS 守卫幂等重跑零新增）；查询 action 白名单含 CREATE。
 > CreateTag/CreateAsset 绑定成功即写 BIND；端点 POST /tags/{tagId}/unbind（预期不符 40900、
 > 未绑定 ErrTagUnbound→40000 族）写 UNBIND；POST /assets/{assetId}/scrap（reason 必填,终态
 > 幂等）强制解绑写 RECYCLE——报废软回收禁硬删（adopted 2026-09-06-asset-tag-p1-wave）。
@@ -719,15 +725,19 @@ App 本地留痕后启动补传；服务端入库即视为成功，App 端成功
 > 企业归属快照自批次回填与采购入库同口径；状态固定 IN_STOCK；modelId 可选须存在且在用，
 > type 缺省由型号类别派生；tagId 可选绑定写 BIND，已被其他资产占用 40900 整单回滚；
 > assetCode 可空，缺省服务端按 A-{批次8位}-{序号5位} 生成）+ GET /assets/{assetId}
-> （详情含企业/区域快照，未命中 40400）+ PUT /assets/{assetId}（受限编辑：仅
-> 类型/型号/标签/批次 四键，标签换绑同事务 UNBIND+BIND 冲突 40900 整单回滚，批次仅
+> （详情含企业/区域快照，未命中 40400）+ PUT /assets/{assetId}（受限编辑：
+> 类型/型号/标签/批次 四键 + sn/mac/loid 身份三要素（000188+P3-T2：建档接收，空串存 NULL，
+> SN/LOID 去首尾空格，MAC 六组 hex 冒号横杠均可入库原样；编辑指针语义缺省=保持、空串=清除；
+> 部分唯一索引冲突 40900 且 message 含冲突字段名，MAC 非法 42200），标签换绑同事务 UNBIND+BIND 冲突 40900 整单回滚，批次仅
 > IN_STOCK 态可改并同步企业快照，四键无变化幂等成功；审计记变更前后键值）+
 > DELETE /assets/{assetId}（守卫删除：仅 IN_STOCK 且无标签绑定/持有台账/换新单/
 > 盘点明细/四码关联引用可物理删，命中任一引用 40900 且 message 列全阻断项；
 > SCRAPPED 一律拒绝硬删提示走报废端点；审计附资产编码）。状态与部署地址不经编辑
 > 端点变更，一律走业务流转（装机扫码/报废/换新）。
 > 全表管理端点（P2-W2-T1，2026-09-06）：POST /tags（建标签：编号+EPC+频段必填且唯一
-> （tags_tag_no_key / tags_epc_code_key 冲突 40900），状态缺省 UNBOUND，法人必填且须存在）+
+> （tags_tag_no_key / tags_epc_code_key 冲突 40900），状态缺省 UNBOUND，法人必填且须存在；
+> EPC 写路径校验（000188+P3-T2）：24 位 hex 大小写不敏感入库统一大写，头部字节须在
+> 30/32/33/35 内（SGTIN/GRAI/GIAI/GID-96），违者 42200）+
 > POST /tags/{id}/disable（停用：仅 UNBOUND，BOUND 必须先解绑 40900；已停用幂等；
 > DISABLED 标签全绑定链路拒绝——建档绑签/编辑换绑前置查状态）+ POST /tags/{id}/enable
 > （启用：仅对 DISABLED 生效回 UNBOUND，非停用态幂等成功）+ GET /tags/{id}/events
