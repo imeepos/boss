@@ -238,3 +238,22 @@ func TestPGStore_ListTagEvents(t *testing.T) {
 		t.Fatalf("unmet: %v", err)
 	}
 }
+
+// CreateBatch 法人不存在 → ErrForeignKeyViolation(P2-W2-T1 F 领用侧前置)。
+func TestPGStore_CreateBatch_LegalEntityMissing(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+
+	mock.ExpectQuery(`SELECT EXISTS`).
+		WithArgs(int64(9)).
+		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(false))
+
+	s := NewPGStore(mock)
+	_, err = s.CreateBatch(context.Background(), AssetBatch{LegalEntityID: 9, Code: "RK-20260905-00001", Name: "批次"})
+	if !errors.Is(err, ErrForeignKeyViolation) {
+		t.Fatalf("err=%v, want ErrForeignKeyViolation", err)
+	}
+}

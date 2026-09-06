@@ -31,6 +31,8 @@ type fakeTagAdmin struct {
 	enabledID    int64
 	modelUpdated int64
 	modelActive  map[int64]bool
+	batch        *asset.AssetBatch
+	batchErr     error
 	modelErr     error
 	disableErr   error
 	tagEvents    []asset.TagEvent
@@ -358,6 +360,67 @@ func TestModelDisableEnableHandlers(t *testing.T) {
 		_ = json.NewDecoder(w.Body).Decode(&out)
 		if out.Code != int(apitypes.CodeNotFound) {
 			t.Fatalf("code=%d, want %d", out.Code, apitypes.CodeNotFound)
+		}
+	})
+}
+
+func (f *fakeTagAdmin) CreateBatch(_ context.Context, b asset.AssetBatch) (int64, error) {
+	if f.batchErr != nil {
+		return 0, f.batchErr
+	}
+	f.batch = &b
+	return 88, nil
+}
+
+func TestBatchCreateHandler(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	t.Run("POST /asset-batches 缺名称→42200", func(t *testing.T) {
+		eng := tagAdminRouter(&fakeTagAdmin{}, nil)
+		w := doJSON(eng, http.MethodPost, "/api/admin/v1/asset-batches", `{"legalEntityId":1}`)
+		var out struct {
+			Code int `json:"code"`
+		}
+		_ = json.NewDecoder(w.Body).Decode(&out)
+		if out.Code != int(apitypes.CodeInvalidParam) {
+			t.Fatalf("code=%d, want %d", out.Code, apitypes.CodeInvalidParam)
+		}
+	})
+
+	t.Run("POST /asset-batches 编码缺省自动生成 RK 风格", func(t *testing.T) {
+		au := &recAudit{}
+		fa := &fakeTagAdmin{}
+		eng := tagAdminRouter(fa, au)
+		w := doJSON(eng, http.MethodPost, "/api/admin/v1/asset-batches", `{"legalEntityId":1,"name":"9月光猫"}`)
+		var out struct {
+			Code int `json:"code"`
+			Data struct {
+				ID   int64  `json:"id"`
+				Code string `json:"code"`
+			} `json:"data"`
+		}
+		_ = json.NewDecoder(w.Body).Decode(&out)
+		if out.Code != int(apitypes.CodeOK) || out.Data.ID != 88 {
+			t.Fatalf("code=%d id=%d", out.Code, out.Data.ID)
+		}
+		// RK-YYYYMMDD-NNNNN:前缀+8 位日期+5 位序号(17 字符,对齐采购 nextBatchCode)。
+		if len(out.Data.Code) != 17 || out.Data.Code[:3] != "RK-" || out.Data.Code[11:12] != "-" {
+			t.Fatalf("generated code=%q", out.Data.Code)
+		}
+		if fa.batch.LegalEntityID != 1 || fa.batch.Name != "9月光猫" {
+			t.Fatalf("batch=%+v", fa.batch)
+		}
+	})
+
+	t.Run("POST /asset-batches 法人不存在→42200", func(t *testing.T) {
+		eng := tagAdminRouter(&fakeTagAdmin{batchErr: fmt.Errorf("asset: legal entity 9: %w", asset.ErrForeignKeyViolation)}, nil)
+		w := doJSON(eng, http.MethodPost, "/api/admin/v1/asset-batches", `{"legalEntityId":9,"name":"X"}`)
+		var out struct {
+			Code int `json:"code"`
+		}
+		_ = json.NewDecoder(w.Body).Decode(&out)
+		if out.Code != int(apitypes.CodeInvalidParam) {
+			t.Fatalf("code=%d, want %d", out.Code, apitypes.CodeInvalidParam)
 		}
 	})
 }

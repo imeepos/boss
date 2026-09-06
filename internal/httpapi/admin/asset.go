@@ -19,6 +19,7 @@ func registerAssetRoutes(g *gin.RouterGroup, a *app.Application) {
 	ams.DELETE("/assets/:assetId", assetDeleteHandler(a)) // P2-W1-T1 守卫删除
 	ams.GET("/assets/:assetId/lifecycle", assetListLifecyclesHandler(a))
 	ams.GET("/assets/batches", assetListBatchesHandler(a))
+	ams.POST("/asset-batches", batchCreateHandler(a)) // P2-W2-T1 建批次(编码缺省 RK 风格自动生成)
 	ams.GET("/assets/assignments", assetListAssignmentsHandler(a))
 	ams.POST("/assets/:assetId/scrap", assetScrapHandler(a)) // P1-T2 报废(标签强回收+事件流)
 	ams.GET("/asset-models", modelListHandler(a))            // P1-T3 型号字典
