@@ -1861,3 +1861,14 @@
 - 哪个坑浪费了最多时间?①i18n locale 大文件用「页尾 pageUnit/jumpText+下节名」做 edit 锚,此类尾锚全仓 51 处出现,一次 matched-2-times 把 zh-CN aaaLogPage 尾部键弄丢+幽灵 provisionPage 残段,靠 git diff 机械盘点损伤才修净;②cdp eval 断言串凭记忆写 ConfirmDialog 标题 '操作确认',实际被 opts.title 覆盖成 '重置密码',断言假阴性一轮;③联调只看 HTTP 200 判接口可用,实则信封 code=50000(102 凭据编解码未配置,A3 部署收口未完成),再耗一轮才定位。
 - skill 有没有提前警告?红线 1(worktree 先 read)拦下一次;红线 24(tail 吞退出码)在 pnpm install 'No projects found' 时靠显式 RC 复验兜住;高频尾锚、断言串对照 i18n 实值、信封层探测三坑是新坑,已回填 recidivism 35-37。
 - 重来一次怎么做?①大 locale/types 编辑锚一律选目标页独有行(columns/billed/title 等),edit 前 grep -c 验全仓恰 1 次;②DOM/网络断言的期望字符串先 grep locale 源码拿实值再写;③接口可用性结论必须打到信封 code/msg 层,HTTP 200 ≠ 可用;④联调假阴性先看页面错误横幅与网络日志,再怀疑组件逻辑。
+
+## 2026-09-06 AAA-A5 per-NAS 注册表与 VSA 限速(feat/aaa-a5-per-nas-vsa)
+
+- 哪个坑浪费了最多时间?两处:① make check 三连跑才绿——第一轮测试期 -race 拦到测试日志缓冲 strings.Builder 被
+  服务端 goroutine 异步写/断言读并发(数据竞争),第二轮 lint 后备分支拦 13 个文件 gofmt 差异,第三轮
+  bossctl routes_gen 在 yaml 补路径后未再生成;② pgxmock v4 对带占位符 SQL 的 ExpectQuery 必须显式 WithArgs,
+  否则报 expected 0 arguments,裸断言路径让错误吞进业务 error 包装,定位多绕一圈。
+- skill 有没有提前警告?红线 11/22 的引号/反引号禁令全程零踩坑(行数组+fromCharCode 策略稳定);
+  「先查库再定迁移号」(fetch+merge main 再定号)兑现——main 三次前进(7db0cfbf/db8b20b3)均无撞号。
+- 重来一次会怎么做?写完 Go 文件立刻 gofmt -w 再 build(把格式化前置);测试里凡涉及异步 goroutine 写日志、
+  主线程读断言的,直接上互斥缓冲不要事后补;契约 yaml 这类「行敏感」文件用 edit 拼接后立刻跑 YAML 解析类检查。
