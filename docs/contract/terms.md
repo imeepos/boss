@@ -64,6 +64,7 @@
 | 设备 resource.status | ONLINE / OFFLINE / FAULT | 在线 / 离线 / 故障 |
 | 认证账号 lo_account.status | ACTIVE / SUSPENDED / CLOSED | 在服 / 停服 / 注销 |
 | 在线会话 aaa_online_sessions.status | ONLINE / PENDING_OFFLINE / OFFLINE / OFFLINE_FAILED | 在线 / 下线待确认(Disconnect 未确认,重试中) / 已下线(终态) / 下线失败(重试耗尽,终态);迁移 000195(AAA-A2,fields.md §8I) |
+| NAS 客户端 aaa_nas_clients.vendor / enabled | HUAWEI / ZTE / GENERIC;true / false | 设备厂商(VSA 限速下发依据,GENERIC 不下发)/ 停用=认证、计费、CoA 一律拒绝;迁移 000196(AAA-A5,fields.md §8J) |
 | 产品 product_offer.status | DRAFT / PUBLISHED / OFFLINE | 草稿 / 在售 / 下架 |
 | 客户 service_status | ACTIVE / ARREARS / SUSPENDED | 在网 / 欠费 / 停机 |
 | 客户 real_name_status | VERIFIED / PENDING | 已实名 / 待补登 |

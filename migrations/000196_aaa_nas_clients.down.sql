@@ -1,0 +1,3 @@
+BEGIN;
+DROP TABLE IF EXISTS aaa_nas_clients;
+COMMIT;

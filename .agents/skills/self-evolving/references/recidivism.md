@@ -115,7 +115,7 @@
 - 共享脚本多 --eval 静默丢参当被测代码 bug 排查(2026-08-29,1 次):cdp-admin-capture parseArgs 步进 bug;工具行为异常先自证工具。已登记 ISSUE.md,绕过=单 eval IIFE。
 | 本地 make check 全绿但 CI 有独立门禁未跑,镜像构建失败白等一轮部署 | 1 | 2026-08-30(新增 admin 路由漏 `make route-perms-check`,102 镜像 genrouteperms --check 22s 失败;本地 check-contract-sync 系另一套不含此项) | 新增 admin 路由提交前固定四件套:路由+契约+`make route-perms-check`+回归测试;本地门禁≠CI门禁,提交前对照 workflow 步骤清单 |
 | 新增 admin 路由漏 admin_perms_gen.go 再生成,目录路由无注册凭据服务端 404 | 1 | 2026-09-01(entity-staff 轮:routes_gen/bossctl 再生成了,admin_perms_gen 忘了,本地 make check 的 TestAdminCatalogRoutesAllRegistered 拦住未浪费 CI;与上一条同根因,防线上已并入 check 但写码时仍漏步骤) | bossctl 目录(routes_gen)与权限目录(admin_perms_gen)是两份生成物,org.yaml 变更两个都要再生成;新增 admin 路由四件套固定执行 |
-| 链式 git 命令用 `| tail -1` 看结果,失败首行像成功信息,误判假成功 | 2 | 2026-08-30(ff-merge 被主树同文件未提交改动挡住,tail 只见"Updating..."当成功,继续链式删分支被 branch -d 拒才暴露;红线#9 兜底防丢); 2026-09-06(P5-W1 收尾:ff-only 失败被 `| tail -2` 掩码,链式 worktree remove 照跑、branch -d 拒才暴露;先 push 过远端,commit 双份无损) | merge/push 等关键步骤不吞输出;判定以 git log/rev-parse 复核为准,不以命令回显首行印象为准;破坏性清理链严禁跟在管道命令后,必须显式 rc 变量+独立 if 判定 |
+| 链式 git 命令用 `| tail -1` 看结果,失败首行像成功信息,误判假成功;破坏性清理未与合并成败绑定 | 3 | 2026-08-30(ff-merge 被主树同文件未提交改动挡住,tail 只见"Updating..."当成功,继续链式删分支被 branch -d 拒才暴露;红线#9 兜底防丢); 2026-09-06(P5-W1 收尾:ff-only 失败被 `| tail -2` 掩码,链式 worktree remove 照跑、branch -d 拒才暴露;先 push 过远端,commit 双份无损); 2026-09-06(AAA-A3:ff-only 失败已显式看到 MERGE_RC=128,却在同一批继续跑 worktree remove+push --delete——清理没跟在管道后但跟在了未验证合并的批次里;branch -d 安全拒保住 commit,远端分支误删后重推恢复) | merge/push 等关键步骤不吞输出;判定以 git log/rev-parse 复核为准,不以命令回显首行印象为准;破坏性清理链严禁跟在管道命令后,必须显式 rc 变量+独立 if 判定;**清理必须等合并成功复核之后的独立步骤** |
 | worktree 已清理后的 hotfix 直接在主树 commit,违反"禁止直接在主分支上修改代码" | 1 | 2026-09-01(entity-staff 轮 E2E 抓出 []byte 落库 bug 后,2 行修复图省事直接 commit 在 main 1a78f3b3;worktree 刚清完,重开成本极低却没做) | worktree 清理后再出修复,重开 `git worktree add ../wt-<fix>` 走完整协议;哪怕 2 行也不留直接提交前例 |
 | CDP eval 用 .click() 操作 Dropdown/MultiSelect 选项(组件绑 onMouseSelect/onMouseDown 选值),勾选不生效误判"保存没落库" | 1 | 2026-09-01(worker 多区域轮:MultiSelect 选项 onMouseDown 选值,eval click 后保存原值,先疑后端;直查接口 10 秒定位是测试侧没选中) | 选项级交互先读组件源码确认事件名;eval 固定 `dispatchEvent(new MouseEvent('mousedown',{bubbles:true}))`;疑"没提交"先 curl 接口分清"没选中/没落库" |
 | merge 解冲突后补编辑未重新暂存,merge commit 缺文件,门禁跑在工作区文件上误绿 | 1 | 2026-09-01(死循环修复轮:backfill/endpoint 三处编辑漂在未暂存区被 ff 上 main;worktree remove 报脏兜住,补提交 6052a930) | 解冲突顺序固定「编辑→git status 必须空→add→commit」;门禁以 commit 后干净树为准,或 commit 后再补编辑单独提交 |
@@ -135,6 +135,8 @@
 | run_code 程序体里拼 bash 长命令用 + 串接多段字符串,漏逗号/引号 parse error | 1 | 2026-09-05(报告周期修复轮:printf 参数用 "..."+"..." 串接漏续行符,Expected ',' got string literal,整轮作废) | 行数组 join 已是成熟范式仍会手滑;多行载荷一律先 tools.write 落 /tmp 再引用,不在命令串里内联大段文本 |
 | run_code 程序体多段编辑用预计算索引自底向上连续 splice,前序改动使后续索引错位,文件碎片化不可修补 | 1 | 2026-09-06(e2e-asset-linkage.sh python 块替换错位,残片插入错误函数) | 整体重写 or 每编辑一步重读文件重算锚点,绝不复用批量预计算索引 |
 | job_output 的 text 只能完整消费一次,二次读取返回空串 | 1 | 2026-09-06(验收跑分日志二次拉取为空) | 首次读取即落盘到 /tmp 文件,后续用文件 grep 取证 |
+| ssh 'bash -s' <<EOF 传入的脚本里出现 docker exec -i / 其他读 stdin 的命令,把脚本剩余部分当 stdin 吞掉,静默无输出且 RC=0 | 1 | 2026-09-06(AAA-A3 批量重置首轮整脚本静默无输出) | 经 heredoc 进远端的脚本内,所有 docker exec 一律不带 -i(psql -c 不需要 stdin),或显式 </dev/null;「输出全空但 RC=0」先怀疑脚本没读完 |
+| 共享主树里随手 git stash pop,弹出的却是并行会话留的 stash,冲突文件污染工作区 | 1 | 2026-09-06(AAA-A3:pop 出 P2-W2 会话 stash,worktree 出 UU 三文件,git reset --hard 恢复) | 共享仓库禁用 stash(列表是全局共享的);临时对照改用 cp 备份文件;误 pop 后立即 reset --hard HEAD 并核对 stash list 原条目仍在 |
 15. **【已犯 1 次】read 工具 lines 数组有单次返回上限,与 totalLines 不符时全文件重写会静默截断** —— 2026-09-06 notes.md 整文件重写丢 1407 行(1752→349),commit stat 的 deletions 远大于预期才逮住,checkout HEAD~1 恢复。整文件重写前必须核对 lines.length === totalLines;不一致改用 cat >> 追加式或分段读全再拼。
 16. **【已犯 1 次】git worktree add <path> <branch> 在分支不存在时 fatal invalid reference** —— 2026-09-06 任务书口径默认分支可建;先 for-each-ref 探测,不存在就 `git worktree add -b <branch> <path>` 一并创建。
 17. **【已犯 1 次】后台 dev server 用管道(如 | head)启动会吞输出且可能根本未监听** —— 2026-09-06 vite 连探三轮 http 000;正解=nohup 重定向日志文件,cat 日志 + curl 探活;macOS 另注意无 timeout 命令。
@@ -157,5 +159,8 @@
 31. **【已犯 1 次】run_code 内层 bash 调用漏必填 description(红线14 自检跳项)** —— 2026-09-06 采购白屏轮:wc -l 调用只带 command,整程序 rejected 一轮废;发车前逐调用默念必填键(bash: command+description,edit: old_string+new_string)。
 32. **【已犯 1 次】部署轮询用「hash 与上次不同」判完成,撞并行部署 hash 翻转假阳性** —— 2026-09-06 采购白屏轮:5180 index.html 在 Dv1VgrCR 与 DCXW1E89 两个旧包间互相换位,10 秒误报 DEPLOYED,旧包上白验一轮还误判修复
 33. **【已犯 1 次】run_code 程序体一处语法错=整个程序零执行,误以为前半段工具调用已跑** —— 2026-09-06 AAA-A2 轮:同一程序里 write handlers + 留了省略号的坏 edit,parse 失败整体未执行,却按「部分已执行」继续,直到 build 报 undefined 才发现 handlers 没落盘,多耗一轮;程序 parse 失败后重发必须整体重跑该程序的全部调用
-34. **【已犯 1 次】生成的 Go 文件未 gofmt 就提交,make lint 的 gofmt -l 拦截** —— 2026-09-06 AAA-A2 轮:14 个新/改文件全挂 gofmt(注释缩进与结构体对齐),多跑一轮 make check + 补 style 提交;run_code 写 Go 文件的程序收尾统一对刚写的文件清单 gofmt -w,再 build/test/commit无效。正解=排除全部已知旧 hash + 新包行为断言(点详情开抽屉)双确认。
+34. **【已犯 1 次】生成的 Go 文件未 gofmt 就提交,make lint 的 gofmt -l 拦截** —— 2026-09-06 AAA-A2 轮:14 个新/改文件全挂 gofmt(注释缩进与结构体对齐),多跑一轮 make check + 补 style 提交;run_code 写 Go 文件的程序收尾统一对刚写的文件清单 gofmt -w,再 build/test/commit
+35. **【已犯 1 次】i18n locale 大文件用通用尾锚(pageUnit/jumpText+下节名)edit,锚全仓几十处重复** —— 2026-09-06 AAA-A6 轮:matched-2-times 后 zh-CN 出现幽灵 provisionPage 段+aaaLogPage 尾部键丢失,靠 git diff 全量盘点修复;大文件锚点必须取目标页独有行(columns/billed/title),edit 前 grep -c 验全仓恰 1 次
+36. **【已犯 1 次】cdp 断言期望字符串凭记忆写,与 i18n 实值/运行时覆盖值不符致假阴性** —— 2026-09-06 AAA-A6 轮:ConfirmDialog 标题被 opts.title 覆盖成页面文案('重置密码'),按默认 '操作确认' 断言连错一轮;断言串先 grep locale 源码取实值
+37. **【已犯 1 次】以 HTTP 200 判定接口可用,不看信封 code** —— 2026-09-06 AAA-A6 轮:102 reset-password 返回 200+code=50000 内部错误(凭据编解码运行时未配置,等 A3 部署收口),前端流程正常却被误判为断言问题;可用性结论必须解析信封 code/msg 层无效。正解=排除全部已知旧 hash + 新包行为断言(点详情开抽屉)双确认。
 

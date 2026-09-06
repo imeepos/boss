@@ -13,8 +13,8 @@ describe('menu.def', () => {
     ])
   })
 
-  it('页面总数不变(89 页;+3 = procurement/install/install-board,+1 = apidocs,+1 = daily-close 柜台日结,+1 = onboarding 开户工作台,+1 = monthly 月度填报,+1 = capacity 容量视图)', () => {
-    expect(MENU_GROUPS.flatMap((g) => g.items)).toHaveLength(89)
+  it('页面总数不变(90 页;+3 = procurement/install/install-board,+1 = apidocs,+1 = daily-close 柜台日结,+1 = onboarding 开户工作台,+1 = monthly 月度填报,+1 = capacity 容量视图,+1 = aaasession 在线会话)', () => {
+    expect(MENU_GROUPS.flatMap((g) => g.items)).toHaveLength(90)
   })
 
   it('重组后关键页面归属新分组(2026-08-27)', () => {

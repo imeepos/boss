@@ -15,4 +15,10 @@ func registerAaaRoutes(g *gin.RouterGroup, a *app.Application) {
 	g.GET("/auth-logs", requirePerm(a.User, "menu:aaalog"), aaaAuthLogsPageHandler(a))
 	g.GET("/aaa/sessions", requirePerm(a.User, "menu:loaccount"), aaaSessionsPageHandler(a))
 	g.POST("/aaa/sessions/:sessionId/disconnect", requirePerm(a.User, "menu:loaccount"), aaaSessionDisconnectHandler(a))
+	// AAA-A5:NAS 客户端注册表(per-NAS 密钥/厂商/CoA 端口/启停),权限码沿用 menu:loaccount。
+	g.GET("/aaa/nas", requirePerm(a.User, "menu:loaccount"), aaaNasPageHandler(a))
+	g.POST("/aaa/nas", requirePerm(a.User, "menu:loaccount"), aaaNasCreateHandler(a))
+	g.GET("/aaa/nas/:id", requirePerm(a.User, "menu:loaccount"), aaaNasGetHandler(a))
+	g.PUT("/aaa/nas/:id", requirePerm(a.User, "menu:loaccount"), aaaNasUpdateHandler(a))
+	g.DELETE("/aaa/nas/:id", requirePerm(a.User, "menu:loaccount"), aaaNasDeleteHandler(a))
 }

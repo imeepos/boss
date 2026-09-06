@@ -23,6 +23,11 @@ mig:000095
 # 越权判定/自定义角色推导均按 menu:resource 判定(role-menu.ts perm 覆盖)。
 menu:capacity
 
+# aaasession(A6 在线会话页,2026-09-06 登记)复用 LOID 台账权限码 menu:loaccount——
+# /aaa/sessions 路由族 permCode 本就是 menu:loaccount(routes_gen),页面 MenuItem.perm='loaccount',
+# 不新增权限码;若未来需要独立 aaasession 权限码,再走新迁移登记 permissions+role_permissions。
+menu:aaasession
+
 # ---- A2. 方法级对账存量:2026-09-07 首扫登记 6 条,当日全部清零 ----
 # geo names ×2 / stripe done,cancel ×2:系扫描器与提取器盲区(引号路径键、
 # for-range 字面量循环注册,见 alignment-audit.md §13 A5/A6),修复后假阳性
