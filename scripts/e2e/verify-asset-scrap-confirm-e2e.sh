@@ -91,7 +91,8 @@ boot_fixtures() { # 自举: 批次/标签/资产1(有SN绑标签)/资产2(无SN�
   local batch tag asset sn b1 b2
   batch=$(api POST /provision/asset-batches "{\"code\":\"RK-ACC-$SUFFIX\",\"name\":\"验收批次-$SUFFIX\",\"legalEntityId\":1}") || return 1
   BATCH_ID=$(j "$batch" id)
-  tag=$(api POST /provision/tags "{\"tagNo\":\"T-ACC-$SUFFIX\",\"epcCode\":\"EPC-ACC-$SUFFIX\",\"legalEntityId\":1,\"band\":\"UHF\",\"status\":\"UNBOUND\",\"battery\":\"100%\"}") || return 1
+  EPC="30$(printf %s "$SUFFIX" | md5 | tr -d " -" | cut -c1-22 | tr "a-f" "A-F")"
+  tag=$(api POST /provision/tags "{\"tagNo\":\"T-ACC-$SUFFIX\",\"epcCode\":\"$EPC\",\"legalEntityId\":1,\"band\":\"UHF\",\"status\":\"UNBOUND\",\"battery\":\"100%\"}") || return 1
   TAG_ID=$(j "$tag" id)
   asset=$(api POST /provision/assets "{\"assetCode\":\"A-ACC-$SUFFIX\",\"batchId\":$BATCH_ID,\"legalEntityId\":1,\"legalEntityName\":\"验收主体\",\"type\":\"ONU\",\"status\":\"IN_STOCK\"}") || return 1
   ASSET_ID=$(j "$asset" id)
