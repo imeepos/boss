@@ -11,10 +11,10 @@ import (
 )
 
 const (
-	offlineRetryInterval = 30 * time.Second   // PENDING_OFFLINE 重试节拍
-	offlineRetryBatch   = 100                // 每轮重试上限
-	zombieScanInterval  = 10 * time.Minute   // 僵尸扫描节拍
-	zombieScanBatch     = 500                // 每轮清理上限
+	offlineRetryInterval = 30 * time.Second // PENDING_OFFLINE 重试节拍
+	offlineRetryBatch    = 100              // 每轮重试上限
+	zombieScanInterval   = 10 * time.Minute // 僵尸扫描节拍
+	zombieScanBatch      = 500              // 每轮清理上限
 )
 
 // startAAAOfflineRetryLoop PENDING_OFFLINE 会话重试循环(下发失败/重试耗尽转终态)。
@@ -29,7 +29,9 @@ func startZombieReapLoop(svc *aaa.SessionControlService, zombieAfter time.Durati
 		zombieAfter = 2 * time.Hour
 	}
 	return startSessionTicker("aaa_zombie_reap", svc, zombieScanInterval,
-		func(c context.Context) { _, _ = svc.ReapZombieSessions(c, time.Now().Add(-zombieAfter), zombieScanBatch) })
+		func(c context.Context) {
+			_, _ = svc.ReapZombieSessions(c, time.Now().Add(-zombieAfter), zombieScanBatch)
+		})
 }
 
 // startSessionTicker 通用节拍器:首轮错峰 → 固定间隔执行;ctx 取消即停(幂等)。

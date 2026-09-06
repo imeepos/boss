@@ -39,21 +39,21 @@ func (s *PGStore) GetSessionByID(ctx context.Context, id int64) (*SessionRecord,
 
 // ListOnlineSessions 指定 LOID 的全部 ONLINE 会话(强制下线目标集,started_at 序)。
 func (s *PGStore) ListOnlineSessions(ctx context.Context, loid string) ([]SessionRecord, error) {
-	return s.querySessions(ctx, 
+	return s.querySessions(ctx,
 		`SELECT `+sessionCols+` FROM aaa_online_sessions WHERE loid = $1 AND status = $2 ORDER BY id`,
 		loid, SessionOnline)
 }
 
 // ListPendingOfflineSessions 全部 PENDING_OFFLINE(重试扫描集,含已达上限的兜底转失败)。
 func (s *PGStore) ListPendingOfflineSessions(ctx context.Context, limit int) ([]SessionRecord, error) {
-	return s.querySessions(ctx, 
+	return s.querySessions(ctx,
 		`SELECT `+sessionCols+` FROM aaa_online_sessions WHERE status = $1 ORDER BY id LIMIT $2`,
 		SessionPendingOffline, limit)
 }
 
 // ListStaleOnlineSessions last_update 早于 staleBefore 的 ONLINE 会话(僵尸扫描集)。
 func (s *PGStore) ListStaleOnlineSessions(ctx context.Context, staleBefore time.Time, limit int) ([]SessionRecord, error) {
-	return s.querySessions(ctx, 
+	return s.querySessions(ctx,
 		`SELECT `+sessionCols+` FROM aaa_online_sessions WHERE status = $1 AND last_update < $2 ORDER BY id LIMIT $3`,
 		SessionOnline, staleBefore, limit)
 }
@@ -93,7 +93,7 @@ func (s *PGStore) MarkSessionOfflineFailed(ctx context.Context, id int64, closeR
 
 // transitSession 状态迁移;0 行属并发竞态(已被 Stop/重试转移),非错误。
 func (s *PGStore) transitSession(ctx context.Context, id int64, to, closeReason string, from []string) error {
-	tag, err := s.db.Exec(ctx, 
+	tag, err := s.db.Exec(ctx,
 		`UPDATE aaa_online_sessions SET status = $2, close_reason = $3, closed_at = now()
 		WHERE id = $1 AND status = ANY($4)`,
 		id, to, closeReason, from)
@@ -107,7 +107,7 @@ func (s *PGStore) transitSession(ctx context.Context, id int64, to, closeReason 
 // IncrementSessionAttempts 重试计数+1,返回新值。
 func (s *PGStore) IncrementSessionAttempts(ctx context.Context, id int64) (int, error) {
 	var n int
-	err := s.db.QueryRow(ctx, 
+	err := s.db.QueryRow(ctx,
 		`UPDATE aaa_online_sessions SET disconnect_attempts = disconnect_attempts + 1 WHERE id = $1 RETURNING disconnect_attempts`,
 		id).Scan(&n)
 	if err != nil {
@@ -118,7 +118,7 @@ func (s *PGStore) IncrementSessionAttempts(ctx context.Context, id int64) (int, 
 
 // ReapSessionZombie 僵尸关闭:ONLINE→OFFLINE(原因 ZOMBIE_REAP);返回是否本调用关闭(幂等)。
 func (s *PGStore) ReapSessionZombie(ctx context.Context, id int64) (bool, error) {
-	tag, err := s.db.Exec(ctx, 
+	tag, err := s.db.Exec(ctx,
 		`UPDATE aaa_online_sessions SET status = $2, close_reason = $3, closed_at = now()
 		WHERE id = $1 AND status = $4`,
 		id, SessionOffline, CloseReasonZombie, SessionOnline)

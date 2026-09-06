@@ -15,10 +15,10 @@ import (
 )
 
 type sessionStub struct {
-	started []aaa.SessionRecord
-	touched [][4]any // loid, sessionID, in, out
-	stopped []string // loid|sessionID|reason
-	stopErr error
+	started        []aaa.SessionRecord
+	touched        [][4]any // loid, sessionID, in, out
+	stopped        []string // loid|sessionID|reason
+	stopErr        error
 	startedCreated bool
 }
 
