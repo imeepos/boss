@@ -102,7 +102,7 @@ func (c *Codec) CHAPOK(stored string, ident byte, challenge, resp []byte) bool {
 }
 
 // randomAlphabet 随机口令字符集(去易混字符 i/l/o/I/L/O/0/1,口头转抄不失真)。
-const randomAlphabet = "abcdefghjkmnpqrstuvwxyzACDEFGHJKLMNPQRSTUVWXYZ23456789"
+const randomAlphabet = "abcdefghjkmnpqrstuvwxyzACDEFGHJKMNPQRSTUVWXYZ23456789"
 
 // Random 生成 n 位随机口令(crypto/rand);n<8 按 8 处理。
 func Random(n int) (string, error) {
