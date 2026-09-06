@@ -134,6 +134,9 @@ type ODNService interface {
 	AcceptProject(ctx context.Context, id int64, acceptedBy int64, note string) (int64, error)
 	ListProjectItems(ctx context.Context, id int64) ([]ConstructionItem, error)
 
+	// 影响面分析(P7,只读聚合;运维侧影响谁)。
+	ImpactByFacility(ctx context.Context, facilityCode string) (*ImpactReport, error)
+
 	// 覆盖关联(P1,迁移 000197;odn↔业务首桥)。
 	UpsertCoverage(ctx context.Context, c Coverage) error
 	GetCoverageByAddress(ctx context.Context, addressID int64) (*Coverage, error)
