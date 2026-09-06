@@ -67,12 +67,13 @@ services:
       BOSS_AAA_AUTH_ADDR: ":1812"
       BOSS_AAA_ACCT_ADDR: ":1813"
       BOSS_AAA_SECRET: "boss-aaa-secret"
-      # 凭据密钥经宿主机文件注入(值不进仓库);ALLOW_NO_CRED 灰度开关:存量重置完成后必须关回 false
+      # 凭据密钥经宿主机文件注入(值不进仓库,属主 1000:1000 与容器 app 用户一致);
+      # ALLOW_NO_CRED=false 终态:未设密账号一律拒绝(2026-09-06 AAA-A3 存量重置已完成)
       BOSS_AAA_CRED_KEY_FILE: "/run/aaa-cred/cred.key"
-      BOSS_AAA_ALLOW_NO_CRED: "true"
+      BOSS_AAA_ALLOW_NO_CRED: "false"
       BOSS_AAA_CDR_TOPIC: "boss-cdr"
     volumes:
-      # AAA 凭据密钥:宿主机 /etc/boss-aaa/cred.key(0600,root),值不进仓库/env/process
+      # AAA 凭据密钥:宿主机 /etc/boss-aaa/cred.key(0600,属主 1000:1000=容器 app 用户),值不进仓库/env/process
       - /etc/boss-aaa/cred.key:/run/aaa-cred/cred.key:ro
 
   report:
