@@ -145,6 +145,24 @@ func TestAssetCRUDHandlers(t *testing.T) {
 		}
 	})
 
+	t.Run("PUT /assets/5 仅改类型缺省批次→200(回归:RequirePositiveID 曾误拒 42200)", func(t *testing.T) {
+		fa := &fakeAssetCRUD{getAssets: map[int64]*asset.Asset{
+			5: {AssetID: 5, Status: "IN_STOCK", Type: "光猫"},
+		}}
+		eng := assetCRUDRouter(fa)
+		w := doJSON(eng, http.MethodPut, "/api/admin/v1/assets/5", `{"type":"路由器"}`)
+		var out struct {
+			Code int `json:"code"`
+		}
+		_ = json.NewDecoder(w.Body).Decode(&out)
+		if out.Code != int(apitypes.CodeOK) {
+			t.Fatalf("code=%d", out.Code)
+		}
+		if fa.updateReq.in.Type != "路由器" || fa.updateReq.in.BatchID != 0 {
+			t.Fatalf("updateReq=%+v", fa.updateReq)
+		}
+	})
+
 	t.Run("PUT /assets/5 无变化幂等成功", func(t *testing.T) {
 		fa := &fakeAssetCRUD{getAssets: map[int64]*asset.Asset{
 			5: {AssetID: 5, Status: "IN_STOCK"},

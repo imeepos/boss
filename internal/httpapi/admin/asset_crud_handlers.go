@@ -81,8 +81,12 @@ func assetUpdateHandler(a *app.Application) gin.HandlerFunc {
 		}
 		var in asset.AssetUpdate
 		if !httpx.BindAndValidate(c, &in, func() error {
+			// 四键均为 0=不改(值类型缺省即未传);仅拒负数,缺省 batchId 的
+			// type-only 编辑是合法请求(RequirePositiveID 曾误拒之,42200)。
 			return httpx.CollectErrors(
-				httpx.RequirePositiveID(in.BatchID, "batchId"),
+				httpx.RequireNonNegativeID(in.BatchID, "batchId"),
+				httpx.RequireNonNegativeID(in.ModelID, "modelId"),
+				httpx.RequireNonNegativeID(in.TagID, "tagId"),
 			)
 		}) {
 			return
