@@ -7,7 +7,7 @@ import { Drawer } from '../../../components/Drawer'
 import { StatusTag } from '../../../components/StatusTag'
 import { TabBar } from '../../../components/business/tab-bar'
 import { useT } from '../../../i18n'
-import { modelLabel } from './logic'
+import { MainRecordSection } from './MainRecordSection'
 import { fmtTime } from '../../../lib/format'
 import type { AssetModelRow, AssetRow, AssignmentRow, LifecycleRow, TagRow } from '../types'
 import { EmptyState } from '../../../components/business'
@@ -82,23 +82,7 @@ export function AssetTrailDrawer({
           <RelItem label={a.relTag}>{tag ? `${tag.tagNo} · ${tag.epcCode}` : asset.tagId ? `#${asset.tagId}` : '—'}</RelItem>
         </div>
       </div>
-      {showMain && (
-        <div className="mx-4 mt-4 mb-3 rounded-sm border border-[var(--shell-side-border)] p-3">
-          <div className="mb-2 text-xs font-medium text-[var(--shell-group-title)]">{a.mainTitle}</div>
-          <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
-            <RelItem label={a.dCode}>{main.assetCode}</RelItem>
-            <RelItem label={a.dTagNo}>{tag?.tagNo || '—'}</RelItem>
-            <RelItem label={a.dEpc}>{tag?.epcCode || '—'}</RelItem>
-            <RelItem label={a.dType}>{main.type || '—'}</RelItem>
-            <RelItem label={a.dModel}>{model ? modelLabel(model) : main.modelId ? '#' + String(main.modelId) : '—'}</RelItem>
-            <RelItem label={a.dBatch}>{batch ? '#' + String(batch.id) + ' ' + batch.code : '#' + String(main.batchId)}</RelItem>
-            <RelItem label={a.dAddress}>{main.addressId ? '#' + String(main.addressId) : '—'}</RelItem>
-            <RelItem label={a.dStatus}><StatusTag domain="asset" value={main.status} /></RelItem>
-            <RelItem label={a.dEntity}>{main.legalEntityName || '—'}</RelItem>
-            <RelItem label={a.dRegion}>{main.regionName || '—'}</RelItem>
-          </div>
-        </div>
-      )}
+      {showMain && <MainRecordSection main={main} tag={tag} model={model} batch={batch} />}
       <TabBar tabs={tabs} value={tab} onChange={setTab} />
       {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : tab === 'lifecycle' ? (
         <div className="overflow-x-auto px-4 pb-4">
