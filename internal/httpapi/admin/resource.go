@@ -23,6 +23,7 @@ func registerResourceRoutes(g *gin.RouterGroup, a *app.Application) {
 	res.POST("/resources/capacity/alert-scan", capacityAlertScanHandler(a))
 	res.GET("/ports", listPortsHandler(a))
 	res.GET("/ports/:portId/change-history", listPortHistoryHandler(a))
+	res.GET("/ports/:portId/path", portPathHandler(a))
 	res.POST("/reserves/:reserveId/release", releaseReserveHandler(a))
 	res.GET("/reserves", listReservesHandler(a))
 

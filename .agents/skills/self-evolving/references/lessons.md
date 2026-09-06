@@ -197,6 +197,8 @@
 - lesson: 102 容器以 app 用户(uid 1000,alpine adduser -D)运行,空命名卷首挂继承镜像目录属主——镜像里 mkdir+chown 才保险;已存在的旧卷必须 docker run --rm -v <vol>:/d alpine chown -R 1000:1000 /d 人工修一次。
 - lesson: apiFetch 发 FormData 时绝不能带 Content-Type: application/json,要让浏览器补 multipart boundary(client.ts 已修,新调用方直接传 FormData 即可)。
 - lesson: Go 服务新增依赖可写目录的功能时,deployments compose(BOSS_BACKUP_DIR + 命名卷)与 Dockerfile(预建目录)必须与功能代码同一批提交,否则 102 部署即 nil 服务。
+- lesson(2026-09-06 P5-W2):run_code 生成含 ${/'/反斜杠 的 bash 脚本,占位符法一次成型——内容行全用单引号 JS 串,@@SQ@@/@@BS@@/@@DS@@ 代替三类禁写字符,写盘后 python3 replace(chr(39)/chr(92)/chr(36)+chr(123)) 一步还原;逐行手工转义必炸 parse error。
+- lesson(2026-09-06 P5-W2):bash 管道 `cmd | tail` 会吞退出码,`pnpm test | tail` 假绿 exit 0——判断门禁结果必须 `echo ${PIPESTATUS[0]}` 或不带管道单独跑;同轮在主树复跑同用例可判定存量/新增。
 - lesson: CI(deploy-102.yml)只构建/部署 Go server 镜像;web/admin 前端验证一律本地 pnpm dev + localStorage 注入 102 token 直连。
 - lessons 77: CDP 断言按钮文案前先 grep locale 实际 key 值再写正则;样例数据先读目标 schema(如 preview.ts ADDR_FIELDS),shape 不符会误判组件故障。
 - lessons 78: push 后 102 新接口仍 404 = CI 部署延迟(~1-2 分钟),20s 轮询直到生效,勿回滚排查自己的路由。

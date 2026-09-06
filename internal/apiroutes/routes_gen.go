@@ -333,6 +333,7 @@ var Portals = []Portal{
 		{"POST", "/resources/capacity/alert-scan", "容量阈值预警扫描(使用率>=80% 产生 WARNING 容量告警入告警体系;同一对象阈值状态变化才重复告警,周期重跑幂等;对齐 Go 实现 POST /resources/capacity/alert-scan,permCode menu:resource)"},
 		{"GET", "/ports", "端口台账(status: IDLE/RESERVED/USED/DISABLED;对齐 Go 实现 GET /ports,按 resourceId 过滤)"},
 		{"GET", "/ports/{portId}/change-history", "端口变更历史(变更前后/触发来源;对齐 Go 实现 :portId)"},
+		{"GET", "/ports/{portId}/path", "PON 端到端链路反查(端口→分光器→PON口→OLT 逐跳;portId 支持端口 ID 或端口编码;断链返回 missing 跳不报错;对齐 Go 实现 GET /ports/:portId/path)"},
 		{"GET", "/reserves", "端口预占记录(预占中/已超时/已释放)"},
 		{"POST", "/reserves/{reserveId}/release", "手动释放预占"},
 		{"GET", "/transfers", "跨区域调配单(资产/端口/设备,归属变更台账)"},
