@@ -18,6 +18,7 @@ func genNo(prefix string) string {
 // registerResourceRoutes 注册网络资源域路由(承接 api/openapi/admin/oss.yaml)。
 func registerResourceRoutes(g *gin.RouterGroup, a *app.Application) {
 	res := g.Group("", requirePerm(a.User, "menu:resource"))
+	res.GET("/inventory-audit", ossInventoryAuditHandler(a))
 	res.GET("/resources", listResourcesHandler(a))
 	res.GET("/ports", listPortsHandler(a))
 	res.GET("/ports/:portId/change-history", listPortHistoryHandler(a))

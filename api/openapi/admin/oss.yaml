@@ -1,4 +1,14 @@
 paths:
+  /inventory-audit:
+    get:
+      tags: [Oss]
+      summary: '资源台账稽核(P5-W3,三类计数+明细,只报不修;permCode menu:resource;每日快照 period=oss-audit-daily)'
+      operationId: inventoryAudit
+      parameters:
+        - { name: category, in: query, required: false, schema: { type: string, enum: [ownership, state, coding] } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
   /resources:
     get:
       tags: [Oss]

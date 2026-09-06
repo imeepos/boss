@@ -328,6 +328,7 @@ var Portals = []Portal{
 		{"GET", "/menu-perms", "菜单权限矩阵(三层权限模型 + 角色×菜单组可见性)"},
 		{"GET", "/data-scopes", "数据权限清单(账号级授权策略)"},
 		{"PUT", "/regions/{regionId}/coverage", "区域覆盖主体划分(子公司划经营区域;legalEntityId=0 摘除回落祖先/总公司兜底)"},
+		{"GET", "/inventory-audit", "资源台账稽核(P5-W3,三类计数+明细,只报不修;permCode menu:resource;每日快照 period=oss-audit-daily)"},
 		{"GET", "/resources", "网络资源清单(OSS/OLT/分光器;对齐 Go 实现 GET /resources,permCode menu:resource)"},
 		{"GET", "/ports", "端口台账(status: IDLE/RESERVED/USED/DISABLED;对齐 Go 实现 GET /ports,按 resourceId 过滤)"},
 		{"GET", "/ports/{portId}/change-history", "端口变更历史(变更前后/触发来源;对齐 Go 实现 :portId)"},
