@@ -78,3 +78,18 @@ export function rejectReasonErr(form: RejectFormState): string {
 export function buildRejectPayload(form: RejectFormState) {
   return { reason: form.reason.trim() }
 }
+
+// GET /procurement/orders/{id} 响应信封为 {item: 订单};误把信封整体当订单用,会在 undefined
+// 金额上调用 toFixed 令整页白屏(2026-09-06)。统一在此解包,兼容裸对象形态。
+export function unwrapOrderDetail<T>(payload: { item?: T } | T | null | undefined): T | null {
+  if (payload === null || payload === undefined) return null
+  if (typeof payload === 'object' && 'item' in (payload as Record<string, unknown>)) {
+    return (payload as { item?: T }).item ?? null
+  }
+  return payload as T
+}
+
+// 金额展示统一入口:接口空值兜底 0.00,禁止在裸字段上直接 toFixed。
+export function fmtAmount(v: number | null | undefined): string {
+  return Number(v ?? 0).toFixed(2)
+}

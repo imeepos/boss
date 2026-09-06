@@ -5,8 +5,9 @@ import { LocaleProvider } from '../../../i18n/context'
 import { OrderItemsEditor } from './OrderItemsEditor'
 import {
   buildOrderEditPayload, buildRejectPayload, buildSupplierPayload, canEditOrder,
-  canEnableSupplier, canRejectReceipt, emptySupplierForm, orderEditErr,
-  rejectReasonErr, supplierFormErr, type OrderEditFormState, type SupplierFormState,
+  canEnableSupplier, canRejectReceipt, emptySupplierForm, fmtAmount, orderEditErr,
+  rejectReasonErr, supplierFormErr, unwrapOrderDetail,
+  type OrderEditFormState, type SupplierFormState,
 } from './purchaseLogic'
 
 const editForm: OrderEditFormState = {
@@ -77,5 +78,21 @@ describe('OrderItemsEditor 组件', () => {
     expect(html).toContain('MI-ONU')
     expect(html).toContain('1GE')
     expect(html).toContain('添加明细')
+  })
+})
+
+describe('purchaseLogic 详情信封解包(2026-09-06 白屏回归)', () => {
+  it('GET /orders/{id} 信封 {item} 解包出订单;裸对象直通;空值归 null', () => {
+    const order = { id: 14, totalAmount: 15 }
+    expect(unwrapOrderDetail({ item: order })).toEqual(order)
+    expect(unwrapOrderDetail(order)).toEqual(order)
+    expect(unwrapOrderDetail({ item: undefined })).toBeNull()
+    expect(unwrapOrderDetail(null)).toBeNull()
+    expect(unwrapOrderDetail(undefined)).toBeNull()
+  })
+  it('金额空值兜底 0.00,禁止在 undefined 上直接 toFixed', () => {
+    expect(fmtAmount(15)).toBe('15.00')
+    expect(fmtAmount(null)).toBe('0.00')
+    expect(fmtAmount(undefined)).toBe('0.00')
   })
 })

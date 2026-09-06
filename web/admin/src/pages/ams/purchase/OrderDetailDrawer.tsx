@@ -5,6 +5,7 @@ import { useT } from '../../../i18n'
 import { Drawer } from '../../../components/Drawer'
 import { StatusTag } from '../../../components/StatusTag'
 import type { OrderItemRow } from '../types'
+import { fmtAmount, unwrapOrderDetail } from './purchaseLogic'
 
 const errBanner = 'rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]'
 
@@ -40,8 +41,8 @@ export function OrderDetailDrawer({ orderId, onClose }: { orderId: number; onClo
 
   useEffect(() => {
     setBusy(true)
-    apiFetch<OrderDetail>('/procurement/orders/' + orderId)
-      .then((x) => setDetail(x))
+    apiFetch<{ item: OrderDetail }>('/procurement/orders/' + orderId)
+      .then((x) => setDetail(unwrapOrderDetail(x)))
       .catch((e) => setError(e instanceof Error ? e.message : d.loadFail))
       .finally(() => setBusy(false))
   }, [orderId]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -63,7 +64,7 @@ export function OrderDetailDrawer({ orderId, onClose }: { orderId: number; onClo
               <span className="text-[12px] text-[var(--shell-group-title)]">{d.colStatus}</span>
               <StatusTag domain="procurement" value={detail.status} />
             </div>
-            <Field label={d.dTotal} value={detail.totalAmount.toFixed(2)} />
+            <Field label={d.dTotal} value={fmtAmount(detail.totalAmount)} />
             <Field label={d.dExpected} value={detail.expectedDate ?? ''} />
             <div className="col-span-2 md:col-span-3">
               <Field label={d.dRemark} value={detail.remark ?? ''} />
@@ -80,7 +81,7 @@ export function OrderDetailDrawer({ orderId, onClose }: { orderId: number; onClo
                     <td className="h-9 px-2 whitespace-nowrap border-b border-[var(--shell-side-border)] font-mono text-[var(--shell-content-text)]">{i.materialCode}</td>
                     <td className="h-9 px-2 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)]">{i.spec || '—'}</td>
                     <td className="h-9 px-2 whitespace-nowrap border-b border-[var(--shell-side-border)] text-right text-[var(--shell-content-text)]">{i.quantity}</td>
-                    <td className="h-9 px-2 whitespace-nowrap border-b border-[var(--shell-side-border)] text-right text-[var(--shell-content-text)]">{i.unitAmount.toFixed(2)}</td>
+                    <td className="h-9 px-2 whitespace-nowrap border-b border-[var(--shell-side-border)] text-right text-[var(--shell-content-text)]">{fmtAmount(i.unitAmount)}</td>
                     <td className="h-9 px-2 whitespace-nowrap border-b border-[var(--shell-side-border)] text-right text-[var(--shell-content-text)]">{i.receivedQty ?? 0}</td>
                   </tr>
                 ))}

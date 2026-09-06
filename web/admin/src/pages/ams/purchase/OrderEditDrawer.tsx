@@ -8,7 +8,7 @@ import { Drawer } from '../../../components/Drawer'
 import { Dropdown } from '../../../components/Dropdown'
 import type { OrderItemRow, SupplierRow } from '../types'
 import { OrderItemsEditor } from './OrderItemsEditor'
-import { buildOrderEditPayload, orderEditErr, type OrderEditFormState } from './purchaseLogic'
+import { buildOrderEditPayload, orderEditErr, unwrapOrderDetail, type OrderEditFormState } from './purchaseLogic'
 
 const input = 'h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]'
 const errBanner = 'rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]'
@@ -27,10 +27,11 @@ export function OrderEditDrawer({ order, suppliers, onClose, onSaved }: {
   const [busy, setBusy] = useState(false)
 
   useEffect(() => {
-    apiFetch<{ items: OrderItemRow[]; supplierId: number; legalEntityId: number; remark: string }>(
+    apiFetch<{ item: { items: OrderItemRow[]; supplierId: number; legalEntityId: number; remark: string } }>(
       '/procurement/orders/' + order.id,
     )
-      .then((detail) => {
+      .then((res) => {
+        const detail = unwrapOrderDetail(res)
         if (!detail) return
         setForm({
           supplierId: detail.supplierId,
