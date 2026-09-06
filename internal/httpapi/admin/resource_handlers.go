@@ -51,6 +51,24 @@ func listPortHistoryHandler(a *app.Application) gin.HandlerFunc {
 	}
 }
 
+// portPathHandler GET /ports/:portId/path:PON 端到端链路反查(P5-W2)。
+// :portId 支持端口 ID(纯数字)或端口编码;派生只读视图,断链以 missing 跳返回不报错。
+func portPathHandler(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ref := c.Param("portId")
+		if ref == "" {
+			respond(c, apitypes.CodeInvalidParam, gin.H{"error": "portId is required"})
+			return
+		}
+		p, err := a.Resource.PortPath(c.Request.Context(), ref)
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		respond(c, apitypes.CodeOK, p)
+	}
+}
+
 // releaseReserveHandler POST /reserves/:reserveId/release:释放预留。
 func releaseReserveHandler(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {

@@ -194,6 +194,7 @@ var AdminRoutePerms = map[string][]string{
 	"GET /api/admin/v1/points/{customerId}":                                       {"menu:userdata"},
 	"GET /api/admin/v1/ports":                                                     {"menu:resource"},
 	"GET /api/admin/v1/ports/{portId}/change-history":                             {"menu:resource"},
+	"GET /api/admin/v1/ports/{portId}/path":                                       {"menu:resource"},
 	"GET /api/admin/v1/posts":                                                     {"menu:post"},
 	"GET /api/admin/v1/procurement/inventory":                                     {"menu:purchase"},
 	"GET /api/admin/v1/procurement/orders":                                        {"menu:purchase"},

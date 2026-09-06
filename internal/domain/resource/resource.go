@@ -46,6 +46,9 @@ type ResourceService interface {
 	ReleasePortByOrder(ctx context.Context, orderID int64) error
 	// Check 资源核查(环节2):目标地址是否有空闲端口;options 为空闲端口码列表。
 	Check(ctx context.Context, addressID int64) (available bool, options []string, err error)
+	// PortPath PON 端到端链路反查(P5-W2):portRef 支持端口 ID 或端口编码。
+	// 逐跳返回 端口→分光器→PON口→OLT;断链落 missing 跳不补链;端口不存在返回 ErrNotFound。
+	PortPath(ctx context.Context, portRef string) (*PortPath, error)
 	// CheckDetail 返回设备级端口分布,供后台核查前预览与失败处置。
 	CheckDetail(ctx context.Context, addressID int64) (*CheckDetail, error)
 }
