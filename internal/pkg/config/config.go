@@ -46,11 +46,15 @@ type Config struct {
 
 	// AAA(阶段7 自研 RADIUS,性能服务群独立部署)。
 	AAA struct {
-		AuthAddr string // RADIUS 认证端口(1812)
-		AcctAddr string // RADIUS 计费端口(1813)
-		Secret   string // NAS 共享密钥
-		AuthTTL  int    // 授权缓存 TTL 秒(默认 60)
-		CDRTopic string // 话单 Kafka topic
+		AuthAddr        string        // RADIUS 认证端口(1812)
+		AcctAddr        string        // RADIUS 计费端口(1813)
+		Secret          string        // NAS 共享密钥
+		AuthTTL         int           // 授权缓存 TTL 秒(默认 60)
+		CDRTopic        string        // 话单 Kafka topic
+		SessionLimit    int           // 同一 LOID 并发会话上限(全局,默认 1)
+		CoAPort         int           // NAS CoA/DM 端口(RFC 5176,默认 3799)
+		OfflineRetryMax int           // Disconnect 不可达重试上限(默认 3)
+		ZombieAfter     time.Duration // 会话超时未更新判僵尸阈值(默认 2h)
 	}
 
 	JWT struct {
@@ -149,6 +153,10 @@ func Load() *Config {
 	c.AAA.AcctAddr = getenv("BOSS_AAA_ACCT_ADDR", ":1813")
 	c.AAA.Secret = getenv("BOSS_AAA_SECRET", "boss-aaa-secret")
 	c.AAA.AuthTTL = 60
+	c.AAA.SessionLimit = getint("BOSS_AAA_SESSION_LIMIT", 1)
+	c.AAA.CoAPort = getint("BOSS_AAA_COA_PORT", 3799)
+	c.AAA.OfflineRetryMax = getint("BOSS_AAA_OFFLINE_RETRY_MAX", 3)
+	c.AAA.ZombieAfter = getdur("BOSS_AAA_ZOMBIE_AFTER", 2*time.Hour)
 	c.Kafka.Brokers = getlist("BOSS_KAFKA_BROKERS", []string{"192.168.0.102:29092"})
 	c.AAA.CDRTopic = getenv("BOSS_AAA_CDR_TOPIC", "boss-cdr")
 	c.Events.Topic = getenv("BOSS_EVENTS_TOPIC", "boss-order-events")

@@ -150,6 +150,20 @@ func (s *PGStore) GetLoAccountByCustomer(ctx context.Context, customerID int64) 
 	return &a, nil
 }
 
+// GetLoAccountByID 按自增 id 查账号(停复机联动:先按 id 停机再取 LOID 下发)。
+func (s *PGStore) GetLoAccountByID(ctx context.Context, id int64) (*LoAccount, error) {
+	var a LoAccount
+	err := s.db.QueryRow(ctx, `SELECT `+loAccountCols+` FROM lo_accounts WHERE id = $1`, id).
+		Scan(&a.ID, &a.Loid, &a.CustomerID, &a.LegalEntityID, &a.LegalEntityName, &a.RegionID, &a.RegionName, &a.RegionPath, &a.OfferID, &a.QosTemplateID, &a.Status, &a.BillingMode)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, ErrNotFound
+	}
+	if err != nil {
+		return nil, fmt.Errorf("aaa: get lo_account by id: %w", err)
+	}
+	return &a, nil
+}
+
 // AlignLoAccountOffer 把已有 LO 账号的生效套餐/计费模式对齐到变更单套餐(改套餐,TMF change order 语义)。
 // 值未变化时 0 行 no-op 返回 false;RADIUS 授权实时 JOIN lo_accounts,对齐即下次认证生效新档。
 func (s *PGStore) AlignLoAccountOffer(ctx context.Context, customerID, offerID int64, billingMode string) (bool, error) {
@@ -170,9 +184,9 @@ const cdrCols = `id, loid, COALESCE(username, ''), acct_status, COALESCE(session
 func (s *PGStore) AppendCdr(ctx context.Context, c CdrRecord) (int64, error) {
 	var id int64
 	err := s.db.QueryRow(ctx, `
-		INSERT INTO cdrs(loid, username, acct_status, session_id, session_time, input_octets, output_octets, nas_ip, billing_status)
-		VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id`,
-		c.Loid, c.Username, c.AcctStatus, c.SessionID, c.SessionTime, c.InputOctets, c.OutputOctets, c.NasIP, c.BillingStatus).Scan(&id)
+		INSERT INTO cdrs(loid, username, acct_status, session_id, session_time, input_octets, output_octets, nas_ip, billing_status, close_reason)
+		VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9, NULLIF($10,'')) RETURNING id`,
+		c.Loid, c.Username, c.AcctStatus, c.SessionID, c.SessionTime, c.InputOctets, c.OutputOctets, c.NasIP, c.BillingStatus, c.CloseReason).Scan(&id)
 	if err != nil {
 		return 0, fmt.Errorf("aaa: append cdr: %w", err)
 	}
@@ -202,7 +216,7 @@ func (s *PGStore) ListCdrs(ctx context.Context, loid string) ([]CdrRecord, error
 func (s *PGStore) AppendAuthLog(ctx context.Context, l AuthLog) (int64, error) {
 	var id int64
 	err := s.db.QueryRow(ctx,
-		`INSERT INTO auth_logs(loid, result) VALUES($1,$2) RETURNING id`, l.Loid, l.Result).Scan(&id)
+		`INSERT INTO auth_logs(loid, result, reason) VALUES($1,$2, NULLIF($3,'')) RETURNING id`, l.Loid, l.Result, l.Reason).Scan(&id)
 	if err != nil {
 		return 0, fmt.Errorf("aaa: append auth log: %w", err)
 	}
@@ -212,7 +226,7 @@ func (s *PGStore) AppendAuthLog(ctx context.Context, l AuthLog) (int64, error) {
 // ListAuthLogs 列出认证日志;loid 为空返回全部,否则按账号过滤。
 func (s *PGStore) ListAuthLogs(ctx context.Context, loid string) ([]AuthLog, error) {
 	rows, err := s.db.Query(ctx,
-		`SELECT id, loid, result, created_at FROM auth_logs WHERE ($1 = '' OR loid = $1) ORDER BY created_at, id`, loid)
+		`SELECT id, loid, result, COALESCE(reason, ''), created_at FROM auth_logs WHERE ($1 = '' OR loid = $1) ORDER BY created_at, id`, loid)
 	if err != nil {
 		return nil, fmt.Errorf("aaa: list auth logs: %w", err)
 	}
@@ -220,7 +234,7 @@ func (s *PGStore) ListAuthLogs(ctx context.Context, loid string) ([]AuthLog, err
 	out := make([]AuthLog, 0)
 	for rows.Next() {
 		var l AuthLog
-		if err := rows.Scan(&l.ID, &l.Loid, &l.Result, &l.CreatedAt); err != nil {
+		if err := rows.Scan(&l.ID, &l.Loid, &l.Result, &l.Reason, &l.CreatedAt); err != nil {
 			return nil, fmt.Errorf("aaa: scan auth log: %w", err)
 		}
 		out = append(out, l)

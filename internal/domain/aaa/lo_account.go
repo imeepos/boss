@@ -39,6 +39,7 @@ type CdrRecord struct {
 	OutputOctets  int64     `json:"outputOctets"`
 	NasIP         string    `json:"nasIp"`
 	BillingStatus string    `json:"billingStatus"` // UNBILLED/BILLED
+	CloseReason   string    `json:"closeReason"`   // 关闭原因标记(僵尸清理补录等;空=无)
 	StartedAt     time.Time `json:"startedAt"`
 }
 
@@ -47,6 +48,7 @@ type AuthLog struct {
 	ID        int64     `json:"id"`
 	Loid      string    `json:"loid"`
 	Result    string    `json:"result"` // SUCCESS/FAILED
+	Reason    string    `json:"reason"` // 失败原因(并发超限等;空=无)
 	CreatedAt time.Time `json:"createdAt"`
 }
 

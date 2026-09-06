@@ -31,7 +31,11 @@ func main() {
 	store := aaa.NewPGStore(pool)
 	auth := aaa.NewPGAuthorizer(pool) // 停复机即时生效:状态权威源=lo_accounts
 
-	handler := &radius.Handler{Auth: auth, CDR: buildEmitter(cfg, store), Log: store}
+	// AAA-A2:计账链路维护在线会话 + 并发会话闸口(上限全局可配,默认 1)。
+	handler := &radius.Handler{
+		Auth: auth, CDR: buildEmitter(cfg, store), Log: store,
+		Sessions: store, Gate: store, SessionLimit: cfg.AAA.SessionLimit,
+	}
 
 	authSrv := radius.New(cfg.AAA.AuthAddr, []byte(cfg.AAA.Secret), handler)
 	acctSrv := radius.New(cfg.AAA.AcctAddr, []byte(cfg.AAA.Secret), handler)

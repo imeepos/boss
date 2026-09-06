@@ -32,6 +32,9 @@ func TestLoadDefaults(t *testing.T) {
 	if c.AAA.AuthTTL != 60 || c.AAA.AuthAddr != ":1812" || c.AAA.AcctAddr != ":1813" || c.AAA.Secret != "boss-aaa-secret" || c.AAA.CDRTopic != "boss-cdr" {
 		t.Fatalf("aaa defaults: %+v", c.AAA)
 	}
+	if c.AAA.SessionLimit != 1 || c.AAA.CoAPort != 3799 || c.AAA.OfflineRetryMax != 3 || c.AAA.ZombieAfter != 2*time.Hour {
+		t.Fatalf("aaa session defaults: %+v", c.AAA)
+	}
 	if c.Provisioner.Driver != "log" || c.Provisioner.TL1Addr != "" || c.Provisioner.TL1User != "" || c.Provisioner.TL1Pass != "" {
 		t.Fatalf("provisioner defaults: %+v", c.Provisioner)
 	}
@@ -70,6 +73,10 @@ func TestLoadEnvOverrides(t *testing.T) {
 		"BOSS_AAA_ACCT_ADDR":           ":2813",
 		"BOSS_AAA_SECRET":              "s3cr3t",
 		"BOSS_AAA_CDR_TOPIC":           "cdr-t",
+		"BOSS_AAA_SESSION_LIMIT":       "2",
+		"BOSS_AAA_COA_PORT":            "13899",
+		"BOSS_AAA_OFFLINE_RETRY_MAX":   "5",
+		"BOSS_AAA_ZOMBIE_AFTER":        "30m",
 		"BOSS_KAFKA_BROKERS":           "k1:9092, k2:9092",
 		"BOSS_EVENTS_TOPIC":            "evt-t",
 		"BOSS_JWT_SECRET":              "jwt-s",
@@ -124,6 +131,9 @@ func TestLoadEnvOverrides(t *testing.T) {
 	}
 	if c.AAA.AuthAddr != ":2812" || c.AAA.AcctAddr != ":2813" || c.AAA.Secret != "s3cr3t" || c.AAA.CDRTopic != "cdr-t" {
 		t.Fatalf("aaa: %+v", c.AAA)
+	}
+	if c.AAA.SessionLimit != 2 || c.AAA.CoAPort != 13899 || c.AAA.OfflineRetryMax != 5 || c.AAA.ZombieAfter != 30*time.Minute {
+		t.Fatalf("aaa session env: %+v", c.AAA)
 	}
 	if got := c.Kafka.Brokers; len(got) != 2 || got[0] != "k1:9092" || got[1] != "k2:9092" {
 		t.Fatalf("kafka: %v", got)

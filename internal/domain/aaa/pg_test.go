@@ -152,7 +152,7 @@ func TestPGStore_AppendCdr(t *testing.T) {
 	defer mock.Close()
 
 	mock.ExpectQuery(`INSERT INTO cdrs`).
-		WithArgs("LOID-88A1", "boss", int16(1), "S-1", int32(7200), int64(1024), int64(2048), "10.0.0.1", "UNBILLED").
+		WithArgs("LOID-88A1", "boss", int16(1), "S-1", int32(7200), int64(1024), int64(2048), "10.0.0.1", "UNBILLED", "").
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(1)))
 
 	s := NewPGStore(mock)
@@ -205,7 +205,7 @@ func TestPGStore_AppendAuthLog(t *testing.T) {
 	defer mock.Close()
 
 	mock.ExpectQuery(`INSERT INTO auth_logs`).
-		WithArgs("LOID-88A1", "SUCCESS").
+		WithArgs("LOID-88A1", "SUCCESS", "").
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(1)))
 
 	s := NewPGStore(mock)
@@ -228,17 +228,17 @@ func TestPGStore_ListAuthLogs(t *testing.T) {
 	}
 	defer mock.Close()
 
-	mock.ExpectQuery(`SELECT id, loid, result, created_at FROM auth_logs`).
+	mock.ExpectQuery(`SELECT id, loid, result, COALESCE\(reason, ''\), created_at FROM auth_logs`).
 		WithArgs("LOID-88A1").
-		WillReturnRows(mock.NewRows([]string{"id", "loid", "result", "created_at"}).
-			AddRow(int64(1), "LOID-88A1", "SUCCESS", ts))
+		WillReturnRows(mock.NewRows([]string{"id", "loid", "result", "reason", "created_at"}).
+			AddRow(int64(1), "LOID-88A1", "FAILED", "CONCURRENT_LIMIT", ts))
 
 	s := NewPGStore(mock)
 	got, err := s.ListAuthLogs(context.Background(), "LOID-88A1")
 	if err != nil {
 		t.Fatalf("ListAuthLogs: %v", err)
 	}
-	if len(got) != 1 || got[0].Result != "SUCCESS" {
+	if len(got) != 1 || got[0].Result != "FAILED" || got[0].Reason != "CONCURRENT_LIMIT" {
 		t.Fatalf("got=%+v", got)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
