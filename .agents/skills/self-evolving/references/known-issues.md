@@ -465,3 +465,8 @@ ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !exp
 - 原因:脚本约定 **out.png 是第一个位置参数**(usage: cdp-admin-capture.mjs <out.png> [--path p] ...),没有 --out 旗标;argv[0] 被当成文件名,旗标整体错位,脚本回落到 base/login 页面执行 eval——about:blank/受限文档读 localStorage 即 SecurityError。
 - 修法:out.png 永远放第一位,目标页路径用 --path,远端用 --base http://192.168.0.102:5180;看到 SecurityError+怪名文件先查参数顺序,不是浏览器问题。
 
+## 2026-09-06 feature push 后紧跟 docs push → 部署 run 被取消,镜像已 build 未部署
+- 症状:push feature 后再 push 一笔 skill/docs 提交,gitea action 前一 run 状态 3(被取消);docker images 里新 sha 镜像已在,但 102 容器仍是旧镜像(Up X hours),页面看不到改动。
+- 原因:deploy-102.yml concurrency cancel-in-progress 取消进行中的旧 run;取消点在 Build 之后 Deploy 之前→镜像进仓库但容器未重建。后续 docs-only run 走 Classify change 的 docs/*|.agents/*|*.md 豁免直接 skip,永远等不来部署;空提交也救不了(diff 为空仍判 docs-only)。
+- 修法:镜像已在仓库时直接手动补 Deploy 步骤——ssh 102 `docker rm -f boss-server boss-aaa boss-report boss-provisioner boss-admin-web` 后用仓库内 compose 管道执行 `docker-compose -p boss-app -f - up -d --force-recreate --remove-orphans`,再过 healthz 指纹+verify-deploy 断言;教训=docs 提交别与 runtime push 同时段抢跑,收尾的 skill 存档等部署验证完成再推。
+
