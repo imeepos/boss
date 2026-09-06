@@ -1258,6 +1258,20 @@ export interface Translations {
       rangeText: string
       jumpText: string
       pageUnit: string
+      linkView: string
+      linkViewTitle: string
+      linkColumns: string[]
+      hopPort: string
+      hopSplitter: string
+      hopPonPort: string
+      hopOlt: string
+      breakTag: string
+      linkComplete: string
+      linkIncomplete: string
+      breakPortSplitterMissing: string
+      breakSplitterNoParent: string
+      breakPonUnassigned: string
+      breakOltUnreachable: string
     }
     reservePage: {
       title: string

@@ -37,6 +37,16 @@ paths:
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
 
+  /ports/{portId}/path:
+    get:
+      tags: [Oss]
+      summary: 'PON 端到端链路反查(端口→分光器→PON口→OLT 逐跳;portId 支持端口 ID 或端口编码;断链返回 missing 跳不报错;对齐 Go 实现 GET /ports/:portId/path)'
+      operationId: portPath
+      parameters:
+        - { name: portId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
   /reserves:
     get:
       tags: [Oss]

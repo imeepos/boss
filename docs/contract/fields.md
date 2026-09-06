@@ -776,6 +776,27 @@ App 本地留痕后启动补传；服务端入库即视为成功，App 端成功
 | ONUNO | `ONUNO` | onu_no | SMALLINT 可空；NULL=未分配（000178） |
 
 > 状态变更历史（TS 实体）：`port_change_history`，端口每次状态/占用变化一行（变更后 status + order_id 快照 + changed_at），历史不随当前状态漂移。
+
+### 4.2.0 PON 端到端链路反查视图（P5-W2，派生只读，无新表新列）
+
+> GET /api/admin/v1/ports/{portId}/path（portId=端口 ID 纯数字或端口编码；permCode menu:resource）。
+> 沿 `ports.resource_id`（→resources 归属）与 `resources.parent_id`（→上级）派生 **端口→分光器→PON口→OLT** 逐跳物理链路；
+> 端口直挂 OLT（归属资源 type=OLT）时链路两跳终止；断链只落 missing 跳 + 断点原因码，**禁止猜链补链**。
+
+| 页面列名 | 字段名 | 来源 | 枚举/说明 |
+|:---------|:-------|:-----|:----------|
+| 跳序 | `seq` | 派生 | 1 起物理顺序 |
+| 类型 | `kind` | 派生 | PORT / SPLITTER / PON_PORT / OLT（资源跳取 resources.type 实际值） |
+| 编码 | `code` | ports.port_code / resources.code | PON 跳为 PONID `NA-<框>-<槽>-<口>`（组装口径同 §4.4） |
+| 名称 | `name` | resources.name | PON/缺失跳为空 |
+| 状态 | `status` | ports.status / resources.status | 枚举见 terms.md 第 4 节；PON_PORT 无独立状态恒空 |
+| 占用 | `occupiedBy` | ports.order_id LEFT JOIN orders.order_no | 仅 PORT 跳，`{kind:"order", id, orderNo}`；空闲为空 |
+| 断点 | `missing` + `reason` | 派生 | missing=true 时 code/status 为空 |
+| 链路完整 | `complete` | 派生 | 无断点且末跳为 OLT |
+
+> 断点原因码（reason，只描述库里缺这条边，不做推断）：`PORT_SPLITTER_MISSING`（孤儿端口：resource_id 无对应资源行）/
+> `SPLITTER_NO_PARENT`（分光器无上级，无 OLT 归属）/`PON_PORT_UNASSIGNED`（端口未配 PON 框/槽/口，pon_* 为 NULL）/
+> `OLT_UNREACHABLE`（归属资源缺失无法上溯）。端口不存在返回 40400（resource: not found），不返回断链视图。
 > 区域/企业锚点（TS 实体）：`region_id`/`region_name`（地址所在经营区域）、`legal_entity_id`/`legal_entity_name`（所属设备企业），按地区/企业统计端口；`lo_accounts` 同挂 `region_id`/`region_name`（客户所在经营区域）。
 
 ### 4.2.2 资源台账稽核 inventory-audit（P5-W3，GET /inventory-audit + 每日快照 period=oss-audit-daily）

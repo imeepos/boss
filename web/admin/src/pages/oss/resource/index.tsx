@@ -9,6 +9,7 @@ import { Drawer } from '../../../components/Drawer'
 import { Dropdown } from '../../../components/Dropdown'
 import { fmtTime } from '../../../lib/format'
 import { pageSlice, type PortHistoryRow, type PortRow, type ResourceRow } from '../types'
+import { PathDrawer } from './path-drawer'
 import { TableStateRow, EmptyState } from '../../../components/business'
 
 export default function ResourcePage() {
@@ -22,6 +23,7 @@ export default function ResourcePage() {
   const [pageSize, setPageSize] = useState(10)
   const [busy, setBusy] = useState(false)
   const [history, setHistory] = useState<PortRow | null>(null)
+  const [pathPort, setPathPort] = useState<PortRow | null>(null)
   const [historyRows, setHistoryRows] = useState<PortHistoryRow[] | null>(null)
 
   const loadPorts = (rid: number) => {
@@ -81,7 +83,8 @@ export default function ResourcePage() {
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><StatusTag domain="port" value={p.status} /></td>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{p.orderId ? `#${p.orderId}` : '—'}</td>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">
-                      <span className="inline-flex items-center">
+                      <span className="inline-flex items-center gap-2">
+                        <button onClick={() => setPathPort(p)}>{r.linkView}</button>
                         <button onClick={() => openHistory(p)}>{r.history}</button>
                       </span>
                     </td>
@@ -97,6 +100,7 @@ export default function ResourcePage() {
             onPage={setPage} onSize={setPageSize} {...pagerTexts(r)} />
         </div>
       </div>
+      {pathPort && <PathDrawer port={pathPort} onClose={() => setPathPort(null)} />}
       {history && (
         <Drawer title={`${r.historyTitle} · ${history.portCode}`} onClose={() => setHistory(null)}
           footer={<button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" onClick={() => setHistory(null)}>
