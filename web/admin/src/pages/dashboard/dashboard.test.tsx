@@ -13,12 +13,16 @@ vi.mock('../../api/client', () => ({
 // Mock useT
 vi.mock('../../i18n', () => ({
   useT: () => ({
+    common: { loading: '加载中' },
     pages: {
       dashboard: {
         title: '工作台',
         welcome: '欢迎,{name}({role})。',
         loadFail: '加载失败',
         empty: '暂无数据',
+        refresh: '刷新',
+        refreshing: '刷新中…',
+        statHint: '点击查看明细',
         trendUnit: '单',
         trendTooltip: '订单数',
       },
@@ -93,10 +97,12 @@ describe('DashboardPage', () => {
     )
 
     // 静态渲染只出骨架(数据分区由 useEffect 拉取后渲染):
-    // 标题 + 欢迎语 + 用户角色。
+    // 标题 + 欢迎语 + 用户角色 + 首屏加载态 + 刷新入口。
     expect(html).toContain('工作台')
     expect(html).toContain('欢迎')
     expect(html).toContain('系统管理员')
+    expect(html).toContain('加载中')
+    expect(html).toContain('刷新')
   })
 
   it('contains proper CSS classes for styling', async () => {
