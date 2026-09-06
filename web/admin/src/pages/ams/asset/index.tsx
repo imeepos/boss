@@ -61,7 +61,7 @@ export default function AssetPage() {
       {detail && <AssetTrailDrawer asset={detail} tag={tagOf(detail.tagId)} showMain onClose={() => setDetail(null)} />}
       {createOpen && <CreateDrawer onClose={() => setCreateOpen(false)} onSaved={load} />}
       {editRow && <EditDrawer asset={editRow} onClose={() => setEditRow(null)} onSaved={load} />}
-      {scrapRow && <ScrapDialog asset={scrapRow} onClose={() => setScrapRow(null)} onSaved={load} />}
+      {scrapRow && <ScrapDialog asset={scrapRow} tag={tagOf(scrapRow.tagId)} onClose={() => setScrapRow(null)} onSaved={load} />}
       {modelsOpen && <ModelDictDrawer onClose={() => setModelsOpen(false)} onSaved={load} />}
       {batchesOpen && <BatchDrawer onClose={() => setBatchesOpen(false)} onSaved={load} />}
     </div>

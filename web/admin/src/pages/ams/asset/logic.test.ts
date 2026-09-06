@@ -1,6 +1,6 @@
 // 建档/编辑纯逻辑用例:必填校验、载荷组装(契约 POST /assets、PUT /assets/:assetId)。
 import { describe, expect, it } from 'vitest'
-import { buildCreatePayload, buildEditPayload, emptyForm, formErrOf, scrapReasonErr } from './logic'
+import { buildCreatePayload, buildEditPayload, emptyForm, formErrOf, scrapConfirmErr, scrapReasonErr } from './logic'
 import type { AssetRow } from '../types'
 
 const row = (over: Partial<AssetRow>): AssetRow => ({
@@ -58,5 +58,29 @@ describe('scrapReasonErr', () => {
     expect(scrapReasonErr('x'.repeat(65))).toBe(true)
     expect(scrapReasonErr('外壳开裂')).toBe(false)
     expect(scrapReasonErr('x'.repeat(64))).toBe(false)
+  })
+})
+
+describe('scrapConfirmErr', () => {
+  const v = (code: string, sn: string, tagNo: string) => ({ code, sn, tagNo })
+  it('资产编码恒必填', () => {
+    expect(scrapConfirmErr(v('', 'S', 'T'), true, true)).toBe('code')
+    expect(scrapConfirmErr(v('  ', 'S', 'T'), true, true)).toBe('code')
+  })
+  it('有 SN:confirmSn 必填', () => {
+    expect(scrapConfirmErr(v('A', '', 'T'), true, true)).toBe('sn')
+  })
+  it('无 SN:confirmSn 须空串(动态规则,输入框不渲染时的兜底)', () => {
+    expect(scrapConfirmErr(v('A', 'SN-X', ''), false, false)).toBe('sn')
+  })
+  it('已绑标签:confirmTagNo 必填', () => {
+    expect(scrapConfirmErr(v('A', 'S', ''), true, true)).toBe('tagNo')
+  })
+  it('未绑标签:confirmTagNo 须空串', () => {
+    expect(scrapConfirmErr(v('A', '', 'T-X'), false, false)).toBe('tagNo')
+  })
+  it('三要素齐备(有/无 两态)均通过', () => {
+    expect(scrapConfirmErr(v('A', 'S', 'T'), true, true)).toBe('')
+    expect(scrapConfirmErr(v('A', '', ''), false, false)).toBe('')
   })
 })

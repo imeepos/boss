@@ -69,3 +69,19 @@ export function scrapReasonErr(reason: string): boolean {
   const t = reason.trim()
   return t.length === 0 || t.length > 64
 }
+
+// 报废三要素预校验字段:'' = 通过,否则为首个不符要素。
+export type ScrapConfirmField = '' | 'code' | 'sn' | 'tagNo'
+
+// 报废三要素本地预校验(P3-F):资产编码恒必填;有 SN 时 confirmSn 必填、无 SN 须空串;
+// 已绑标签时 confirmTagNo 必填、未绑须空串。服务端同规则强校验兜底(不符 422)。
+export function scrapConfirmErr(
+  v: { code: string; sn: string; tagNo: string },
+  hasSn: boolean,
+  hasTag: boolean,
+): ScrapConfirmField {
+  if (!v.code.trim()) return 'code'
+  if (hasSn ? !v.sn.trim() : Boolean(v.sn.trim())) return 'sn'
+  if (hasTag ? !v.tagNo.trim() : Boolean(v.tagNo.trim())) return 'tagNo'
+  return ''
+}

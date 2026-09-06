@@ -12,6 +12,7 @@ export interface AssetRow {
   regionName: string
   type: string // 光猫/ONU/路由器
   modelId: number // 0=未挂型号(P1-T3)
+  sn?: string // P3-E 身份列;有则报废三要素须核对(P3-F)
   status: string // IN_STOCK/DEPLOYED/MAINTENANCE/SCRAPPED
 }
 
