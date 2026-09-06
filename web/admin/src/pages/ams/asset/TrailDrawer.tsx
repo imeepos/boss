@@ -7,8 +7,9 @@ import { Drawer } from '../../../components/Drawer'
 import { StatusTag } from '../../../components/StatusTag'
 import { TabBar } from '../../../components/business/tab-bar'
 import { useT } from '../../../i18n'
+import { modelLabel } from './logic'
 import { fmtTime } from '../../../lib/format'
-import type { AssetRow, AssignmentRow, LifecycleRow, TagRow } from '../types'
+import type { AssetModelRow, AssetRow, AssignmentRow, LifecycleRow, TagRow } from '../types'
 import { EmptyState } from '../../../components/business'
 
 type BatchRow = { id: number; code: string; name: string }
@@ -25,8 +26,8 @@ function RelItem({ label, children }: { label: string; children: ReactNode }) {
 }
 
 export function AssetTrailDrawer({
-  asset, tag, onClose,
-}: { asset: AssetRow; tag?: TagRow; onClose: () => void }) {
+  asset, tag, showMain, onClose,
+}: { asset: AssetRow; tag?: TagRow; showMain?: boolean; onClose: () => void }) {
   const t = useT()
   const a = t.pages.assetPage
   const [tab, setTab] = useState<RelTab>('lifecycle')
@@ -35,6 +36,8 @@ export function AssetTrailDrawer({
   const [batch, setBatch] = useState<BatchRow | null>(null)
   const [receipt, setReceipt] = useState<ReceiptLite | null>(null)
   const [error, setError] = useState('')
+  const [main, setMain] = useState<AssetRow>(asset)
+  const [model, setModel] = useState<AssetModelRow | null>(null)
 
   useEffect(() => {
     apiFetch<{ items: LifecycleRow[] }>(`/assets/${asset.assetId}/lifecycle`)
@@ -50,6 +53,15 @@ export function AssetTrailDrawer({
     apiFetch<{ items: ReceiptLite[] }>('/procurement/receipts')
       .then((d) => setReceipt((d?.items ?? []).find((x) => x.batchId === asset.batchId) ?? null))
       .catch(() => setReceipt(null))
+    // 主档全字段:契约 GET /assets/:assetId;后端未部署时回退列表行数据。
+    if (showMain) {
+      apiFetch<AssetRow>('/assets/' + String(asset.assetId))
+        .then((d) => { if (d) setMain(d) })
+        .catch(() => setMain(asset))
+      apiFetch<{ items: AssetModelRow[] }>('/asset-models')
+        .then((d) => setModel((d?.items ?? []).find((m) => m.id === asset.modelId) ?? null))
+        .catch(() => setModel(null))
+    }
   }, [asset.assetId, asset.batchId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const tabs = [
@@ -58,7 +70,7 @@ export function AssetTrailDrawer({
   ]
 
   return (
-    <Drawer title={`${a.lifecycleTitle} · ${asset.assetCode}`} onClose={onClose} width={680}
+    <Drawer title={`${showMain ? a.detailTitle : a.lifecycleTitle} · ${asset.assetCode}`} onClose={onClose} width={680}
       footer={<button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" onClick={onClose}>{t.pages.company.cancel}</button>}>
       {/* 关联区块:批次 → 采购入库单 → 采购订单;标签经 /tags 联表传入。 */}
       <div className="mx-4 mt-4 mb-3 rounded-sm border border-[var(--shell-side-border)] p-3">
@@ -70,6 +82,23 @@ export function AssetTrailDrawer({
           <RelItem label={a.relTag}>{tag ? `${tag.tagNo} · ${tag.epcCode}` : asset.tagId ? `#${asset.tagId}` : '—'}</RelItem>
         </div>
       </div>
+      {showMain && (
+        <div className="mx-4 mt-4 mb-3 rounded-sm border border-[var(--shell-side-border)] p-3">
+          <div className="mb-2 text-xs font-medium text-[var(--shell-group-title)]">{a.mainTitle}</div>
+          <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+            <RelItem label={a.dCode}>{main.assetCode}</RelItem>
+            <RelItem label={a.dTagNo}>{tag?.tagNo || '—'}</RelItem>
+            <RelItem label={a.dEpc}>{tag?.epcCode || '—'}</RelItem>
+            <RelItem label={a.dType}>{main.type || '—'}</RelItem>
+            <RelItem label={a.dModel}>{model ? modelLabel(model) : main.modelId ? '#' + String(main.modelId) : '—'}</RelItem>
+            <RelItem label={a.dBatch}>{batch ? '#' + String(batch.id) + ' ' + batch.code : '#' + String(main.batchId)}</RelItem>
+            <RelItem label={a.dAddress}>{main.addressId ? '#' + String(main.addressId) : '—'}</RelItem>
+            <RelItem label={a.dStatus}><StatusTag domain="asset" value={main.status} /></RelItem>
+            <RelItem label={a.dEntity}>{main.legalEntityName || '—'}</RelItem>
+            <RelItem label={a.dRegion}>{main.regionName || '—'}</RelItem>
+          </div>
+        </div>
+      )}
       <TabBar tabs={tabs} value={tab} onChange={setTab} />
       {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : tab === 'lifecycle' ? (
         <div className="overflow-x-auto px-4 pb-4">

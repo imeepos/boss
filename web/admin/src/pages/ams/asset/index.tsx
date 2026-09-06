@@ -7,6 +7,11 @@ import { StatusTag } from '../../../components/StatusTag'
 import { Pagination } from '../../../components/Pagination'
 import { pageSlice, type AssetRow, type TagRow } from '../types'
 import { AssetTrailDrawer } from './TrailDrawer'
+import { CreateDrawer } from './CreateDrawer'
+import { EditDrawer } from './EditDrawer'
+import { ScrapDialog } from './ScrapDialog'
+import { useConfirm } from '../../../components/ConfirmDialog'
+import { toast } from 'sonner'
 import { TableStateRow } from '../../../components/business'
 
 export default function AssetPage() {
@@ -20,6 +25,11 @@ export default function AssetPage() {
   const [pageSize, setPageSize] = useState(10)
   const [busy, setBusy] = useState(false)
   const [trail, setTrail] = useState<AssetRow | null>(null)
+  const [detail, setDetail] = useState<AssetRow | null>(null)
+  const [createOpen, setCreateOpen] = useState(false)
+  const [editRow, setEditRow] = useState<AssetRow | null>(null)
+  const [scrapRow, setScrapRow] = useState<AssetRow | null>(null)
+  const confirmDialog = useConfirm()
 
   const load = () => {
     setError('')
@@ -35,6 +45,20 @@ export default function AssetPage() {
   useEffect(load, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const tagOf = (tagId: number) => tags.find((x) => x.tagId === tagId)
+  // 删除:二次确认(仅入库且无引用可删);40900 时服务端 message(阻断项清单)完整展示于页首 error 条。
+  const delRow = async (r: AssetRow) => {
+    if (busy || !(await confirmDialog(a.deleteConfirm, { danger: true }))) return
+    setBusy(true)
+    try {
+      await apiFetch('/assets/' + String(r.assetId), { method: 'DELETE' })
+      toast.success(a.deleteOk)
+      load()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : a.loadFail)
+    } finally {
+      setBusy(false)
+    }
+  }
   const filtered = useMemo(
     () => rows.filter((r) => r.assetCode.toLowerCase().includes(keyword.trim().toLowerCase())),
     [rows, keyword],
@@ -50,6 +74,7 @@ export default function AssetPage() {
             value={keyword} onChange={(e) => { setKeyword(e.target.value); setPage(1) }} />
           <span className="spacer" />
           <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
+          <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" onClick={() => setCreateOpen(true)}>{a.create}</button>
         </div>
         {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : (
           <div className="overflow-x-auto px-4 pb-4">
@@ -66,8 +91,12 @@ export default function AssetPage() {
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.addressId ? `#${r.addressId}` : '—'}</td>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><StatusTag domain="asset" value={r.status} /></td>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">
-                      <span className="inline-flex items-center">
-                        <button onClick={() => setTrail(r)}>{a.lifecycle}</button>
+                      <span className="inline-flex items-center gap-3">
+                        <button disabled={busy} onClick={() => setTrail(r)}>{a.lifecycle}</button>
+                        <button disabled={busy} onClick={() => setDetail(r)}>{a.detail}</button>
+                        <button disabled={busy} onClick={() => setEditRow(r)}>{a.edit}</button>
+                        {r.status !== 'SCRAPPED' && <button disabled={busy} onClick={() => setScrapRow(r)}>{a.scrapAction}</button>}
+                        {r.status !== 'SCRAPPED' && <button disabled={busy} onClick={() => delRow(r)}>{a.deleteAction}</button>}
                       </span>
                     </td>
                   </tr>
@@ -83,6 +112,10 @@ export default function AssetPage() {
         </div>
       </div>
       {trail && <AssetTrailDrawer asset={trail} tag={tagOf(trail.tagId)} onClose={() => setTrail(null)} />}
+      {detail && <AssetTrailDrawer asset={detail} tag={tagOf(detail.tagId)} showMain onClose={() => setDetail(null)} />}
+      {createOpen && <CreateDrawer onClose={() => setCreateOpen(false)} onSaved={load} />}
+      {editRow && <EditDrawer asset={editRow} onClose={() => setEditRow(null)} onSaved={load} />}
+      {scrapRow && <ScrapDialog asset={scrapRow} onClose={() => setScrapRow(null)} onSaved={load} />}
     </div>
   )
 }
