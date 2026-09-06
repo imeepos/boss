@@ -77,6 +77,9 @@ func TestRespondErrMapping(t *testing.T) {
 		{portal.ErrSmsCooldown, apitypes.CodeResourceBusy},
 		{sms.ErrUnsupportedRegion, apitypes.CodeInvalidParam},
 		{asset.ErrBindingConflict, apitypes.CodeConflict},
+		{asset.ErrCodeDuplicate, apitypes.CodeConflict},
+		{asset.ErrBatchNotEditable, apitypes.CodeInvalidParam},
+		{&asset.ErrAssetReferenced{Blockers: []string{"x"}}, apitypes.CodeConflict},
 		// 任务A(2026-09-04)错误映射补齐:此前全部裸 50000。
 		{worker.ErrScanBindRequired, apitypes.CodeStateInvalid},
 		{worker.ErrGroupInvalid, apitypes.CodeNotFound},

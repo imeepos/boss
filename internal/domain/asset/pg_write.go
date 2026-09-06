@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgconn"
 )
@@ -120,6 +121,23 @@ func (s *PGStore) CreateAsset(ctx context.Context, a Asset) (int64, error) {
 		if !ok {
 			return 0, fmt.Errorf("asset: legal entity %d: %w", a.LegalEntityID, ErrForeignKeyViolation)
 		}
+	}
+	// 企业归属快照:未显式给定时自批次回填(与采购入库建档同口径;admin 建档只传批次)。
+	if a.LegalEntityID == 0 && a.BatchID > 0 {
+		var leName string
+		err := s.db.QueryRow(ctx,
+			`SELECT b.legal_entity_id, COALESCE(le.name, '')
+			 FROM asset_batches b LEFT JOIN legal_entities le ON le.id = b.legal_entity_id
+			 WHERE b.id = $1`, a.BatchID).Scan(&a.LegalEntityID, &leName)
+		if err != nil {
+			return 0, fmt.Errorf("asset: batch %d: %w", a.BatchID, ErrForeignKeyViolation)
+		}
+		a.LegalEntityName = leName
+	}
+	// 资产编码缺省服务端生成:A-{批次 8 位}-{序号 5 位} 对齐采购入库 nextAssetCode 风格;
+	// 序号取纳秒尾数防批内撞号,DB 唯一约束兜底(ErrCodeDuplicate)。
+	if a.AssetCode == "" {
+		a.AssetCode = genAssetCode(a.BatchID, time.Now().UTC().UnixNano()%100000)
 	}
 	// 型号字典(P1-T3):model_id 必须存在且未停用;Type 未显式给定时取 model.category 派生。
 	if a.ModelID > 0 {
@@ -264,6 +282,10 @@ func classifyAssetInsertErr(ctx context.Context, err error, a Asset) error {
 		return err
 	}
 	switch pgErr.ConstraintName {
+	case "assets_asset_code_key":
+		slog.WarnContext(ctx, "[asset] CODE DUPLICATE",
+			"asset_code", a.AssetCode, "reason", "DB assets_asset_code_key violation")
+		return fmt.Errorf("asset: code %s: %w", a.AssetCode, ErrCodeDuplicate)
 	case "uq_assets_tag_notnull":
 		slog.WarnContext(ctx, "[asset] TAG BIND CONFLICT",
 			"tag_id", a.TagID, "new_asset_code", a.AssetCode,
