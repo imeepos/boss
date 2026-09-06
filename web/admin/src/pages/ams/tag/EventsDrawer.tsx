@@ -49,9 +49,8 @@ export function TagEventsDrawer({ tag, onClose }: { tag: { tagId: number; tagNo:
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <span className="font-mono text-[12px] font-medium text-[var(--shell-heading)]">{ev.action}</span>
-                  <span className="text-[12px] text-[var(--shell-group-title)]">{fmt(ev.changedAt)}</span>
+                  <span className="text-[12px] text-[var(--shell-group-title)]">{fmt(ev.createdAt)}</span>
                 </div>
-                {ev.actorName && <div className="mt-0.5 text-[12px] text-[var(--shell-content-text)]">{ev.actorName}</div>}
                 {ev.detail && <div className="mt-0.5 text-[12px] break-all text-[var(--shell-group-title)]">{ev.detail}</div>}
               </div>
             </li>

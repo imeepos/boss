@@ -24,6 +24,8 @@ var adminRoutes = []routeEntry{
 	{"GET", "/assets/assignments", "资产装维指派(对齐 Go 实现 GET /assets/assignments)"},
 	{"GET", "/tags", "电子标签列表(status: UNBOUND/BOUND/DISABLED)"},
 	{"POST", "/tags/:tagId/unbind", "解绑标签(P1-T2;标签回 UNBOUND 可复用,写 UNBIND 事件;expectedAssetId 传入时校验当前绑定一致)"},
+	{"GET", "/tags/:tagId/events", "标签事件流(P2-T4 消费面;id 倒序,limit 默认 50 上限 100;action 多值白名单 BIND/UNBIND/RECYCLE,白名单外 42200;标签不存在 40400)"},
+	{"GET", "/assets/:assetId/events", "资产事件流(P2-T4 消费面;口径同 /tags/{tagId}/events,资产不存在 40400)"},
 	{"POST", "/assets/:assetId/scrap", "报废资产(P1-T2;任意非终态→SCRAPPED 终态幂等,标签强解绑写 RECYCLE 事件,轨迹落行,同事务)"},
 	{"GET", "/asset-models", "型号字典(P1-T3;含停用,管理端下拉与列表;UNIQUE vendor+model+category+partNumber)"},
 	{"POST", "/asset-models", "建型号(P1-T3;冲突 40900;停用不物理删,引用由 assets.model_id 承载)"},

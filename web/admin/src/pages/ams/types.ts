@@ -44,12 +44,17 @@ export interface TagRow {
 }
 
 // 标签事件流(契约 GET /tags/{tagId}/events;action: BIND/UNBIND/RECYCLE)。
+// 形状对齐 internal/domain/asset.TagEvent 全量行(append-only 审计流)。
 export interface TagEventRow {
-  id?: number
+  id: number
+  eventId: string
+  tagId: number
+  assetId: number
   action: string
-  actorName?: string
-  detail?: string
-  changedAt: string
+  actorAccountId: number
+  detail: string
+  changed?: Record<string, unknown>
+  createdAt: string
 }
 
 export interface LifecycleRow {

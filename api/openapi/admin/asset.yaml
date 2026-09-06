@@ -171,6 +171,33 @@ paths:
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Ok' }
 
+  /tags/{tagId}/events:
+    get:
+      tags: [Asset]
+      summary: 标签事件流(P2-T4 消费面;id 倒序,limit 默认 50 上限 100;action 多值白名单 BIND/UNBIND/RECYCLE,白名单外 42200;标签不存在 40400)
+      operationId: listTagEvents
+      parameters:
+        - { name: tagId, in: path, required: true, schema: { type: integer, format: int64 } }
+        - { name: limit, in: query, schema: { type: integer, default: 50, maximum: 100 }, description: 页大小(缺省 50,超限取 100) }
+        - { name: before_id, in: query, schema: { type: integer, format: int64 }, description: 游标(只取 id 小于该值的事件;首版 UI 不用,翻页预留) }
+        - { name: action, in: query, schema: { type: string, enum: [BIND, UNBIND, RECYCLE] }, description: 动作过滤(可重复传多值,缺省不过滤) }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
+
+  /assets/{assetId}/events:
+    get:
+      tags: [Asset]
+      summary: 资产事件流(P2-T4 消费面;口径同 /tags/{tagId}/events,资产不存在 40400)
+      operationId: listAssetEvents
+      parameters:
+        - { name: assetId, in: path, required: true, schema: { type: integer, format: int64 } }
+        - { name: limit, in: query, schema: { type: integer, default: 50, maximum: 100 }, description: 页大小(缺省 50,超限取 100) }
+        - { name: before_id, in: query, schema: { type: integer, format: int64 }, description: 游标(只取 id 小于该值的事件;首版 UI 不用,翻页预留) }
+        - { name: action, in: query, schema: { type: string, enum: [BIND, UNBIND, RECYCLE] }, description: 动作过滤(可重复传多值,缺省不过滤) }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
   /assets/{assetId}/scrap:
     post:
       tags: [Asset]

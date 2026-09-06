@@ -16,10 +16,17 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// bindTagEvent 在事务上写一条 BIND 事件(建标签预绑定/建资产绑签成功路径调用);
-// 失败仅 ALERT 留痕不回滚主流程(主状态已落库,事件损失可由巡检口径补录)。
-func (s *PGStore) bindTagEvent(ctx context.Context, ex ExecQuerier, tagID, assetID int64) {
+// bindTagEvent 写一条 BIND 事件:主事务提交【之后】经 s.db 尽力而为,失败仅 ALERT
+// (审计面损失不阻断主流程)。真正的落库由 bindTagEventEx 承担。
+func (s *PGStore) bindTagEvent(ctx context.Context, tagID, assetID int64) {
 	changed, _ := json.Marshal(map[string]any{"bound_asset_id": assetID})
+	s.bindTagEventEx(ctx, s.db, tagID, assetID, string(changed))
+}
+
+// bindTagEventEx 在指定执行器(事务或 s.db)上写 BIND 事件。
+// changed 必须传 string——pgx 将 []byte 按 bytea 发送,JSONB 列拒收(22P02,
+// 2026-09-06 真库冒烟实证,热修见 ISSUE.md)。
+func (s *PGStore) bindTagEventEx(ctx context.Context, ex ExecQuerier, tagID, assetID int64, changed string) {
 	if _, err := ex.Exec(ctx,
 		`INSERT INTO tag_events(tag_id, asset_id, action, changed) VALUES($1, $2, 'BIND', $3)`,
 		tagID, assetID, changed); err != nil {
@@ -65,7 +72,7 @@ func (s *PGStore) UnbindTag(ctx context.Context, tagID, expectedAssetID, actorAc
 	changed, _ := json.Marshal(map[string]any{"bound_asset_id": []int64{bound, 0}})
 	if _, err := tx.Exec(ctx,
 		`INSERT INTO tag_events(tag_id, asset_id, action, actor_account_id, detail, changed) VALUES($1, $2, 'UNBIND', $3, $4, $5)`,
-		tagID, bound, idOrNil(actorAccountID), detail, changed); err != nil {
+		tagID, bound, idOrNil(actorAccountID), detail, string(changed)); err != nil {
 		slog.ErrorContext(ctx, "[asset] TAG EVENT FAILED",
 			"action", "UNBIND", "tag_id", tagID, "asset_id", bound, "err", err)
 	}
@@ -120,7 +127,7 @@ func (s *PGStore) ScrapAsset(ctx context.Context, assetID, actorAccountID int64,
 		changed, _ := json.Marshal(map[string]any{"bound_asset_id": []int64{assetID, 0}})
 		if _, err := tx.Exec(ctx,
 			`INSERT INTO tag_events(tag_id, asset_id, action, actor_account_id, detail, changed) VALUES($1, $2, 'RECYCLE', $3, $4, $5)`,
-			tagID, assetID, idOrNil(actorAccountID), reason, changed); err != nil {
+			tagID, assetID, idOrNil(actorAccountID), reason, string(changed)); err != nil {
 			slog.ErrorContext(ctx, "[asset] TAG EVENT FAILED",
 				"action", "RECYCLE", "tag_id", tagID, "asset_id", assetID, "err", err)
 		}
@@ -129,4 +136,79 @@ func (s *PGStore) ScrapAsset(ctx context.Context, assetID, actorAccountID int64,
 		return fmt.Errorf("asset: commit scrap: %w", err)
 	}
 	return nil
+}
+
+// 事件查询(P2-T4 消费面):供 /tags/{tagId}/events 与 /assets/{assetId}/events 读取,
+// 口径 = id 倒序 + limit(默认 50 上限 100,服务层兜底)+ action 白名单过滤 + before_id 游标。
+const (
+	eventListDefaultLimit = 50
+	eventListMaxLimit     = 100
+)
+
+// ValidEventAction 查询过滤 action 是否在写侧已产出的动作集内(handler 拒收白名单外值)。
+func ValidEventAction(action string) bool {
+	return action == "BIND" || action == "UNBIND" || action == "RECYCLE"
+}
+
+// ListTagEvents 标签事件流(P2-T4):id 倒序 + limit;beforeID>0 只取更小 id(游标翻页
+// 预留);actions 非空时过滤。标签不存在返回 ErrNotFound(与写侧 404 语义一致)。
+func (s *PGStore) ListTagEvents(ctx context.Context, tagID, limit, beforeID int64, actions []string) ([]TagEvent, error) {
+	ok, err := s.exists(ctx, "tags", tagID)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return nil, ErrNotFound
+	}
+	return s.listEvents(ctx, "tag_id = $1", []any{tagID}, limit, beforeID, actions)
+}
+
+// ListAssetEvents 资产事件流(P2-T4):口径同 ListTagEvents;资产不存在返回 ErrNotFound。
+func (s *PGStore) ListAssetEvents(ctx context.Context, assetID, limit, beforeID int64, actions []string) ([]TagEvent, error) {
+	ok, err := s.exists(ctx, "assets", assetID)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return nil, ErrNotFound
+	}
+	return s.listEvents(ctx, "asset_id = $1", []any{assetID}, limit, beforeID, actions)
+}
+
+// listEvents 事件流共用查询:scope 固定占 $1,action 过滤/游标/limit 占位按序追加。
+func (s *PGStore) listEvents(ctx context.Context, scope string, args []any, limit, beforeID int64, actions []string) ([]TagEvent, error) {
+	if limit <= 0 {
+		limit = eventListDefaultLimit
+	}
+	if limit > eventListMaxLimit {
+		limit = eventListMaxLimit
+	}
+	where := scope
+	if len(actions) > 0 {
+		args = append(args, actions)
+		where += fmt.Sprintf(" AND action = ANY($%d)", len(args))
+	}
+	if beforeID > 0 {
+		args = append(args, beforeID)
+		where += fmt.Sprintf(" AND id < $%d", len(args))
+	}
+	args = append(args, limit)
+	rows, err := s.db.Query(ctx,
+		"SELECT id, event_id, tag_id, COALESCE(asset_id, 0), action,"+
+			" COALESCE(actor_account_id, 0), detail, changed, created_at"+
+			" FROM tag_events WHERE "+where+" ORDER BY id DESC LIMIT $"+fmt.Sprint(len(args)), args...)
+	if err != nil {
+		return nil, fmt.Errorf("asset: list tag events: %w", err)
+	}
+	defer rows.Close()
+	out := make([]TagEvent, 0)
+	for rows.Next() {
+		var e TagEvent
+		if err := rows.Scan(&e.ID, &e.EventID, &e.TagID, &e.AssetID, &e.Action,
+			&e.ActorAccountID, &e.Detail, &e.Changed, &e.CreatedAt); err != nil {
+			return nil, fmt.Errorf("asset: scan tag event: %w", err)
+		}
+		out = append(out, e)
+	}
+	return out, rows.Err()
 }
