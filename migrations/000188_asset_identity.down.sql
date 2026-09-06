@@ -1,0 +1,9 @@
+-- 000188 down:身份列与部分唯一索引完整回滚。
+BEGIN;
+DROP INDEX IF EXISTS uq_assets_loid;
+DROP INDEX IF EXISTS uq_assets_mac;
+DROP INDEX IF EXISTS uq_assets_sn;
+ALTER TABLE assets DROP COLUMN IF EXISTS loid;
+ALTER TABLE assets DROP COLUMN IF EXISTS mac;
+ALTER TABLE assets DROP COLUMN IF EXISTS sn;
+COMMIT;

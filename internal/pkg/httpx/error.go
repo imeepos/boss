@@ -37,6 +37,7 @@ import (
 // RespondErr 领域错误 → 统一错误码。未知错误一律 500。
 func RespondErr(c *gin.Context, err error) {
 	var assetRefErr *asset.ErrAssetReferenced
+	var assetIdentityDup *asset.ErrAssetIdentityDuplicate
 	switch {
 	case errors.Is(err, user.ErrUnauthorized):
 		Respond(c, apitypes.CodeUnauthorized, nil)
@@ -73,6 +74,14 @@ func RespondErr(c *gin.Context, err error) {
 		// 资产删除命中引用(P2-W1-T1):40900 + 全量阻断项清单(message 列明标签绑定/
 		// 持有台账/换新单/盘点明细/四码关联,操作员按单消除)。
 		Respond(c, apitypes.CodeConflict, gin.H{"reason": assetRefErr.Error()})
+	case errors.As(err, &assetIdentityDup):
+		// 身份列唯一冲突(P3-T2 迁移 000188):40900 + reason 含冲突字段名(sn/mac/loid),
+		// 操作员能直接定位是哪个身份标识撞了全网唯一。
+		Respond(c, apitypes.CodeConflict, gin.H{"reason": err.Error()})
+	case errors.Is(err, asset.ErrInvalidMAC),
+		errors.Is(err, asset.ErrInvalidEPC):
+		// 身份/EPC 格式非法(P3-T2):42200 + 原因透传,操作员可见哪个字段不合规范。
+		Respond(c, apitypes.CodeInvalidParam, gin.H{"reason": err.Error()})
 	case errors.Is(err, provision.ErrBindingInvalid):
 		// 绑定校验失败(跨法人/模板停用):42200 + 透传原因,管理员可见为什么绑不上。
 		Respond(c, apitypes.CodeInvalidParam, gin.H{"reason": err.Error()})

@@ -66,6 +66,9 @@ type Asset struct {
 	Type            string `json:"type"`    // 光猫/ONU/路由器(展示冗余;权威=model_id→asset_models.category)
 	ModelID         int64  `json:"modelId"` // 0=未挂型号(P1-T3)
 	Status          string `json:"status"`  // IN_STOCK/DEPLOYED/MAINTENANCE/SCRAPPED
+	SN              string `json:"sn"`      // 序列号,可空;全网唯一(uq_assets_sn,000188)
+	MAC             string `json:"mac"`     // MAC 地址,可空;全网唯一(uq_assets_mac,000188)
+	LOID            string `json:"loid"`    // 电信 LOID,可空;全网唯一(uq_assets_loid,000188)
 }
 
 // AssetLifecycle 资产状态轨迹(每次状态/位置变更一行,历史不随当前状态漂移)。

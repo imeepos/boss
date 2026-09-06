@@ -103,13 +103,13 @@ func TestPGStore_CreateTag(t *testing.T) {
 		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
 	mock.ExpectBegin()
 	mock.ExpectQuery(`INSERT INTO tags`).
-		WithArgs(int64(1), "TAG-0003", "EPC-0003", "UHF", nil, "UNBOUND", "95%").
+		WithArgs(int64(1), "TAG-0003", "3000000000000000000000E3", "UHF", nil, "UNBOUND", "95%").
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(3)))
 	mock.ExpectCommit()
 
 	s := NewPGStore(mock)
 	id, err := s.CreateTag(context.Background(), Tag{
-		LegalEntityID: 1, TagNo: "TAG-0003", EpcCode: "EPC-0003", Band: "UHF", Status: "UNBOUND", Battery: "95%",
+		LegalEntityID: 1, TagNo: "TAG-0003", EpcCode: "3000000000000000000000E3", Band: "UHF", Status: "UNBOUND", Battery: "95%",
 	})
 	if err != nil {
 		t.Fatalf("CreateTag: %v", err)
@@ -129,10 +129,10 @@ func TestPGStore_ListAssets(t *testing.T) {
 	}
 	defer mock.Close()
 
-	cols := []string{"id", "asset_code", "batch_id", "legal_entity_id", "legal_entity_name", "tag_id", "address_id", "region_id", "region_name", "type", "status", "model_id"}
+	cols := []string{"id", "asset_code", "batch_id", "legal_entity_id", "legal_entity_name", "tag_id", "address_id", "region_id", "region_name", "type", "status", "model_id", "sn", "mac", "loid"}
 	mock.ExpectQuery(`SELECT id, asset_code, batch_id, legal_entity_id, legal_entity_name`).
 		WillReturnRows(mock.NewRows(cols).
-			AddRow(int64(1), "A-20260001", int64(1), int64(1), "主品牌·企业", int64(0), int64(0), int64(0), "", "光猫", "IN_STOCK", int64(0)))
+			AddRow(int64(1), "A-20260001", int64(1), int64(1), "主品牌·企业", int64(0), int64(0), int64(0), "", "光猫", "IN_STOCK", int64(0), "", "", ""))
 
 	s := NewPGStore(mock)
 	got, err := s.ListAssets(context.Background())
@@ -166,7 +166,7 @@ func TestPGStore_CreateAsset(t *testing.T) {
 
 	mock.ExpectBegin()
 	mock.ExpectQuery(`INSERT INTO assets`).
-		WithArgs("A-20260002", int64(1), int64(1), "主品牌·企业", nil, nil, nil, "", "ONU", "IN_STOCK", nil).
+		WithArgs("A-20260002", int64(1), int64(1), "主品牌·企业", nil, nil, nil, "", "ONU", "IN_STOCK", nil, nil, nil, nil).
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(2)))
 	// 入账轨迹首行:建档即留痕
 	mock.ExpectExec(`INSERT INTO asset_lifecycles`).
@@ -198,11 +198,11 @@ func TestPGStore_GetAsset(t *testing.T) {
 		}
 		defer mock.Close()
 
-		cols := []string{"id", "asset_code", "batch_id", "legal_entity_id", "legal_entity_name", "tag_id", "address_id", "region_id", "region_name", "type", "status", "model_id"}
+		cols := []string{"id", "asset_code", "batch_id", "legal_entity_id", "legal_entity_name", "tag_id", "address_id", "region_id", "region_name", "type", "status", "model_id", "sn", "mac", "loid"}
 		mock.ExpectQuery(`SELECT id, asset_code, batch_id, legal_entity_id, legal_entity_name`).
 			WithArgs(int64(1)).
 			WillReturnRows(mock.NewRows(cols).
-				AddRow(int64(1), "A-20260001", int64(1), int64(1), "主品牌·企业", int64(2), int64(100), int64(11), "马尼拉市", "光猫", "DEPLOYED", int64(0)))
+				AddRow(int64(1), "A-20260001", int64(1), int64(1), "主品牌·企业", int64(2), int64(100), int64(11), "马尼拉市", "光猫", "DEPLOYED", int64(0), "", "", ""))
 
 		s := NewPGStore(mock)
 		a, err := s.GetAsset(context.Background(), 1)
@@ -395,7 +395,7 @@ func TestPGStore_CreateAsset_ResubmitIdempotent(t *testing.T) {
 		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
 	mock.ExpectBegin()
 	mock.ExpectQuery(`INSERT INTO assets`).
-		WithArgs("A-20260003", int64(1), int64(1), "主品牌·企业", int64(9), nil, nil, "", "ONU", "IN_STOCK", nil).
+		WithArgs("A-20260003", int64(1), int64(1), "主品牌·企业", int64(9), nil, nil, "", "ONU", "IN_STOCK", nil, nil, nil, nil).
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(3)))
 	// 入账轨迹首行:建档即留痕
 	mock.ExpectExec(`INSERT INTO asset_lifecycles`).
@@ -448,7 +448,7 @@ func TestPGStore_CreateTag_ResubmitIdempotent(t *testing.T) {
 		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
 	mock.ExpectBegin()
 	mock.ExpectQuery(`INSERT INTO tags`).
-		WithArgs(int64(1), "TAG-0007", "EPC-0007", "UHF", int64(5), "BOUND", "95%").
+		WithArgs(int64(1), "TAG-0007", "3000000000000000000000E7", "UHF", int64(5), "BOUND", "95%").
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(12)))
 	mock.ExpectExec(`UPDATE assets SET tag_id`).
 		WithArgs(int64(5), int64(12)).
@@ -462,7 +462,7 @@ func TestPGStore_CreateTag_ResubmitIdempotent(t *testing.T) {
 
 	s := NewPGStore(mock)
 	id, err := s.CreateTag(context.Background(), Tag{
-		LegalEntityID: 1, TagNo: "TAG-0007", EpcCode: "EPC-0007", Band: "UHF",
+		LegalEntityID: 1, TagNo: "TAG-0007", EpcCode: "3000000000000000000000E7", Band: "UHF",
 		BoundAssetID: 5, Status: "BOUND", Battery: "95%",
 	})
 	if err != nil {

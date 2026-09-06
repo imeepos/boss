@@ -93,8 +93,10 @@ boot_fixtures() { # 自举: 地址/OLT/模板/端口/批次/标签/资产(acc_ �
   p2=$(api POST /provision/ports "{\"portCode\":\"P-ACC-$SUFFIX-02\",\"resourceId\":$RES_ID,\"addressId\":$ADDR_ID,\"legalEntityId\":1}") || return 1
   batch=$(api POST /provision/asset-batches "{\"code\":\"RK-ACC-$SUFFIX\",\"name\":\"验收批次-$SUFFIX\",\"legalEntityId\":1}") || return 1
   BATCH_ID=$(j "$batch" id)
-  tag=$(api POST /provision/tags "{\"tagNo\":\"T-ACC-$SUFFIX\",\"epcCode\":\"EPC-ACC-$SUFFIX\",\"legalEntityId\":1,\"band\":\"UHF\",\"status\":\"UNBOUND\",\"battery\":\"100%\"}") || return 1
-  TAG_ID=$(j "$tag" id); EPC="EPC-ACC-$SUFFIX"
+  # EPC 24 位 hex 大写头部 0x30(P3-T2 写路径校验):30+md5(suffix) 前 22 位
+  EPC="30$(printf %s "$SUFFIX" | md5 | tr -d " -" | cut -c1-22 | tr "a-f" "A-F")"
+  tag=$(api POST /provision/tags "{\"tagNo\":\"T-ACC-$SUFFIX\",\"epcCode\":\"$EPC\",\"legalEntityId\":1,\"band\":\"UHF\",\"status\":\"UNBOUND\",\"battery\":\"100%\"}") || return 1
+  TAG_ID=$(j "$tag" id)
   asset=$(api POST /provision/assets "{\"assetCode\":\"A-ACC-$SUFFIX\",\"batchId\":$BATCH_ID,\"legalEntityId\":1,\"legalEntityName\":\"验收主体\",\"type\":\"ONU\",\"status\":\"IN_STOCK\"}") || return 1
   ASSET_ID=$(j "$asset" id)
   if [ -z "$ADDR_ID" ] || [ -z "$ASSET_ID" ] || [ "$ASSET_ID" = "None" ]; then

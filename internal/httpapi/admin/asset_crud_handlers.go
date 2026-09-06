@@ -27,12 +27,22 @@ func assetCreateHandler(a *app.Application) gin.HandlerFunc {
 			ModelID   int64  `json:"modelId"`
 			TagID     int64  `json:"tagId"`
 			Type      string `json:"type"`
+			SN        string `json:"sn"`
+			MAC       string `json:"mac"`
+			LOID      string `json:"loid"`
 		}
 		if !httpx.BindAndValidate(c, &req, func() error {
 			return httpx.CollectErrors(
 				httpx.RequirePositiveID(req.BatchID, "batchId"),
 			)
 		}) {
+			return
+		}
+		// 身份三要素归一(P3-T2):SN/LOID 去空格,MAC 校验格式;空串存 NULL,
+		// 唯一冲突由 DB 部分唯一索引兜底(ErrAssetIdentityDuplicate,40900)。
+		sn, mac, loid, idErr := asset.NormalizeIdentity(req.SN, req.MAC, req.LOID)
+		if idErr != nil {
+			respondErr(c, idErr)
 			return
 		}
 		id, err := a.Asset.CreateAsset(c.Request.Context(), asset.Asset{
@@ -42,6 +52,9 @@ func assetCreateHandler(a *app.Application) gin.HandlerFunc {
 			TagID:     req.TagID,
 			Type:      req.Type,
 			Status:    "IN_STOCK",
+			SN:        sn,
+			MAC:       mac,
+			LOID:      loid,
 		})
 		if err != nil {
 			respondErr(c, err)
@@ -49,6 +62,7 @@ func assetCreateHandler(a *app.Application) gin.HandlerFunc {
 		}
 		httpx.RecordAudit(a, c, "数据变更", "asset", fmt.Sprint(id), map[string]any{
 			"op": "create", "batchId": req.BatchID, "tagId": req.TagID, "modelId": req.ModelID,
+			"sn": sn, "mac": mac, "loid": loid,
 		})
 		respond(c, apitypes.CodeOK, gin.H{"id": id})
 	}
@@ -119,8 +133,11 @@ func updateDiff(before, after *asset.Asset) map[string]any {
 		func(x *asset.Asset) any { return x.TagID },
 		func(x *asset.Asset) any { return x.BatchID },
 		func(x *asset.Asset) any { return x.LegalEntityID },
+		func(x *asset.Asset) any { return x.SN },
+		func(x *asset.Asset) any { return x.MAC },
+		func(x *asset.Asset) any { return x.LOID },
 	}
-	names := []string{"type", "modelId", "tagId", "batchId", "legalEntityId"}
+	names := []string{"type", "modelId", "tagId", "batchId", "legalEntityId", "sn", "mac", "loid"}
 	diff := map[string]any{}
 	for i, get := range gets {
 		if get(before) != get(after) {

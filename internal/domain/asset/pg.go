@@ -117,7 +117,8 @@ func (s *PGStore) ListAssets(ctx context.Context) ([]Asset, error) {
 	rows, err := s.db.Query(ctx,
 		`SELECT id, asset_code, batch_id, legal_entity_id, legal_entity_name,
 		        COALESCE(tag_id, 0), COALESCE(address_id, 0), COALESCE(region_id, 0),
-		        COALESCE(region_name, ''), type, status, COALESCE(model_id, 0)
+		        COALESCE(region_name, ''), type, status, COALESCE(model_id, 0),
+		        COALESCE(sn, ''), COALESCE(mac, ''), COALESCE(loid, '')
 		 FROM assets ORDER BY id`)
 	if err != nil {
 		return nil, fmt.Errorf("asset: list assets: %w", err)
@@ -127,7 +128,8 @@ func (s *PGStore) ListAssets(ctx context.Context) ([]Asset, error) {
 	for rows.Next() {
 		var a Asset
 		if err := rows.Scan(&a.AssetID, &a.AssetCode, &a.BatchID, &a.LegalEntityID, &a.LegalEntityName,
-			&a.TagID, &a.AddressID, &a.RegionID, &a.RegionName, &a.Type, &a.Status, &a.ModelID); err != nil {
+			&a.TagID, &a.AddressID, &a.RegionID, &a.RegionName, &a.Type, &a.Status, &a.ModelID,
+			&a.SN, &a.MAC, &a.LOID); err != nil {
 			return nil, fmt.Errorf("asset: scan asset: %w", err)
 		}
 		out = append(out, a)
@@ -143,10 +145,12 @@ func (s *PGStore) GetAsset(ctx context.Context, id int64) (*Asset, error) {
 	err := s.db.QueryRow(ctx,
 		`SELECT id, asset_code, batch_id, legal_entity_id, legal_entity_name,
 		        COALESCE(tag_id, 0), COALESCE(address_id, 0), COALESCE(region_id, 0),
-		        COALESCE(region_name, ''), type, status, COALESCE(model_id, 0)
+		        COALESCE(region_name, ''), type, status, COALESCE(model_id, 0),
+		        COALESCE(sn, ''), COALESCE(mac, ''), COALESCE(loid, '')
 		 FROM assets WHERE id = $1`, id).
 		Scan(&a.AssetID, &a.AssetCode, &a.BatchID, &a.LegalEntityID, &a.LegalEntityName,
-			&a.TagID, &a.AddressID, &a.RegionID, &a.RegionName, &a.Type, &a.Status, &a.ModelID)
+			&a.TagID, &a.AddressID, &a.RegionID, &a.RegionName, &a.Type, &a.Status, &a.ModelID,
+			&a.SN, &a.MAC, &a.LOID)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, ErrNotFound
 	}

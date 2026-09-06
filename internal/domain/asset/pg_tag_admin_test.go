@@ -25,7 +25,7 @@ func TestPGStore_CreateTag_LegalEntityMissing(t *testing.T) {
 		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(false))
 
 	s := NewPGStore(mock)
-	_, err = s.CreateTag(context.Background(), Tag{LegalEntityID: 9, TagNo: "T-1", EpcCode: "E1", Band: "UHF"})
+	_, err = s.CreateTag(context.Background(), Tag{LegalEntityID: 9, TagNo: "T-1", EpcCode: "3000000000000000000000E1", Band: "UHF"})
 	if !errors.Is(err, ErrForeignKeyViolation) {
 		t.Fatalf("err=%v, want ErrForeignKeyViolation", err)
 	}
@@ -49,11 +49,11 @@ func TestPGStore_CreateTag_NoDuplicateConflict(t *testing.T) {
 				WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
 			mock.ExpectBegin()
 			mock.ExpectQuery(`INSERT INTO tags`).
-				WithArgs(int64(1), "T-1", "E1", "UHF", nil, "", "").
+				WithArgs(int64(1), "T-1", "3000000000000000000000E1", "UHF", nil, "", "").
 				WillReturnError(pgErr)
 
 			s := NewPGStore(mock)
-			_, err = s.CreateTag(context.Background(), Tag{LegalEntityID: 1, TagNo: "T-1", EpcCode: "E1", Band: "UHF"})
+			_, err = s.CreateTag(context.Background(), Tag{LegalEntityID: 1, TagNo: "T-1", EpcCode: "3000000000000000000000E1", Band: "UHF"})
 			if !errors.Is(err, ErrCodeDuplicate) {
 				t.Fatalf("err=%v, want ErrCodeDuplicate", err)
 			}

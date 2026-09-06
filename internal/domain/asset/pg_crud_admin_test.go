@@ -33,7 +33,7 @@ func TestPGStore_CreateAsset_AdminAutoCode(t *testing.T) {
 	mock.ExpectBegin()
 	// 编码为自动生成,AnyArg;企业快照已自批次回填。
 	mock.ExpectQuery(`INSERT INTO assets`).
-		WithArgs(pgxmock.AnyArg(), int64(1), int64(1), "主品牌·企业", nil, nil, nil, "", "ONU", "IN_STOCK", nil).
+		WithArgs(pgxmock.AnyArg(), int64(1), int64(1), "主品牌·企业", nil, nil, nil, "", "ONU", "IN_STOCK", nil, nil, nil, nil).
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(5)))
 	// 初始轨迹行:建档即留痕。
 	mock.ExpectExec(`INSERT INTO asset_lifecycles`).
@@ -82,8 +82,8 @@ func TestPGStore_UpdateAsset_RebindTagEvents(t *testing.T) {
 
 	mock.ExpectBegin()
 	mock.ExpectQuery(`FOR UPDATE`).WithArgs(pgxmock.AnyArg()).
-		WillReturnRows(mock.NewRows([]string{"status", "type", "batch_id", "model_id", "tag_id", "le_id", "le_name"}).
-			AddRow("IN_STOCK", "ONU", int64(1), int64(0), int64(9), int64(1), "主品牌·企业"))
+		WillReturnRows(mock.NewRows([]string{"status", "type", "batch_id", "model_id", "tag_id", "le_id", "le_name", "sn", "mac", "loid"}).
+			AddRow("IN_STOCK", "ONU", int64(1), int64(0), int64(9), int64(1), "主品牌·企业", "", "", ""))
 	// 旧绑 9 解绑。
 	mock.ExpectExec(`UPDATE tags SET bound_asset_id = NULL`).
 		WithArgs(int64(9), int64(3)).
@@ -104,7 +104,7 @@ func TestPGStore_UpdateAsset_RebindTagEvents(t *testing.T) {
 		WithArgs(int64(7), int64(3), pgxmock.AnyArg()).
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
 	mock.ExpectExec(`UPDATE assets`).
-		WithArgs(int64(3), "ONU", nil, int64(7), int64(1), int64(1), "主品牌·企业").
+		WithArgs(int64(3), "ONU", nil, int64(7), int64(1), int64(1), "主品牌·企业", nil, nil, nil).
 		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 	mock.ExpectCommit()
 
@@ -128,8 +128,8 @@ func TestPGStore_UpdateAsset_RebindConflictRollback(t *testing.T) {
 
 	mock.ExpectBegin()
 	mock.ExpectQuery(`FOR UPDATE`).WithArgs(pgxmock.AnyArg()).
-		WillReturnRows(mock.NewRows([]string{"status", "type", "batch_id", "model_id", "tag_id", "le_id", "le_name"}).
-			AddRow("IN_STOCK", "ONU", int64(1), int64(0), int64(9), int64(1), "主品牌·企业"))
+		WillReturnRows(mock.NewRows([]string{"status", "type", "batch_id", "model_id", "tag_id", "le_id", "le_name", "sn", "mac", "loid"}).
+			AddRow("IN_STOCK", "ONU", int64(1), int64(0), int64(9), int64(1), "主品牌·企业", "", "", ""))
 	mock.ExpectExec(`UPDATE tags SET bound_asset_id = NULL`).
 		WithArgs(int64(9), int64(3)).
 		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
@@ -165,8 +165,8 @@ func TestPGStore_UpdateAsset_BatchNotEditable(t *testing.T) {
 
 	mock.ExpectBegin()
 	mock.ExpectQuery(`FOR UPDATE`).WithArgs(pgxmock.AnyArg()).
-		WillReturnRows(mock.NewRows([]string{"status", "type", "batch_id", "model_id", "tag_id", "le_id", "le_name"}).
-			AddRow("DEPLOYED", "ONU", int64(1), int64(0), int64(0), int64(1), "主品牌·企业"))
+		WillReturnRows(mock.NewRows([]string{"status", "type", "batch_id", "model_id", "tag_id", "le_id", "le_name", "sn", "mac", "loid"}).
+			AddRow("DEPLOYED", "ONU", int64(1), int64(0), int64(0), int64(1), "主品牌·企业", "", "", ""))
 	mock.ExpectRollback()
 
 	s := NewPGStore(mock)
@@ -189,13 +189,13 @@ func TestPGStore_UpdateAsset_BatchSyncsSnapshot(t *testing.T) {
 
 	mock.ExpectBegin()
 	mock.ExpectQuery(`FOR UPDATE`).WithArgs(pgxmock.AnyArg()).
-		WillReturnRows(mock.NewRows([]string{"status", "type", "batch_id", "model_id", "tag_id", "le_id", "le_name"}).
-			AddRow("IN_STOCK", "ONU", int64(1), int64(0), int64(0), int64(1), "主品牌·企业"))
+		WillReturnRows(mock.NewRows([]string{"status", "type", "batch_id", "model_id", "tag_id", "le_id", "le_name", "sn", "mac", "loid"}).
+			AddRow("IN_STOCK", "ONU", int64(1), int64(0), int64(0), int64(1), "主品牌·企业", "", "", ""))
 	mock.ExpectQuery(`FROM asset_batches b`).
 		WithArgs(int64(2)).
 		WillReturnRows(mock.NewRows([]string{"legal_entity_id", "name"}).AddRow(int64(2), "新公司"))
 	mock.ExpectExec(`UPDATE assets`).
-		WithArgs(int64(3), "ONU", nil, nil, int64(2), int64(2), "新公司").
+		WithArgs(int64(3), "ONU", nil, nil, int64(2), int64(2), "新公司", nil, nil, nil).
 		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 	mock.ExpectCommit()
 
@@ -219,8 +219,8 @@ func TestPGStore_UpdateAsset_Idempotent(t *testing.T) {
 
 	mock.ExpectBegin()
 	mock.ExpectQuery(`FOR UPDATE`).WithArgs(pgxmock.AnyArg()).
-		WillReturnRows(mock.NewRows([]string{"status", "type", "batch_id", "model_id", "tag_id", "le_id", "le_name"}).
-			AddRow("IN_STOCK", "ONU", int64(1), int64(0), int64(0), int64(1), "主品牌·企业"))
+		WillReturnRows(mock.NewRows([]string{"status", "type", "batch_id", "model_id", "tag_id", "le_id", "le_name", "sn", "mac", "loid"}).
+			AddRow("IN_STOCK", "ONU", int64(1), int64(0), int64(0), int64(1), "主品牌·企业", "", "", ""))
 	mock.ExpectRollback()
 
 	s := NewPGStore(mock)
@@ -244,10 +244,10 @@ func TestPGStore_UpdateAsset_TypeOnlyKeepsRefs(t *testing.T) {
 
 	mock.ExpectBegin()
 	mock.ExpectQuery(`FOR UPDATE`).WithArgs(pgxmock.AnyArg()).
-		WillReturnRows(mock.NewRows([]string{"status", "type", "batch_id", "model_id", "tag_id", "le_id", "le_name"}).
-			AddRow("IN_STOCK", "光猫", int64(1), int64(77), int64(5), int64(1), "主品牌·企业"))
+		WillReturnRows(mock.NewRows([]string{"status", "type", "batch_id", "model_id", "tag_id", "le_id", "le_name", "sn", "mac", "loid"}).
+			AddRow("IN_STOCK", "光猫", int64(1), int64(77), int64(5), int64(1), "主品牌·企业", "", "", ""))
 	mock.ExpectExec(`UPDATE assets`).
-		WithArgs(int64(3), "ROUTER-X", int64(77), int64(5), int64(1), int64(1), "主品牌·企业").
+		WithArgs(int64(3), "ROUTER-X", int64(77), int64(5), int64(1), int64(1), "主品牌·企业", nil, nil, nil).
 		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 	mock.ExpectCommit()
 

@@ -28,7 +28,7 @@ func TestPGStore_CreateAsset_BackfillTagBinding(t *testing.T) {
 		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
 	mock.ExpectBegin()
 	mock.ExpectQuery(`INSERT INTO assets`).
-		WithArgs("A-20260003", int64(1), int64(1), "主品牌·企业", int64(9), nil, nil, "", "ONU", "IN_STOCK", nil).
+		WithArgs("A-20260003", int64(1), int64(1), "主品牌·企业", int64(9), nil, nil, "", "ONU", "IN_STOCK", nil, nil, nil, nil).
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(3)))
 	// 入账轨迹首行:建档即留痕
 	mock.ExpectExec(`INSERT INTO asset_lifecycles`).
@@ -81,7 +81,7 @@ func TestPGStore_CreateAsset_TagAlreadyBound(t *testing.T) {
 		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
 	mock.ExpectBegin()
 	mock.ExpectQuery(`INSERT INTO assets`).
-		WithArgs("A-20260003", int64(1), int64(1), "主品牌·企业", int64(9), nil, nil, "", "ONU", "IN_STOCK", nil).
+		WithArgs("A-20260003", int64(1), int64(1), "主品牌·企业", int64(9), nil, nil, "", "ONU", "IN_STOCK", nil, nil, nil, nil).
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(3)))
 	// 入账轨迹首行:建档即留痕
 	mock.ExpectExec(`INSERT INTO asset_lifecycles`).
@@ -128,7 +128,7 @@ func TestPGStore_CreateTag_AssetNotFound(t *testing.T) {
 
 	s := NewPGStore(mock)
 	_, err = s.CreateTag(context.Background(), Tag{
-		LegalEntityID: 1, TagNo: "TAG-0009", EpcCode: "EPC-0009", Band: "UHF",
+		LegalEntityID: 1, TagNo: "TAG-0009", EpcCode: "3000000000000000000000E9", Band: "UHF",
 		BoundAssetID: 99, Status: "BOUND", Battery: "95%",
 	})
 	if !errors.Is(err, ErrForeignKeyViolation) {
@@ -158,7 +158,7 @@ func TestPGStore_CreateTag_BackfillAssetBinding(t *testing.T) {
 	// INSERT tag,bound_asset_id=5 → NULL 转换(事务化:CreateTag 全程包 tx)
 	mock.ExpectBegin()
 	mock.ExpectQuery(`INSERT INTO tags`).
-		WithArgs(int64(1), "TAG-0005", "EPC-0005", "UHF", int64(5), "BOUND", "95%").
+		WithArgs(int64(1), "TAG-0005", "3000000000000000000000E5", "UHF", int64(5), "BOUND", "95%").
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(10)))
 	// 反向回填 assets.tag_id
 	mock.ExpectExec(`UPDATE assets SET tag_id`).
@@ -173,7 +173,7 @@ func TestPGStore_CreateTag_BackfillAssetBinding(t *testing.T) {
 
 	s := NewPGStore(mock)
 	id, err := s.CreateTag(context.Background(), Tag{
-		LegalEntityID: 1, TagNo: "TAG-0005", EpcCode: "EPC-0005", Band: "UHF",
+		LegalEntityID: 1, TagNo: "TAG-0005", EpcCode: "3000000000000000000000E5", Band: "UHF",
 		BoundAssetID: 5, Status: "BOUND", Battery: "95%",
 	})
 	if err != nil {
@@ -204,7 +204,7 @@ func TestPGStore_CreateTag_AssetAlreadyBound(t *testing.T) {
 		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
 	mock.ExpectBegin()
 	mock.ExpectQuery(`INSERT INTO tags`).
-		WithArgs(int64(1), "TAG-0006", "EPC-0006", "UHF", int64(5), "BOUND", "95%").
+		WithArgs(int64(1), "TAG-0006", "3000000000000000000000E6", "UHF", int64(5), "BOUND", "95%").
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(11)))
 	// 资产.tag_id 已被另一标签占用 → UPDATE 0 行 → ErrBindingConflict(整单回滚)。
 	mock.ExpectExec(`UPDATE assets SET tag_id`).
@@ -214,7 +214,7 @@ func TestPGStore_CreateTag_AssetAlreadyBound(t *testing.T) {
 
 	s := NewPGStore(mock)
 	_, err = s.CreateTag(context.Background(), Tag{
-		LegalEntityID: 1, TagNo: "TAG-0006", EpcCode: "EPC-0006", Band: "UHF",
+		LegalEntityID: 1, TagNo: "TAG-0006", EpcCode: "3000000000000000000000E6", Band: "UHF",
 		BoundAssetID: 5, Status: "BOUND", Battery: "95%",
 	})
 	if !errors.Is(err, ErrBindingConflict) {
@@ -242,7 +242,7 @@ func TestPGStore_CreateTag_DBUniqueViolation_AssetBound(t *testing.T) {
 		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
 	mock.ExpectBegin()
 	mock.ExpectQuery(`INSERT INTO tags`).
-		WithArgs(int64(1), "TAG-DUP", "EPC-DUP", "UHF", int64(5), "BOUND", "95%").
+		WithArgs(int64(1), "TAG-DUP", "3000000000000000000000DD", "UHF", int64(5), "BOUND", "95%").
 		WillReturnError(&pgconn.PgError{
 			Code:           "23505",
 			ConstraintName: "uq_tags_bound_asset_notnull",
@@ -252,7 +252,7 @@ func TestPGStore_CreateTag_DBUniqueViolation_AssetBound(t *testing.T) {
 
 	s := NewPGStore(mock)
 	_, err = s.CreateTag(context.Background(), Tag{
-		LegalEntityID: 1, TagNo: "TAG-DUP", EpcCode: "EPC-DUP", Band: "UHF",
+		LegalEntityID: 1, TagNo: "TAG-DUP", EpcCode: "3000000000000000000000DD", Band: "UHF",
 		BoundAssetID: 5, Status: "BOUND", Battery: "95%",
 	})
 	if !errors.Is(err, ErrBindingConflict) {
@@ -279,7 +279,7 @@ func TestPGStore_CreateAsset_DBUniqueViolation_TagBound(t *testing.T) {
 		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
 	mock.ExpectBegin()
 	mock.ExpectQuery(`INSERT INTO assets`).
-		WithArgs("A-DUP", int64(1), int64(1), "主品牌·企业", int64(9), nil, nil, "", "ONU", "IN_STOCK", nil).
+		WithArgs("A-DUP", int64(1), int64(1), "主品牌·企业", int64(9), nil, nil, "", "ONU", "IN_STOCK", nil, nil, nil, nil).
 		WillReturnError(&pgconn.PgError{
 			Code:           "23505",
 			ConstraintName: "uq_assets_tag_notnull",
@@ -315,7 +315,7 @@ func TestPGStore_CreateTag_DBUniqueViolation_TagNoDup(t *testing.T) {
 		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
 	mock.ExpectBegin()
 	mock.ExpectQuery(`INSERT INTO tags`).
-		WithArgs(int64(1), "DUP-NO", "EPC-NEW", "UHF", nil, "UNBOUND", "95%").
+		WithArgs(int64(1), "DUP-NO", "3000000000000000000000DE", "UHF", nil, "UNBOUND", "95%").
 		WillReturnError(&pgconn.PgError{
 			Code:           "23505",
 			ConstraintName: "tags_tag_no_key",
@@ -325,7 +325,7 @@ func TestPGStore_CreateTag_DBUniqueViolation_TagNoDup(t *testing.T) {
 
 	s := NewPGStore(mock)
 	_, err = s.CreateTag(context.Background(), Tag{
-		LegalEntityID: 1, TagNo: "DUP-NO", EpcCode: "EPC-NEW", Band: "UHF",
+		LegalEntityID: 1, TagNo: "DUP-NO", EpcCode: "3000000000000000000000DE", Band: "UHF",
 		Status: "UNBOUND", Battery: "95%",
 	})
 	if !errors.Is(err, ErrCodeDuplicate) {

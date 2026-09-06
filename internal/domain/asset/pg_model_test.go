@@ -100,7 +100,7 @@ func TestPGStore_CreateAsset_WithModel(t *testing.T) {
 			WillReturnRows(mock.NewRows([]string{"category", "is_active"}).AddRow("OLT", true))
 		mock.ExpectBegin()
 		mock.ExpectQuery(`INSERT INTO assets`).
-			WithArgs("A-MODEL1", int64(1), int64(1), "主品牌·企业", nil, nil, nil, "", "OLT", "IN_STOCK", int64(77)).
+			WithArgs("A-MODEL1", int64(1), int64(1), "主品牌·企业", nil, nil, nil, "", "OLT", "IN_STOCK", int64(77), nil, nil, nil).
 			WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(30)))
 		mock.ExpectExec(`INSERT INTO asset_lifecycles`).
 			WithArgs(int64(30), "IN_STOCK").

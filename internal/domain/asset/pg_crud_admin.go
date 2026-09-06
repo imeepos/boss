@@ -30,11 +30,15 @@ func (e *ErrAssetReferenced) Error() string {
 }
 
 // AssetUpdate 受限编辑入参(四键全量替换;BatchID 必填,TagID/ModelID 0=无,Type 空=派生或保持)。
+// SN/MAC/LOID(P3-T2)指针语义:nil=未传保持现值,非 nil 生效(空串清除存 NULL)。
 type AssetUpdate struct {
-	Type    string `json:"type"`
-	ModelID int64  `json:"modelId"`
-	TagID   int64  `json:"tagId"`
-	BatchID int64  `json:"batchId"`
+	Type    string  `json:"type"`
+	ModelID int64   `json:"modelId"`
+	TagID   int64   `json:"tagId"`
+	BatchID int64   `json:"batchId"`
+	SN      *string `json:"sn"`
+	MAC     *string `json:"mac"`
+	LOID    *string `json:"loid"`
 }
 
 // UpdateAsset 受限编辑(P2-W1-T1):仅 类型/型号/标签/批次 四键,同一事务完成
@@ -49,12 +53,13 @@ func (s *PGStore) UpdateAsset(ctx context.Context, assetID int64, in AssetUpdate
 	}
 	defer tx.Rollback(ctx)
 
-	var status, atype, leName string
+	var status, atype, leName, curSN, curMAC, curLOID string
 	var batchID, modelID, tagID, leID int64
 	err = tx.QueryRow(ctx,
-		`SELECT status, type, batch_id, COALESCE(model_id, 0), COALESCE(tag_id, 0), legal_entity_id, legal_entity_name
+		`SELECT status, type, batch_id, COALESCE(model_id, 0), COALESCE(tag_id, 0), legal_entity_id, legal_entity_name,
+		          COALESCE(sn, ''), COALESCE(mac, ''), COALESCE(loid, '')
 		  FROM assets WHERE id = $1 FOR UPDATE`, assetID).
-		Scan(&status, &atype, &batchID, &modelID, &tagID, &leID, &leName)
+		Scan(&status, &atype, &batchID, &modelID, &tagID, &leID, &leName, &curSN, &curMAC, &curLOID)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return ErrNotFound
 	}
@@ -118,17 +123,28 @@ func (s *PGStore) UpdateAsset(ctx context.Context, assetID int64, in AssetUpdate
 		}
 	}
 
-	// 幂等闸门:四键均无变化时零写入成功(不触发 UPDATE 与事件)。
-	if effBatchID == batchID && effModelID == modelID && effTagID == tagID && newType == atype {
+	// 身份三要素归一(P3-T2):nil=保持现值,非 nil 生效(MAC 校验格式,空串清除)。
+	effSN := IdentityEffText(curSN, in.SN)
+	effMAC, macErr := IdentityEffMac(curMAC, in.MAC)
+	if macErr != nil {
+		return macErr
+	}
+	effLOID := IdentityEffText(curLOID, in.LOID)
+
+	// 幂等闸门:四键与身份字段均无变化时零写入成功(不触发 UPDATE 与事件)。
+	if effBatchID == batchID && effModelID == modelID && effTagID == tagID && newType == atype &&
+		effSN == curSN && effMAC == curMAC && effLOID == curLOID {
 		return nil
 	}
 
 	if _, err := tx.Exec(ctx,
 		`UPDATE assets
 		   SET type = $2, model_id = $3, tag_id = $4, batch_id = $5,
-		       legal_entity_id = $6, legal_entity_name = $7, updated_at = now()
+		       legal_entity_id = $6, legal_entity_name = $7, updated_at = now(),
+		       sn = $8, mac = $9, loid = $10
 		 WHERE id = $1`,
-		assetID, newType, idOrNil(effModelID), idOrNil(effTagID), effBatchID, leID, leName); err != nil {
+		assetID, newType, idOrNil(effModelID), idOrNil(effTagID), effBatchID, leID, leName,
+		strOrNil(effSN), strOrNil(effMAC), strOrNil(effLOID)); err != nil {
 		return fmt.Errorf("asset: update asset %d: %w", assetID, err)
 	}
 	if err := tx.Commit(ctx); err != nil {

@@ -2,6 +2,7 @@ package httpx
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -78,6 +79,9 @@ func TestRespondErrMapping(t *testing.T) {
 		{sms.ErrUnsupportedRegion, apitypes.CodeInvalidParam},
 		{asset.ErrBindingConflict, apitypes.CodeConflict},
 		{asset.ErrCodeDuplicate, apitypes.CodeConflict},
+		{asset.ErrInvalidMAC, apitypes.CodeInvalidParam},
+		{asset.ErrInvalidEPC, apitypes.CodeInvalidParam},
+		{fmt.Errorf("asset: sn duplicate: %w", &asset.ErrAssetIdentityDuplicate{Field: "sn"}), apitypes.CodeConflict},
 		{asset.ErrBatchNotEditable, apitypes.CodeInvalidParam},
 		{&asset.ErrAssetReferenced{Blockers: []string{"x"}}, apitypes.CodeConflict},
 		// 任务A(2026-09-04)错误映射补齐:此前全部裸 50000。

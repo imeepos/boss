@@ -8,7 +8,7 @@ paths:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
     post:
       tags: [Asset]
-      summary: '资产建档(P2-W1-T1;batchId 必填,企业快照自批次回填;状态固定 IN_STOCK;型号可选须在用,类型缺省由型号类别派生;标签可选绑定写 BIND 事件,已被其他资产占用 40900 整单回滚;assetCode 缺省服务端生成;建档同事务落初始轨迹行)'
+      summary: '资产建档(P2-W1-T1;batchId 必填,企业快照自批次回填;状态固定 IN_STOCK;型号可选须在用,类型缺省由型号类别派生;标签可选绑定写 BIND 事件,已被其他资产占用 40900 整单回滚;assetCode 缺省服务端生成;建档同事务落初始轨迹行;sn/mac/loid 身份三要素可选,P3-T2:MAC 六组 hex(:或-分隔),唯一冲突 40900 含冲突字段名)'
       operationId: createAsset
       requestBody:
         required: true
@@ -23,6 +23,9 @@ paths:
                 modelId: { type: integer, format: int64, description: '型号 ID(可选,须存在且未停用)' }
                 tagId: { type: integer, format: int64, description: '标签 ID(可选,绑定成功写 BIND,占用 40900)' }
                 type: { type: string, maxLength: 32, description: '类型(可选,未给定时由型号类别派生)' }
+                sn: { type: string, description: '序列号(可选,P3-T2;去首尾空格,空串存 NULL;全网唯一 uq_assets_sn,冲突 40900)' }
+                mac: { type: string, description: 'MAC 地址(可选,P3-T2;六组十六进制冒号或横杠分隔,入库原样;全网唯一 uq_assets_mac,格式非法 42200/冲突 40900)' }
+                loid: { type: string, description: '电信 LOID(可选,P3-T2;去首尾空格,空串存 NULL;全网唯一 uq_assets_loid,冲突 40900)' }
       responses:
         '200':
           description: 资产已建档(data 返回新 id)
@@ -70,7 +73,7 @@ paths:
                       status: { type: string, enum: [IN_STOCK, DEPLOYED, MAINTENANCE, SCRAPPED] }
     put:
       tags: [Asset]
-      summary: '受限编辑(P2-W1-T1;仅 类型/型号/标签/批次 四键;标签换绑同事务 UNBIND+BIND,冲突 40900 整单回滚;批次仅 IN_STOCK 可改并同步企业快照;状态与部署地址不在编辑范围走业务流转;字段无变化幂等成功)'
+      summary: '受限编辑(P2-W1-T1;类型/型号/标签/批次 四键 + sn/mac/loid 身份三要素 P3-T2(指针语义:缺省=保持现值,空串=清除存 NULL);标签换绑同事务 UNBIND+BIND,冲突 40900 整单回滚;批次仅 IN_STOCK 可改并同步企业快照;状态与部署地址不在编辑范围走业务流转;字段无变化幂等成功)'
       operationId: updateAsset
       parameters:
         - { name: assetId, in: path, required: true, schema: { type: integer, format: int64 } }
@@ -86,6 +89,9 @@ paths:
                 modelId: { type: integer, format: int64, description: '型号 ID(0=不挂型号)' }
                 tagId: { type: integer, format: int64, description: '标签 ID(0=解绑,解绑写 UNBIND 事件)' }
                 batchId: { type: integer, format: int64, description: '入库批次 ID(必填;仅 IN_STOCK 可改,同步企业归属快照)' }
+                sn: { type: string, description: '序列号(P3-T2;缺省=保持,空串=清除存 NULL;全网唯一,冲突 40900 含字段名)' }
+                mac: { type: string, description: 'MAC 地址(P3-T2;缺省=保持,空串=清除;六组 hex(:或-分隔),非法 42200)' }
+                loid: { type: string, description: '电信 LOID(P3-T2;缺省=保持,空串=清除存 NULL)' }
       responses:
         '200':
           description: 编辑成功(data 返回更新后主档;无变化亦 200)
@@ -166,7 +172,7 @@ paths:
               properties:
                 legalEntityId: { type: integer, format: int64, description: 法人主体 ID(必填) }
                 tagNo: { type: string, maxLength: 32, description: 标签编号(必填且唯一) }
-                epcCode: { type: string, maxLength: 32, description: EPC 码(必填且唯一) }
+                epcCode: { type: string, maxLength: 32, description: 'EPC 码(必填且唯一;P3-T2:24 位 hex 大小写不敏感,入库统一大写;头部字节须在 30/32/33/35 内,否则 42200)' }
                 band: { type: string, maxLength: 8, description: 频段(必填,如 UHF) }
                 battery: { type: string, maxLength: 8, description: 电量(可选) }
       responses:
