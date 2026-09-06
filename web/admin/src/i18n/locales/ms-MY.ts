@@ -1187,6 +1187,8 @@ const msMY: Translations = {
       modelSaveOk: 'Model disimpan',
       modelEnabled: 'Aktif',
       modelDisabled: 'Dilumpuhkan',
+      modelDisable: 'Lumpuhkan',
+      modelEnable: 'Aktifkan',
       batchesManage: 'Kelompok',
       batchesTitle: 'Pengurusan Kelompok',
       batchCols: ['Kod Kelompok', 'Nama Kelompok', 'Tindakan'],

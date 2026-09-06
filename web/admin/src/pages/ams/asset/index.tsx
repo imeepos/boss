@@ -11,6 +11,8 @@ import { CreateDrawer } from './CreateDrawer'
 import { EditDrawer } from './EditDrawer'
 import { ScrapDialog } from './ScrapDialog'
 import { useAssetList } from './useAssetList'
+import { ModelDictDrawer } from './ModelDictDrawer'
+import { BatchDrawer } from './BatchDrawer'
 
 export default function AssetPage() {
   const t = useT()
@@ -24,6 +26,8 @@ export default function AssetPage() {
   const [createOpen, setCreateOpen] = useState(false)
   const [editRow, setEditRow] = useState<AssetRow | null>(null)
   const [scrapRow, setScrapRow] = useState<AssetRow | null>(null)
+  const [modelsOpen, setModelsOpen] = useState(false)
+  const [batchesOpen, setBatchesOpen] = useState(false)
 
   const filtered = useMemo(
     () => rows.filter((r) => r.assetCode.toLowerCase().includes(keyword.trim().toLowerCase())),
@@ -40,6 +44,8 @@ export default function AssetPage() {
             value={keyword} onChange={(e) => { setKeyword(e.target.value); setPage(1) }} />
           <span className="spacer" />
           <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
+          <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={() => setModelsOpen(true)}>{a.modelsManage}</button>
+          <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={() => setBatchesOpen(true)}>{a.batchesManage}</button>
           <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" onClick={() => setCreateOpen(true)}>{a.create}</button>
         </div>
         {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : (
@@ -56,6 +62,8 @@ export default function AssetPage() {
       {createOpen && <CreateDrawer onClose={() => setCreateOpen(false)} onSaved={load} />}
       {editRow && <EditDrawer asset={editRow} onClose={() => setEditRow(null)} onSaved={load} />}
       {scrapRow && <ScrapDialog asset={scrapRow} onClose={() => setScrapRow(null)} onSaved={load} />}
+      {modelsOpen && <ModelDictDrawer onClose={() => setModelsOpen(false)} onSaved={load} />}
+      {batchesOpen && <BatchDrawer onClose={() => setBatchesOpen(false)} onSaved={load} />}
     </div>
   )
 }

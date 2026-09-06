@@ -1187,6 +1187,8 @@ const enUS: Translations = {
       modelSaveOk: 'Model saved',
       modelEnabled: 'Active',
       modelDisabled: 'Disabled',
+      modelDisable: 'Disable',
+      modelEnable: 'Enable',
       batchesManage: 'Batches',
       batchesTitle: 'Batch Management',
       batchCols: ['Batch Code', 'Batch Name', 'Actions'],

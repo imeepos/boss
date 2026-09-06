@@ -1187,6 +1187,8 @@ const zhCN: Translations = {
       modelSaveOk: '型号已保存',
       modelEnabled: '在用',
       modelDisabled: '已停用',
+      modelDisable: '停用',
+      modelEnable: '启用',
       batchesManage: '批次管理',
       batchesTitle: '批次管理',
       batchCols: ['批次编码', '批次名称', '操作'],

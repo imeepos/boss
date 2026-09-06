@@ -961,6 +961,8 @@ export interface Translations {
       modelSaveOk: string
       modelEnabled: string
       modelDisabled: string
+      modelDisable: string
+      modelEnable: string
       batchesManage: string
       batchesTitle: string
       batchCols: string[]
