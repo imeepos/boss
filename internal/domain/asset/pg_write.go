@@ -43,8 +43,8 @@ func (s *PGStore) CreateBatch(ctx context.Context, b AssetBatch) (int64, error) 
 // - batch/legal entity 不存在 → ErrForeignKeyViolation
 // - 标签已被其他资产绑定 → ErrBindingConflict(回滚,不留孤儿资产)
 func (s *PGStore) CreateAsset(ctx context.Context, a Asset) (int64, error) {
-	// 身份三要素归一(P3-T2):SN/LOID 去首尾空格,MAC 格式校验(入库原样);
-	// 空串一律存 NULL(不占部分唯一索引名额)。非法 MAC ErrInvalidMAC(42200)。
+	// 身份三要素归一(P3-T2/000190):SN/LOID 去首尾空格,MAC 归一为大写冒号规范形;
+	// 空串一律存 NULL(不占唯一索引名额)。非法 MAC ErrInvalidMAC(42200)。
 	sn, mac, loid, idErr := NormalizeIdentity(a.SN, a.MAC, a.LOID)
 	if idErr != nil {
 		return 0, idErr

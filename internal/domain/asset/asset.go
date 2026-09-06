@@ -67,7 +67,7 @@ type Asset struct {
 	ModelID         int64  `json:"modelId"` // 0=未挂型号(P1-T3)
 	Status          string `json:"status"`  // IN_STOCK/DEPLOYED/MAINTENANCE/SCRAPPED
 	SN              string `json:"sn"`      // 序列号,可空;全网唯一(uq_assets_sn,000188)
-	MAC             string `json:"mac"`     // MAC 地址,可空;全网唯一(uq_assets_mac,000188)
+	MAC             string `json:"mac"`     // MAC 地址,可空;大写冒号规范形存储(000190),全网唯一(uq_assets_mac)
 	LOID            string `json:"loid"`    // 电信 LOID,可空;全网唯一(uq_assets_loid,000188)
 }
 

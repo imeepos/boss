@@ -17,16 +17,20 @@ func TestNormalizeIdentity(t *testing.T) {
 	}{
 		{name: "全空归空", sn: "", mac: "", l: "", wantSN: "", wantMAC: "", wantLOID: ""},
 		{name: "空白串归空", sn: "  ", mac: " ", l: "\t", wantSN: "", wantMAC: "", wantLOID: ""},
-		{name: "冒号MAC原样入库", sn: " SN001 ", mac: "AA:BB:CC:DD:EE:01", l: " L001 ",
+		{name: "冒号MAC已是规范形", sn: " SN001 ", mac: "AA:BB:CC:DD:EE:01", l: " L001 ",
 			wantSN: "SN001", wantMAC: "AA:BB:CC:DD:EE:01", wantLOID: "L001"},
-		{name: "横杠MAC合法", sn: "S", mac: "AA-BB-CC-DD-EE-01", l: "L",
-			wantSN: "S", wantMAC: "AA-BB-CC-DD-EE-01", wantLOID: "L"},
-		{name: "小写hexMAC合法", sn: "", mac: "aa:bb:cc:dd:ee:01", l: "",
-			wantSN: "", wantMAC: "aa:bb:cc:dd:ee:01", wantLOID: ""},
+		{name: "横杠MAC归一冒号", sn: "S", mac: "AA-BB-CC-DD-EE-01", l: "L",
+			wantSN: "S", wantMAC: "AA:BB:CC:DD:EE:01", wantLOID: "L"},
+		{name: "小写冒号归一大写", sn: "", mac: "aa:bb:cc:dd:ee:01", l: "",
+			wantSN: "", wantMAC: "AA:BB:CC:DD:EE:01", wantLOID: ""},
+		{name: "小写横杠归一大写冒号", sn: "", mac: "aa-bb-cc-dd-ee-ff", l: "",
+			wantSN: "", wantMAC: "AA:BB:CC:DD:EE:FF", wantLOID: ""},
+		{name: "裸hex归一冒号", sn: "", mac: "AABBCCDDEE01", l: "",
+			wantSN: "", wantMAC: "AA:BB:CC:DD:EE:01", wantLOID: ""},
 		{name: "位数不足拒绝", sn: "", mac: "AA:BB:CC:DD:EE", l: "", wantErr: ErrInvalidMAC},
 		{name: "非hex拒绝", sn: "", mac: "AA:BB:CC:DD:EE:ZZ", l: "", wantErr: ErrInvalidMAC},
 		{name: "分隔符混用拒绝", sn: "", mac: "AA-BB:CC-DD:EE:01", l: "", wantErr: ErrInvalidMAC},
-		{name: "无分隔符拒绝", sn: "", mac: "AABBCCDDEE01", l: "", wantErr: ErrInvalidMAC},
+		{name: "组形横杠拒绝", sn: "", mac: "aabb-ccdd-eeff", l: "", wantErr: ErrInvalidMAC},
 	}
 	for _, tc := range cases {
 		sn, mac, loid, err := NormalizeIdentity(tc.sn, tc.mac, tc.l)
@@ -89,8 +93,14 @@ func TestIdentityUpdateSemantics(t *testing.T) {
 	if got, err := IdentityEffMac("AA:BB:CC:DD:EE:01", nil); err != nil || got != "AA:BB:CC:DD:EE:01" {
 		t.Errorf("nil mac should keep, got %q err %v", got, err)
 	}
-	if got, err := IdentityEffMac("old", strPtr("AA-BB-CC-DD-EE-FF")); err != nil || got != "AA-BB-CC-DD-EE-FF" {
-		t.Errorf("dash mac should apply, got %q err %v", got, err)
+	if got, err := IdentityEffMac("old", strPtr("AA-BB-CC-DD-EE-FF")); err != nil || got != "AA:BB:CC:DD:EE:FF" {
+		t.Errorf("dash mac should normalize to colon form, got %q err %v", got, err)
+	}
+	if got, err := IdentityEffMac("old", strPtr("")); err != nil || got != "" {
+		t.Errorf("empty mac should clear, got %q err %v", got, err)
+	}
+	if got, err := IdentityEffMac("old", strPtr("aabbccddee11")); err != nil || got != "AA:BB:CC:DD:EE:11" {
+		t.Errorf("bare hex mac should normalize, got %q err %v", got, err)
 	}
 	if _, err := IdentityEffMac("old", strPtr("bad")); !errors.Is(err, ErrInvalidMAC) {
 		t.Errorf("bad mac: err = %v, want ErrInvalidMAC", err)
