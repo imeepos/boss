@@ -84,3 +84,18 @@ func (s *PGStore) UpdateModel(ctx context.Context, id int64, m AssetModel) error
 	}
 	return nil
 }
+
+// SetModelActive 型号停用/启用(P2-W2-T1 E):is_active 置否/置真。
+// 停用不物理删,已被资产引用由 assets.model_id 承载(P1-T3 契约);
+// 同值重复置位幂等成功;未命中 ErrNotFound。
+func (s *PGStore) SetModelActive(ctx context.Context, id int64, active bool) error {
+	tag, err := s.db.Exec(ctx,
+		`UPDATE asset_models SET is_active = $2 WHERE id = $1`, id, active)
+	if err != nil {
+		return fmt.Errorf("asset: set model %d active=%v: %w", id, active, err)
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrNotFound
+	}
+	return nil
+}

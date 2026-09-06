@@ -172,3 +172,41 @@ func TestPGStore_UpdateModel(t *testing.T) {
 		}
 	})
 }
+
+// SetModelActive(P2-W2-T1 E):停用/启用/幂等/不存在。
+func TestPGStore_SetModelActive(t *testing.T) {
+	ctx := context.Background()
+	t.Run("停用成功", func(t *testing.T) {
+		mock, _ := pgxmock.NewPool()
+		defer mock.Close()
+		mock.ExpectExec("UPDATE asset_models SET is_active").
+			WithArgs(int64(3), false).
+			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+		s := NewPGStore(mock)
+		if err := s.SetModelActive(ctx, 3, false); err != nil {
+			t.Fatalf("err=%v", err)
+		}
+	})
+	t.Run("启用幂等成功", func(t *testing.T) {
+		mock, _ := pgxmock.NewPool()
+		defer mock.Close()
+		mock.ExpectExec("UPDATE asset_models SET is_active").
+			WithArgs(int64(3), true).
+			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+		s := NewPGStore(mock)
+		if err := s.SetModelActive(ctx, 3, true); err != nil {
+			t.Fatalf("err=%v", err)
+		}
+	})
+	t.Run("不存在404", func(t *testing.T) {
+		mock, _ := pgxmock.NewPool()
+		defer mock.Close()
+		mock.ExpectExec("UPDATE asset_models SET is_active").
+			WithArgs(int64(3), true).
+			WillReturnResult(pgxmock.NewResult("UPDATE", 0))
+		s := NewPGStore(mock)
+		if err := s.SetModelActive(ctx, 3, true); !errors.Is(err, ErrNotFound) {
+			t.Fatalf("err=%v, want ErrNotFound", err)
+		}
+	})
+}

@@ -24,6 +24,8 @@ func registerAssetRoutes(g *gin.RouterGroup, a *app.Application) {
 	ams.GET("/asset-models", modelListHandler(a))            // P1-T3 型号字典
 	ams.POST("/asset-models", modelCreateHandler(a))
 	ams.PUT("/asset-models/:id", modelUpdateHandler(a)) // P2-W2-T1 编辑(停用不可改,冲突 40900)
+	ams.POST("/asset-models/:id/disable", modelDisableHandler(a)) // P2-W2-T1 停用(is_active 置否,不物理删)
+	ams.POST("/asset-models/:id/enable", modelEnableHandler(a))   // P2-W2-T1 启用(is_active 置真,幂等)
 
 	g.GET("/tags", requirePerm(a.User, "menu:tag"), tagListHandler(a))
 	g.POST("/tags", requirePerm(a.User, "menu:tag"), tagCreateHandler(a))               // P2-W2-T1 建标签(编号+EPC+频段必填唯一)

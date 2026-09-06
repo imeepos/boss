@@ -39,3 +39,37 @@ func modelUpdateHandler(a *app.Application) gin.HandlerFunc {
 		respond(c, apitypes.CodeOK, nil)
 	}
 }
+
+// modelDisableHandler POST /asset-models/{id}/disable:停用型号(P2-W2-T1 E)。
+// is_active 置否,不物理删;已被资产引用由 model_id 承载;幂等。
+func modelDisableHandler(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id, ok := httpx.ParsePathParamInt64(c, "id")
+		if !ok {
+			return
+		}
+		if err := a.Asset.SetModelActive(c.Request.Context(), id, false); err != nil {
+			respondErr(c, err)
+			return
+		}
+		httpx.RecordAudit(a, c, "状态变更", "asset_model", c.Param("id"), map[string]any{"op": "disable"})
+		respond(c, apitypes.CodeOK, nil)
+	}
+}
+
+// modelEnableHandler POST /asset-models/{id}/enable:启用型号(P2-W2-T1 E)。
+// is_active 置真;幂等(已启用重复启用成功)。
+func modelEnableHandler(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id, ok := httpx.ParsePathParamInt64(c, "id")
+		if !ok {
+			return
+		}
+		if err := a.Asset.SetModelActive(c.Request.Context(), id, true); err != nil {
+			respondErr(c, err)
+			return
+		}
+		httpx.RecordAudit(a, c, "状态变更", "asset_model", c.Param("id"), map[string]any{"op": "enable"})
+		respond(c, apitypes.CodeOK, nil)
+	}
+}

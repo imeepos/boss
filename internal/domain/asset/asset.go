@@ -206,4 +206,6 @@ type AssetService interface {
 	// UpdateModel 编辑型号(P2-W2-T1):厂商/型号名/类别/料号/规格可改;唯一冲突
 	// ErrModelExists(40900);停用型号拒绝编辑 ErrModelInactive(40900,先启用)。
 	UpdateModel(ctx context.Context, id int64, m AssetModel) error
+	// SetModelActive 型号停用/启用(P2-W2-T1):is_active 直改,幂等;未命中 ErrNotFound。
+	SetModelActive(ctx context.Context, id int64, active bool) error
 }

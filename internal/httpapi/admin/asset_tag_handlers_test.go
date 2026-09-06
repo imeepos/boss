@@ -30,6 +30,7 @@ type fakeTagAdmin struct {
 	disabledID   int64
 	enabledID    int64
 	modelUpdated int64
+	modelActive  map[int64]bool
 	modelErr     error
 	disableErr   error
 	tagEvents    []asset.TagEvent
@@ -304,6 +305,59 @@ func TestModelUpdateHandler(t *testing.T) {
 		_ = json.NewDecoder(w.Body).Decode(&out)
 		if out.Code != int(apitypes.CodeInvalidParam) {
 			t.Fatalf("code=%d, want %d", out.Code, apitypes.CodeInvalidParam)
+		}
+	})
+}
+
+func (f *fakeTagAdmin) SetModelActive(_ context.Context, id int64, active bool) error {
+	if f.modelErr != nil {
+		return f.modelErr
+	}
+	f.modelActive[id] = active
+	return nil
+}
+
+func TestModelDisableEnableHandlers(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	t.Run("POST /asset-models/3/disable 成功+审计", func(t *testing.T) {
+		au := &recAudit{}
+		fa := &fakeTagAdmin{modelActive: map[int64]bool{}}
+		eng := tagAdminRouter(fa, au)
+		w := doJSON(eng, http.MethodPost, "/api/admin/v1/asset-models/3/disable", "")
+		var out struct {
+			Code int `json:"code"`
+		}
+		_ = json.NewDecoder(w.Body).Decode(&out)
+		if out.Code != int(apitypes.CodeOK) || fa.modelActive[3] != false {
+			t.Fatalf("code=%d modelActive=%v", out.Code, fa.modelActive)
+		}
+		if len(au.events) != 1 || au.events[0].Detail["op"] != "disable" {
+			t.Fatalf("events=%+v", au.events)
+		}
+	})
+
+	t.Run("POST /asset-models/3/enable 幂等成功", func(t *testing.T) {
+		eng := tagAdminRouter(&fakeTagAdmin{modelActive: map[int64]bool{}}, nil)
+		w := doJSON(eng, http.MethodPost, "/api/admin/v1/asset-models/3/enable", "")
+		var out struct {
+			Code int `json:"code"`
+		}
+		_ = json.NewDecoder(w.Body).Decode(&out)
+		if out.Code != int(apitypes.CodeOK) {
+			t.Fatalf("code=%d", out.Code)
+		}
+	})
+
+	t.Run("POST /asset-models/9/enable 未命中→40400", func(t *testing.T) {
+		eng := tagAdminRouter(&fakeTagAdmin{modelActive: map[int64]bool{}, modelErr: asset.ErrNotFound}, nil)
+		w := doJSON(eng, http.MethodPost, "/api/admin/v1/asset-models/9/enable", "")
+		var out struct {
+			Code int `json:"code"`
+		}
+		_ = json.NewDecoder(w.Body).Decode(&out)
+		if out.Code != int(apitypes.CodeNotFound) {
+			t.Fatalf("code=%d, want %d", out.Code, apitypes.CodeNotFound)
 		}
 	})
 }
