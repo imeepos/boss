@@ -284,6 +284,7 @@ var Portals = []Portal{
 		{"POST", "/odn/constructions/{id}/items", "追加施工明细(设施须 PLANNED;ACCEPTED 后锁定)"},
 		{"POST", "/odn/constructions/{id}/start", "开工(PENDING→BUILDING,单内 PLANNED 设施批量转 IN_BUILD)"},
 		{"POST", "/odn/constructions/{id}/accept", "竣工验收(BUILDING→ACCEPTED,设施批量回填 IN_SERVICE,记竣工人/时间/备注)"},
+		{"GET", "/odn/impact", "设施影响面报告(直接挂接的覆盖地址与客户清单,只读聚合)"},
 		{"GET", "/openplat/apps", "开放应用清单(裸数组;不含 Secret)"},
 		{"POST", "/openplat/apps", "创建开放应用(AppId+Secret 仅本次返回;缺省 rpm 60 / quota 10000)"},
 		{"PUT", "/openplat/apps/{id}/status", "启用/停用开放应用(停用即验签失效)"},

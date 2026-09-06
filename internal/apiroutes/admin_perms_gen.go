@@ -180,6 +180,7 @@ var AdminRoutePerms = map[string][]string{
 	"GET /api/admin/v1/odn/facilities":                                            {"menu:odn"},
 	"GET /api/admin/v1/odn/facilities/{code}":                                     {"menu:odn"},
 	"GET /api/admin/v1/odn/grids":                                                 {"menu:odn"},
+	"GET /api/admin/v1/odn/impact":                                                {"menu:odn"},
 	"GET /api/admin/v1/odn/segments":                                              {"menu:odn"},
 	"GET /api/admin/v1/odn/segments/{id}/fibers":                                  {"menu:odn"},
 	"GET /api/admin/v1/odn/sites":                                                 {"menu:odn"},

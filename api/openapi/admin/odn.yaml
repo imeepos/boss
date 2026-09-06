@@ -415,3 +415,12 @@ paths:
               properties:
                 note: { type: string, description: as-built 竣工备注 }
       responses: { '200': { $ref: '#/components/responses/Data' } }
+
+  /odn/impact:
+    get:
+      tags: [ODN]
+      summary: 设施影响面报告(直接挂接的覆盖地址与客户清单,只读聚合)
+      operationId: getOdnImpact
+      parameters:
+        - { name: facilityCode, in: query, required: true, schema: { type: string } }
+      responses: { '200': { $ref: '#/components/responses/Data' } }
