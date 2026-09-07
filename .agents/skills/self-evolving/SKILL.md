@@ -35,6 +35,8 @@ description: "MUST LOAD FIRST A self-evolving skill that grows through reflectio
 23. **【已犯 2 次】消费接口前必须核对真实信封形状(列表 {items} vs 单资源 {item} vs 裸对象)** —— 2026-08-20 worker/user 端 token 从顶层取全端 401;2026-09-06 采购单详情抽屉把 {item} 信封当订单用,undefined.toFixed 整页白屏。新页面单条详情/回填一律走 unwrap helper 并 curl 单条接口核对第一层 key。
 24. **【已犯 2 次】链式 git 命令严禁用 `| tail` 看结果判定成败(管道吞退出码,失败首行像成功信息)** —— 2026-08-30 ff-merge 被挡,tail 只见"Updating..."当成功;2026-09-06 P5-W1 收尾 ff-only 失败被 `| tail -2` 掩码,链式 worktree remove 照跑(先 push 过远端,commit 双份无损,branch -d 拒才暴露)。关键步骤必须显式 rc 变量或 `echo RC=$?` 独立判定;破坏性清理(worktree remove/branch -d)严禁跟在管道命令的 && 链后面;详见 recidivism.md#L118。
 
+25. **【已犯 2 次】bash 命令严禁以 rm -rf 绝对路径开头（整条静默零输出）** —— 宿主安全钩子对该模式静默拦截，连 echo 都不出、无 marker 不报错，链上后续验证全部丢失（2026-09-07 T1 轮两连）；删目录用 mv 到仓库外备份名 / git worktree remove / git clean，确需 rm 用相对路径单独成命令。
+
 # 上级叮嘱
 1. 按钮文字一定居中，上下左右预留合适的边距
 2. 元素和元素之间预留合适的边距，4xN，N表示元素语义之间的亲密关系

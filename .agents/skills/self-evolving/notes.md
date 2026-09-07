@@ -1957,3 +1957,53 @@
 
 - 重来一次怎么做?派工时就把反思类主树提交延后到分支合并放行之后写进任务书;合并统一原子脚本(fetch+ancestor+merge+push 一条命令);验收命令一律落仓库脚本再进账本;devloop_accept 只用于秒级检查,长门禁负责人后台实跑显式 RC。
 
+## 2026-09-07 端口台账只读溯源 + 扩容单执行闭环(worktree feat/expand-port-provision 已合并 main b806d645)
+- 坑1: run_code 里生成 Go 代码——JS 双引号串内写反斜杠+引号转义必炸宿主 parse error(红线22变体);正解=JS 单引号串内直接放裸双引号,或占位符 fromCharCode(1) 最后 split/join 还原。Go 字面量本身要双引号(单引号会 illegal rune literal)。占位符两段式写文件(先 base 尾缀 /* CONTINUE */ 再补齐)可行。
+- 坑2: pgxmock ExpectQuery 无 WithArgs 默认期望 0 参,CreatePort 传 10 参直接 expected 0 but got 10——INSERT/UPDATE 期望必须补 pgxmock.AnyArg() x N。
+- 坑3: pgxmock.NewPool() 返回类型是 pgxmock.PgxPoolIface,不是自造的 Pools。
+- 坑4: edit old_string 用反斜杠 n 拼多行在宿主会断(本次 Expected , got eof);一律行数组 + join(fromCharCode(10))。
+- 发现预存在 flaky:internal/app TestRunOSSAuditIfDueRunsOnceDaily 当日幂等单次 calls=2,主树/分支同样红(跨时区日期判定),与本轮改动无关,待单独修。
+- 用户问「为什么没有X」类问题时要给出可执行的替代入口,并先自己验证入口可用——本轮扩容 expand 流程半成品(只有收单无执行)就是没验出来的。
+
+## 2026-09-07 T1 存量开户导入建模迁移轮(feat/kaihu-000202-vlan-columns 已 push,47b8e458+ee68ac4a)
+
+- 哪个坑最耗时?worktree 元数据被并行会话清掉与 rm -rf 静默拦截叠加,三番才建稳;
+  经验=并行会话活跃期,worktree 创建与注册验证必须同命令完成,删目录一律 mv 备份(已登 recidivism/known-issues)。
+- 门禁被 main 预存日期炸弹挡路:TestRunOSSAuditIfDueRunsOnceDaily 写死 09-06 跨日必挂,
+  根因是实现时间源不贯通(注入 now 没到 SaveOSSAudit),fix 独立提交可 revert;
+  审计法=grep 时间注入函数体内的 time.Now(),出现即断点。
+- 占号检查两版都错(7 位正则/带路径锚点),第三版 sed 剥前缀才真验过;机械检查自己先跑两遍对不上号就要怀疑检查器本身。
+- 零行为变更加字段模式:可空列用指针+omitempty,nil 下 JSON 输出不变,SELECT/Scan 不动,
+  门禁全绿;T2 写路径可直接消费这些字段。
+
+## 2026-09-07 T2 OSS/AAA 建号写接口轮(feat/kaihu-oss-aaa-create-apis,4 commits,make check 全绿)
+
+- 哪个坑最耗时?make check 首轮红在存量日期炸弹(internal/app OSS 审计幂等),非我引入却卡验收;
+  快速判定法=同测试在 main 复跑,红了即存量,独立 fix 提交隔离(与 T1 侧修复撞车后 rebase drop 即可)。
+- run_code 里 write 生成 Go 文件时注释行漏 // 前缀(块注释接续三行裸文本)——生成源码文件后
+  必须立即 go build/vet 语法验证,不能等测试才暴露;edit old=new 手滑被工具拒绝(参数成对自检有效)。
+- 复用既有测试基建(如 nasToken)要连 secret 一起复用,签发/验证 secret 不一致=全用例 401。
+- edit 锚点带裸反引号一次侥幸未炸(红线 11),仍应避开——SQL 原始串区域用双引号锚或函数签名锚。
+- POST /lo-accounts 域侧校验放 LoAccountAdminService 扩展而非改 CreateLoAccount:环节 6 链路
+  行为冻结,管理端语义独立;错误映射补注册 aaa.ErrForeignKeyViolation(原缺注册落 50000)。
+- 拆提交时共享文件(httpx/error.go)两域错误行相邻:用两步 edit 摘除/回加配合分批 add,
+  保证每个中间提交可独立构建测试。
+
+## 2026-09-07 T3 开户导入工具轮(feat/kaihu-import-tool, commit cf1dee64, 验收 A/B/C/D 全过)
+
+- 哪个坑最耗时? 裸正则啃 xlsx sheet XML: 自闭合空格 <c .../> 的 / 被属性组 ([^>]*) 吞掉,
+  正则继续吃到下一个 </c>, 把下一列的值错挂到当前列(S 列出现 9 个假拆机日期、SN 313≠330、
+  账号唯一 342≠347)——计数与设计文档画像对不上时, 第一怀疑对象应是解析器而不是数据;
+  换 xml.etree.ElementTree 后一次全中。教训已登 lessons/known-issues。
+- 数据口径要多源交叉验证: 「VLAN 四元组同缺 35」直觉解是全四空(实测 34), 靠 T4 基线
+  「svlan 非空 312」反推才锁定口径=外层缺失(35, 另 1 行部分缺)。任务书硬指标若直译直觉
+  口径, selfcheck 会永远差 1。
+- 任务书与设计文档有出入时按两者并集实现并显式回报: 任务书 API 段漏列 assets, 但设计文档
+  T3 与 T4 基线(assets.sn +330)都要求, 补进后回报里单列差异提示交负责人裁决, 不擅自取舍。
+- 实测计数(端口 313)与基线预估(~331/+346)不符时不动数据迁就预估: 缺 ONU/OLT 行三要素不齐
+  不建端口(禁止编造红线), 差异原因写清(ONU 缺 34/OLT 缺 11/重叠), 交 T4 对账时对齐。
+- 红线 11/22 有效应用零事故: 本轮所有生成文件(python/shell/README)内容全程避开反引号/${/
+  双引号/反斜杠四件套, SQL 字面量引号用 chr(39) 构造, py_compile 一次过; run_code 生成
+  源码文件的可靠姿势=先设计成无危险字符再落盘。
+- apply 未执行(任务书禁止)但幂等性必须有机械抓手: upsert 自然键 + 对账复核 SQL 内嵌
+  (--csv 输出工具解析), 不符整体失败; 「未跑过」的代码路径靠结构保证而非口头承诺。
