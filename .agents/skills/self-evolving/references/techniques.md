@@ -672,3 +672,10 @@ SQL
 - 页面常有多个 listbox 触发器(顶栏服务端切换器等),querySelector("[aria-haspopup=listbox]") 全局首个不一定是目标;先定位目标区块(如含标题文本的 section)再在其中找触发器。
 - 401 假象排查:注入 token 时若把 JWT 连引号存入(双重 JSON.stringify),请求头变成 Bearer "eyJ..." 全线 401;用 CDP Network.requestWillBeSent 看实际 Authorization 头,一击定位。
 - 长时序 UI 断言(loading→data)不要单点采样:Node 侧 70ms 轮询取快照,并同 expr 同时采 busy/disabled 等关联状态,避免两次 evaluate 之间状态已翻页。
+
+## 逐域 UX 走查两轮采集法:先全量清单 eval,再交互断言轮(2026-09-07 PP2-W1 Phase A)
+
+- 场景:16+ 页逐页走查反馈链/表单/表格/选择器,逐页手看太慢且漏按钮。
+- 做法:①批量轮一个循环脚本对每页跑同一 inventory eval(buttons 全文/select 数/表格行数/placeholders),logs 存 JSON 再用 python 脚本统一扫 console>=warn 与 net>=400;②交互轮对抽屉/弹层逐个点击+DOM 断言(labels 全文、drawer 存在性),一轮只改一个变量。
+- 产出:总评表(如 toast 覆盖面)直接由清单聚合;根因定位(如 Dropdown 值契约违例)靠交互轮 label 全文对照源码。
+
