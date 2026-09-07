@@ -2098,3 +2098,9 @@
 - 会话并行期 main 每小时都在动:每个任务分支合并前都撞一次『分叉→worktree 反向同步→再 ff』,
   协议本身够用,但负责人要预期 2-3 轮;分叉检查用 merge-base --is-ancestor。
 - 任务书验收命令写『--selfcheck 退出码』而非『报告数字一致』,机械可判,四轮修复零扯皮。
+## 2026-09-07 W2 网格投资测算读模型(P-INFRA-1,worktree 闭环全流程)
+
+- 最耗时坑:①并行撞号实锤——D 项门禁抓到 W1 分支占 000205/000206,按让号规则改名 000207 再核查全网空闲,让号说明写进迁移头注释;②一次 bash 调用 workdir 参数疑似未生效,命令跑在主树(main 未受损,「Already up to date」),此后关键 git 操作一律 git -C <path> 显式指树;③i18n 三语文件机械插入把逗号拼成双逗号,keys.test 的 transform error 直接定位行号,秒修。
+- skill 有没有预警:红线9(清理链等 merge+rev-parse 独立确认)、红线13(--no-checkout 两段式)、红线24(禁管道吞退出码)全部命中且零损失;菜单三方对账门禁(menu-sync 只减不增)的 MENU_REGEN 临时接受→部署后 fetch-menu-perms 回收的两段式流程,是本次最顺滑的并行协调机制。
+- 重来一次:开工第一步就 git fetch gitea + 占号两处核查(本次做晚了,幸未落盘 000205);bash workdir 不可信改为全程 git -C;i18n 机械编辑后立刻跑 keys.test 再提交。
+
