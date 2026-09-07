@@ -1,6 +1,7 @@
 // 师傅账号对话框集(2026-09-01 后台录入师傅):新增师傅(含师傅端登录密码)/重置密码。
 // 表单密度与视觉复用 TeamDialogs 的 Shell/Err/compact;师傅端用手机号+密码登录。
 import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { Dropdown } from '../../../components/Dropdown'
@@ -62,6 +63,7 @@ function WorkerForm({ groups, onClose, onDone }: { groups: WorkerGroupRow[]; onC
           groupId: Number(groupId), regionIds: regionIds.map(Number), password,
         },
       })
+      toast.success(w.toastWorkerSaved)
       onClose(); onDone()
     } catch (e) {
       setErr(e instanceof Error ? e.message : w.actionFail)
@@ -123,6 +125,7 @@ function ResetPwdForm({ workerId, name, onClose }: { workerId: number; name: str
     setBusy(true); setErr('')
     try {
       await apiFetch(`/workers/${workerId}/password`, { method: 'PUT', body: { password } })
+      toast.success(w.toastPwdReset)
       onClose()
     } catch (e) {
       setErr(e instanceof Error ? e.message : w.actionFail)

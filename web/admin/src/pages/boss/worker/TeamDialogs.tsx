@@ -71,6 +71,7 @@ function TeamForm({ group, workers, onClose, onDone }: { group: WorkerGroupRow |
       } else {
         await apiFetch('/worker-groups', { method: 'POST', body: { legalEntityId: Number(entityId), code: code.trim(), name: name.trim() } })
       }
+      toast.success(w.toastTeamSaved)
       onClose(); onDone()
     } catch (e) {
       setErr(e instanceof Error ? e.message : w.actionFail)
@@ -132,6 +133,7 @@ function TransferForm({ worker, groups, onClose, onDone }: { worker: WorkerRow; 
     setBusy(true); setErr('')
     try {
       await apiFetch(`/workers/${worker.id}/transfer`, { method: 'POST', body: { groupId: Number(groupId), reason: reason.trim() } })
+      toast.success(w.toastTransferred)
       onClose(); onDone()
     } catch (e) {
       setErr(e instanceof Error ? e.message : w.actionFail)
@@ -207,6 +209,7 @@ export function TeamDialogs({ mode, groups, workers, onClose, onDone }: DialogsP
   const disband = async (id: number) => {
     try {
       await apiFetch(`/worker-groups/${id}`, { method: 'DELETE' })
+      toast.success(w.toastDisbanded)
       onClose(); onDone()
     } catch (e) {
       toast.error(e instanceof Error ? e.message : w.actionFail)

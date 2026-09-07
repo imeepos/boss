@@ -1,6 +1,7 @@
 // 负责区域配置对话框(000175):一师傅多负责区域,覆盖式保存;
 // 首个选中为主区域(镜像 workers.region_id),复用 Shell/compact 视觉。
 import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { MultiSelect } from '../../../components/MultiSelect'
@@ -33,6 +34,7 @@ export function WorkerRegionsDialog({ worker, onClose, onDone }: RegionsDialogPr
         method: 'PUT',
         body: { regionIds: regionIds.map(Number) },
       })
+      toast.success(w.toastRegionsSaved)
       onClose(); onDone()
     } catch (e) {
       setErr(e instanceof Error ? e.message : w.actionFail)

@@ -1,6 +1,7 @@
 // 客户端版本管理:client_releases 列表 + 抽屉式上传/灰度白名单状态编辑。
 // 菜单 key=release,权限 menu:release;契约见 docs/contract/fields.md 8F。
 import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import { useT } from '../../../i18n'
 import { PageHead } from '../../org/shared'
 import { TableStateRow, ToolbarButton } from '../../../components/business'
@@ -16,6 +17,14 @@ import {
 type Status = ClientReleaseDTO['status']
 
 const EMPTY_FORM = { app: 'user', version: '', versionCode: '', minSupportedCode: '', notes: '', file: undefined as File | undefined }
+
+// 状态机(terms.md §4):ROLLED_BACK 终态不可再投放;灰度可全量/回滚;草稿可灰度/全量。
+const ALLOWED_NEXT: Record<Status, Status[]> = {
+  DRAFT: ['DRAFT', 'GRAY', 'PUBLISHED'],
+  GRAY: ['GRAY', 'PUBLISHED', 'ROLLED_BACK'],
+  PUBLISHED: ['PUBLISHED', 'ROLLED_BACK'],
+  ROLLED_BACK: ['ROLLED_BACK'],
+}
 
 export default function ClientReleasePage() {
   const t = useT(); const s = t.pages.releasePage
@@ -54,6 +63,7 @@ export default function ClientReleasePage() {
         versionCode: Number(form.versionCode), minSupportedCode: Number(form.minSupportedCode) || 1,
         notes: form.notes, file: form.file,
       })
+      toast.success(s.toastUploadOk)
       closeUpload()
       load()
     } catch (e) { setFormError(e instanceof Error ? e.message : s.uploadFail) }
@@ -65,6 +75,7 @@ export default function ClientReleasePage() {
     setBusy(true)
     try {
       await patchRelease(editing.id, patch)
+      toast.success(s.toastPatchOk)
       setEditing(null); setPatch({}); load()
     } catch (e) { setError(e instanceof Error ? e.message : s.saveFail); setBusy(false) }
   }
@@ -81,7 +92,7 @@ export default function ClientReleasePage() {
     {error && <div className="mb-3 text-sm text-[var(--color-danger)]">{error}</div>}
 
     <div className="mb-3 flex items-center gap-3">
-      <Dropdown value={appFilter === 'worker' ? s.appWorker : appFilter === 'user' ? s.appUser : s.columns[0]}
+      <Dropdown value={appFilter}
         ariaLabel={s.fApp} onChange={(v) => setAppFilter(v)}
         options={[{ value: '', label: s.columns[0] }, { value: 'user', label: s.appUser }, { value: 'worker', label: s.appWorker }]} />
       <span className="flex-1" />
@@ -119,7 +130,7 @@ export default function ClientReleasePage() {
       </>}>
       <div className="grid gap-3">
         <label className="text-xs">{s.fApp}
-          <div className="mt-1"><Dropdown value={appLabel(form.app)} ariaLabel={s.fApp}
+          <div className="mt-1"><Dropdown value={form.app} ariaLabel={s.fApp}
             options={[{ value: 'user', label: s.appUser }, { value: 'worker', label: s.appWorker }]}
             onChange={(v) => setForm({ ...form, app: v })} /></div>
         </label>
@@ -142,11 +153,11 @@ export default function ClientReleasePage() {
       </>}>
       <div className="grid gap-3">
         <label className="text-xs">{s.fStatus}
-          <div className="mt-1"><Dropdown value={stLabel(patch.status ?? editing.status)} ariaLabel={s.fStatus} onChange={(v) => setPatch({ ...patch, status: v as Status })}
+          <div className="mt-1"><Dropdown value={patch.status ?? editing.status} ariaLabel={s.fStatus} onChange={(v) => setPatch({ ...patch, status: v as Status })}
             options={[
               { value: 'DRAFT', label: s.stDraft }, { value: 'GRAY', label: s.stGray },
               { value: 'PUBLISHED', label: s.stPublished }, { value: 'ROLLED_BACK', label: s.stRolledBack },
-            ]} /></div>
+            ].map((o) => ({ ...o, disabled: !ALLOWED_NEXT[editing.status].includes(o.value as Status) }))} /></div>
         </label>
         <label className="text-xs">{s.fRollout}<input className={inputCls + ' mt-1'} inputMode="numeric" placeholder={String(editing.rolloutPercent)} onChange={(e) => setPatch({ ...patch, rolloutPercent: Number(e.target.value) })} /></label>
         <label className="text-xs">{s.fWhitelist}<input className={inputCls + ' mt-1'} placeholder={editing.whitelistIds.join(',')} onChange={(e) => setPatch({ ...patch, whitelistIds: e.target.value.split(',').map((x) => Number(x.trim())).filter((n) => n > 0) })} /></label>

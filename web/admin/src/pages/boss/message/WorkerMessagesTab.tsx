@@ -48,7 +48,7 @@ export function WorkerMessagesTab({ t }: { t: Ns }) {
     setHint('')
     apiFetch<{ items: WorkerMessageEntry[] }>('/worker-messages', { query: { workerId: toId(workerId) || undefined } })
       .then((d) => setRows(d?.items ?? []))
-      .catch(() => setError(t.loadFail))
+      .catch((e) => setError(e instanceof Error ? e.message : t.loadFail))
   }
 
   useEffect(load, []) // eslint-disable-line react-hooks/exhaustive-deps
@@ -88,7 +88,7 @@ export function WorkerMessagesTab({ t }: { t: Ns }) {
         toast.success(t.sent)
         load()
       })
-      .catch(() => { setSending(false); setHint(t.sendFail) })
+      .catch((e) => { setSending(false); setHint(e instanceof Error ? e.message : t.sendFail) })
   }
 
   return (
@@ -141,7 +141,7 @@ export function WorkerMessagesTab({ t }: { t: Ns }) {
             rows={slice as unknown as Record<string, unknown>[]}
             columns={[
               { key: 'level', label: t.msgColumns[0], render: (r) => <StatusTag domain="message" value={String(r.level)} /> },
-              { key: 'workerId', label: t.msgColumns[1], render: (r) => `#${r.workerId}` },
+              { key: 'workerId', label: t.msgColumns[1], render: (r) => <span title={'workerId=' + String(r.workerId)}>#{String(r.workerId)}</span> },
               { key: 'title', label: t.msgColumns[2], render: (r) => String(r.title ?? '') },
               { key: 'content', label: t.msgColumns[3], render: (r) => <span className="text-[var(--shell-group-title)]">{String(r.content ?? '')}</span> },
               { key: 'sentAt', label: t.msgColumns[4], render: (r) => fmtTime(String(r.sentAt)) },
@@ -199,7 +199,7 @@ export function WorkerMessagesTab({ t }: { t: Ns }) {
             </label>
             <label className={formLabel}>
               {t.msgColumns[3]}
-              <input className={fieldInput} placeholder={t.sendContentPlaceholder} value={sendContent}
+              <textarea className={fieldInput} rows={3} placeholder={t.sendContentPlaceholder} value={sendContent}
                 onChange={(e) => setSendContent(e.target.value)} />
             </label>
             {hint && <span className="text-xs text-[var(--color-danger)]">{hint}</span>}

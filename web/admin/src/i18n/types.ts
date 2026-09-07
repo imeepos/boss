@@ -403,6 +403,8 @@ export interface Translations {
       taskRetryRegister: string
     }
     account: {
+      saved: string
+      statusUpdated: string
       title: string
       desc: string
       searchPlaceholder: string
@@ -1535,6 +1537,10 @@ export interface Translations {
       empty: string
       loadFail: string
       trackFail: string
+      toastReserveOk: string
+      toastChargeOk: string
+      toastCancelOk: string
+      toastCreateOk: string
       prev: string
       next: string
       perPage: string
@@ -1639,6 +1645,12 @@ export interface Translations {
       disband: string
       disbandConfirmText: string
       confirmDisband: string
+      toastTeamSaved: string
+      toastWorkerSaved: string
+      toastPwdReset: string
+      toastRegionsSaved: string
+      toastTransferred: string
+      toastDisbanded: string
       perfBtn: string
       perfTitle: string
       periodLabel: string
@@ -1719,6 +1731,15 @@ export interface Translations {
       total: string
       empty: string
       loadFail: string
+      tabAll: string
+      tabPending: string
+      tabApproved: string
+      tabRejected: string
+      stPending: string
+      stApproved: string
+      stRejected: string
+      toastApproveOk: string
+      toastRejectOk: string
     }
     workerOps: {
       title: string
@@ -1749,6 +1770,8 @@ export interface Translations {
       transfer: string
       fMaster: string
       pMaster: string
+      toastAssignOk: string
+      toastTransferOk: string
       fReason: string
       pReason: string
       eInput: string
@@ -1791,6 +1814,7 @@ export interface Translations {
       fPort: string
       pickSearch: string
       pickEmpty: string
+      toastCreateOk: string
       total: string
       empty: string
       loadFail: string
@@ -1823,6 +1847,13 @@ export interface Translations {
       columns: string[]
       close: string
       closeConfirm: string
+      accept: string
+      acceptOk: string
+      closeOk: string
+      eventsBtn: string
+      eventsTitle: string
+      eventsColumns: string[]
+      eventsEmpty: string
       actionFail: string
       total: string
       empty: string
@@ -1876,6 +1907,8 @@ export interface Translations {
       saveFail: string
       actionFail: string
       empty: string
+      toastSaved: string,
+      toastDeleted: string,
       loadFail: string
     },
     siteCatsPage: {
@@ -1902,6 +1935,8 @@ export interface Translations {
       saveFail: string
       actionFail: string
       empty: string
+      toastSaved: string,
+      toastDeleted: string,
       loadFail: string
     },
     releasePage: {
@@ -1938,6 +1973,8 @@ export interface Translations {
       loadFail: string
       actionFail: string
       empty: string
+      toastUploadOk: string,
+      toastPatchOk: string,
     },
     licensePage: {
       title: string
@@ -1981,6 +2018,8 @@ export interface Translations {
       actionFail: string
       total: string
       empty: string
+      toastSaved: string,
+      toastDeleted: string,
       loadFail: string
       prev: string
       next: string
@@ -1995,6 +2034,7 @@ export interface Translations {
       columns: string[]
       retry: string
       retryConfirm: string
+      toastRetryOk: string
       actionFail: string
       total: string
       empty: string
@@ -2018,6 +2058,7 @@ export interface Translations {
       needReviewNo: string
       review: string
       reviewConfirm: string
+      toastReviewOk: string
       actionFail: string
       total: string
       empty: string
@@ -2667,6 +2708,7 @@ export interface Translations {
       save: string
       saving: string
       saved: string
+      savePartial: string,
       saveFail: string,
       resetForm: string
       detailTitle: string
@@ -3070,6 +3112,7 @@ export interface Translations {
       loadFail: string
     }
     backup: {
+      deleted: string
       title: string
       desc: string
       refresh: string

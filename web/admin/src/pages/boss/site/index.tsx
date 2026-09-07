@@ -2,6 +2,7 @@
 // 菜单 key=site,权限 menu:site。分类列展示字典本地化名(懒加载 /site-categories);
 // 语言列(000155):同 slug 多语言变体各一行,可按语言筛选。
 import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import { useNavigate } from 'react-router-dom'
 import { apiFetch } from '../../../api/client'
 import { useT, useLocale, localeOptions } from '../../../i18n'
@@ -54,7 +55,7 @@ export default function SitePostsPage() {
   const remove = async (p: Post) => {
     if (!(await confirm(s.deleteConfirm, { danger: true }))) return
     setBusy(true)
-    try { await apiFetch(`/site-posts/${p.id}`, { method: 'DELETE' }); load() }
+    try { await apiFetch(`/site-posts/${p.id}`, { method: 'DELETE' }); toast.success(s.toastDeleted); load() }
     catch (e) { setError(e instanceof Error ? e.message : s.actionFail); setBusy(false) }
   }
 
@@ -77,13 +78,13 @@ export default function SitePostsPage() {
     <div className="rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] p-4">
       {error && <div className="mb-3 text-sm text-[var(--color-danger)]">{error}</div>}
       <div className="mb-3 flex items-center gap-3">
-        <Dropdown ariaLabel={s.fCategory} value={fCat ? catLabel(fCat) : s.filterAll}
+        <Dropdown ariaLabel={s.fCategory} value={fCat}
           onChange={(v) => { setFCat(v); setPage(1) }}
           options={[{ value: '', label: s.filterAll }, ...Object.entries(cats).map(([code, c]) => ({ value: code, label: c.names?.[locale] || c.name }))]} />
-        <Dropdown ariaLabel={s.fStatus} value={fSt ? stLabel(fSt) : s.filterAll}
+        <Dropdown ariaLabel={s.fStatus} value={fSt}
           onChange={(v) => { setFSt(v); setPage(1) }}
           options={[{ value: '', label: s.filterAll }, { value: 'DRAFT', label: s.stDraft }, { value: 'PUBLISHED', label: s.stPublished }, { value: 'OFFLINE', label: s.stOffline }]} />
-        <Dropdown ariaLabel={s.fLang} value={fLang ? langLabel(fLang) : s.filterAll}
+        <Dropdown ariaLabel={s.fLang} value={fLang}
           onChange={(v) => { setFLang(v); setPage(1) }}
           options={[{ value: '', label: s.filterAll }, ...localeOptions()]} />
       </div>

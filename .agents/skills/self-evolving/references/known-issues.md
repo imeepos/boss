@@ -534,3 +534,9 @@ ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !exp
 - 原因:第一个 --eval 是「localStorage seed + location.href=目标页」;Runtime.evaluate(awaitPromise:true) 发出后导航撕掉执行上下文,CDP 对该调用的响应永不返回,cdp.send 无超时 → await 永挂(触发与否是竞态,时灵时不灵)。
 - 修法(已落 scripts/cdp-capture.mjs):① ws.onclose 时拒绝全部在途 pending;② send 加 30s 超时,超时干净报错退出可重试。
 - 排查线索:采集脚本卡住先 ps 看 Chrome 是否还在;不在即此类挂死。治本建议:wrapper 把 seed 与跳转拆开,跳转用 CDP Page.navigate 而非页内 location.href。
+
+## 2026-09-07 自研 Dropdown 触发器显示 ariaLabel 而非当前选中值(值契约违例簇)
+- 症状:页面下拉框永远显示占位文案(如「状态」「分类」「端」),label 与触发器文本拼成「状态状态/分类分类」;用户看不到当前值,release 编辑抽屉连当前状态都不可见。102 DOM 实证于 boss 域 site 编辑器/列表筛选/release/knowledge/site-cats。
+- 原因:components/Dropdown.tsx 以 options.find(o=>o.value===value) 匹配,未命中回退 placeholder/ariaLabel;9+ 处页面把显示文案当 value 传入(如 value=stLabel(status) 传「草稿」而 option.value 是 DRAFT)。
+- 修法:页面侧改传 option.value;基座侧可加「value 不中时再按 label 匹配」兜底一次修全域(W0 兼容层评审项)。grep 线索:value={ 后接 *Label( 或 stLabel( 的 Dropdown 调用点。
+

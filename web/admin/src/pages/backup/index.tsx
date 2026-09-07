@@ -4,6 +4,7 @@
 // 筛选/分页状态经 URL search 持久;有 running 任务时 3s 轮询刷新。
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { apiFetch } from '../../api/client'
+import { toast } from 'sonner'
 import { useT } from '../../i18n'
 import { useQueryInt, useQueryState } from '../../lib/useQueryState'
 import { Dropdown } from '../../components/Dropdown'
@@ -64,8 +65,8 @@ export default function BackupPage() {
   const handleDelete = async (row: BackupJobEntry) => {
     if (!(await confirmDialog(t.pages.backup.deleteConfirm, { danger: true }))) return
     apiFetch(`/backup/jobs/${row.id}`, { method: 'DELETE' })
-      .then(load)
-      .catch((e) => setError(e instanceof Error ? e.message : t.pages.backup.loadFail))
+      .then(() => { toast.success(t.pages.backup.deleted); load() })
+      .catch((e) => toast.error(e instanceof Error ? e.message : t.pages.backup.loadFail))
   }
 
   const handleDownload = (row: BackupJobEntry) => {
