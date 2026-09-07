@@ -1,4 +1,4 @@
-// 选择器公共基座核心逻辑:双数据源合并、单/多选集合、已选回显、分页查询组装。
+// 选择器公共基座核心逻辑:双数据源合并、单/多选集合、已选回显、分页查询组装、键盘导航、钉选回显与清空口径。
 // 纯函数零依赖(仅类型),供 SimplePicker / DialogPicker / ResourcePicker 复用并配 vitest 单测。
 import type { DropdownOption } from '../Dropdown'
 
@@ -73,4 +73,79 @@ export function buildPickerQuery(q: PickerQueryInput): Record<string, string | n
     if (t) out[k] = t
   }
   return out
+}
+
+/** 统一防抖毫秒:SimplePicker 服务端检索与 DialogPicker 关键字检索共用,全体系同节奏。 */
+export const PICKER_DEBOUNCE_MS = 300
+
+/**
+ * 键盘上下移动活动项:跳过禁用项并循环回绕;未初始化(-1)向下落首项、向上落末项;
+ * 空列表返回 -1;全部禁用返回原值(保持不动)。
+ */
+export function moveActive(count: number, current: number, delta: 1 | -1, isDisabled?: (index: number) => boolean): number {
+  if (count <= 0) return -1
+  let idx = current
+  for (let n = 0; n < count; n += 1) {
+    idx = idx < 0 ? (delta === 1 ? 0 : count - 1) : (idx + delta + count) % count
+    if (!isDisabled?.(idx)) return idx
+  }
+  return current < 0 ? -1 : current
+}
+
+/** 已选值不在选项集时追加合成选项(value 兼作 label),保证触发器回显不丢失;空值不钉。 */
+export function withPinnedValue(options: DropdownOption[], value: string): DropdownOption[] {
+  if (value === '' || options.some((o) => o.value === value)) return options
+  return [...options, { value, label: value }]
+}
+
+/** 清空按钮可见性口径:显式开启 clearable 且未禁用且有值。 */
+export function canClearValue(clearable: boolean | undefined, disabled: boolean | undefined, value: string): boolean {
+  return !!clearable && !disabled && value !== ''
+}
+
+/** 服务端检索状态机状态:结果集 + loading/error + 已发出的最新请求序号(防竞态)。 */
+export interface PickerSearchState<T> {
+  items: T[]
+  loading: boolean
+  error: boolean
+  reqSeq: number
+}
+
+export function initialPickerSearchState<T>(): PickerSearchState<T> {
+  return { items: [], loading: false, error: false, reqSeq: 0 }
+}
+
+export type PickerSearchAction<T> =
+  | { type: 'request'; seq: number }
+  | { type: 'ok'; seq: number; items: T[] }
+  | { type: 'fail'; seq: number }
+
+/** 纯状态机:仅接受最新 seq 的响应,过期响应原样忽略;fail 清空结果并置错误态(可重试)。 */
+export function pickerSearchReducer<T>(state: PickerSearchState<T>, action: PickerSearchAction<T>): PickerSearchState<T> {
+  switch (action.type) {
+    case 'request':
+      return { ...state, loading: true, error: false, reqSeq: action.seq }
+    case 'ok':
+      if (action.seq !== state.reqSeq) return state
+      return { ...state, items: action.items, loading: false, error: false }
+    case 'fail':
+      if (action.seq !== state.reqSeq) return state
+      return { ...state, items: [], loading: false, error: true }
+    default:
+      return state
+  }
+}
+
+/**
+ * 有效选中值解析(W1 裁定防御):精确 value 命中优先;存量调用把显示文案当 value 传时,
+ * 按 label 同值兜底(effectiveValue 回到真实 value);双 miss 原样返回,交由 withPinnedValue
+ * 合成钉选回显。hit.value !== value 即 label 兜底命中,调用方应 console.warn 留痕。
+ */
+export function resolveOptionMatch(options: DropdownOption[], value: string): { effectiveValue: string; hit?: DropdownOption } {
+  if (value === '') return { effectiveValue: '' }
+  const exact = options.find((o) => o.value === value)
+  if (exact) return { effectiveValue: value, hit: exact }
+  const byLabel = options.find((o) => o.label === value)
+  if (byLabel) return { effectiveValue: byLabel.value, hit: byLabel }
+  return { effectiveValue: value }
 }

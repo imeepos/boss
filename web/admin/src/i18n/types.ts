@@ -3079,7 +3079,7 @@ export interface Translations {
       pageUnit: string
     }
     pickers: {
-      common: { placeholder: string; loadFail: string; viewDetail: string; detailFail: string; close: string; jumpToList: string; all: string; clear: string }
+      common: { placeholder: string; loadFail: string; viewDetail: string; detailFail: string; close: string; jumpToList: string; all: string; clear: string; loading: string; empty: string; retry: string }
       dialog: {
         confirm: string; cancel: string; loadFail: string; empty: string; keywordPh: string
         selectedCount: string; clearAll: string; remove: string
