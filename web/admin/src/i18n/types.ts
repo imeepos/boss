@@ -1340,6 +1340,14 @@ export interface Translations {
       breakSplitterNoParent: string
       breakPonUnassigned: string
       breakOltUnreachable: string
+      provision: string
+      provNoPerm: string
+      provTitle: string
+      fPortCode: string
+      pPortCode: string
+      provDevice: string
+      provAddress: string
+      provSaveFail: string
     }
     capacityPage: {
       title: string
@@ -1503,6 +1511,16 @@ export interface Translations {
       rangeText: string
       jumpText: string
       pageUnit: string
+      exec: string
+      reject: string
+      execConfirm: string
+      rejectConfirm: string
+      actionFail: string
+      execTitle: string
+      fDevice: string
+      pDevice: string
+      execOk: string
+      noDevice: string
     }
     orderPage: {
       title: string

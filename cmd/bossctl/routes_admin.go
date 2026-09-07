@@ -360,6 +360,8 @@ var adminRoutes = []routeEntry{
 	{"POST", "/lo-accounts/:loid/reset-password", "重置 LOID 接入密码(A1:随机生成,明文仅本次响应返回;menu:loaccount)"},
 	{"GET", "/expansions", "扩容申请单列表"},
 	{"POST", "/expansions", "新建扩容申请(对齐 Go 实现 POST /expansions,必填 legalEntityId/regionId,expansionNo/status 缺省自动补)"},
+	{"POST", "/expansions/:expansionNo/execute", "执行扩容单(PENDING→DONE):目标设备按 expectedPorts 批量建端口(端口码续号,quad_code=端口码,IDLE 入池);已建满则直接完成;建口失败留 PENDING 可重试;设备须归属扩容单同一法人"},
+	{"POST", "/expansions/:expansionNo/reject", "扩容驳回(PENDING→DONE 终态;仅 PENDING 可驳回)"},
 	{"GET", "/expansions/qos-templates", "扩容 QoS 模板(对齐 Go 实现 GET /expansions/qos-templates)"},
 	{"POST", "/partner/orders", "企业工作台渠道下单"},
 	{"POST", "/partner/applications", "企业自助提交入驻申请(公开,免登录)"},

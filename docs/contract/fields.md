@@ -842,6 +842,12 @@ App 本地留痕后启动补传；服务端入库即视为成功，App 端成功
 | 存量光缆层级 | `LegacyPath` | legacy_path | TEXT 可空；OCC06/ODB040/OBD01/P05 单列无损承接（000202） |
 
 > 状态变更历史（TS 实体）：`port_change_history`，端口每次状态/占用变化一行（变更后 status + order_id 快照 + changed_at），历史不随当前状态漂移。
+>
+> 扩容单写侧（P5 补齐，`POST /expansions/{expansionNo}/execute|reject`，permCode menu:transfer）：
+> execute=`PENDING→DONE` 单请求内完成——按 `expectedPorts` 在目标设备（resourceId 必填，须归属扩容单同一法人）批量建端口，
+> 端口码 `P-<设备码去横杠>-<序号>` 续号（跳过已占码），`quad_code` 初始=端口码（四码关联建立时细化），状态 IDLE 入池，
+> 法人/区域名按扩容单 ID 现查落快照；已建满则直接完成（created=0）；单口失败整单留 PENDING（已建端口保留，重试续建）。
+> reject=`PENDING→DONE` 终态。台账页只读不变：端口的预占/占用仍由订单状态机管理，扩容执行只产 IDLE 端口。
 
 ### 4.2.0 PON 端到端链路反查视图（P5-W2，派生只读，无新表新列）
 
