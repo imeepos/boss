@@ -1710,6 +1710,15 @@ export interface Translations {
       total: string
       empty: string
       loadFail: string
+      tabAll: string
+      tabPending: string
+      tabApproved: string
+      tabRejected: string
+      stPending: string
+      stApproved: string
+      stRejected: string
+      toastApproveOk: string
+      toastRejectOk: string
     }
     workerOps: {
       title: string
