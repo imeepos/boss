@@ -78,13 +78,17 @@ def wait_health(seconds=120):
 
 
 def wait_ready(seconds=300):
-    # 二进制就绪探针:W4 新端点 /odn/permits 可用(404=旧二进制;部署窗口竞态防护)
+    # 二进制就绪探针:W4 新端点 /odn/permits 在新二进制返回 200+code0,旧二进制 404;
+    # 负责人 W3 教训:纯存在性探针分不清部署代次,必须用新端点差异行为;超时打印最近探测状态。
+    last = ""
     deadline = time.time() + seconds
     while time.time() < deadline:
         st, body = http("GET", "/odn/permits")
+        last = "status=" + str(st) + " code=" + str((body or {}).get("code") if body else None)
         if st == 200 and body and body.get("code") == 0:
             return True
         time.sleep(5)
+    print("ready probe timeout; last=" + last)
     return False
 
 
@@ -104,7 +108,7 @@ def remote_rewrite_gate(on):
     py.append("        out.append(ln)")
     py.append("    lines = out")
     py.append("io.open(p, " + q + "w" + q + ", encoding=" + q + "utf-8" + q + ").write(chr(10).join(lines))")
-    rc, out, err = ssh("python3 -", stdin_text=py.join if False else chr(10).join(py))
+    rc, out, err = ssh("python3 -", stdin_text=chr(10).join(py))
     return rc == 0, (out + err)[-200:]
 
 
