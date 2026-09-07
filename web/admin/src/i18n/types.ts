@@ -751,7 +751,7 @@ export interface Translations {
     }
     billPage: {
     run: { btn: string; title: string; periodPh: string; result: string; fail: string }
-    invoice: { title: string; desc: string; loadFail: string; actFail: string; filterCustomer: string; empty: string; columns: string[]; voidBtn: string; reissueBtn: string; backfillBtn: string; voidConfirm: string; reissueConfirm: string; backfillTip: string; voidReasonPh: string; taxNoPh: string; confirm: string }
+    invoice: { title: string; desc: string; loadFail: string; actFail: string; filterCustomer: string; empty: string; columns: string[]; voidBtn: string; reissueBtn: string; backfillBtn: string; voidConfirm: string; reissueConfirm: string; backfillTip: string; voidReasonPh: string; taxNoPh: string; confirm: string; voidOk: string; reissueOk: string; backfillOk: string }
       title: string
       desc: string
       filterCustomer: string
@@ -798,6 +798,8 @@ export interface Translations {
       fail: string
       noBill: string
       searchFail: string
+      siteLoadFail: string
+      billLoadFail: string
       confirmText: string
     }
     /** 柜台日结(纪要 2026-08-28:T+0 只读汇总+实点回填)。 */
@@ -827,6 +829,8 @@ export interface Translations {
       resume: string
       stopConfirm: string
       resumeConfirm: string
+      stopOk: string
+      resumeOk: string
       actionFail: string
       total: string
       empty: string
@@ -849,6 +853,7 @@ export interface Translations {
       actionFail: string
       actionConfirm: string
       actionFailMsg: string
+      updateOk: string
       empty: string
       loadFail: string
       total: string
@@ -866,6 +871,7 @@ export interface Translations {
       columns: string[]
       retry: string
       retryConfirm: string
+      retryOk: string
       actionFail: string
       actionStop: string
       actionResume: string
@@ -887,6 +893,7 @@ export interface Translations {
       columns: string[]
       settle: string
       settleConfirm: string
+      settleOk: string
       actionFail: string
       ledgerPeriod: string
       ledgerQuery: string
@@ -2033,6 +2040,7 @@ export interface Translations {
       reconcileDone: string
       resolve: string
       resolveConfirm: string
+      resolveOk: string
       actionFail: string
       total: string
       empty: string
@@ -2066,6 +2074,7 @@ export interface Translations {
       columns: string[]
       ack: string
       ackConfirm: string
+      ackOk: string
       batchRetest: string
       fScope: string
       pScope: string
@@ -2145,6 +2154,7 @@ export interface Translations {
       columns: string[]
       retry: string
       retryConfirm: string
+      retryOk: string
       actionFail: string
       total: string
       empty: string
@@ -2164,6 +2174,9 @@ export interface Translations {
       edit: string
       delete: string
       deleteConfirm: string
+      saveOk: string
+      deleteOk: string
+      statusOk: string
       allStatus: string
       saveFail: string,
       requiredHint: string
