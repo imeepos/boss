@@ -20,7 +20,7 @@ type odnSiteReq struct {
 // odnDeviceReq 设备新建请求体(prvCode/cityPrefix 可空:handler 回退 query,与 site 一致)。
 type odnDeviceReq struct {
 	Code       string   `json:"code" binding:"required"`
-	Kind       string   `json:"kind" binding:"required,oneof=SNW OLT ODF OCC ODB SDB PRT TBP"`
+	Kind       string   `json:"kind" binding:"required,oneof=SNW OLT ODF OCC ODB OBD SDB SBD PRT TBP"`
 	PrvCode    string   `json:"prvCode"`
 	CityPrefix string   `json:"cityPrefix"`
 	SiteNo     int16    `json:"siteNo" binding:"min=0,max=999"`

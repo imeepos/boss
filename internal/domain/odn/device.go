@@ -14,25 +14,32 @@ var (
 	ErrBadHierarchy = errors.New("odn: bad hierarchy")
 )
 
-// 核心链路设备类型(资产编码规范 2.2)。
+// 核心链路设备类型(资产编码规范 2.2;OBD/SBD 为箱内部件扩展,规范 2.4 口径,
+// 裁定见 docs/notes/adopted/2026-09-07-odn-box-types-import-chain.md)。
 const (
 	DevSNW = "SNW" // 机房根节点,全网唯一
 	DevOLT = "OLT" // 市域唯一
 	DevODF = "ODF" // 按需节点,市域唯一
 	DevOCC = "OCC" // 按需节点,市域唯一
 	DevODB = "ODB" // 归属 OCC
+	DevOBD = "OBD" // 一级分光器,箱内部件(规范 2.4),归属 ODB
 	DevSDB = "SDB" // 归属 ODB(二级分光必选)
+	DevSBD = "SBD" // 二级分光器,箱内部件(扩展裁定),归属 SDB
 	DevPRT = "PRT" // 归属 SDB
 	DevTBP = "TBP" // 归属 PRT,可选末端
 )
 
-// parentKind 归属链(规范 2.1 拓扑;空=顶层,可挂局点)。
+// BoxKinds 箱体设备类型(W3 导入域:允许无城市,编码规范 2.2/2.4)。
+var BoxKinds = []string{DevODF, DevOCC, DevODB, DevOBD, DevSDB, DevSBD}
+
+// parentKind 归属链(规范 2.1 拓扑 + 2.4 箱内部件;空=顶层,可挂局点)。
 var parentKind = map[string]string{
-	DevODB: DevOCC, DevSDB: DevODB, DevPRT: DevSDB, DevTBP: DevPRT,
+	DevODB: DevOCC, DevOBD: DevODB, DevSDB: DevODB,
+	DevSBD: DevSDB, DevPRT: DevSDB, DevTBP: DevPRT,
 }
 
 // deviceCode 设备码:3 字母前缀 + 3 位编号 + 可选同址扩容后缀 -N(N>=2,禁 -1,规范 3.1)。
-var deviceCode = regexp.MustCompile(`^(SNW|OLT|ODF|OCC|ODB|SDB|PRT|TBP)([0-9]{3})(-([2-9]|[1-9][0-9]+))?$`)
+var deviceCode = regexp.MustCompile(`^(SNW|OLT|ODF|OCC|ODB|OBD|SDB|SBD|PRT|TBP)([0-9]{3})(-([2-9]|[1-9][0-9]+))?$`)
 
 // Site 局点(NodeCode = CityPrefix + 3 位序号)。
 type Site struct {
