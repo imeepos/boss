@@ -161,6 +161,11 @@ type ODNService interface {
 	ListBindingsByPort(ctx context.Context, portID int64) ([]ODNBinding, error)
 	ListBindingsByOrder(ctx context.Context, orderID int64) ([]ODNBinding, error)
 
+	// 资源链批量导入(P-INFRA-1 W3;说明页六规则;导入域箱体设备展开)。
+	ImportResourceChains(ctx context.Context, in ChainImportInput) (*ChainImportResult, error)
+	ListResourceChains(ctx context.Context, batch string, limit int) ([]ResourceChainView, error)
+	PatrolResourceChains(ctx context.Context) (*ChainPatrol, error)
+
 	// 影响面分析(P7,只读聚合;运维侧影响谁)。
 	ImpactByFacility(ctx context.Context, facilityCode string) (*ImpactReport, error)
 

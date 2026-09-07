@@ -213,7 +213,7 @@ paths:
       summary: 核心链路设备列表(kind/城市过滤)
       operationId: listOdnDevices
       parameters:
-        - { name: kind, in: query, schema: { type: string, enum: [SNW, OLT, ODF, OCC, ODB, SDB, PRT, TBP] } }
+        - { name: kind, in: query, schema: { type: string, enum: [SNW, OLT, ODF, OCC, ODB, OBD, SDB, SBD, PRT, TBP] } }
         - { name: prvCode, in: query, schema: { type: string } }
         - { name: cityPrefix, in: query, schema: { type: string } }
       responses: { '200': { $ref: '#/components/responses/Array' } }
@@ -229,8 +229,8 @@ paths:
               type: object
               required: [code, kind, prvCode, cityPrefix]
               properties:
-                code: { type: string, examples: [OLT001, ODB001-2], description: '^(SNW|OLT|ODF|OCC|ODB|SDB|PRT|TBP)[0-9]{3}(-[2-9][0-9]*)?$' }
-                kind: { type: string, enum: [SNW, OLT, ODF, OCC, ODB, SDB, PRT, TBP] }
+                code: { type: string, examples: [OLT001, ODB001-2], description: '^(SNW|OLT|ODF|OCC|ODB|OBD|SDB|SBD|PRT|TBP)[0-9]{3}(-[2-9][0-9]*)?$' }
+                kind: { type: string, enum: [SNW, OLT, ODF, OCC, ODB, OBD, SDB, SBD, PRT, TBP] }
                 prvCode: { type: string, examples: [PHL001] }
                 cityPrefix: { type: string, examples: [MNL] }
                 siteNo: { type: integer, description: 归属局点序号,0=市域设备 }
@@ -515,6 +515,43 @@ paths:
       operationId: getOdnImpact
       parameters:
         - { name: facilityCode, in: query, required: true, schema: { type: string } }
+      responses: { '200': { $ref: '#/components/responses/Data' } }
+
+  /odn/resource-chains/import:
+    post:
+      tags: [ODN]
+      summary: 资源链批量导入(P-INFRA-1 W3;模板 23 列一行一链;说明页六规则:示例行过滤/留空不猜填/层级断链拒绝/规划默认 PLANNED/总分光比乘积校验/指纹去重)
+      operationId: importOdnResourceChains
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [rows]
+              properties:
+                exampleRowCount: { type: integer, description: 说明页约定前 N 数据行为示例行,过滤不导入 }
+                rows:
+                  type: array
+                  description: 模板 ODN资源 sheet 数据行(枚举列为模板中文标签);字段口径 fields.md 1.5.12
+                  items: { type: object }
+      responses: { '200': { $ref: '#/components/responses/Data' } }
+
+  /odn/resource-chains:
+    get:
+      tags: [ODN]
+      summary: 资源链清单(导入结果核对;batch 过滤,近批优先)
+      operationId: listOdnResourceChains
+      parameters:
+        - { name: batch, in: query, schema: { type: string } }
+        - { name: limit, in: query, schema: { type: integer } }
+      responses: { '200': { $ref: '#/components/responses/Array' } }
+
+  /odn/resource-chains/patrol:
+    get:
+      tags: [ODN]
+      summary: 孤儿/半链巡检(链上箱体编码必须存在导入域设备;计数+样本行号)
+      operationId: patrolOdnResourceChains
       responses: { '200': { $ref: '#/components/responses/Data' } }
 
   /odn/devices/{id}/ports:
