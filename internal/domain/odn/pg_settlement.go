@@ -128,35 +128,106 @@ func (s *PGStore) GetSettlement(ctx context.Context, id int64) (*Settlement, err
 	return &st, nil
 }
 
-// SettleSettlement 确认结算 PENDING→SETTLED(CAS,记结算人/时间)。
-func (s *PGStore) SettleSettlement(ctx context.Context, id, accountID int64) error {
-	tag, err := s.db.Exec(ctx, `UPDATE construction_settlements
+// SettleSettlement 确认结算 PENDING→SETTLED(CAS,记结算人/时间),同事务自动生成应付记录
+// (W6/F8:金额=结算应付快照,来源单据 settlement_id 唯一引用)。
+func (s *PGStore) SettleSettlement(ctx context.Context, id, accountID int64) (*Payable, error) {
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		log.Printf("[odn-settlement] SETTLE TX BEGIN FAILED id=%d: %v", id, err)
+		return nil, fmt.Errorf("odn: settle begin: %w", err)
+	}
+	defer tx.Rollback(ctx)
+	var status string
+	var total, projID int64
+	var projNo, contractorName, settleNo string
+	var contractorID int64
+	err = tx.QueryRow(ctx, `SELECT status, total_amount, project_id, project_no,
+		COALESCE(contractor_id,0), contractor_name, settlement_no
+		FROM construction_settlements WHERE id=$1 FOR UPDATE`, id).
+		Scan(&status, &total, &projID, &projNo, &contractorID, &contractorName, &settleNo)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, ErrNotFound
+	}
+	if err != nil {
+		log.Printf("[odn-settlement] SETTLE READ FAILED id=%d: %v", id, err)
+		return nil, fmt.Errorf("odn: settle read: %w", err)
+	}
+	tag, err := tx.Exec(ctx, `UPDATE construction_settlements
 		SET status='SETTLED', settled_by=$2, settled_at=now(), updated_at=now()
 		WHERE id=$1 AND status='PENDING'`, id, accountID)
 	if err != nil {
-		log.Printf("[odn-settlement] SETTLE FAILED id=%d: %v", id, err)
-		return fmt.Errorf("odn: settle: %w", err)
+		log.Printf("[odn-settlement] SETTLE CAS FAILED id=%d: %v", id, err)
+		return nil, fmt.Errorf("odn: settle: %w", err)
 	}
 	if tag.RowsAffected() == 0 {
-		return s.settlementConflict(ctx, id)
+		if err := tx.Rollback(ctx); err != nil {
+			log.Printf("[odn-settlement] SETTLE ROLLBACK FAILED id=%d: %v", id, err)
+		}
+		return nil, s.settlementConflict(ctx, id)
 	}
-	return nil
+	// 同事务生成应付(F8):金额=结算应付,单据链经 settlement_id 可回放。
+	no := nextPayableNo()
+	var apID int64
+	var createdAt, updatedAt string
+	err = tx.QueryRow(ctx, `INSERT INTO construction_payables
+		(payable_no, settlement_id, settlement_no, project_id, project_no,
+		 contractor_id, contractor_name, payable_amount, status)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+		RETURNING id, to_char(created_at,'YYYY-MM-DD HH24:MI:SS'), to_char(updated_at,'YYYY-MM-DD HH24:MI:SS')`,
+		no, id, settleNo, projID, projNo, contractorID, contractorName, total, APOpen).
+		Scan(&apID, &createdAt, &updatedAt)
+	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+			return nil, fmt.Errorf("odn: settlement %d 应付已存在: %w", id, ErrPayableState)
+		}
+		log.Printf("[odn-settlement] PAYABLE CREATE FAILED settlement=%d no=%s: %v", id, no, err)
+		return nil, fmt.Errorf("odn: settle payable create: %w", err)
+	}
+	if err := tx.Commit(ctx); err != nil {
+		log.Printf("[odn-settlement] SETTLE COMMIT FAILED id=%d no=%s: %v", id, no, err)
+		return nil, fmt.Errorf("odn: settle commit: %w", err)
+	}
+	return &Payable{ID: apID, PayableNo: no, SettlementID: id, SettlementNo: settleNo,
+		ProjectID: projID, ProjectNo: projNo, ContractorID: contractorID,
+		ContractorName: contractorName, PayableAmount: float64(total),
+		Balance: float64(total), Status: APOpen, CreatedAt: createdAt, UpdatedAt: updatedAt}, nil
 }
 
 // VoidSettlement 作废 PENDING/SETTLED→VOIDED(原因必填,记作废人/时间);VOIDED 终态。
+// 已生成应付的(SETTLED 后作废),同事务冲销应付(原因同源);付款流水保留历史。
 func (s *PGStore) VoidSettlement(ctx context.Context, id, accountID int64, reason string) error {
 	if reason == "" {
 		return fmt.Errorf("odn: void reason required: %w", ErrInvalidInput)
 	}
-	tag, err := s.db.Exec(ctx, `UPDATE construction_settlements
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		log.Printf("[odn-settlement] VOID TX BEGIN FAILED id=%d: %v", id, err)
+		return fmt.Errorf("odn: void begin: %w", err)
+	}
+	defer tx.Rollback(ctx)
+	tag, err := tx.Exec(ctx, `UPDATE construction_settlements
 		SET status='VOIDED', voided_by=$2, voided_at=now(), void_reason=$3, updated_at=now()
 		WHERE id=$1 AND status IN ('PENDING','SETTLED')`, id, accountID, reason)
 	if err != nil {
-		log.Printf("[odn-settlement] VOID FAILED id=%d: %v", id, err)
+		log.Printf("[odn-settlement] VOID CAS FAILED id=%d: %v", id, err)
 		return fmt.Errorf("odn: void: %w", err)
 	}
 	if tag.RowsAffected() == 0 {
+		if err := tx.Rollback(ctx); err != nil {
+			log.Printf("[odn-settlement] VOID ROLLBACK FAILED id=%d: %v", id, err)
+		}
 		return s.settlementConflict(ctx, id)
+	}
+	if _, err := tx.Exec(ctx, `UPDATE construction_payables
+		SET status='VOIDED', void_reason=$2, updated_at=now()
+		WHERE settlement_id=$1 AND status<>'VOIDED'`, id, reason); err != nil {
+		log.Printf("[odn-settlement] PAYABLE VOID FAILED settlement=%d: %v", id, err)
+		return fmt.Errorf("odn: void payable: %w", err)
+	}
+	if err := tx.Commit(ctx); err != nil {
+		log.Printf("[odn-settlement] VOID COMMIT FAILED id=%d: %v", id, err)
+		return fmt.Errorf("odn: void commit: %w", err)
 	}
 	return nil
 }

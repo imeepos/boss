@@ -10,13 +10,16 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
-// projCols 施工项目查询列(000199)。
+// projCols 施工项目查询列(000199;000218 加预算金额与已结算金额只读派生列)。
 const projCols = "p.id, p.proj_no, COALESCE(p.name,''), COALESCE(p.prv_code,''), " +
 	"COALESCE(p.city_prefix,''), p.status, COALESCE(p.asbuilt_note,''), COALESCE(p.accepted_by,0), " +
 	"COALESCE(to_char(p.accepted_at,'YYYY-MM-DD HH24:MI:SS'),''), " +
 	"(SELECT count(*) FROM construction_items i WHERE i.project_id=p.id), " +
 	"COALESCE(p.contractor_id,0), COALESCE(p.contractor_name,''), " +
 	"(SELECT COALESCE(SUM(amount),0) FROM construction_items i WHERE i.project_id=p.id), " +
+	"p.budget_amount, " +
+	"(SELECT COALESCE(SUM(cs.total_amount),0) FROM construction_settlements cs " +
+	"WHERE cs.project_id=p.id AND cs.status='SETTLED'), " +
 	"to_char(p.updated_at,'YYYY-MM-DD HH24:MI:SS')"
 
 // CreateProject 新建施工单(proj_no 唯一;冲突→ErrDuplicate)。
@@ -44,7 +47,7 @@ func (s *PGStore) GetProject(ctx context.Context, id int64) (*Construction, erro
 	q := `SELECT ` + projCols + ` FROM construction_projects p WHERE p.id=$1`
 	err := s.db.QueryRow(ctx, q, id).Scan(&p.ID, &p.ProjNo, &p.Name, &p.PrvCode, &p.CityPrefix,
 		&p.Status, &p.AsbuiltNote, &p.AcceptedBy, &p.AcceptedAt, &p.ItemCount,
-		&p.ContractorID, &p.ContractorName, &p.ItemsAmount, &p.UpdatedAt)
+		&p.ContractorID, &p.ContractorName, &p.ItemsAmount, &p.BudgetAmount, &p.SettledAmount, &p.UpdatedAt)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	}
@@ -70,7 +73,7 @@ func (s *PGStore) ListProjects(ctx context.Context, limit int) ([]Construction, 
 		var p Construction
 		if err := rows.Scan(&p.ID, &p.ProjNo, &p.Name, &p.PrvCode, &p.CityPrefix,
 			&p.Status, &p.AsbuiltNote, &p.AcceptedBy, &p.AcceptedAt, &p.ItemCount,
-			&p.ContractorID, &p.ContractorName, &p.ItemsAmount, &p.UpdatedAt); err != nil {
+			&p.ContractorID, &p.ContractorName, &p.ItemsAmount, &p.BudgetAmount, &p.SettledAmount, &p.UpdatedAt); err != nil {
 			return nil, fmt.Errorf("odn: scan project: %w", err)
 		}
 		out = append(out, p)

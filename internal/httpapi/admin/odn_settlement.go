@@ -69,17 +69,21 @@ func odnGetSettlementHandler(a *app.Application) gin.HandlerFunc {
 	}
 }
 
-// odnSettleSettlementHandler POST /odn/settlements/{id}/settle:确认结算 PENDING→SETTLED。
+// odnSettleSettlementHandler POST /odn/settlements/{id}/settle:确认结算 PENDING→SETTLED,
+// 同事务自动生成应付记录(W6/F8);审计含应付单号。
 func odnSettleSettlementHandler(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
 		operator := httpx.ClaimsAccountID(c)
-		if err := a.ODN.SettleSettlement(c.Request.Context(), id, operator); err != nil {
+		ap, err := a.ODN.SettleSettlement(c.Request.Context(), id, operator)
+		if err != nil {
 			respondErr(c, err)
 			return
 		}
-		httpx.RecordAudit(a, c, "odn.settlement.settle", "construction_settlements", c.Param("id"), map[string]any{"to": "SETTLED"})
-		respond(c, apitypes.CodeOK, gin.H{"id": id, "status": "SETTLED"})
+		httpx.RecordAudit(a, c, "odn.settlement.settle", "construction_settlements", c.Param("id"),
+			map[string]any{"to": "SETTLED", "payableId": ap.ID, "payableNo": ap.PayableNo, "payableAmount": ap.PayableAmount})
+		respond(c, apitypes.CodeOK, gin.H{"id": id, "status": "SETTLED",
+			"payableId": ap.ID, "payableNo": ap.PayableNo})
 	}
 }
 

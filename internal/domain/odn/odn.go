@@ -170,11 +170,28 @@ type ODNService interface {
 	ConfirmIssue(ctx context.Context, id, accountID int64) error
 	CancelIssue(ctx context.Context, id, accountID int64) error
 
+	// 结算与应付(W1 结算模型;W6/F8 应付台账:SETTLED 同事务生成应付,VOIDED 同事务冲销)。
 	CreateSettlement(ctx context.Context, projectID, createdBy int64) (*Settlement, error)
 	ListSettlements(ctx context.Context, projectID int64) ([]Settlement, error)
 	GetSettlement(ctx context.Context, id int64) (*Settlement, error)
-	SettleSettlement(ctx context.Context, id, accountID int64) error
+	SettleSettlement(ctx context.Context, id, accountID int64) (*Payable, error)
 	VoidSettlement(ctx context.Context, id, accountID int64, reason string) error
+
+	// 预算与里程碑(W6/G2:000218;预算与里程碑清单仅 PENDING 可改,状态标记至 ACCEPTED 前)。
+	SetProjectBudget(ctx context.Context, projectID int64, amount *float64) error
+	ListMilestones(ctx context.Context, projectID int64) ([]Milestone, error)
+	AddMilestone(ctx context.Context, projectID int64, name, plannedDate string) (*Milestone, error)
+	UpdateMilestone(ctx context.Context, milestoneID int64, name, plannedDate string) error
+	MarkMilestone(ctx context.Context, milestoneID int64, status string) error
+
+	// 工程应付台账(W6/F8:000219;付款/核减/发票登记,净应付与余额只读派生)。
+	ListPayables(ctx context.Context, status string, projectID int64, limit int) ([]Payable, error)
+	GetPayable(ctx context.Context, id int64) (*PayableDetail, error)
+	RegisterPayablePayment(ctx context.Context, payableID, accountID int64, amount float64,
+		method, paidAt, reference, note string) (*PayablePayment, error)
+	DeductPayable(ctx context.Context, payableID, accountID int64, amount float64, reason string) (*PayableDeduction, error)
+	RegisterPayableInvoice(ctx context.Context, payableID, accountID int64, amount float64,
+		invoiceNo, invoicedAt, note string) (*PayableInvoice, error)
 
 	// 物理端口占用态(P2,迁移 000200;下单门控数据基础)。
 	ListPorts(ctx context.Context, deviceID int64) ([]ODNPort, error)
