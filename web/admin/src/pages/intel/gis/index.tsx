@@ -6,6 +6,7 @@ import { useT } from '../../../i18n'
 import { PageHead, pagerTexts } from '../../org/shared'
 import { Pagination } from '../../../components/Pagination'
 import { Dropdown } from '../../../components/Dropdown'
+import { SimplePicker } from '../../../components/pickers/SimplePicker'
 import { DetailDrawer } from '../../org/shared'
 import { fmtTime } from '../../../lib/format'
 import { useLocalStorage } from '../../../lib/useLocalStorage'
@@ -60,6 +61,21 @@ export default function GisPage() {
   const changeLevel = (lv: number) => {
     setLevel(lv); setParentId(0); setPage(1)
     load(lv, 0); loadPoints(lv, 0)
+  }
+
+  // 上级节点筛选数据源:同页 /gis/drill 取上级层(level-1)节点;level=1 无上级,选择器置灰。
+  const searchParentNodes = async (keyword: string): Promise<{ value: string; label: string }[] | null> => {
+    if (level <= 1) return []
+    const d = await apiFetch<{ items: GisNode[] }>('/gis/drill', { query: { level: level - 1 } })
+    const kw = keyword.trim().toLowerCase()
+    return (d?.items ?? [])
+      .filter((n) => !kw || n.name.toLowerCase().includes(kw) || String(n.id).includes(kw))
+      .map((n) => ({ value: String(n.id), label: n.name + ' (#' + n.id + ')' }))
+  }
+  const changeParent = (v: string) => {
+    const pid = Number(v) || 0
+    setParentId(pid); setPage(1)
+    load(level, pid); loadPoints(level, pid)
   }
 
   // ODN 图层点位:entity 显式传入(不用闭包 odnLayer,避免 state 未刷新误判 off);
@@ -123,8 +139,20 @@ export default function GisPage() {
           onChange={(v) => changeLevel(Number(v))}
           ariaLabel={g.title}
         />
-        <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" type="number" placeholder="parentId"
-          value={parentId || ''} onChange={(e) => { setParentId(Number(e.target.value) || 0); setPage(1) }} />
+        <SimplePicker
+          value={parentId ? String(parentId) : ''}
+          search={searchParentNodes}
+          onChange={changeParent}
+          ariaLabel={g.parentNode}
+          placeholder={g.parentNode}
+          searchPlaceholder={g.parentNode}
+          errorText={g.loadFail}
+          emptyLabel={t.pages.pickers.common.all}
+          clearable
+          clearLabel={t.pages.pickers.common.clear}
+          disabled={level <= 1}
+          minWidth={200}
+        />
         <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={refreshAll}>{t.pages.audit.refresh}</button>
         <span className="flex-1" />
         <Dropdown
