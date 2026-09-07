@@ -2109,3 +2109,11 @@
 - 哪个坑浪费了最多时间?宿主程序体转义族:\n、\" 在 run_code 字符串里被预解码成真实换行/引号,python/bash 内嵌脚本两次炸 parse error;Go 双引号串跨行(行数组写 Go 时 SQL 拆行)是另一个新雷。最省事的组合拳:代码文件一律行数组+String.fromCharCode 拼接(SQ/DQ/NL/T 常量),纯文本(YAML/SQL 块)才用模板字面量直写;每行发车前查裸反引号/反斜杠/\${。
 - skill 有没有提前警告?红线 11/22 都命中过且 SKILL.md 有明文,但「python 代码经行数组落地时 \n 也算反斜杠」这个变体没写透,本次补记。另:ff-only 合并、占号核查、迁移 up/down 成对等流程红线本次零违例,照单执行顺畅。
 - 重来一次会怎么做?写 Go 文件前先定「每行引号数配对」自检;SQL 一律单行或行尾 + 拼接;验收脚本第一版就带「服务端生成批次号不能当清理键」的意识;部署验收等 health=healthy + settle 45s 再跑,不等容器 Up 几秒的窗口。
+
+## 2026-09-07 W4 ROW/PECE 许可工作流（执行会话）
+- 最大时间坑：run_code 引号约束连续炸 6 次。最终稳定配方：① 字符串字面量内严禁一切反斜杠转义（\' \" \n 全部会炸）；② 引号字符一律 String.fromCharCode(34/39/96) 常量拼接（DQ/SQ/BT）；③ 多行内容用行数组 join(NL)，行按包含关系选 JS 引号类型（含单引号选双引号 JS 串，反之亦然）；④ 生成的 Go SQL 一律参数化（"$n" 风格传参），杜绝 SQL 内字面量，从源头消除嵌套引号；⑤ ssh 内嵌脚本改走 stdin 传 python3 -，且 heredoc 定界符必须带引号（<<'P7EOF'），否则 $1 被 bash 吞。
+- 第二坑：respondErr 信封恒 HTTP 200 + body.code 业务码（40900 等），验收脚本断言必须看 body.code 与 data.reason，只看 HTTP status 全错。
+- 第三坑：odn 设施生命周期 PLANNED 无 API 入口（状态机只出不进，新建即 IN_SERVICE），e2e 造数须 psql 直设（W1 同款）。
+- 流程坑：验收脚本翻全局开关（灰度 env）必须「开局确定性复位 + finally 崩溃安全恢复」，否则中途崩溃污染下轮；db-patrol-gate 超限项按作用域分类，非本工作流存量债记 WARN 上报而非硬 FAIL。
+- 基础设施：deploy-102 CI 卡死复现（act_runner 0.2.11 拉任务后无 job 容器无错误行），重启 runner 无效；手动复刻 CI（同参数 build+push+compose up）可行，注意 102 ~/boss 运维副本 compose 会过期（曾缺 BOSS_AAA_CRED_KEY_FILE），部署前先 scp 同步。
+- 102 真机验收价值实证：UnlinkPermitProject SQL 空串字面量被生成器吞掉（本地测试全绿），102 一跑就 500。
