@@ -76,8 +76,8 @@ SQL
 cleanup_data >/dev/null 2>&1
 
 # P0 造数:两个 PLANNED 设施(清单两行用;ON CONFLICT 幂等,仅动本任务命名行)。
-sqlval "INSERT INTO odn_facility(code, kind, prv_code, city_prefix, grid_code, name, status, lifecycle_status) VALUES ('$FAC1','CLS','PHL001','MNL',1,'$TAG 设施','IN_USE','PLANNED') ON CONFLICT (code) DO UPDATE SET lifecycle_status='PLANNED', name='$TAG 设施' RETURNING code;" >/dev/null
-sqlval "INSERT INTO odn_facility(code, kind, prv_code, city_prefix, grid_code, name, status, lifecycle_status) VALUES ('$FAC2','CLS','PHL001','MNL',1,'$TAG 设施2','IN_USE','PLANNED') ON CONFLICT (code) DO UPDATE SET lifecycle_status='PLANNED', name='$TAG 设施2' RETURNING code;" >/dev/null
+sqlval "INSERT INTO odn_facility(code, kind, prv_code, city_prefix, name, lifecycle_status) VALUES ('$FAC1','CLS','PHL001','MNL','$TAG 设施','PLANNED') ON CONFLICT (code) DO UPDATE SET lifecycle_status='PLANNED', name='$TAG 设施' RETURNING code;" >/dev/null
+sqlval "INSERT INTO odn_facility(code, kind, prv_code, city_prefix, name, lifecycle_status) VALUES ('$FAC2','CLS','PHL001','MNL','$TAG 设施2','PLANNED') ON CONFLICT (code) DO UPDATE SET lifecycle_status='PLANNED', name='$TAG 设施2' RETURNING code;" >/dev/null
 LC=$(sqlval "SELECT count(*) FROM odn_facility WHERE code IN ('$FAC1','$FAC2') AND lifecycle_status='PLANNED' AND name LIKE '${TAG} %';")
 assert_eq P0 "2" "$LC" "设施 $FAC1/$FAC2 备妥"
 
