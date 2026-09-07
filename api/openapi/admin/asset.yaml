@@ -141,6 +141,14 @@ paths:
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
 
+  /assets/region-backfill:
+    post:
+      tags: [Asset]
+      summary: 资产区域快照幂等回补(W3 收口;空快照行按地址行级节点归属推导,可重跑)
+      operationId: backfillAssetRegionSnapshots
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/List' }
+
   /assets/assignments:
     get:
       tags: [Asset]

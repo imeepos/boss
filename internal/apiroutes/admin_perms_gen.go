@@ -352,6 +352,7 @@ var AdminRoutePerms = map[string][]string{
 	"POST /api/admin/v1/asset-models/{id}/enable":                                 {"menu:asset"},
 	"POST /api/admin/v1/asset-returns/{returnId}/confirm":                         {"menu:order"},
 	"POST /api/admin/v1/assets":                                                   {"menu:asset"},
+	"POST /api/admin/v1/assets/region-backfill":                                   {"menu:asset"},
 	"POST /api/admin/v1/assets/{assetId}/scrap":                                   {"menu:asset"},
 	"POST /api/admin/v1/attachments/batch-get":                                    {},
 	"POST /api/admin/v1/attachments/upload":                                       {},

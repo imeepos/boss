@@ -153,6 +153,9 @@ type StocktakeItem struct {
 type AssetService interface {
 	ListBatches(ctx context.Context) ([]AssetBatch, error)
 	CreateBatch(ctx context.Context, b AssetBatch) (int64, error)
+	// BackfillRegionSnapshots 幂等回补资产区域快照(W3 收口,存量开户导入遗留①):
+	// 空快照行按地址行级节点归属推导回补(口径见 pg_region_backfill.go 文件头)。
+	BackfillRegionSnapshots(ctx context.Context) (*RegionBackfillResult, error)
 	ListTags(ctx context.Context) ([]Tag, error)
 	CreateTag(ctx context.Context, t Tag) (int64, error)
 	// ListTagsPage 标签分页列表(P3-T1):offset/limit+status/q(tag_no 前缀)+排序白名单,

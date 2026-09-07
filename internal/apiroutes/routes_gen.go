@@ -44,6 +44,7 @@ var Portals = []Portal{
 		{"DELETE", "/assets/{assetId}", "守卫删除(P2-W1-T1;仅 IN_STOCK 且无标签绑定/持有台账/换新单/盘点明细/四码关联可物理删;命中任一引用 40900 且 message 列全阻断项;SCRAPPED 一律拒绝硬删提示走报废端点)"},
 		{"GET", "/assets/{assetId}/lifecycle", "资产生命周期时间轴/流转记录(对齐 Go 实现 :assetId)"},
 		{"GET", "/assets/batches", "资产批次(对齐 Go 实现 GET /assets/batches)"},
+		{"POST", "/assets/region-backfill", "资产区域快照幂等回补(W3 收口;空快照行按地址行级节点归属推导,可重跑)"},
 		{"GET", "/assets/assignments", "资产装维指派(对齐 Go 实现 GET /assets/assignments)"},
 		{"GET", "/tags", "电子标签列表(status: UNBOUND/BOUND/DISABLED)"},
 		{"POST", "/tags", "建标签(P2-W2-T1 A;编号+EPC+频段必填且唯一,冲突 40900;状态缺省 UNBOUND;法人必填且须存在)"},
