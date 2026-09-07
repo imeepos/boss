@@ -196,14 +196,14 @@ def backfill():
 def grid_rows():
     st, body = http("GET", "/odn/grid-investment")
     if st == 200 and code_of(body) == 0:
-        return data_of(body) or []
+        return (data_of(body) or {}).get("items") or []
     raise RuntimeError("grid-investment: " + str((st, body))[:200])
 
 
 def city_rows():
     st, body = http("GET", "/odn/city-investment")
     if st == 200 and code_of(body) == 0:
-        return data_of(body) or []
+        return (data_of(body) or {}).get("items") or []
     raise RuntimeError("city-investment: " + str((st, body))[:200])
 
 
