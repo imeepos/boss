@@ -19,6 +19,7 @@ SSH_HOST = "imeepos@192.168.0.102"
 COMPOSE_PATH = "/home/imeepos/boss/deployments/docker-compose.102.app.yml"
 PROJ_PREFIX = "w4acc-"
 FAC_PREFIX = "W4ACC-"
+ADDR_PREFIX = "W4ACC-"
 PASS = 0
 FAIL = 0
 KEY = ""
