@@ -182,6 +182,7 @@ var AdminRoutePerms = map[string][]string{
 	"GET /api/admin/v1/odn/devices/{id}/ports":                                    {"menu:odn"},
 	"GET /api/admin/v1/odn/facilities":                                            {"menu:odn"},
 	"GET /api/admin/v1/odn/facilities/{code}":                                     {"menu:odn"},
+	"GET /api/admin/v1/odn/grid-investment":                                       {"menu:grid-investment"},
 	"GET /api/admin/v1/odn/grids":                                                 {"menu:odn"},
 	"GET /api/admin/v1/odn/impact":                                                {"menu:odn"},
 	"GET /api/admin/v1/odn/segments":                                              {"menu:odn"},

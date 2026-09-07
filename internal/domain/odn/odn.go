@@ -100,6 +100,9 @@ type ODNService interface {
 	UpdateGrid(ctx context.Context, prvCode, cityPrefix string, gridCode int16, g Grid) error
 	RetireGrid(ctx context.Context, prvCode, cityPrefix string, gridCode int16) error
 
+	// 网格投资测算读模型(P-INFRA-1 W2;纯只读聚合,无写路径)。
+	GridInvestment(ctx context.Context) ([]GridInvestmentRow, error)
+
 	// 基础设施。
 	ListFacilities(ctx context.Context, kind string, gridFilter GridRef) ([]Facility, error)
 	GetFacility(ctx context.Context, code string) (*Facility, error)

@@ -32,6 +32,13 @@ paths:
                 status: { type: string, enum: [ACTIVE, RESERVED] }
       responses: { '200': { $ref: '#/components/responses/Data' } }
 
+  /odn/grid-investment:
+    get:
+      tags: [ODN]
+      summary: 网格投资测算读模型(P-INFRA-1 W2,只读聚合;门禁 menu:grid-investment)
+      operationId: listOdnGridInvestment
+      responses: { '200': { $ref: '#/components/responses/Data' } }
+
   /odn/grids/{gridCode}:
     put:
       tags: [ODN]

@@ -108,6 +108,8 @@
 | 派单区域匹配（派生口径） | regions 树祖先或自身 | 工单区域须落在师傅负责区域子树内（ltree path <@）；师傅区域 0=不限、工单区域 0=放行；adopted 2026-09-01（WorkerService.MatchedRegionIDs） |
 | 授权类型 license_type | duration / lifetime / trial | 按时长 / 终身 / 试用（release-platform 发行契约，claims 内透传展示） |
 | 授权 status（release-platform 侧） | issued / activated / consumed / expired / revoked | 已签发 / 已激活 / 已兑码 / 已过期 / 已吊销；boss 仅核验 `revoked`/`expired` 拒绝（verify.go checkStatus），其余透传展示 |
+| ODN 设施生命周期 odn_facility.lifecycle_status | PLANNED / IN_BUILD / IN_SERVICE / RETIRED | 规划 / 施工中 / 在网 / 退役（site/device 同规，迁移 000198；RETIRED 终态与 status 双列同步） |
+| 地址覆盖 address_coverage.status | SERVED / PENDING / UNSERVED | 可装 / 规划在建 / 未覆盖（迁移 000197；SERVED/PENDING 须挂服务设施或核心设备） |
 
 ## 5. 关键术语
 

@@ -239,6 +239,7 @@ var adminRoutes = []routeEntry{
 	{"POST", "/notifications/resolve", "办结待办(refType+refID 置 resolved+resolved_at;SLA onTimeRate 计入)"},
 	{"GET", "/odn/grids", "网格分区列表(含占用数与 >=80% 预警)"},
 	{"POST", "/odn/grids", "新建网格(备案,规范红线 2)"},
+	{"GET", "/odn/grid-investment", "网格投资测算读模型(P-INFRA-1 W2,只读聚合;门禁 menu:grid-investment)"},
 	{"PUT", "/odn/grids/:gridCode", "编辑网格(RETIRED 不可改回)"},
 	{"DELETE", "/odn/grids/:gridCode", "网格退役(须无在用设施)"},
 	{"GET", "/odn/facilities", "设施列表(kind/网格过滤)"},

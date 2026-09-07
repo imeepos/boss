@@ -2,6 +2,9 @@
 
 <!-- 格式：禁止 X，因为 Y 发生过。真的付出过代价才记。 -->
 
+- 禁止在大批量 DELETE 前不做 pg_dump 备份或不包单事务,因为 FK 反序与漏删父表需要多次回滚重试(2026-09-07 清理轮三连回滚+orders 漏删),备份(backup-102.sh)+ON_ERROR_STOP 是唯一安全网;也禁止不跑 db-patrol-gate 就宣布清理完成。
+- 禁止用 pg_stat_user_tables 的 n_live_tup 判断「表是否为空/该不该清理」,因为估算长期失真(assets 估219实566、bills 估0实4、procurement 估0实13),必须 count(*)。
+
 - 禁止用 bash cat/head 代替 Read 工具读"待编辑"的文件，因为 edit/write 会因未观察而拒绝；同一会话踩过两次。
 - 禁止复用上轮 CDP 截图的 Chrome profile 拍对照图，因为 localStorage 状态泄漏让"亮色"截图拍成了暗色。
 - 禁止用假数据/mock 替代真实后端做开发验证，因为造假掩盖后端真实问题（用户明确驳回 mock 登录方案）；dev 免登录用真实 /auth/login 换来的 JWT 经 `?token=` 注入（scripts/dev-token.mjs）。

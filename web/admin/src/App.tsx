@@ -97,6 +97,7 @@ const GisPage = lazy(() => import('./pages/intel/gis'))
 const AnalyticsPage = lazy(() => import('./pages/intel/analytics'))
 const ReportPage = lazy(() => import('./pages/intel/report'))
 const MonthlyPage = lazy(() => import('./pages/intel/monthly'))
+const GridInvestmentPage = lazy(() => import('./pages/intel/grid-investment'))
 const ProfilePage = lazy(() => import('./pages/profile'))
 const PartnerApplyPage = lazy(() => import('./pages/partner/apply'))
 const ForbiddenPage = lazy(() => import('./pages/error').then((m) => ({ default: m.ForbiddenPage })))
@@ -222,6 +223,7 @@ function MenuPage({ pageKey }: { pageKey: string }) {
   if (pageKey === 'analytics') return <AnalyticsPage />
   if (pageKey === 'report') return <ReportPage />
   if (pageKey === 'monthly') return <MonthlyPage />
+  if (pageKey === 'grid-investment') return <GridInvestmentPage />
   return <PlaceholderPage title={label} />
 }
 

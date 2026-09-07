@@ -1,5 +1,11 @@
 # Notes
 
+## 2026-09-07 102 全量测试数据清理(主会话直做,无 worktree)
+
+- 最耗时坑:四件事叠一起。①ssh+psql 内联 -c 叠引号 3 连炸(红线9a已犯14次,换「本地写 SQL 文件 + ssh stdin 管道」一次过,该模式应默认化);②pg_stat_user_tables 估算全失真(assets 估219实566、bills 估0实4),差点按估算判「空表跳过」;③DELETE 脚本手工排 FK 序三连反序回滚(invoices→bills、coupon_redemptions→coupons、procurement_receipts→asset_batches),且 del_orders 临时表建了却漏写 orders 本体 DELETE,靠复核 count 抓出;④17:16 有并行终端用 admin@192.168.0.15 导入 346 个 OWPAL/OWTAC 客户壳+资产,落在我确认范围之后——停下来问用户,确认为造数后才纳入。
+- skill 有没有预警:红线9a 管了引号但没管「批量删除应从 pg_constraint 生成拓扑序」「行数盘点禁信 pg_stat」;备份-单事务-巡检门禁三件套(backup-102.sh/ON_ERROR_STOP/db-patrol-gate)全部按既有约定走,三次回滚+一次漏删都零损失,机制红利明显。
+- 重来一次:大清理标准动线=count(*) 全量盘点 → pg_constraint 拉 FK 图生成拓扑序删除脚本 → backup-102.sh → 本地 SQL 文件+ssh stdin 单事务 ON_ERROR_STOP → 复核+db-patrol-gate;盘点后新出现的并行造数必须扩范围前问用户。
+
 ## 2026-09-07 P-INFRA-1 负责人立项(feat/plan-infra-buildout)
 
 - 最耗时坑:--no-checkout worktree 半检出状态直接 commit——index 为空,git status 满屏 D 误当常态,add+commit 产出「删全仓只留 docs」的提交 eb0b6aa;幸运未推送未并 main,reset --hard main 后 cherry-pick 重做无损。同轮 ff-only 合并撞并行 kaihu 线推进 main,按协议回 worktree reset --hard main + cherry-pick 后一次过。
@@ -2045,3 +2051,14 @@
 - 修复方案落码前先做数据侧预检:ltree label 合法性(347 账号全字母数字下划线)、
   号段/路径零冲突,一次探明后实现零返工;裁定给的特征('全部账号均为字母数字下划线')
   仍要实测验证而非直接信任。
+
+## 2026-09-07 T3 修复轮3(4724eb43, 幂等硬化+ltree 转义)
+
+- ltree 列直接 LIKE 在 psql 报 operator does not exist: ltree ~~ unknown——ltree 无
+  ~~ 操作符,须 path::text LIKE(或 <@ 包含,但 <@ 会把父根自身计入,计数口径要重算);
+  生成 SQL 的对账语句过真库前至少 psql 干跑一次,类型系统差异只在执行时暴露。
+- 幂等语义权威在服务端唯一约束,客户端列表查重(关键词/分页)只是优化:POST 40900
+  一律按已存在跳过,列表查重失效也不崩;但非 409 错误仍要 raise+行级日志,别把
+  『跳过』扩成『吞错』。
+- CI 重库会清空 API 段数据:重放语义按『全新导入』设计(created=347/skipped=0 是
+  正常态),不要按残留假设写死预期。

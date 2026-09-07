@@ -38,6 +38,7 @@
         "dashboard",
         "feedback",
         "gis",
+        "grid-investment",
         "knowledge",
         "marketing",
         "marketing-recon",
@@ -67,6 +68,7 @@
         "aaalog",
         "aaasession",
         "alarm",
+        "grid-investment",
         "monthly"
       ],
       "beOnly": []
@@ -74,7 +76,8 @@
     "sysadmin": {
       "feOnly": [
         "aaasession",
-        "capacity"
+        "capacity",
+        "grid-investment"
       ],
       "beOnly": [
         "menu:ai",

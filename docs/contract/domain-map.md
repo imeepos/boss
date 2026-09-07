@@ -38,7 +38,7 @@
 | 四码合一/一致性 | QUAD | （横切 CONS） | `quadlink` | 阶段6 | quad | quadlink/check/scanlog |
 | GIS | GIS | AG-11 | `gis` | 阶段8 | intel | gis |
 | 国际地理基础数据 | — | — | `geo` | 阶段1 | base（web/admin `/base/geo`；docs/admin menu.js 未列） | geo（国家/行政区划/译名，ISO 3166；服务 addresses 国际化，与 gis 分立见 note 2026-08-18-geo-vs-gis-split） |
-| 经营分析 BI | BI | AG-12 | `analytics`(+`report`+`monthly`，000181 月度填报) | 阶段9 | intel | analytics/report；monthly 页面待建(T20) |
+| 经营分析 BI | BI | AG-12 | `analytics`(+`report`+`monthly`，000181 月度填报) | 阶段9 | intel | analytics/report/monthly/grid-investment(W2 投资测算,读模型属 odn 包) |
 | 客服工单 | CS | AG-07 | `cs`（000118 基础） | 增量(Q1) | boss(报障) | complaint/客服工作台 |
 | 应收信用 | AR | AG-09 | `ar`（000118 基础） | 增量(Q1) | billing(欠费) | arrears/催收队列 |
 | 渠道经销商 | CH | AG-10 | `partner`(入驻先行) | 阶段1(000098) | org(审核页 partner)+企业工作台 | partner 入驻申请审核/我的企业/员工管理/企业订单 |
@@ -52,7 +52,7 @@
 | 消息通知 | NOT | XG-04(组装) | `worker`(师傅侧消息/公告)、`notify`(admin 侧提醒/待办,迁移 000090) | 阶段2 | boss | message(后台提醒=第三页签);推送通道配置 push.*(pkg/push,迁移 000094,页面 /base/pushconfig) |
 | AI 能力网关 | AI | （横切，平台级，非 21 域） | `ai` | 增量 | 无专用页（复用 base/settings 参数页） | ai.openai.* 配置经 /params 或 /ai/openai/config 热更 |
 | 营销促销 | PROMO | （横切营销；LOY 积分待建，积分换券未来经契约） | `promotion` | 增量(000102) | bss（券仓入用户详情聚合;模板/赠送规则经 admin API,无专用页面） | 券模板/发放/兑换码/转赠/缴费抵扣/赠送时长规则;设计见 docs/design/promotion-coupon.md |
-| ODN 无源物理层 | ODN | （横切,与 OSS/AMS 同源;规范见 docs/pdfs《Suniway ODN 地理空间编码规范》） | `odn` | 阶段7/8(增量) | oss（`menu:odn`,sysadmin+resource_admin） | 局点/核心链路设备/光缆段落纤芯/网格与设施(规范第 2-5 章);`/odn/sites\|devices\|grids\|facilities\|segments` |
+| ODN 无源物理层 | ODN | （横切,与 OSS/AMS 同源;规范见 docs/pdfs《Suniway ODN 地理空间编码规范》） | `odn` | 阶段7/8(增量) | oss（`menu:odn`,sysadmin+resource_admin） | 局点/核心链路设备/光缆段落纤芯/网格与设施(规范第 2-5 章);`/odn/sites\|devices\|grids\|facilities\|segments`;网格投资测算读模型 `/odn/grid-investment`(W2,页面挂 intel,见 §2.1) |
 | 采购-库存 | PUR | （横切,增量挂靠,不开阶段 10;adopted 2026-08-28） | `procurement` | 增量(000163) | ams（`menu:purchase`、`menu:inventory`,sysadmin） | 供应商/采购单/库存查询（与 asset 域共用 asset_batches/资产台账但域边界独立;GIS 库存分布图层读 asset_batches.warehouse_lat/lng） |
 | 官网内容发布 | CMS | （平台级,非 21 域） | `cms`(000134) | 增量 | boss(官网内容) | `/boss/site` 文章管理(动态/新闻/文章)；公开读 `/api/admin/v1/site/posts` 免鉴权供官网首页 |
 | 开放平台 | OPEN | （横切,平台级,非 21 域） | `openplat`(000122) | 增量(Q4) | org（开发者门户,`/openplat`） | AppId+Secret HMAC 鉴权、Webhook 订阅与投递、配额与限流、回放工具;契约 `/api/open/v1` |
@@ -83,7 +83,7 @@ menu.js 共 13 分组 49 菜单页（另 `login.html` 为登录散页，不进�
 | provision 配置下发 | PROV | `provision` | 阶段7 | provision/template/provlog |
 | alarm 告警中心 | MON | `device` | 阶段7 | alarm |
 | aaa 认证计费 | AAA | `aaa` | 阶段7 | aaalog |
-| intel 数字孪生与经营 | GIS + BI | `gis`/`analytics`/`monthly`(000181) | 阶段8/9 | gis/analytics/report；monthly 页面待建(T20) |
+| intel 数字孪生与经营 | GIS + BI | `gis`/`analytics`/`monthly`(000181)/`odn`(投资测算读模型,W2) | 阶段8/9 | gis/analytics/report/monthly/grid-investment |
 
 ### 2.1 跨域归属的页面（边界标注，Agent 不得越界实现）
 
@@ -94,6 +94,7 @@ menu.js 共 13 分组 49 菜单页（另 `login.html` 为登录散页，不进�
 | loaccount.html | oss | AAA(认证授权) | 认证账号，属 AAA 域非资源域 |
 | callback.html | boss | ORD(订单) | 激活回调，订单第 11 环节 |
 | importer.html | base | 横切 | 数据导入中心，跨域公共能力 |
+| grid-investment | intel | ODN(+W1 结算成本) | 网格投资测算只读读模型（P-INFRA-1 W2）；数据源 odn_facility/address_coverage 与 W1 承包商结算，接口 `/odn/grid-investment`，口径 fields.md 1.5.11 |
 
 ## 3. 阶段 vs 能力域 vs Agent 的落地顺序
 
