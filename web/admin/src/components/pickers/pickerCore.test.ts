@@ -7,6 +7,7 @@ import {
   mergeOptions,
   moveActive,
   pickerSearchReducer,
+  resolveOptionMatch,
   pickSingleKey,
   toSelectionChips,
   togglePickKey,
@@ -207,5 +208,26 @@ describe('pickerSearchReducer 服务端检索状态机', () => {
     s = pickerSearchReducer(s, req(2))
     s = pickerSearchReducer(s, { type: 'ok', seq: 1, items: ['old'] })
     expect(s.items).toEqual([])
+  })
+})
+
+describe('resolveOptionMatch 文案当 value 的兜底解析(W1 裁定)', () => {
+  const opts = [opt('1', '在职'), opt('0', '离职')]
+
+  it('精确 value 命中优先', () => {
+    expect(resolveOptionMatch(opts, '0')).toEqual({ effectiveValue: '0', hit: opts[1] })
+  })
+
+  it('文案当 value 传入时按 label 同值兜底,effectiveValue 回到真实 value', () => {
+    expect(resolveOptionMatch(opts, '在职')).toEqual({ effectiveValue: '1', hit: opts[0] })
+  })
+
+  it('双 miss 原样返回,交由合成钉选回显', () => {
+    expect(resolveOptionMatch(opts, '冻结').effectiveValue).toBe('冻结')
+    expect(resolveOptionMatch(opts, '冻结').hit).toBeUndefined()
+  })
+
+  it('空值不参与匹配', () => {
+    expect(resolveOptionMatch(opts, '')).toEqual({ effectiveValue: '' })
   })
 })

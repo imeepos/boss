@@ -23,6 +23,19 @@
 
 经验法则:拿不准时先数数据量与筛选维度;两维以上筛选或要分页,直接 DialogPicker。
 
+## 文案当 value 的存量调用防御(W1 裁定,2026-09-07)
+
+W1 域审计发现至少 9 处调用点把显示文案当 value 传给 Dropdown(触发器跌回 ariaLabel,
+102 实证出现「状态状态」)。基座统一防御,各域按以下口径在 Phase B 逐处修正:
+
+- 精确 value 命中优先;文案恰为某 option 的 label 时按 label 同值兜底(resolveOptionMatch):
+  勾选、键盘落点、高亮全按真实 value 项渲染,选定回写真实 value。
+- 文案既不在 value 域也不在 label 域:合成钉选回显原值(withPinnedValue),不跌回占位文案。
+- 两条兜底路径均 console.warn('[Dropdown] value 不在 options 值域:…') 每实例留痕一次,
+  Phase B 改传真实 value 后告警自然消失;全站 grep 该前缀即可盘点存量调用点。
+- MultiSelect 不做 label 兜底(多选勾选集合语义不同),values 传文案时按原值回显;
+  新调用一律传真实 value,枚举以 docs/contract/fields.md 为准。
+
 ## SimplePicker(小数据量基座)
 
 文件:components/pickers/SimplePicker.tsx。双数据源二选一:静态 options 数组(本地过滤)或 search 服务端关键字检索函数(防抖 300ms,优先级高,内部走 useServerPickerSearch)。

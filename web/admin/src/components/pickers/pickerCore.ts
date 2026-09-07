@@ -135,3 +135,17 @@ export function pickerSearchReducer<T>(state: PickerSearchState<T>, action: Pick
       return state
   }
 }
+
+/**
+ * 有效选中值解析(W1 裁定防御):精确 value 命中优先;存量调用把显示文案当 value 传时,
+ * 按 label 同值兜底(effectiveValue 回到真实 value);双 miss 原样返回,交由 withPinnedValue
+ * 合成钉选回显。hit.value !== value 即 label 兜底命中,调用方应 console.warn 留痕。
+ */
+export function resolveOptionMatch(options: DropdownOption[], value: string): { effectiveValue: string; hit?: DropdownOption } {
+  if (value === '') return { effectiveValue: '' }
+  const exact = options.find((o) => o.value === value)
+  if (exact) return { effectiveValue: value, hit: exact }
+  const byLabel = options.find((o) => o.label === value)
+  if (byLabel) return { effectiveValue: byLabel.value, hit: byLabel }
+  return { effectiveValue: value }
+}

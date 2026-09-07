@@ -5,7 +5,7 @@
 // aria-activedescendant。服务端检索 loading 行与空态文案由调用方透传;
 // 已选值不在当前选项集时钉选回显(withPinnedValue),触发器不跌回占位文案。
 import { useEffect, useId, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent } from 'react'
-import { moveActive, withPinnedValue } from './pickers/pickerCore'
+import { moveActive, resolveOptionMatch, withPinnedValue } from './pickers/pickerCore'
 
 export interface DropdownOption {
   value: string
@@ -61,16 +61,30 @@ export function Dropdown({ value, options, onChange, ariaLabel, disabled, trigge
     return () => document.removeEventListener('mousedown', onDocClick)
   }, [open, disabled])
 
-  // 已选值不在当前选项集(服务端检索漏项/静态漏项)时追加合成选项,回显不丢失。
-  const fullOptions = withPinnedValue(options, value)
-  const current = fullOptions.find((o) => o.value === value)
+  // W1 裁定防御:存量调用把显示文案当 value 传时,label 同值兜底为有效选中项(勾选/高亮/
+  // 键盘落点全按 effectiveValue,选定回写真实 value);双 miss 才合成钉选回显原值。
+  // 两条兜底路径均 console.warn 留痕一次,便于各域 Phase B 逐处改传真实 value。
+  const match = resolveOptionMatch(options, value)
+  const effectiveValue = match.effectiveValue
+  const fullOptions = match.hit ? options : withPinnedValue(options, value)
+  const current = match.hit ?? fullOptions.find((o) => o.value === value)
+  const warnedRef = useRef<Set<string>>(new Set())
+  useEffect(() => {
+    if (value === '' || !match.hit || match.hit.value === value) return
+    const key = (match.hit.value === value ? 'v' : 'l') + ':' + value
+    if (warnedRef.current.has(key)) return
+    warnedRef.current.add(key)
+    console.warn('[Dropdown] value 不在 options 值域:' + value + (match.hit.value === value ? '' : '(已按 label 同值兜底回显)') + ';请改传真实 value(见 picker-guide W1 裁定)')
+    // match 每渲染重建,去重交给 warnedRef。
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value])
   const kw = keyword.trim().toLowerCase()
   const visible = searchable && !remote && kw !== '' ? fullOptions.filter((o) => o.label.toLowerCase().includes(kw)) : fullOptions
 
   // 打开时:活动项落在已选项(无则首项);searchable 时焦点直达过滤输入。关闭即复位。
   useEffect(() => {
     if (!open) { setActive(-1); return }
-    const idx = visible.findIndex((o) => o.value === value)
+    const idx = visible.findIndex((o) => o.value === effectiveValue)
     setActive(idx >= 0 ? idx : 0)
     if (searchable) inputRef.current?.focus()
     // visible/value 仅用于开合瞬间的落点计算,不作为重放依赖。
@@ -187,8 +201,8 @@ export function Dropdown({ value, options, onChange, ariaLabel, disabled, trigge
               + (o.disabled
                 ? 'cursor-not-allowed text-[var(--shell-input-placeholder)]'
                 : 'cursor-pointer ' + (onDark
-                  ? 'text-white hover:bg-white/10' + (o.value === value ? ' font-semibold text-[var(--color-brand-gold-500)]' : '')
-                  : 'text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]' + (o.value === value ? ' font-semibold text-[var(--shell-fab-bg)]' : '')))
+                  ? 'text-white hover:bg-white/10' + (o.value === effectiveValue ? ' font-semibold text-[var(--color-brand-gold-500)]' : '')
+                  : 'text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]' + (o.value === effectiveValue ? ' font-semibold text-[var(--shell-fab-bg)]' : '')))
               + activeCls
             return (
               <button
@@ -196,7 +210,7 @@ export function Dropdown({ value, options, onChange, ariaLabel, disabled, trigge
                 id={lbId + '-opt-' + i}
                 type='button'
                 role='option'
-                aria-selected={o.value === value}
+                aria-selected={o.value === effectiveValue}
                 aria-disabled={o.disabled || undefined}
                 className={optCls}
                 onMouseEnter={() => setActive(i)}
@@ -210,7 +224,7 @@ export function Dropdown({ value, options, onChange, ariaLabel, disabled, trigge
                 onClick={(e) => e.preventDefault()}
               >
                 <span className='truncate'>{o.label}</span>
-                <span className='min-w-[14px] text-right' aria-hidden>{o.value === value && (
+                <span className='min-w-[14px] text-right' aria-hidden>{o.value === effectiveValue && (
                   <svg viewBox='0 0 24 24' width='14' height='14' fill='none' stroke='currentColor'
                     strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'>
                     <path d='M5 12.5l4.5 4.5L19 7.5' />
