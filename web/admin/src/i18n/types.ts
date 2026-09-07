@@ -1170,6 +1170,13 @@ export interface Translations {
       unitAmount: string
       addItem: string
       errSupplier: string
+      createOk: string
+      submitOk: string
+      confirmOk: string
+      pEntitySelect: string
+      delRow: string
+      phMaterial: string
+      phBatchCode: string
       errItems: string
       batchCode: string
       batchName: string
