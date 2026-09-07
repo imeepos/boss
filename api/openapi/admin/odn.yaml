@@ -32,6 +32,22 @@ paths:
                 status: { type: string, enum: [ACTIVE, RESERVED] }
       responses: { '200': { $ref: '#/components/responses/Data' } }
 
+  /odn/regions:
+    get:
+      tags: [ODN]
+      summary: 省级编码字典(000075 种子只读;级联下拉数据源)
+      operationId: listOdnRegions
+      responses: { '200': { $ref: '#/components/responses/Array' } }
+
+  /odn/cities:
+    get:
+      tags: [ODN]
+      summary: 省内城市前缀字典(000075 种子只读;级联下拉数据源)
+      operationId: listOdnCities
+      parameters:
+        - { name: prvCode, in: query, required: true, schema: { type: string, examples: [PHL001] } }
+      responses: { '200': { $ref: '#/components/responses/Array' } }
+
   /odn/grid-investment:
     get:
       tags: [ODN]

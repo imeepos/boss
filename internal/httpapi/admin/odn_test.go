@@ -25,6 +25,22 @@ type fakeODN struct {
 	createErr error
 	created   *odn.Facility
 	segment   *odn.Segment
+	dictErr   error
+}
+
+func (f *fakeODN) ListRegions(_ context.Context) ([]odn.RegionOption, error) {
+	if f.dictErr != nil {
+		return nil, f.dictErr
+	}
+	return []odn.RegionOption{{PrvCode: "PHL001", Name: "国家首都区"}}, nil
+}
+
+func (f *fakeODN) ListCities(_ context.Context, prvCode string) ([]odn.CityOption, error) {
+	if f.dictErr != nil {
+		return nil, f.dictErr
+	}
+	_ = prvCode
+	return []odn.CityOption{{CityPrefix: "MNL", Name: "马尼拉"}}, nil
 }
 
 func (f *fakeODN) CreateFacility(_ context.Context, fac odn.Facility) error {
@@ -156,6 +172,34 @@ func TestODNSiteDeviceHandlers(t *testing.T) {
 			"/api/admin/v1/odn/devices?prvCode=PHL001&cityPrefix=MNL",
 			`{"code":"OLT001","kind":"OLT","siteNo":1}`)
 		if w.Code != http.StatusOK {
+			t.Fatalf("HTTP=%d body=%s", w.Code, w.Body.String())
+		}
+	})
+}
+
+func TestODNDictHandlers(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	t.Run("GET /odn/regions 返回省级字典", func(t *testing.T) {
+		w := doJSON(odnRouter(&fakeODN{}), http.MethodGet, "/api/admin/v1/odn/regions", "")
+		if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), "PHL001") {
+			t.Fatalf("HTTP=%d body=%s", w.Code, w.Body.String())
+		}
+	})
+	t.Run("GET /odn/cities 缺 prvCode 拒绝", func(t *testing.T) {
+		w := doJSON(odnRouter(&fakeODN{}), http.MethodGet, "/api/admin/v1/odn/cities", "")
+		var body struct {
+			Code int `json:"code"`
+		}
+		json.Unmarshal(w.Body.Bytes(), &body)
+		if body.Code != 42200 {
+			t.Fatalf("期望 42200,body=%s", w.Body.String())
+		}
+	})
+	t.Run("GET /odn/cities 按 prvCode 过滤", func(t *testing.T) {
+		w := doJSON(odnRouter(&fakeODN{}), http.MethodGet,
+			"/api/admin/v1/odn/cities?prvCode=PHL001", "")
+		if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), "MNL") {
 			t.Fatalf("HTTP=%d body=%s", w.Code, w.Body.String())
 		}
 	})

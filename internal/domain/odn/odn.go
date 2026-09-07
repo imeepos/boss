@@ -195,6 +195,10 @@ type ODNService interface {
 	UnlinkPermitProject(ctx context.Context, id int64) error
 	ListProjectPermits(ctx context.Context, projectID int64) ([]Permit, error)
 	CheckProjectPermits(ctx context.Context, projectID int64) (*PermitGateReport, error)
+
+	// 省市编码字典(P-INFRA-1 UX;000075 种子只读,前端级联下拉数据源)。
+	ListRegions(ctx context.Context) ([]RegionOption, error)
+	ListCities(ctx context.Context, prvCode string) ([]CityOption, error)
 }
 
 // GridRef 网格定位(城市 + 网格码)。
