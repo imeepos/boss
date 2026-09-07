@@ -1,12 +1,14 @@
 // 设备更换单页:契约 GET /replacements、POST /replacements、POST /replacements/{id}/assign
 // (单号后端自动生成 RPL-*;派单 PENDING→DOING,adopted note 2026-08-27-replacement-ticket-flow)。
 import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { useConfirm } from '../../../components/ConfirmDialog'
 import { useT } from '../../../i18n'
 import { Dropdown } from '../../../components/Dropdown'
 import { ResourcePicker } from '../../../components/ResourcePicker'
 import { PageHead, pagerTexts } from '../../org/shared'
+import { ErrorBanner } from '../../../components/business/page-head'
 import { StatusTag } from '../../../components/StatusTag'
 import { Pagination } from '../../../components/Pagination'
 import { Drawer } from '../../../components/Drawer'
@@ -31,7 +33,6 @@ export default function ReplacePage() {
   const [dispatchRow, setDispatchRow] = useState<ReplacementRow | null>(null)
   const [picked, setPicked] = useState<PickedWorker | null>(null)
   const [dispatchError, setDispatchError] = useState('')
-  const [toast, setToast] = useState('')
   const confirm = useConfirm()
 
   const load = () => {
@@ -56,6 +57,7 @@ export default function ReplacePage() {
       setOpen(false)
       setAssetId('')
       setReason('')
+      toast.success(r.createOk)
       load()
     } catch (e) {
       setFormError(e instanceof Error ? e.message : r.saveFail)
@@ -75,8 +77,7 @@ export default function ReplacePage() {
       })
       setDispatchRow(null)
       setPicked(null)
-      setToast(r.dispatchOk)
-      setTimeout(() => setToast(''), 3000)
+      toast.success(r.dispatchOk)
       load()
     } catch (e) {
       setDispatchError(e instanceof Error ? e.message : r.dispatchFail)
@@ -92,8 +93,7 @@ export default function ReplacePage() {
     setBusy(true)
     try {
       await apiFetch(cancelPath(x.id), { method: 'POST' })
-      setToast(r.cancelOk)
-      setTimeout(() => setToast(''), 3000)
+      toast.success(r.cancelOk)
       load()
     } catch (e) {
       setError(e instanceof Error ? e.message : r.cancelFail)
@@ -108,15 +108,14 @@ export default function ReplacePage() {
   return (
     <div>
       <PageHead title={r.title} desc={r.desc} />
-      {toast && <div className="mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-success)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-success)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-success)]">{toast}</div>}
       <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
         <div className="flex flex-wrap items-center gap-2 p-4">
           <span className="spacer" />
           <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
           <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" onClick={() => setOpen(true)}>{r.create}</button>
         </div>
-        {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : (
-          <div className="overflow-x-auto px-4 pb-4">
+        {error && <ErrorBanner message={error} />}
+        <div className="overflow-x-auto px-4 pb-4">
             <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
               <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{r.columns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
               <tbody>
@@ -146,7 +145,6 @@ export default function ReplacePage() {
               </tbody>
             </table>
           </div>
-        )}
         <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
           <Pagination total={rows.length} page={page} pageSize={pageSize}
             onPage={setPage} onSize={setPageSize} {...pagerTexts(r)} />
