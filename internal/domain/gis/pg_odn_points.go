@@ -2,7 +2,8 @@ package gis
 
 // ODN 无源物理层点位(ODNPoints)PG 实现:设施/局点/设备自带 lat/lng,直接作地图图层。
 // 与 Points(地址/逻辑资源)独立:ODN 实体无 geom 列,bbox 用数值区间过滤(lat/lng BETWEEN)。
-// level 语义:9=设施(facility)、10=局点(site)、11=设备(device),与前端图层开关一一对应。
+// level 语义:9=设施(facility)、10=局点(site)、11=设备(device)、
+// 12=勘测打点(survey,W7 000223)、13=施工进度点(progress,W7 000224),与前端图层开关一一对应。
 
 import (
 	"context"
@@ -35,7 +36,7 @@ func (s *PGStore) ODNPoints(ctx context.Context, entity, bbox string) ([]Point, 
 }
 
 // ErrODNEntityInvalid 非法 ODN 实体类型。
-var ErrODNEntityInvalid = fmt.Errorf("gis: entity must be facility|site|device")
+var ErrODNEntityInvalid = fmt.Errorf("gis: entity must be facility|site|device|survey|progress")
 
 // odnPointsQuery 组装 ODN 点位 SQL(按 entity 分发)与参数。
 func odnPointsQuery(entity, bbox string) (string, []any, error) {
@@ -63,6 +64,18 @@ func odnPointsQuery(entity, bbox string) (string, []any, error) {
 			FROM odn_device d
 			WHERE d.lat IS NOT NULL AND d.lng IS NOT NULL AND d.status = 'IN_USE'` +
 			bboxSQL + ` ORDER BY d.code`, bboxArgs, nil
+	case "survey":
+		return `SELECT r.id, 12 AS level, t.task_no AS name,
+				r.lng, r.lat, r.suggestion AS status, 0 AS count, r.task_id AS parent_id
+			FROM survey_task_reports r JOIN survey_tasks t ON t.id = r.task_id
+			WHERE r.lat IS NOT NULL AND r.lng IS NOT NULL` +
+			bboxSQL + ` ORDER BY r.id`, bboxArgs, nil
+	case "progress":
+		return `SELECT p.id, 13 AS level, p.facility_code AS name,
+				p.lng, p.lat, pr.status AS status, 0 AS count, p.project_id AS parent_id
+			FROM construction_progress p JOIN construction_projects pr ON pr.id = p.project_id
+			WHERE p.lat IS NOT NULL AND p.lng IS NOT NULL` +
+			bboxSQL + ` ORDER BY p.id`, bboxArgs, nil
 	default:
 		return "", nil, ErrODNEntityInvalid
 	}
