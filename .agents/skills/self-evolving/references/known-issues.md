@@ -558,3 +558,9 @@ ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !exp
 症状 → make check 的 test 阶段 internal/app FAIL：当日应幂等单次 calls=2 upserts=2；干净 main 同红，与当轮改动无关（另一并行会话曾记 flaky 待修）。
 原因 → runOSSAuditIfDue 接收注入 now 用于到点/当日判定，但 runOSSAuditSnapshot 落快照传真实 time.Now()；测试 fake 时间写死 2026-09-06，真实日期跨日后 WindowStart（真实）与判定基准（fake）不同日，幂等判定必假。
 修法 → now 贯通至 SaveOSSAudit 第三参（fix ee68ac4a on feat/kaihu-000202-vlan-columns）；生产 ticker 传 time.Now() 行为等价。
+
+## 正则解析 xlsx 把自闭合空单元格吞进属性组导致串列取值（2026-09-07 T3 轮）
+
+症状 → 裸解析计数与设计文档画像全面不符（SN 313≠330、账号唯一 342≠347、S 拆机列出现 9 个假值如 1084），且行级样本错位（T 列值挂到 S 列）。
+原因 → 形如 <c r="S194" s="46"/> 的自闭合空单元格被 <c r="([A-Z]+)\d+"([^>]*)>(.*?)</c> 匹配时，attrs 组吞掉 / 后 > 照常闭合，(.*?) 一路吃到下一个非空单元格的 </c>，下一列的值错挂到当前列。
+修法 → 永不用正则啃 XML：zipfile 解包 + xml.etree.ElementTree 遍历 row/c 节点（get r/t 属性 + find v 子元素），自闭合节点天然安全；解析后先对权威画像（行数/唯一数/缺失数）做断言再继续。
