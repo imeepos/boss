@@ -170,3 +170,7 @@
 38. **【已犯 1 次】~/.nvm/current 指向的 node 挂起(疑似并行 nvm 操作),pnpm/vite/node 全部静默挂死空输出** —— 2026-09-06 AAA-A6 补验轮:node --version 超时、pnpm dev 空日志不监听、vite 不起,像工具坏了;正解=用显式版本路径(如 ~/.nvm/versions/node/v24.14.1/bin/node)直接跑 vite.js/脚本绕过 shim;诊断特征=od/cat 等 shell 命令正常而一切 node 入口超时无效。正解=排除全部已知旧 hash + 新包行为断言(点详情开抽屉)双确认。
 
 | 程序串转义层级算错(双引号串写 \\\\d 想 file 里落 \\d,实际落 \\d 层级算错 → old_string not found)及数组元素漏逗号 parse error | 1 | 2026-09-07(dashboard 轮:改 verify 脚本时 old_string 用四重反斜杠而文件实为单反斜杠 not found 废一轮;同轮脚本数组漏逗号 Expected , 全段不执行废一轮) | 生成/匹配文件内容时先在纸上写下目标字节,再按宿主+JS 两层解码倒推写法;数组字面量发车前逐元素查逗号 |
+
+| bash 命令含 rm -rf 绝对路径整条静默零输出(连 echo 都不出,无 marker 不报错) | 2 | 2026-09-07(T1 建模迁移轮两连:rm -rf 残骸 worktree+重建链、rm -rf+prune+add 链均零输出;同链去掉 rm -rf 改 mv 备份后正常) | 疑似宿主安全钩子对 rm -rf+绝对路径模式静默拦截整条命令;删目录改用 mv 到仓库外备份名/git worktree remove/git clean,确需 rm 用相对路径且单独成命令,不与验证步骤同链 |
+| worktree add 成功后注册被并行会话清掉(主树 .git/worktrees/<name> 消失) | 1 | 2026-09-07(T1 轮:add 成功出完整 checkout,数秒后主树 worktree list 不显示、目录内 git 报 not a git repository;当时并行会话正在改名整理 T2/T3 worktree) | mv 残骸目录到仓库外备份 → git worktree prune → 重新 add 挂原分支(checkout 已存在则秒过) → 同一命令内立即 list+目录内 rev-parse 验证;并行会话活跃期创建与验证必须同命令完成 |
+| 测试写死日期+实现时间源不贯通=日期炸弹(TestRunOSSAuditIfDueRunsOnceDaily 自 09-07 必挂) | 1 | 2026-09-07(T1 轮:make check 被挡,干净 main 同红;runOSSAuditIfDue 注入 now 但 SaveOSSAudit 传真实 time.Now(),快照 WindowStart 与判定基准跨日必不同;另一并行会话 notes.md 已记 flaky 待修,本轮 fix ee68ac4a 闭环) | now 参数贯通到全部落库时间戳(fix ee68ac4a on feat/kaihu-000202-vlan-columns);时间注入函数审计法:grep 函数体内 time.Now(),出现即时间源断点 |

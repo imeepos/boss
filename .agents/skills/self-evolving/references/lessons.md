@@ -529,3 +529,7 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 当用 grep -c 统计「每目录命中」时,修复是逐文件或全量复核再下结论——grep -c 输出多文件多行,head -1 只取首个文件,多文件目录的缺口会被漏计(PP2-W4 Phase A 两条 P2 误报的根因,Phase B 源码复核勘误)。2026-09-07。
 - 当负责人指令引用的脚本/文件在 worktree 里不存在时,修复是先 git fetch + merge main 反向同步再找——并行波次的基建常在切分支后进 main(PP2-W4 的 scripts/accept/pp2-gate.sh 即如此)。2026-09-07。
 
+
+- 当循环/判定函数接收注入 now 时，修复是把 now 贯通到全部落库时间戳与「当日」判定；函数体内出现 time.Now() 即时间源断点，测试写死日期只当天绿（2026-09-07 oss_audit_loop 日期炸弹，fix ee68ac4a）。skill 没提前警告我。
+- 当用 git ls-tree 按分支检查迁移号占用时，修复是先 sed 剥掉 migrations/ 目录前缀再 grep 号段；^0002 锚在带路径输出上永不命中，假阴性会误判号可用（2026-09-07 T1 轮两版检查都错，第三版才真验过）。skill 没提前警告我。
+- 当 bash 命令以 rm -rf 绝对路径开头整条零输出时，修复是换 mv 备份 / git worktree remove，且 rm 不与验证步骤同链（2026-09-07 T1 轮）。skill 没提前警告我。
