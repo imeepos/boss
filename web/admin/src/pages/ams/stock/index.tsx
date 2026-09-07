@@ -148,6 +148,7 @@ export default function StockPage() {
               <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" value={scope} placeholder={s.pScope}
                 onChange={(e) => setScope(e.target.value)} />
               {!scopeOk && scope !== '' && <span className="text-[11px] text-[var(--color-danger)]">{s.eScope}</span>}
+              <span className="text-[11px] text-[var(--shell-crumb-text)]">保留值 ODN = 网络资产专项盘点(仅盘有资产化凭证的在网资产,W8)</span>
             </div>
             {formError && <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]" style={{ margin: 0 }}>{formError}</div>}
           </div>
