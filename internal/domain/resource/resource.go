@@ -27,10 +27,10 @@ type Port struct {
 	RegionName      string  `json:"regionName"`
 	OrderID         int64   `json:"orderId"`                 // 0=空闲
 	Status          string  `json:"status"`                  // IDLE/RESERVED/USED/DISABLED
-	Svlan           *int16  `json:"svlan,omitempty"`         // 外层 VLAN(000202);NULL=未配置
-	Cvlan           *int16  `json:"cvlan,omitempty"`         // 内层 VLAN(000202);NULL=未配置
-	InternetCvlan   *int16  `json:"internetCvlan,omitempty"` // internet 内层 VLAN(000202);NULL=未配置
-	TR069Cvlan      *int16  `json:"tr069Cvlan,omitempty"`    // TR069 内层 VLAN(000202);NULL=未配置
+	Svlan           *int    `json:"svlan,omitempty"`         // 外层 VLAN(000202,000203 改 INTEGER);NULL=未配置
+	Cvlan           *int    `json:"cvlan,omitempty"`         // 内层 VLAN(000202,000203 改 INTEGER);NULL=未配置
+	InternetCvlan   *int    `json:"internetCvlan,omitempty"` // internet 内层 VLAN(000202,000203 改 INTEGER);NULL=未配置
+	TR069Cvlan      *int    `json:"tr069Cvlan,omitempty"`    // TR069 内层 VLAN(000202,000203 改 INTEGER);NULL=未配置
 	LegacyPath      *string `json:"legacyPath,omitempty"`    // 存量光缆层级 OCC06/ODB040/OBD01/P05(000202);NULL=未承接
 }
 
