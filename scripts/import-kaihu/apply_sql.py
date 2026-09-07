@@ -5,10 +5,10 @@
 import os
 import subprocess
 
-from normalize import DEFAULTS
+from normalize import ADDRESS_ROOT_NAME, ADDRESS_ROOT_PATH, DEFAULTS
 
 SQL_NAME = 'apply.sql'
-RECON_ITEMS = ('resources_olt', 'ports', 'lo_accounts', 'lo_closed', 'quad_links', 'customers', 'customers_phone')
+RECON_ITEMS = ('resources_olt', 'ports', 'lo_accounts', 'lo_closed', 'quad_links', 'customers', 'customers_phone', 'row_addresses')
 
 
 def _q(text):
@@ -31,10 +31,22 @@ def _offer_subq(rec):
 
 
 def _sql_address():
-    out = ['-- 占位地址(单一节点 needs_review=true,治理队列消化;自然键 path 幂等)']
+    # 一线一地址节点(2026-09-07 裁定):父根单一保留,行级子节点见 _sql_row_addresses。
+    out = ['-- 地址父根(单一 level 1 节点,自然键 path 幂等)']
     out.append('INSERT INTO addresses (path, level, name, needs_review)')
-    out.append('VALUES (%s, 1, %s, true)' % (_q(DEFAULTS['address_path']), _q(DEFAULTS['address_name'])))
+    out.append('VALUES (%s, 1, %s, true)' % (_q(ADDRESS_ROOT_PATH), _q(ADDRESS_ROOT_NAME)))
     out.append('ON CONFLICT (path) DO NOTHING;')
+    return out
+
+
+def _sql_row_addresses(records):
+    # 每行独立地址子节点 legacy_import.<小写账号>(level 2, needs_review=true):
+    # uq_quad_links_address 每地址至多一条非空活跃链路,共用单节点第二条即撞。
+    out = ['-- 行级地址节点(一线一节点;自然键 path 幂等)']
+    for rec in records:
+        out.append('INSERT INTO addresses (path, level, name, needs_review)')
+        out.append('VALUES (%s, 2, %s, true)' % (_q(rec['address_path']), _q(rec['address_name'])))
+        out.append('ON CONFLICT (path) DO NOTHING;')
     return out
 
 
@@ -43,7 +55,7 @@ def _sql_resources(olts):
     for code in olts:
         out.append('INSERT INTO resources (legal_entity_id, code, name, type, address_id, status)')
         out.append('SELECT %d, %s, %s, %s,' % (DEFAULTS['legal_entity_id'], _q(code), _q(code), _q('OLT')))
-        out.append('       (SELECT id FROM addresses WHERE path = %s), %s;' % (_q(DEFAULTS['address_path']), _q('ONLINE')))
+        out.append('       (SELECT id FROM addresses WHERE path = %s), %s;' % (_q(ADDRESS_ROOT_PATH), _q('ONLINE')))
     return out
 
 
@@ -57,7 +69,7 @@ def _sql_ports(records):
         out.append('  svlan, cvlan, internet_cvlan, tr069_cvlan, legacy_path)')
         out.append('VALUES (%s, %s,' % (_q(rec['port_code']), _q(rec['port_code'])))
         out.append('  (SELECT id FROM resources WHERE code = %s), %d, %s,' % (_q(rec['olt']), DEFAULTS['legal_entity_id'], _q(DEFAULTS['legal_entity_name'])))
-        out.append('  (SELECT id FROM addresses WHERE path = %s), %d, %s, %s,' % (_q(DEFAULTS['address_path']), DEFAULTS['region_id'], _q(DEFAULTS['region_name']), _q('USED')))
+        out.append('  (SELECT id FROM addresses WHERE path = %s), %d, %s, %s,' % (_q(rec['address_path']), DEFAULTS['region_id'], _q(DEFAULTS['region_name']), _q('USED')))
         out.append('  %s, %s, %s, %s,' % (rec['pon_frame'], rec['pon_slot'], rec['pon_port'], rec['onu_no']))
         out.append('  %s, %s, %s, %s, %s)' % (_int_or_null(rec['svlan']), _int_or_null(rec['cvlan']), _int_or_null(rec['internet_cvlan']), _int_or_null(rec['tr069_cvlan']), _int_or_null(rec['legacy_path']) if rec['legacy_path'] is None else _q(rec['legacy_path'])))
         out.append('ON CONFLICT (port_code) DO UPDATE SET')
@@ -96,7 +108,7 @@ def _sql_quad_links(records):
         if not rec['port_code']:
             continue
         out.append('INSERT INTO quad_links (asset_id, customer_id, port_id, address_id, legal_entity_id, legal_entity_name, status)')
-        out.append('SELECT a.id, c.id, p.id, (SELECT id FROM addresses WHERE path = %s), %d, %s, %s' % (_q(DEFAULTS['address_path']), DEFAULTS['legal_entity_id'], _q(DEFAULTS['legal_entity_name']), _q('LINKED')))
+        out.append('SELECT a.id, c.id, p.id, (SELECT id FROM addresses WHERE path = %s), %d, %s, %s' % (_q(rec['address_path']), DEFAULTS['legal_entity_id'], _q(DEFAULTS['legal_entity_name']), _q('LINKED')))
         out.append('FROM (SELECT id FROM assets WHERE loid = %s ORDER BY id LIMIT 1) a,' % _q(rec['account']))
         out.append('     (SELECT id FROM customers WHERE name = %s AND legal_entity_id = %d ORDER BY id LIMIT 1) c,' % (_q(rec['account']), DEFAULTS['legal_entity_id']))
         out.append('     (SELECT id FROM ports WHERE port_code = %s) p' % _q(rec['port_code']))
@@ -120,6 +132,7 @@ def _sql_verify(records):
     out.append("SELECT 'quad_links' AS item, count(*) AS n FROM quad_links WHERE status = 'LINKED' AND port_id IN (SELECT id FROM ports WHERE port_code IN (%s));" % _in_list(pcs))
     out.append("SELECT 'customers' AS item, count(*) AS n FROM customers WHERE name IN (%s);" % _in_list(loids))
     out.append("SELECT 'customers_phone' AS item, count(*) AS n FROM customers WHERE phone LIKE '0999000%%' AND name IN (%s);" % _in_list(loids))
+    out.append("SELECT 'row_addresses' AS item, count(*) AS n FROM addresses WHERE path LIKE 'legacy_import.%%';")
     return out
 
 
@@ -127,6 +140,7 @@ def build_sql(records):
     lines = ['-- 存量开户记录导入 SQL 段(幂等 upsert;T4 执行;前置见文件头注释)']
     lines.append('BEGIN;')
     lines.extend(_sql_address())
+    lines.extend(_sql_row_addresses(records))
     lines.extend(_sql_resources(sorted(set(r['olt'] for r in records if r['olt']))))
     lines.extend(_sql_ports(records))
     lines.extend(_sql_phone_fix(records))
@@ -147,6 +161,7 @@ def _expected(records):
         'quad_links': len(pcs),
         'customers': len(records),
         'customers_phone': len(records),
+        'row_addresses': len(records),
     }
 
 

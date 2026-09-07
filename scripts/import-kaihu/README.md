@@ -40,8 +40,10 @@ closed_date 拆机日期(Excel 序列号已换算) / remark 备注 / ownership �
 ## 缺省归属(2026-09-07 裁定)
 
 legal_entity=平台总公司(id=6) / region=集团(id=1,POST /customers 需真实区域,以集团根代「不限」,假设已列报告) /
-地址=单一占位节点 addresses.path=legacy_import(needs_review=true,apply 自建,治理队列消化)。
-lo_accounts.region_id/region_name 同取缺省;ports.address_id 由占位节点满足 NOT NULL。
+地址=一线一节点: 父根 addresses.path=legacy_import(level 1, 单一) + 每行子节点 legacy_import.<小写账号>(level 2,
+name=账号原文, needs_review=true, apply 自建, 治理队列消化)——满足 uq_quad_links_address 每地址至多一条
+非空活跃链路(000086), 347 行共用单节点第二条即撞。lo_accounts.region_id/region_name 同取缺省;
+ports.address_id 与 quad_links.address_id 指向本行节点; assets API 载荷无 addressId, 资产地址保持未部署态。
 
 ## 假设与已知口径(报告 assumptions/needsReview 同步可见)
 
