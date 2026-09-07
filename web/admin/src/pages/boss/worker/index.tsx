@@ -170,7 +170,7 @@ export default function WorkerPage() {
             )}
             <button className={smallBtn} disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
           </div>
-          {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : (
+          {error && <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div>}
             <div className="overflow-x-auto px-4 pb-4">
               <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
                 <thead><tr>{w.columns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
@@ -202,7 +202,6 @@ export default function WorkerPage() {
                 </tbody>
               </table>
             </div>
-          )}
           <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
             <Pagination total={filtered.length} page={page} pageSize={pageSize}
               onPage={setPage} onSize={setPageSize} {...pagerTexts(w)} />
