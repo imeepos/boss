@@ -104,17 +104,32 @@ def quad_orphans():
 
 
 def create_grid(grid_code):
-    st, body = http("POST", "/odn/grids", {"prvCode": "PHL001", "cityPrefix": "MNL",
-        "gridCode": grid_code, "name": TAG + "-G" + str(grid_code), "coverage": TAG, "status": "ACTIVE"})
+    # prvCode/cityPrefix 是 query 参数(yaml /odn/grids post),body 只带 gridCode/name/coverage/status
+    st, body = http("POST", "/odn/grids?prvCode=PHL001&cityPrefix=MNL",
+        {"gridCode": grid_code, "name": TAG + "-G" + str(grid_code), "coverage": TAG, "status": "ACTIVE"})
     if st == 200 and code_of(body) == 0:
         return grid_code
+    bad("create grid " + str(grid_code), str((st, body))[:200])
     return None
+
+
+def pick_free_grids(need):
+    # 102 网格码可能被占用(如 91),先查现役网格再从 60~99 选空位
+    st, body = http("GET", "/odn/grids?prvCode=PHL001&cityPrefix=MNL")
+    taken = set()
+    if st == 200 and code_of(body) == 0:
+        for r in data_of(body) or []:
+            taken.add(int(r.get("gridCode")))
+    free = [c for c in range(60, 100) if c not in taken]
+    if len(free) < need:
+        raise RuntimeError("no free grid codes, taken=" + str(sorted(taken)))
+    return free[:need]
 
 
 def create_facility(kind, grid_code, seq):
     code = kind + ("%02d" % grid_code) + ("%03d" % seq)
     st, body = http("POST", "/odn/facilities", {"code": code, "kind": kind, "name": TAG + "-" + code,
-        "prvCode": "PHL001", "cityPrefix": "MNL"})
+        "prvCode": "PHL001", "cityPrefix": "MNL", "gridCode": grid_code})
     if st == 200 and code_of(body) == 0:
         psql("UPDATE odn_facility SET lifecycle_status = " + q("PLANNED") + " WHERE code = " + q(code))
         return code
@@ -122,7 +137,8 @@ def create_facility(kind, grid_code, seq):
 
 
 def create_address(label):
-    st, body = http("POST", "/addresses", {"parentID": 0, "label": label, "name": label})
+    # label 契约限制:路径段=小写字母数字(name 无限制,仍用 TAG 前缀供清理定位)
+    st, body = http("POST", "/addresses", {"parentID": 0, "label": label.lower().replace("-", ""), "name": label})
     if st == 200 and code_of(body) == 0:
         aid = (data_of(body) or {}).get("id") or (data_of(body) or {}).get("addressId")
         if aid:
@@ -157,7 +173,7 @@ def chain_row(occ, odb, obd, s1r, s1p, sdb, sbd, s2r, s2p):
         "sdbCode": sdb, "sbdCode": sbd,
         "split2Ratio": s2r, "split2Port": s2p,
         "totalSplit": "", "fiberCode": TAG + "-F", "frTo": TAG + "-FRTO",
-        "portStatus": "可用", "layingMethod": "架空", "rowStatus": "NA", "peceStatus": "NA",
+        "portStatus": "可用", "layingMethod": "架空", "rowStatus": "不适用", "peceStatus": "不适用",
         "remark": TAG}
 
 def import_chains(rows):
@@ -180,14 +196,14 @@ def backfill():
 def grid_rows():
     st, body = http("GET", "/odn/grid-investment")
     if st == 200 and code_of(body) == 0:
-        return data_of(body) or []
+        return (data_of(body) or {}).get("items") or []
     raise RuntimeError("grid-investment: " + str((st, body))[:200])
 
 
 def city_rows():
     st, body = http("GET", "/odn/city-investment")
     if st == 200 and code_of(body) == 0:
-        return data_of(body) or []
+        return (data_of(body) or {}).get("items") or []
     raise RuntimeError("city-investment: " + str((st, body))[:200])
 
 
@@ -235,8 +251,6 @@ def main():
     ok("ready probe: new binary deployed (/odn/city-investment 200 code=0)")
     base_quad = quad_orphans()
     print("[baseline] quad LINKED-but-not-DEPLOYED = " + str(base_quad))
-    grid_a = random.randint(80, 88)
-    grid_b = random.randint(89, 98)
     sfx = str(random.randint(700, 799))
     sfx2 = str(random.randint(800, 899))
     occ_s, odb_s, obd_s, sdb_s, sbd_s = "OCC" + sfx, "ODB" + sfx, "OBD" + sfx, "SDB" + sfx, "SBD" + sfx
@@ -249,6 +263,8 @@ def main():
     import_codes = [occ_i, odb_i, obd_i]
     try:
         # ---- Phase A: 造数全链:网格→设施→覆盖→项目挂预算→材料出库→资源链分光比 ----
+        free_grids = pick_free_grids(2)
+        grid_a, grid_b = free_grids[0], free_grids[1]
         if not create_grid(grid_a) or not create_grid(grid_b):
             raise RuntimeError("grid create failed")
         ok("grids created " + str(grid_a) + "/" + str(grid_b))
@@ -277,7 +293,8 @@ def main():
         if not (st == 200 and code_of(body) == 0):
             raise RuntimeError("receipt: " + str((st, body))[:200])
         receipt_id = (data_of(body) or {}).get("id")
-        st, body = http("POST", "/procurement/receipts/" + str(receipt_id) + "/confirm", {})
+        st, body = http("POST", "/procurement/receipts/" + str(receipt_id) + "/confirm",
+            {"items": [{"materialCode": TAG + "-MAT", "quantity": 2}]})
         if not (st == 200 and code_of(body) == 0):
             raise RuntimeError("receipt confirm: " + str((st, body))[:200])
         batch_id = psql("SELECT batch_id FROM procurement_receipts WHERE id = " + str(receipt_id)).strip()
