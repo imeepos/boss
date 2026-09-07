@@ -791,3 +791,96 @@ paths:
       operationId: unbindOdnPort
       parameters: [ { name: portId, in: path, required: true, schema: { type: integer } } ]
       responses: { '200': { $ref: '#/components/responses/Data' } }
+
+  /odn/assets/registrations:
+    get:
+      tags: [ODN]
+      summary: 资产化凭证列表(entityKind/entityRef 过滤;entityRef=设施码或设备id;P-INFRA-1 W8,000215)
+      operationId: listOdnAssetRegistrations
+      parameters:
+        - { name: entityKind, in: query, schema: { type: string, enum: [FACILITY, DEVICE] } }
+        - { name: entityRef, in: query, schema: { type: string }, description: 设施码或设备 id }
+        - { name: status, in: query, schema: { type: string, enum: [ACTIVE, REVERSED] } }
+        - { name: limit, in: query, schema: { type: integer, default: 200, maximum: 500 } }
+      responses: { '200': { $ref: '#/components/responses/Array' } }
+    post:
+      tags: [ODN]
+      summary: 资产化登记(建凭证+资产置 DEPLOYED;CONSTRUCTION 来源须项目 ACCEPTED;一对象/资产至多一张 ACTIVE 凭证)
+      operationId: createOdnAssetRegistration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [entityKind, assetId, sourceKind]
+              properties:
+                entityKind: { type: string, enum: [FACILITY, DEVICE] }
+                facilityCode: { type: string, description: 设施码(entityKind=FACILITY 必填) }
+                deviceId: { type: integer, description: 设备 id(entityKind=DEVICE 必填;含 W3 导入域箱体) }
+                assetId: { type: integer, description: 资产 id(前置 IN_STOCK/IN_TRANSIT) }
+                sourceKind: { type: string, enum: [PROCUREMENT, CONSTRUCTION, DIRECT] }
+                projectId: { type: integer, description: 施工项目(CONSTRUCTION 必填且 ACCEPTED) }
+                valueAmount: { type: number, description: 转固价值(>=0) }
+                remark: { type: string, maxLength: 255 }
+      responses: { '200': { $ref: '#/components/responses/Data' } }
+
+  /odn/assets/registrations/{id}/reverse:
+    post:
+      tags: [ODN]
+      summary: 冲销凭证(ACTIVE→REVERSED,原因必填;资产仍 DEPLOYED 则回 IN_STOCK+轨迹)
+      operationId: reverseOdnAssetRegistration
+      parameters: [ { name: id, in: path, required: true, schema: { type: integer } } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason: { type: string, maxLength: 255 }
+      responses: { '200': { $ref: '#/components/responses/Data' } }
+
+  /odn/material-issues:
+    get:
+      tags: [ODN]
+      summary: 材料出库单列表(projectId/status 过滤;台账连续性:CONFIRMED=资产在途 IN_TRANSIT)
+      operationId: listOdnMaterialIssues
+      parameters:
+        - { name: projectId, in: query, schema: { type: integer } }
+        - { name: status, in: query, schema: { type: string, enum: [OPEN, CONFIRMED, CANCELLED] } }
+        - { name: limit, in: query, schema: { type: integer, default: 100, maximum: 500 } }
+      responses: { '200': { $ref: '#/components/responses/Array' } }
+    post:
+      tags: [ODN]
+      summary: 建出库单(OPEN;明细资产须 IN_STOCK;成本归集归 W9 项目领料)
+      operationId: createOdnMaterialIssue
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [projectId, assetIds]
+              properties:
+                projectId: { type: integer }
+                assetIds: { type: array, items: { type: integer }, maxItems: 200, description: 逐台资产 }
+                remark: { type: string, maxLength: 255 }
+      responses: { '200': { $ref: '#/components/responses/Data' } }
+
+  /odn/material-issues/{id}/confirm:
+    post:
+      tags: [ODN]
+      summary: 出库确认(OPEN→CONFIRMED;明细资产 IN_STOCK→IN_TRANSIT+轨迹,任一漂移整体回滚)
+      operationId: confirmOdnMaterialIssue
+      parameters: [ { name: id, in: path, required: true, schema: { type: integer } } ]
+      responses: { '200': { $ref: '#/components/responses/Data' } }
+
+  /odn/material-issues/{id}/cancel:
+    post:
+      tags: [ODN]
+      summary: 取消出库单(OPEN 作废不碰资产;CONFIRMED 取消=退库,在途资产回 IN_STOCK+轨迹)
+      operationId: cancelOdnMaterialIssue
+      parameters: [ { name: id, in: path, required: true, schema: { type: integer } } ]
+      responses: { '200': { $ref: '#/components/responses/Data' } }

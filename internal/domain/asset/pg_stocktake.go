@@ -44,11 +44,17 @@ func stocktakeStatus(st Stocktake) string {
 }
 
 // snapshotStocktake 把范围内资产冻结为 PENDING 明细行(S10:建单即快照,后续台账变动不影响在盘任务)。
+// scope='ODN'(W8,000215)为保留枚举:仅快照带 ACTIVE 资产化凭证的在网资产
+// (桥表 odn_asset_registrations 跨域只读,SQL 共享零 Go import,adopted 2026-09-07)。
 func (s *PGStore) snapshotStocktake(ctx context.Context, taskID int64, st Stocktake) error {
 	if _, err := s.db.Exec(ctx, `
 		INSERT INTO stocktake_items(task_id, asset_id, expected_status, kind, resolution)
 		SELECT $1, id, status, 'PENDING', 'OPEN' FROM assets
-		WHERE legal_entity_id = $2 AND ($3 IN ('全库','') OR COALESCE(region_name,'') = $3)`,
+		WHERE legal_entity_id = $2 AND (
+			($3 IN ('全库',''))
+			OR ($3 = 'ODN' AND EXISTS (SELECT 1 FROM odn_asset_registrations r
+				WHERE r.asset_id = assets.id AND r.status = 'ACTIVE'))
+			OR ($3 <> 'ODN' AND $3 NOT IN ('全库','') AND COALESCE(region_name,'') = $3))`,
 		taskID, st.LegalEntityID, st.Scope); err != nil {
 		return fmt.Errorf("asset: snapshot stocktake %d: %w", taskID, err)
 	}

@@ -443,6 +443,37 @@
 | 关联资源链 | `ChainID` | chain_id | 软引用 odn_resource_chain(id)，无 FK |
 | 证照附件 | `AttachmentIDs` | attachment_ids | BIGINT[]，attachments(id) 引用（档案页可选附件管理器） |
 | 备注/驳回原因 | `Note`/`RejectReason` | note/reject_reason | 驳回/退回/作废原因必填场景见状态机 |
+
+### 1.5.14 odn_asset_registrations / odn_material_issues（资产化凭证与材料出库，迁移 000215，internal/domain/odn）
+
+> P-INFRA-1 W8（审查 F7 资产转固阻塞闭环；裁定 adopted 2026-09-07-odn-asset-capitalization）：odn×asset 关联=桥表软引用
+（跨域不加 FK，不动 assets/odn_facility/odn_device 既有 schema）。凭证行=转固事实（登记号/价值/来源/项目与批次溯源），
+登记事务内资产置 DEPLOYED+asset_lifecycles 轨迹；冲销 REVERSED 留历史。管理面 `menu:odn`（ODN 设施/设备页资产列+登记入口，
+施工项目详情页出库入口），REST `/odn/assets/registrations*`、`/odn/material-issues*`（契约 admin/odn.yaml）。
+
+odn_asset_registrations（资产化凭证，桥表）：
+
+| 页面列名 | 字段名 | DB 列 | 枚举/说明 |
+|:---------|:-------|:------|:----------|
+| 凭证号 | `RegistrationNo` | registration_no | VARCHAR(32) 唯一（ZG-YYYYMMDD-NNNNN，后端生成兜底） |
+| 对象类型 | `EntityKind` | entity_kind | FACILITY 设施（facility_code 必填）/ DEVICE 设备（device_id 必填，含 W3 导入域箱体）；CHECK 二选一 |
+| 资产 | `AssetID` | asset_id | BIGINT 软引用 assets；登记前置资产 IN_STOCK/IN_TRANSIT，一资产至多一张 ACTIVE 凭证 |
+| 来源 | `SourceKind` | source_kind | PROCUREMENT 采购入库 / CONSTRUCTION 施工建成（project_id 必填且项目 ACCEPTED）/ DIRECT 直购直转 |
+| 施工项目 | `ConstructionProjectID` | construction_project_id | 软引用 construction_projects，可空 |
+| 入库批次 | `BatchID` | batch_id | 采购溯源快照，登记时自 assets.batch_id 回填 |
+| 转固价值 | `ValueAmount` | value_amount | NUMERIC(14,2) ≥0 |
+| 状态 | `Status` | status | ACTIVE / REVERSED（冲销原因必填；冲销时资产仍 DEPLOYED 则回 IN_STOCK+轨迹） |
+| 登记人/时间 | `RegisteredBy`/`RegisteredAt` | registered_by/registered_at | → accounts / TIMESTAMPTZ |
+
+odn_material_issues / odn_material_issue_items（材料出库，台账连续性载体；成本归集归 W9）：
+
+| 页面列名 | 字段名 | DB 列 | 枚举/说明 |
+|:---------|:-------|:------|:----------|
+| 出库单号 | `IssueNo` | issue_no | VARCHAR(32) 唯一（MI-YYYYMMDD-NNNNN，后端生成兜底） |
+| 施工项目 | `ProjectID`/`ProjectNo` | project_id/project_no | 软引用 construction_projects + 单号快照 |
+| 状态 | `Status` | status | OPEN 备出库（资产不动）/ CONFIRMED 已出库（明细资产 IN_TRANSIT 在途，000216）/ CANCELLED（CONFIRMED 取消=退库回 IN_STOCK） |
+| 出库明细 | `AssetIDs` | odn_material_issue_items.asset_id | 逐台资产（issue_id,asset_id 唯一）；建单前置资产 IN_STOCK，确认/取消任一状态漂移即整体回滚 |
+| 备注/操作人 | `Remark`/`CreatedBy`/`IssuedBy`/`CancelledBy` | 同名 | remark ≤255；操作人 → accounts |
 ### 1.6 audit_logs（审计日志）· biz_params（业务参数）
 
 | 页面列名 | 字段名 | DB 列 | 枚举/说明 |
@@ -855,7 +886,7 @@ App 本地留痕后启动补传；服务端入库即视为成功，App 端成功
 | 型号 | `ModelID` | model_id | BIGINT → asset_models（可空，000187+P1-T3） |
 | 入库批次 | `BatchID` | batch_id | BIGINT → asset_batches |
 | 部署地址 | `AddressID` | address_id | BIGINT → addresses（可空，未部署为空） |
-| 状态 | `Status` | status | IN_STOCK/DEPLOYED/MAINTENANCE/SCRAPPED（见 terms.md 第 4 节） |
+| 状态 | `Status` | status | IN_STOCK/IN_TRANSIT/DEPLOYED/MAINTENANCE/SCRAPPED（见 terms.md 第 4 节；IN_TRANSIT=W8 000216 出库在途） |
 | 序列号 | `SN` | sn | 可空 text；全网唯一（部分唯一索引 uq_assets_sn，000188；存量不回填不强制） |
 | MAC 地址 | `MAC` | mac | 可空 text；冒号/横杠/裸 hex 三形态输入，写入归一为大写冒号规范形 `AA:BB:CC:DD:EE:FF`（000190，与应用层 NormalizeMAC 及表达式唯一索引 upper(regexp_replace(mac,'[:. -]','','g')) 同一归一空间；000188 建列） |
 | LOID | `LOID` | loid | 可空 text；电信 LOID 鉴权标识（uq_assets_loid，000188） |
@@ -1004,7 +1035,7 @@ stocktakes（盘点任务，页面 `/ams/stock`「盘点管理」）：
 |:---------|:-------|:--------------|:----------|
 | 盘点任务 | `ID` | id | BIGSERIAL PK |
 | 所属公司 | `LegalEntityID` | legal_entity_id | BIGINT → legal_entities（建单快照范围） |
-| 范围 | `Scope` | scope | `全库`/空=主体全部资产;否则 region_name 精确匹配 |
+| 范围 | `Scope` | scope | `全库`/空=主体全部资产;`ODN`=网络资产专项(W8 000215:快照=有 ACTIVE 资产化凭证的在网资产,桥表只读);否则 region_name 精确匹配 |
 | 进度 | `Progress` | progress | SMALLINT 0~100,实扫/计划快照行,扫码自动重算 |
 | 差异项 | `DiffCount` | diff_count | MISMATCH/MISSING/EXTRA 行数 |
 | 状态 | `Status` | status | DOING/DONE（见 terms.md 第 4 节;存在未处置差异禁止 DONE） |

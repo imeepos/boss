@@ -144,6 +144,20 @@ type ODNService interface {
 	RecordProgress(ctx context.Context, p ProgressEntry) (int64, bool, error)
 	ListProgress(ctx context.Context, projectID int64, limit int) ([]ProgressEntry, error)
 	ItemProgressSummary(ctx context.Context, projectID int64) ([]ItemProgress, error)
+	// 资产化转固(P-INFRA-1 W8,迁移 000215;桥表软引用,adopted 2026-09-07-odn-asset-capitalization)。
+	CreateRegistration(ctx context.Context, entityKind, facilityCode string, deviceID, assetID int64,
+		sourceKind string, projectID int64, value float64, remark string, accountID int64) (*AssetRegistration, error)
+	ListRegistrations(ctx context.Context, entityKind, entityRef, status string, limit int) ([]AssetRegistration, error)
+	GetRegistration(ctx context.Context, id int64) (*AssetRegistration, error)
+	ReverseRegistration(ctx context.Context, id, accountID int64, reason string) error
+
+	// 材料出库(W8,迁移 000215;台账连续性:OPEN 备出/CONFIRMED 在途/CANCELLED 退库)。
+	CreateIssue(ctx context.Context, projectID int64, assetIDs []int64, remark string, accountID int64) (*MaterialIssue, error)
+	ListIssues(ctx context.Context, projectID int64, status string, limit int) ([]MaterialIssue, error)
+	GetIssue(ctx context.Context, id int64) (*MaterialIssue, error)
+	ConfirmIssue(ctx context.Context, id, accountID int64) error
+	CancelIssue(ctx context.Context, id, accountID int64) error
+
 	CreateSettlement(ctx context.Context, projectID, createdBy int64) (*Settlement, error)
 	ListSettlements(ctx context.Context, projectID int64) ([]Settlement, error)
 	GetSettlement(ctx context.Context, id int64) (*Settlement, error)

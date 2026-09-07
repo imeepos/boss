@@ -47,7 +47,7 @@
 | 域 | 状态码集 | 说明 |
 |:---|:---------|:-----|
 | 端口 port.status | IDLE / RESERVED / USED / DISABLED | IDLE 可预占；RESERVED 事务行锁兜底 |
-| 资产 asset.status | IN_STOCK / DEPLOYED / MAINTENANCE / SCRAPPED | 生命周期状态 |
+| 资产 asset.status | IN_STOCK / IN_TRANSIT / DEPLOYED / MAINTENANCE / SCRAPPED | 生命周期状态。Amended 2026-09-07 W8：四态扩五态，IN_TRANSIT=出库在途（材料出库单 CONFIRMED 置此态，000216；转固凭证 ACTIVE 生效即 DEPLOYED，出库单取消回 IN_STOCK） |
 | 四码 quad_link | LINKED / CONFLICT / UNLINKED | 一致性对账用 |
 | 标签 tag.status | UNBOUND / BOUND / DISABLED | 电子标签 |
 | 报障 complaint.status | OPEN / PROCESSING / CLOSED | 受理中 / 处理中 / 已关闭 |
@@ -97,6 +97,9 @@
 | 接单设置 worker_settings | accepting 布尔 + accept_types CSV | 后端当前仅识别工单作业类型 `INSTALL`（`internal/httpapi/worker/ticket_gate.go` portalTicketType）；P2 接单类型枚举待扩展 |
 | 派单工单作业类型 dispatch_tickets.work_type（派生口径） | INSTALL / REPAIR | 报障单（complaints 联表有值）→ REPAIR，否则 INSTALL（`internal/httpapi/worker/ticket.go` portalTicketTypeOf；admin 看板只落 INSTALL） |
 | 盘点任务 stocktake.status | DOING / DONE | 在盘 / 已关单（000156 起：差异明细全处置完才可关单，存在 OPEN 差异返回 40900；口径见 fields.md §4.2.1） |
+| 盘点范围 stocktake.scope 保留值 | ODN | 网络资产专项盘点（W8 000215）：快照范围=有 ACTIVE 资产化凭证的在网资产；其余值仍按全库/区域名口径（fields.md §4.2.1） |
+| 资产化凭证 odn_asset_registrations.status | ACTIVE / REVERSED | 凭证有效（资产已转固 DEPLOYED）/ 已冲销（终态留历史不删，原因必填；同结算单 VOIDED 先例）。迁移 000215（W8，adopted 2026-09-07-odn-asset-capitalization） |
+| 材料出库 odn_material_issues.status | OPEN / CONFIRMED / CANCELLED | 备出库（资产仍 IN_STOCK）/ 已出库（资产 IN_TRANSIT 在途）/ 已取消（CONFIRMED 取消=退库，在途资产回 IN_STOCK）。迁移 000215（W8）；材料成本归集归 W9 项目领料 |
 | 盘点差异 stocktake_items.kind | PENDING / OK / MISMATCH / MISSING / EXTRA | 未扫 / 账实一致 / 状态不符 / 关单时仍未扫 / 计划外多扫 |
 | 盘点处置 stocktake_items.resolution | OPEN / CONFIRMED / FIXED / ESCALATED | 待处置 / 确认差异(按实盘修正台账) / 现场核实台账为准 / 上报转人工 |
 | 供应商 procurement_suppliers.status | ENABLED / DISABLED | 启用 / 停用（adopted 2026-08-28；迁移 000163） |

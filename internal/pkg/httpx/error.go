@@ -202,8 +202,11 @@ func RespondErr(c *gin.Context, err error) {
 		// 下单覆盖门控拒单(T12):40900 + 透传地址/状态,运营可见为什么拒。
 		Respond(c, apitypes.CodeConflict, gin.H{"reason": err.Error()})
 	case errors.Is(err, odn.ErrNoContractor), errors.Is(err, odn.ErrSettlementState),
-		errors.Is(err, odn.ErrFacilityNotInScope):
-		// 结算发起前置缺失/状态冲突(000204):40900 + 原因,管理员可见为什么拒。
+		errors.Is(err, odn.ErrFacilityNotInScope),
+		errors.Is(err, odn.ErrRegConflict), errors.Is(err, odn.ErrRegState),
+		errors.Is(err, odn.ErrIssueState), errors.Is(err, odn.ErrIssueAsset):
+		// 结算发起前置缺失/状态冲突(000204);资产化凭证与出库单状态冲突(W8 000215):
+		// 40900 + 原因,管理员可见为什么拒。
 		Respond(c, apitypes.CodeConflict, gin.H{"reason": err.Error()})
 	case errors.Is(err, odn.ErrPermitRequired),
 		errors.Is(err, odn.ErrPermitState),
@@ -217,7 +220,8 @@ func RespondErr(c *gin.Context, err error) {
 		errors.Is(err, odn.ErrSamePriority),
 		errors.Is(err, odn.ErrInvalidDeviceCode),
 		errors.Is(err, odn.ErrBadHierarchy),
-		errors.Is(err, odn.ErrInvalidInput):
+		errors.Is(err, odn.ErrInvalidInput),
+		errors.Is(err, odn.ErrRegInput), errors.Is(err, odn.ErrIssueInput):
 		Respond(c, apitypes.CodeInvalidParam, nil)
 	case errors.Is(err, odn.ErrNotFound):
 		Respond(c, apitypes.CodeNotFound, nil)
