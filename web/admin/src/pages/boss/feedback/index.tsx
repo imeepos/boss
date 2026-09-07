@@ -97,10 +97,10 @@ export default function FeedbackPage() {
               <tbody>
                 {slice.map((x) => (
                   <tr key={x.id} className="border-b border-[var(--shell-side-border)] hover:bg-[var(--shell-menu-hover-bg)]">
-                    <td className="h-11 px-3 whitespace-nowrap">#{x.id}</td>
+                    <td className="h-11 px-3 whitespace-nowrap" title={'feedbackId=' + x.id}>#{x.id}</td>
                     <td className="h-11 px-3 whitespace-nowrap">{x.customerName || '—'}</td>
                     <td className="h-11 px-3 whitespace-nowrap">{x.workerName || '—'}</td>
-                    <td className="h-11 px-3 whitespace-nowrap">#{x.ticketId}</td>
+                    <td className="h-11 px-3 whitespace-nowrap" title={'ticketId=' + x.ticketId}>#{x.ticketId}</td>
                     <td className="h-11 px-3 whitespace-nowrap">{x.groupName || '—'}</td>
                     <td className="h-11 px-3 whitespace-nowrap">{x.regionName || '—'}</td>
                     <td className="h-11 px-3 whitespace-nowrap">{x.legalEntityName || '—'}</td>

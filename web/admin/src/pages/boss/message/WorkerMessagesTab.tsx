@@ -141,7 +141,7 @@ export function WorkerMessagesTab({ t }: { t: Ns }) {
             rows={slice as unknown as Record<string, unknown>[]}
             columns={[
               { key: 'level', label: t.msgColumns[0], render: (r) => <StatusTag domain="message" value={String(r.level)} /> },
-              { key: 'workerId', label: t.msgColumns[1], render: (r) => `#${r.workerId}` },
+              { key: 'workerId', label: t.msgColumns[1], render: (r) => <span title={'workerId=' + r.workerId}>#{r.workerId}</span> },
               { key: 'title', label: t.msgColumns[2], render: (r) => String(r.title ?? '') },
               { key: 'content', label: t.msgColumns[3], render: (r) => <span className="text-[var(--shell-group-title)]">{String(r.content ?? '')}</span> },
               { key: 'sentAt', label: t.msgColumns[4], render: (r) => fmtTime(String(r.sentAt)) },
