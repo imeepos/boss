@@ -153,10 +153,9 @@ def create_facility(suffix):
     if st != 200 or not body or body.get("code") != 0:
         bad("create_facility", str(body))
         return None
-    st2, body2 = http("PUT", "/odn/facilities/" + code + "/lifecycle", {"lifecycleStatus": "PLANNED"})
-    if st2 != 200 or not body2 or body2.get("code") != 0:
-        bad("set lifecycle PLANNED", str(body2))
-        return None
+    # PLANNED 无 API 入口(状态机只出不进,W1 同款):验收造数经 psql 直设;
+    # 开工/竣工的 IN_BUILD/IN_SERVICE 翻转仍走真实 API。
+    psql("UPDATE odn_facility SET lifecycle_status = " + chr(39) + "PLANNED" + chr(39) + " WHERE code = " + chr(39) + code + chr(39))
     return code
 
 
