@@ -21,7 +21,9 @@ var (
 	// ErrRetired 编码已报废,永久锁定禁止复用(资产编码规范红线 2)。
 	ErrRetired = errors.New("odn: code retired")
 	// ErrSiteMissing 局点未备案或已退役(E16:site_no 无 FK,域层守护归属链)。
+	// ErrSiteFull 城市局点序号已用尽 999(规范 3.2;退役号占号不复用)。
 	ErrSiteMissing = errors.New("odn: site not registered")
+	ErrSiteFull    = errors.New("odn: site no full")
 )
 
 // Kind 基础设施类型(规范 4.2)。
@@ -199,6 +201,10 @@ type ODNService interface {
 	// 省市编码字典(P-INFRA-1 UX;000075 种子只读,前端级联下拉数据源)。
 	ListRegions(ctx context.Context) ([]RegionOption, error)
 	ListCities(ctx context.Context, prvCode string) ([]CityOption, error)
+
+	// 下一可用编码(P-INFRA-1 UX;退役占号不复用,前端新增表单自动顺延预览)。
+	NextFacilityCode(ctx context.Context, kind string, gridCode int16) (string, error)
+	NextSiteNo(ctx context.Context, prvCode, cityPrefix string) (int16, error)
 }
 
 // GridRef 网格定位(城市 + 网格码)。

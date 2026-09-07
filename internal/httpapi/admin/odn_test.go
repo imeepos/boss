@@ -24,8 +24,9 @@ type fakeODN struct {
 	odn.ODNService
 	createErr error
 	created   *odn.Facility
-	segment   *odn.Segment
-	dictErr   error
+	segment     *odn.Segment
+	dictErr     error
+	nextCodeErr error
 }
 
 func (f *fakeODN) ListRegions(_ context.Context) ([]odn.RegionOption, error) {
@@ -41,6 +42,17 @@ func (f *fakeODN) ListCities(_ context.Context, prvCode string) ([]odn.CityOptio
 	}
 	_ = prvCode
 	return []odn.CityOption{{CityPrefix: "MNL", Name: "马尼拉"}}, nil
+}
+
+func (f *fakeODN) NextFacilityCode(_ context.Context, kind string, gridCode int16) (string, error) {
+	if f.nextCodeErr != nil {
+		return "", f.nextCodeErr
+	}
+	return odn.FormatFacilityCode(kind, gridCode, 1), nil
+}
+
+func (f *fakeODN) NextSiteNo(_ context.Context, _, _ string) (int16, error) {
+	return 89, nil
 }
 
 func (f *fakeODN) CreateFacility(_ context.Context, fac odn.Facility) error {
@@ -200,6 +212,48 @@ func TestODNDictHandlers(t *testing.T) {
 		w := doJSON(odnRouter(&fakeODN{}), http.MethodGet,
 			"/api/admin/v1/odn/cities?prvCode=PHL001", "")
 		if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), "MNL") {
+			t.Fatalf("HTTP=%d body=%s", w.Code, w.Body.String())
+		}
+	})
+}
+
+func TestODNNextCodeHandlers(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	t.Run("GET /odn/facility-next-code P+网格12", func(t *testing.T) {
+		w := doJSON(odnRouter(&fakeODN{}), http.MethodGet,
+			"/api/admin/v1/odn/facility-next-code?kind=P&gridCode=12", "")
+		if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), "P12001") {
+			t.Fatalf("HTTP=%d body=%s", w.Code, w.Body.String())
+		}
+	})
+	t.Run("GET /odn/facility-next-code 非法 kind 透传域错误", func(t *testing.T) {
+		f := &fakeODN{nextCodeErr: odn.ErrInvalidCode}
+		w := doJSON(odnRouter(f), http.MethodGet,
+			"/api/admin/v1/odn/facility-next-code?kind=XX&gridCode=1", "")
+		var body struct {
+			Code int `json:"code"`
+		}
+		json.Unmarshal(w.Body.Bytes(), &body)
+		if body.Code != 42200 {
+			t.Fatalf("期望 42200,body=%s", w.Body.String())
+		}
+	})
+	t.Run("GET /odn/site-next-no 缺城市拒绝", func(t *testing.T) {
+		w := doJSON(odnRouter(&fakeODN{}), http.MethodGet,
+			"/api/admin/v1/odn/site-next-no?prvCode=PHL001", "")
+		var body struct {
+			Code int `json:"code"`
+		}
+		json.Unmarshal(w.Body.Bytes(), &body)
+		if body.Code != 42200 {
+			t.Fatalf("期望 42200,body=%s", w.Body.String())
+		}
+	})
+	t.Run("GET /odn/site-next-no 回显下一序号", func(t *testing.T) {
+		w := doJSON(odnRouter(&fakeODN{}), http.MethodGet,
+			"/api/admin/v1/odn/site-next-no?prvCode=PHL001&cityPrefix=MNL", "")
+		if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), "89") {
 			t.Fatalf("HTTP=%d body=%s", w.Code, w.Body.String())
 		}
 	})
