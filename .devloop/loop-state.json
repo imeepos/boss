@@ -1,119 +1,64 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-06T14:20:30.000-07:00",
+  "updatedAt": "2026-09-07T10:12:00+08:00",
   "project": "boss",
+  "phase": "PP2 前端页面体验打磨",
   "tasks": [
     {
-      "id": "T1",
-      "title": "资源容量视图与预警(P5-W1,对标C6)",
-      "goal": "容量聚合API+阈值预警+视图页",
-      "priority": "P1",
-      "status": "done",
-      "acceptanceCommand": "bash scripts/e2e/verify-oss-capacity-e2e.sh"
+      "id": "U0",
+      "title": "PP2-W0 全局选择器基座体验统一(公共地基,最高优先)",
+      "goal": "Dropdown/SimplePicker/DialogPicker/域选择器/MultiSelect/RegionCascade 统一体验契约(加载/空态/失败重试/清空/键盘/aria/三语),ResourcePicker 兼容层让 16 个直用页零改动受益,picker-guide 同步",
+      "priority": "P0",
+      "status": "doing",
+      "acceptanceCommand": "make web-admin-check && bash -c '! git grep -n \"<select\" -- web/admin/src/components' && bash -c '! git grep -nE \"(^|[^.a-zA-Z])alert[(]\" -- web/admin/src/components' && test -f docs/admin/picker-guide.md"
     },
     {
-      "id": "T2",
-      "title": "PON端到端链路反查(P5-W2,对标C4)",
-      "goal": "逐跳链路API+链路视图",
+      "id": "U1",
+      "title": "PP2-W1 boss 域逐页体验打磨(32 页:订单/派单/装机看板/师傅/消息/拆机等)",
+      "goal": "Phase A 只读走查落审计清单→Phase B 逐页修复反馈链/表单/表格/选择器,102 真实走查证据落档",
       "priority": "P1",
-      "status": "done",
-      "acceptanceCommand": "bash scripts/e2e/verify-oss-pon-path-e2e.sh"
+      "status": "doing",
+      "acceptanceCommand": "make web-admin-check && bash -c '! git grep -nE \"(^|[^.a-zA-Z])alert[(]\" -- web/admin/src/pages/boss' && test -f docs/plan/pp2-audit-boss.md && test -f docs/acceptance/2026-09-07-pp2-w1-boss.md"
     },
     {
-      "id": "T3",
-      "title": "资源台账稽核(P5-W3,对标C7)",
-      "goal": "三类稽核+每日快照",
+      "id": "U2",
+      "title": "PP2-W2 ams+org 域逐页体验打磨(58 页:资产/库存/采购/换新/组织/权限等)",
+      "goal": "同 W1 两阶段节奏,裸按钮裸表格重灾区",
       "priority": "P1",
-      "status": "done",
-      "acceptanceCommand": "bash scripts/e2e/verify-oss-inventory-audit-e2e.sh"
+      "status": "doing",
+      "acceptanceCommand": "make web-admin-check && bash -c '! git grep -nE \"(^|[^.a-zA-Z])alert[(]\" -- web/admin/src/pages/ams web/admin/src/pages/org' && test -f docs/plan/pp2-audit-ams-org.md && test -f docs/acceptance/2026-09-07-pp2-w2-ams-org.md"
     },
     {
-      "id": "T4",
-      "title": "ODN P1 覆盖关联:迁移与契约同步(T4)",
-      "goal": "address_coverage 迁移 000197+契约 V1.6",
+      "id": "U3",
+      "title": "PP2-W3 计费+运维域逐页体验打磨(billing/oss 全域+provision/quad/alarm+intel 残留+aaa 双页)",
+      "goal": "同 W1 两阶段节奏;清偿 PP1-C 登记债(quad/alarm 内联 style、provision toast)",
       "priority": "P1",
-      "status": "done",
-      "acceptanceCommand": "make check"
+      "status": "doing",
+      "acceptanceCommand": "make web-admin-check && bash -c '! grep -rn \"style={{\" web/admin/src/pages/quad web/admin/src/pages/alarm' && bash -c '! git grep -nE \"(^|[^.a-zA-Z])alert[(]\" -- web/admin/src/pages/billing web/admin/src/pages/oss web/admin/src/pages/provision web/admin/src/pages/quad web/admin/src/pages/alarm' && test -f docs/plan/pp2-audit-ops.md && test -f docs/acceptance/2026-09-07-pp2-w3-ops.md"
     },
     {
-      "id": "T5",
-      "title": "ODN P1 覆盖关联:coverage 后端域(T5)",
-      "goal": "四端点+单测+留痕;已上线",
-      "priority": "P1",
-      "status": "done",
-      "acceptanceCommand": "go build ./... && go test ./internal/domain/odn/..."
-    },
-    {
-      "id": "T6",
-      "title": "ODN P1 覆盖关联:admin 前端(T6)",
-      "goal": "覆盖页签+三语言 i18n",
-      "priority": "P1",
-      "status": "done",
-      "acceptanceCommand": "make web-admin-check"
-    },
-    {
-      "id": "T7",
-      "title": "ODN P1 覆盖关联:102 端到端验收(T7)",
-      "goal": "RESULT: PASS 全过",
-      "priority": "P1",
-      "status": "done",
-      "acceptanceCommand": "bash scripts/e2e/verify-odn-coverage-e2e.sh"
-    },
-    {
-      "id": "T8",
-      "title": "ODN P6 设计-施工:设施状态机(T8)",
-      "goal": "lifecycle_status 四态+CAS 转移+审计;已上线 102",
-      "priority": "P1",
-      "status": "done",
-      "acceptanceCommand": "go build ./... && go test ./internal/domain/odn/..."
-    },
-    {
-      "id": "T9",
-      "title": "ODN P6 设计-施工:施工项目与竣工回填(T9)",
-      "goal": "construction 单+批量竣工回填;102 e2e RESULT: PASS",
-      "priority": "P1",
-      "status": "done",
-      "acceptanceCommand": "bash scripts/e2e/verify-odn-construction-e2e.sh"
-    },
-    {
-      "id": "T10",
-      "title": "ODN P7 运维影响面(T10)",
-      "goal": "impact 接口设施→覆盖→客户清单;102 e2e RESULT: PASS",
-      "priority": "P1",
-      "status": "done",
-      "acceptanceCommand": "bash scripts/e2e/verify-odn-impact-e2e.sh"
-    },
-    {
-      "id": "T11",
-      "title": "ODN P2 端口占用态+按地址分配(T11)",
-      "goal": "odn_port(000200)+SKIP LOCKED 分配+AllocateForAddress;102 e2e RESULT: PASS",
-      "priority": "P1",
-      "status": "done",
-      "acceptanceCommand": "bash scripts/e2e/verify-odn-port-e2e.sh"
-    },
-    {
-      "id": "T12",
-      "title": "ODN P2 下单硬校验接线(T12)",
-      "goal": "CoverageGate 灰度接线(BOSS_ODN_COVERAGE_GATE)+ErrNotServable 40900;已合 main",
-      "priority": "P1",
-      "status": "done",
-      "acceptanceCommand": "go build ./... && go test ./internal/domain/odn/... ./internal/domain/order/..."
-    },
-    {
-      "id": "T13",
-      "title": "ODN P3 逻辑-物理绑定+售后反查(T13)",
-      "goal": "odn_bindings(000201) 一口一绑定+按口/按单反查;102 e2e RESULT: PASS(拒绝码 40900/40400 已收敛)",
-      "priority": "P1",
-      "status": "done",
-      "acceptanceCommand": "bash scripts/e2e/verify-odn-bindings-e2e.sh"
-    },
-    {
-      "id": "T14",
-      "title": "ODN 生命周期打磨(GIS 前端点击反查弹窗+下单页可装性展示强化)",
-      "goal": "后端数据链全通(T4-T13);前端 GIS 点位点击反查绑定/订单弹窗、下单页徽标接 allocate-for-address 实时判定",
+      "id": "U4",
+      "title": "PP2-W4 base+辅助页逐页体验打磨(base 全域+profile/backup/dashboard 等)",
+      "goal": "W1-W3 收尾后派发,同两阶段节奏",
       "priority": "P2",
       "status": "todo",
-      "acceptanceCommand": "make web-admin-check"
+      "acceptanceCommand": "make web-admin-check && test -f docs/plan/pp2-audit-base-aux.md && test -f docs/acceptance/2026-09-07-pp2-w4-base-aux.md"
+    },
+    {
+      "id": "U5",
+      "title": "T14 ODN 前端强化 rider(GIS 点位点击反查弹窗+下单页可装性徽标)",
+      "goal": "后端数据链 T4-T13 已全通;归 W3 会话余力执行,不做不合并",
+      "priority": "P2",
+      "status": "todo",
+      "acceptanceCommand": "make web-admin-check && test -f docs/acceptance/2026-09-07-pp2-t14-odn.md"
+    },
+    {
+      "id": "U6",
+      "title": "PP2 收尾整合:主树全量门禁+102 部署冒烟+专属会话归档",
+      "goal": "全部波次合并进 main 后由负责人执行",
+      "priority": "P1",
+      "status": "todo",
+      "acceptanceCommand": "make check && make web-admin-check"
     }
   ]
 }
