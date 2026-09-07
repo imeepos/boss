@@ -80,16 +80,17 @@ type GridUsage struct {
 
 // Facility 基础设施(电杆/人井/铁塔/接头盒/终端盒)。
 type Facility struct {
-	Code            string  `json:"code"`       // P01001/MH01001/TW00001/CLS00001/TBX00001
-	Kind            string  `json:"kind"`       // P/MH/TW/CLS/TBX
-	PrvCode         string  `json:"prvCode"`    // 所属网格城市(仅 P/MH)
-	CityPrefix      string  `json:"cityPrefix"` // 仅 P/MH
-	GridCode        int16   `json:"gridCode"`   // 仅 P/MH
-	Name            string  `json:"name"`
-	Lat             float64 `json:"lat"`             // 纬度
-	Lng             float64 `json:"lng"`             // 经度
-	Status          string  `json:"status"`          // IN_USE/RETIRED
-	LifecycleStatus string  `json:"lifecycleStatus"` // PLANNED/IN_BUILD/IN_SERVICE/RETIRED(000198)
+	Code            string          `json:"code"`       // P01001/MH01001/TW00001/CLS00001/TBX00001
+	Kind            string          `json:"kind"`       // P/MH/TW/CLS/TBX
+	PrvCode         string          `json:"prvCode"`    // 所属网格城市(仅 P/MH)
+	CityPrefix      string          `json:"cityPrefix"` // 仅 P/MH
+	GridCode        int16           `json:"gridCode"`   // 仅 P/MH
+	Name            string          `json:"name"`
+	Lat             float64         `json:"lat"`                // 纬度
+	Lng             float64         `json:"lng"`                // 经度
+	Status          string          `json:"status"`             // IN_USE/RETIRED
+	LifecycleStatus string          `json:"lifecycleStatus"`    // PLANNED/IN_BUILD/IN_SERVICE/RETIRED(000198)
+	AssetReg        *EntityAssetReg `json:"assetReg,omitempty"` // ACTIVE 资产化凭证(W8 000215,列表附加)
 }
 
 // ODNService ODN 无源物理层域服务口。

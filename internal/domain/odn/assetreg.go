@@ -54,6 +54,14 @@ type AssetRegistration struct {
 	ReversedAt            string  `json:"reversedAt,omitempty"`
 }
 
+// EntityAssetReg 对象上的 ACTIVE 凭证摘要(设施/设备列表附加,资产身份视图可见)。
+type EntityAssetReg struct {
+	RegistrationNo string `json:"registrationNo"`
+	AssetID        int64  `json:"assetId"`
+	AssetCode      string `json:"assetCode"`
+	AssetStatus    string `json:"assetStatus"`
+}
+
 // ValidateRegistrationInput 登记入参校验(42200 族):实体二选一、来源与项目匹配、价值非负。
 func ValidateRegistrationInput(entityKind, sourceKind string, facilityCode string, deviceID, projectID int64, value float64) error {
 	if entityKind != RegFacility && entityKind != RegDevice {

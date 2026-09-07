@@ -118,10 +118,14 @@ func (s *PGStore) insertChildDevice(ctx context.Context, d Device, wantKind stri
 
 // ListDevices 设备列表(kind 可空;城市可空=全网)。
 func (s *PGStore) ListDevices(ctx context.Context, kind, prvCode, cityPrefix string) ([]Device, error) {
-	rows, err := s.db.Query(ctx, `SELECT id, code, kind, COALESCE(prv_code,''), COALESCE(city_prefix,''),
-			COALESCE(site_no,0), COALESCE(parent_id,0), COALESCE(name,''), lat, lng, status, lifecycle_status
-		FROM odn_device WHERE ($1='' OR kind=$1) AND ($2='' OR (prv_code=$2 AND city_prefix=$3))
-		ORDER BY code LIMIT 500`, kind, prvCode, cityPrefix)
+	rows, err := s.db.Query(ctx, `SELECT d.id, d.code, d.kind, COALESCE(d.prv_code,''), COALESCE(d.city_prefix,''),
+		COALESCE(d.site_no,0), COALESCE(d.parent_id,0), COALESCE(d.name,''), d.lat, d.lng, d.status, d.lifecycle_status,
+		COALESCE(r.registration_no,''), COALESCE(r.asset_id,0), COALESCE(a.asset_code,''), COALESCE(a.status,'')
+		FROM odn_device d
+		LEFT JOIN odn_asset_registrations r ON r.entity_kind='DEVICE' AND r.device_id=d.id AND r.status='ACTIVE'
+		LEFT JOIN assets a ON a.id=r.asset_id
+		WHERE ($1='' OR d.kind=$1) AND ($2='' OR (d.prv_code=$2 AND d.city_prefix=$3))
+		ORDER BY d.code LIMIT 500`, kind, prvCode, cityPrefix)
 	if err != nil {
 		return nil, fmt.Errorf("odn: list devices: %w", err)
 	}
@@ -129,9 +133,15 @@ func (s *PGStore) ListDevices(ctx context.Context, kind, prvCode, cityPrefix str
 	out := []Device{}
 	for rows.Next() {
 		var d Device
+		var regNo, assetCode, assetStatus string
+		var regAssetID int64
 		if err := rows.Scan(&d.ID, &d.Code, &d.Kind, &d.PrvCode, &d.CityPrefix,
-			&d.SiteNo, &d.ParentID, &d.Name, &d.Lat, &d.Lng, &d.Status, &d.LifecycleStatus); err != nil {
+			&d.SiteNo, &d.ParentID, &d.Name, &d.Lat, &d.Lng, &d.Status, &d.LifecycleStatus,
+			&regNo, &regAssetID, &assetCode, &assetStatus); err != nil {
 			return nil, fmt.Errorf("odn: scan device: %w", err)
+		}
+		if regNo != "" {
+			d.AssetReg = &EntityAssetReg{RegistrationNo: regNo, AssetID: regAssetID, AssetCode: assetCode, AssetStatus: assetStatus}
 		}
 		out = append(out, d)
 	}

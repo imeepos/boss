@@ -93,10 +93,14 @@ func (s *PGStore) GetFacility(ctx context.Context, code string) (*Facility, erro
 
 // ListFacilities 设施列表(kind 可空=全部;GridRef 可空=不限网格)。
 func (s *PGStore) ListFacilities(ctx context.Context, kind string, gridFilter GridRef) ([]Facility, error) {
-	sql := `SELECT code, kind, prv_code, city_prefix, COALESCE(grid_code,0),
-			COALESCE(name,''), COALESCE(lat,0), COALESCE(lng,0), status, lifecycle_status
-		FROM odn_facility WHERE ($1='' OR kind=$1) AND ($2='' OR (prv_code=$2 AND city_prefix=$3 AND grid_code=$4))
-		ORDER BY code LIMIT 500`
+	sql := `SELECT f.code, f.kind, f.prv_code, f.city_prefix, COALESCE(f.grid_code,0),
+		COALESCE(f.name,''), COALESCE(f.lat,0), COALESCE(f.lng,0), f.status, f.lifecycle_status,
+		COALESCE(r.registration_no,''), COALESCE(r.asset_id,0), COALESCE(a.asset_code,''), COALESCE(a.status,'')
+		FROM odn_facility f
+		LEFT JOIN odn_asset_registrations r ON r.entity_kind='FACILITY' AND r.facility_code=f.code AND r.status='ACTIVE'
+		LEFT JOIN assets a ON a.id=r.asset_id
+		WHERE ($1='' OR f.kind=$1) AND ($2='' OR (f.prv_code=$2 AND f.city_prefix=$3 AND f.grid_code=$4))
+		ORDER BY f.code LIMIT 500`
 	if gridFilter.PrvCode == "" {
 		gridFilter = GridRef{PrvCode: "", CityPrefix: "", GridCode: 0}
 	}
@@ -108,9 +112,15 @@ func (s *PGStore) ListFacilities(ctx context.Context, kind string, gridFilter Gr
 	out := []Facility{}
 	for rows.Next() {
 		var f Facility
+		var regNo, assetCode, assetStatus string
+		var regAssetID int64
 		if err := rows.Scan(&f.Code, &f.Kind, &f.PrvCode, &f.CityPrefix,
-			&f.GridCode, &f.Name, &f.Lat, &f.Lng, &f.Status, &f.LifecycleStatus); err != nil {
+			&f.GridCode, &f.Name, &f.Lat, &f.Lng, &f.Status, &f.LifecycleStatus,
+			&regNo, &regAssetID, &assetCode, &assetStatus); err != nil {
 			return nil, fmt.Errorf("odn: scan facility: %w", err)
+		}
+		if regNo != "" {
+			f.AssetReg = &EntityAssetReg{RegistrationNo: regNo, AssetID: regAssetID, AssetCode: assetCode, AssetStatus: assetStatus}
 		}
 		out = append(out, f)
 	}
