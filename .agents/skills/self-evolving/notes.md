@@ -1957,3 +1957,21 @@
 
 - 重来一次怎么做?派工时就把反思类主树提交延后到分支合并放行之后写进任务书;合并统一原子脚本(fetch+ancestor+merge+push 一条命令);验收命令一律落仓库脚本再进账本;devloop_accept 只用于秒级检查,长门禁负责人后台实跑显式 RC。
 
+## 2026-09-07 端口台账只读溯源 + 扩容单执行闭环(worktree feat/expand-port-provision 已合并 main b806d645)
+- 坑1: run_code 里生成 Go 代码——JS 双引号串内写反斜杠+引号转义必炸宿主 parse error(红线22变体);正解=JS 单引号串内直接放裸双引号,或占位符 fromCharCode(1) 最后 split/join 还原。Go 字面量本身要双引号(单引号会 illegal rune literal)。占位符两段式写文件(先 base 尾缀 /* CONTINUE */ 再补齐)可行。
+- 坑2: pgxmock ExpectQuery 无 WithArgs 默认期望 0 参,CreatePort 传 10 参直接 expected 0 but got 10——INSERT/UPDATE 期望必须补 pgxmock.AnyArg() x N。
+- 坑3: pgxmock.NewPool() 返回类型是 pgxmock.PgxPoolIface,不是自造的 Pools。
+- 坑4: edit old_string 用反斜杠 n 拼多行在宿主会断(本次 Expected , got eof);一律行数组 + join(fromCharCode(10))。
+- 发现预存在 flaky:internal/app TestRunOSSAuditIfDueRunsOnceDaily 当日幂等单次 calls=2,主树/分支同样红(跨时区日期判定),与本轮改动无关,待单独修。
+- 用户问「为什么没有X」类问题时要给出可执行的替代入口,并先自己验证入口可用——本轮扩容 expand 流程半成品(只有收单无执行)就是没验出来的。
+
+## 2026-09-07 T1 存量开户导入建模迁移轮(feat/kaihu-000202-vlan-columns 已 push,47b8e458+ee68ac4a)
+
+- 哪个坑最耗时?worktree 元数据被并行会话清掉与 rm -rf 静默拦截叠加,三番才建稳;
+  经验=并行会话活跃期,worktree 创建与注册验证必须同命令完成,删目录一律 mv 备份(已登 recidivism/known-issues)。
+- 门禁被 main 预存日期炸弹挡路:TestRunOSSAuditIfDueRunsOnceDaily 写死 09-06 跨日必挂,
+  根因是实现时间源不贯通(注入 now 没到 SaveOSSAudit),fix 独立提交可 revert;
+  审计法=grep 时间注入函数体内的 time.Now(),出现即断点。
+- 占号检查两版都错(7 位正则/带路径锚点),第三版 sed 剥前缀才真验过;机械检查自己先跑两遍对不上号就要怀疑检查器本身。
+- 零行为变更加字段模式:可空列用指针+omitempty,nil 下 JSON 输出不变,SELECT/Scan 不动,
+  门禁全绿;T2 写路径可直接消费这些字段。
