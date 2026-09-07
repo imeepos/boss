@@ -5,6 +5,7 @@
 
 | 坑 | 次数 | 发生日期 | 后果 |
 |---|---|---|---|
+| --no-checkout worktree 半检出状态直接 commit(index 为空,仅 checkout 过部分目录) | 1 | 2026-09-07(P-INFRA-1 立项轮:git worktree add --no-checkout 后只 git checkout HEAD -- docs,git status 满屏 D 即 index 缺失整树条目,照常 add+commit 产出「删全仓只留 docs」的提交 eb0b6aa;未推送未并 main,reset --hard main 后 cherry-pick 重做无损) | --no-checkout worktree 内提交前必须 git status --porcelain 确认无整树 D;要么 reset --hard 补全检出再改,要么小改动不用 --no-checkout;commit 前先 git diff --name-only HEAD~1 HEAD 核对范围 |
 | .gitignore 宽规则(coverage.*)误伤同名源码新文件,git add 静默报错连带 && 链断裂 | 2 | 2026-09-07(ODN P1:coverage.go 首次 add 失败致 commit 退出 1 无输出;coverage.tsx 中招后靠「文件在盘+git status 干净+git log --all 空」三重矛盾定位,git check-ignore -v 实锤 .gitignore:18) | 新建文件后 git status 必须看到对应 ??/A 条目,看不到就 check-ignore 预检;撞覆盖率惯例名的源码加白名单例外而非 -f 硬塞 |
 | e2e ensure_table 手工 apply 迁移未登记 schema_migrations,服务器迁移器重放崩溃循环 | 1 | 2026-09-07(T9 轮:部署慢时 e2e psql 裸 apply 000199,服务器启动重放报 42P07 Restarting(1) 持续崩溃;修=DROP 手工表让迁移器正规登记自愈) | e2e 缺表守卫禁 raw apply 迁移文件;缺表=部署未完成信号,应等待重试而非代为建表 |
 | git add 列清单漏带「域接口文件」(odn.go),handler 引用未定义接口致 main 构建断链 | 3 | 2026-09-07(T13 轮三犯:漏带 httpx/error.go 错误映射,功能对但错误码 50000 粗糙) | 2026-09-07(T9 首犯:odn.go 留在 worktree 未提交区随清理丢失,CI 构建失败部署静默停摆 1h 才由 404+镜像时间线定位;T10 再犯同源漏同文件) | 涉及接口扩展的提交,add 清单必须含 internal/domain/odn/odn.go;commit 后在干净目录 go build 复验而非依赖 worktree 内旧产物 |

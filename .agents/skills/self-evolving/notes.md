@@ -1,5 +1,11 @@
 # Notes
 
+## 2026-09-07 P-INFRA-1 负责人立项(feat/plan-infra-buildout)
+
+- 最耗时坑:--no-checkout worktree 半检出状态直接 commit——index 为空,git status 满屏 D 误当常态,add+commit 产出「删全仓只留 docs」的提交 eb0b6aa;幸运未推送未并 main,reset --hard main 后 cherry-pick 重做无损。同轮 ff-only 合并撞并行 kaihu 线推进 main,按协议回 worktree reset --hard main + cherry-pick 后一次过。
+- skill 有没有预警:红线 9/13 管「ff 失败禁删 worktree」「长命令后台跑」,没管「--no-checkout 的 index 陷阱」;DSH 零参工具(get_goal/session_link_list)不传参报 binding arguments must be lossless JSON,须显式传 {}。均已登记 lessons/recidivism。
+- 重来一次:worktree 提交前必跑 git status --porcelain 判「整树 D」;commit 后必 git diff --name-only HEAD~1 HEAD 核对范围;零参工具默念「空对象也要传」。
+- 立项产物:docs/plan/infra-buildout-plan.md(缺口五项/最佳实践引用/W1-W2 派发与迁移号预分配/合并顺序);W1(承包商结算)、W2(网格投资测算)两个专属会话已派发。注意:台账 #12 裁定 archiveSession 在本环境禁用——「工作完归档会话」须向用户报备 GUI 手工归档,不得调该工具。
 ## 2026-09-07 PP2-U6 跨域业务流冒烟(feat/pp2-u6-smoke)
 
 - 零踩坑轮。W4 沉淀的两条直接复用:收尾清理直接 --force 一次过(W4 的 Directory not
@@ -2007,3 +2013,26 @@
   源码文件的可靠姿势=先设计成无危险字符再落盘。
 - apply 未执行(任务书禁止)但幂等性必须有机械抓手: upsert 自然键 + 对账复核 SQL 内嵌
   (--csv 输出工具解析), 不符整体失败; 「未跑过」的代码路径靠结构保证而非口头承诺。
+
+### T2 追补:范围收缩与重复修复消化(二次纠偏轮,合并 a90ce8df 收口)
+- 并行范围变更(取消 POST /ports)落地姿势:先 fetch 查 main 实际状态与权威端点
+  (/provision/ports),再决定 domain 层哪些保留(CreateResource 增强)哪些回退
+  (quad 预查)——范围收缩不等于全量回滚,保留对 main 有利的部分并写明依据。
+- drop 中间提交的机械三步法:branch backup → reset 到目标点 → cherry-pick 保留段
+  → 重新 merge main;比交互 rebase 可控,cherry-pick 前确认被丢弃提交不污染保留段 diff。
+- 与并行分支同修一个文件(oss-audit 时钟)时:谁先合 main 谁的修复作数,另一方
+  rebase 后 drop 即可;drop 前必须 grep main 确认修复已在树内,否则 make check 会
+  出现与本次改动无关的假红。
+- 收缩类历史提交标题(如 feat(oss) 带 ports 字样)不改写,以终态 API 面为准并在
+  回报中显式声明,避免 force push 放大。
+
+## 2026-09-07 T3 修复轮(69519d69, customers.phone 伪登录号段)
+
+- edit 改名式误操作:想在函数前插入新函数,却把 old/new 写成『仅函数签名行』导致原函数被改名,
+  调用点断链;修正时 old_string 又凭记忆少抄行尾注释(拆机 CLOSED)再次 not found。
+  正解=插入类编辑的 old/new 都必须包含『完整上下文行』,改完立即 grep 函数名核对调用点闭环。
+- python %-format 与 SQL LIKE 通配符冲突:模板串里 '0999000%' 的 % 会被 %(_in_list) 当占位符,
+  ValueError unsupported format character;LIKE 通配符在 %-format 模板里必须写 %%,
+  且这类错误只在 build_sql 真被调用时才炸——生成 SQL 的代码路径要进 acceptance 覆盖。
+- 修复型任务先探测再动手:102 直查确认索引名/号段零冲突/残留行后,修复一次到位;
+  apply 幂等的重放语义在修复时要重新过一遍(查重跳过 + UPDATE 收敛 + 对账兜底三层)。

@@ -28,6 +28,8 @@
 - 当 sysadmin 角色被菜单门禁拒（403 no permission:menu:x）时，修复是先查远端库 `schema_migrations` 最新版本对比 `ls migrations/*.up.sql`——本项目权限全是 role_permissions 显式行，sysadmin 无隐式全权，迁移漏跑（漏插权限/授权）是首要嫌疑。skill 没提前警告我。
 - 当手测 API 收到 42200 参数非法时，修复是先读后端请求 struct 再拼 JSON（如 geo attrs 的 timeZones 是 string[] 而非对象数组），不凭直觉猜字段类型。skill 没提前警告我。
 - 当本机没有 psql 却要查/改远端 PG 时，修复是 /tmp 临时 go 程序 + pgx 直连 DSN（configs/config.example.yaml 有现成连接串），迁移文件是纯 SQL 可整文件 Exec。skill 没提前警告我。
+- 当在 --no-checkout 的 worktree 里提交时，修复是先 git status --porcelain 确认 index 完整（满屏 D = index 为空，commit 会删整树），或放弃 --no-checkout 用完整检出。skill 没提前警告我。
+- 当 DSH 零参工具（get_goal/session_link_list 等）报 binding arguments must be lossless JSON 时，修复是显式传空对象 {} 而不是不传参。skill 没提前警告我。
 - 当新增数据库迁移文件时,修复是先 `ls migrations/*.up.sql | tail -5` 确认真实最大编号——`ls | head` 截断列表曾让我险些撞号 000031(已被 order_no_seq 占用);代码注释里的迁移号(internal/domain/order/pg.go)也要 grep 交叉验证。
 - 当 CI 全新 clone 后 compose up 报 env file not found 时,修复是 workflow 里从 example 生成 env 文件、密钥从 gitea repo secret 注入、缺失即 fail fast——被 .gitignore 的文件在无人值守环境必然缺失。
 - 当验证 CI 部署结果时,修复是看 actions 日志或比对镜像 tag(GITHUB_SHA),curl healthz 只证明"有容器活着"——部署在 compose up 前失败时旧容器照常应答 ok。
@@ -536,3 +538,5 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 当正则解析 xlsx/HTML 等结构化标记且计数与权威画像不符时，修复是换 xml.etree.ElementTree/正规解析器，不用正则啃 XML——自闭合空单元格 <c .../> 的 / 被属性组吞掉后会串列取值（2026-09-07 T3 轮：S 列假拆机 9 个、SN 313≠330，换 ET 一次全中）。skill 没提前警告我。
 - 当硬指标口径有歧义（如「VLAN 四元组同缺 35」）时，修复是拿另一条独立基线交叉反推（T4 的「svlan 非空 312」→ 347-312=35=外层缺失），直觉口径（全四空=34）会差 1 且 selfcheck 永远红（2026-09-07 T3 轮）。skill 没提前警告我。
 - 当任务书与设计文档字段清单不一致时，修复是按两者并集实现并在回报中单列差异提示交负责人裁决——单方取舍都会在下游验收爆雷（2026-09-07 T3 轮 assets 段）。skill 没提前警告我。
+- 当 SQL 模板同时含 LIKE 通配符与 python %-format 时，修复是通配符 % 写成 %%——只有生成路径真被调用才炸 ValueError，SQL 构建函数必须进验收覆盖（2026-09-07 T3 修复轮 apply_sql build_sql）。skill 没提前警告我。
+- 当 edit 用于『在函数前插入新函数』时，修复是 old/new 都带完整上下文行且禁止只写签名行——只写签名行会把原函数改名断链；改完必须 grep 函数名核对定义与调用点闭环（2026-09-07 T3 修复轮 _sql_lo_accounts 被误改名）。skill 没提前警告我。
