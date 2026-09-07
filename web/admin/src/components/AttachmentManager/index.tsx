@@ -185,7 +185,7 @@ export function AttachmentManager({
         {!fixedUploader && (
           <UploaderFilter
             typeSel={typeSel}
-            onTypeChange={(v) => { setTypeSel(v); setPage(1) }}
+            onTypeChange={(v) => { setTypeSel(v); setUidInput(''); setPage(1) }}
             uid={uidInput}
             onUidChange={setUidInput}
           />
