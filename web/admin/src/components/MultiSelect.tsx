@@ -94,7 +94,7 @@ export function MultiSelect({ values, options, onChange, ariaLabel, placeholder,
     if (e.key === 'ArrowDown') { e.preventDefault(); step(1) }
     else if (e.key === 'ArrowUp') { e.preventDefault(); step(-1) }
     else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleActive() }
-    else if (e.key === 'Escape') { e.preventDefault(); setOpen(false) }
+    else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); setOpen(false) }
     else if (e.key === 'Tab') setOpen(false)
   }
   const onTriggerKey = (e: ReactKeyboardEvent<HTMLButtonElement>) => {

@@ -105,7 +105,7 @@ export function Dropdown({ value, options, onChange, ariaLabel, disabled, trigge
     if (e.key === 'ArrowDown') { e.preventDefault(); step(1) }
     else if (e.key === 'ArrowUp') { e.preventDefault(); step(-1) }
     else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); commitActive() }
-    else if (e.key === 'Escape') { e.preventDefault(); close(true) }
+    else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); close(true) }
     else if (e.key === 'Tab') close(false)
   }
   const onTriggerKey = (e: ReactKeyboardEvent<HTMLButtonElement>) => {
