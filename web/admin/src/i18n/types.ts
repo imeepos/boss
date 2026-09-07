@@ -1656,6 +1656,15 @@ export interface Translations {
       chainSiblingsMore: string
       chainNeedCustomer: string
       chainBackfilled: string
+      // T14-2 代客下单可装性徽标
+      badgeServable: string
+      badgePending: string
+      badgeUnservable: string
+      badgeEvaluating: string
+      badgeNoCoords: string
+      badgeNoCoordsHint: string
+      badgeFail: string
+      badgeRetry: string
     }
     onboardingPage: {
       title: string
