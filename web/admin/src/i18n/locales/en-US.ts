@@ -1473,6 +1473,7 @@ const enUS: Translations = {
       dispatchTitle: 'Dispatch · {no}',
       dispatchConfirm: 'Confirm dispatch',
       dispatchOk: 'Dispatched, now in progress',
+      createOk: 'Replacement created',
       dispatchFail: 'Dispatch failed',
       cancel: 'Cancel',
       cancelConfirm: 'Cancelled replacements cannot be dispatched. Cancel {no}?',

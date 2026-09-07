@@ -1473,6 +1473,7 @@ const msMY: Translations = {
       dispatchTitle: 'Hantar tugasan · {no}',
       dispatchConfirm: 'Sahkan penghantaran',
       dispatchOk: 'Berjaya dihantar, kini dalam proses',
+      createOk: 'Penggantian dicipta',
       dispatchFail: 'Penghantaran gagal',
       cancel: 'Batal',
       cancelConfirm: 'Gantian yang dibatalkan tidak boleh dihantar lagi. Batalkan {no}?',

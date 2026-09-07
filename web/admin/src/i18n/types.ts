@@ -1252,6 +1252,7 @@ export interface Translations {
       dispatchTitle: string
       dispatchConfirm: string
       dispatchOk: string
+      createOk: string
       dispatchFail: string
       cancel: string
       cancelConfirm: string

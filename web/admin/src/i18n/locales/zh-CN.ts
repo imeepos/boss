@@ -1473,6 +1473,7 @@ const zhCN: Translations = {
       dispatchTitle: '派单 · {no}',
       dispatchConfirm: '确认派单',
       dispatchOk: '派单成功,已转入执行中',
+      createOk: '更换单已创建',
       dispatchFail: '派单失败',
       cancel: '取消',
       cancelConfirm: '取消后该更换单不可再派单,确认取消 {no}?',
