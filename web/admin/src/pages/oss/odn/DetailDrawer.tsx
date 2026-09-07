@@ -87,7 +87,7 @@ export function DetailDrawer({ target, regions, grids, facilities, sites, device
       if (parent) chain.push({ key: 'parent', icon: '设备', tone: 'var(--color-brand-blue-300)', code: parent.code, name: parent.name, kindLabel: g.parentDevice, go: () => onSwitch({ tab: 'devices', row: parent }) })
     }
   }
-  if (tab === 'facilities' && grid) chain.push({ key: 'grid', icon: '网格', tone: 'var(--color-brand-gold-300)', code: String(grid.gridCode).padStart(2, '0'), name: grid.name, kindLabel: g.relGrid, go: () => onSwitch({ tab: 'grids', row: grid }) })
+  if (tab === 'facilities' && grid) chain.push({ key: 'grid', icon: '网格', tone: 'var(--color-warning)', code: String(grid.gridCode).padStart(2, '0'), name: grid.name, kindLabel: g.relGrid, go: () => onSwitch({ tab: 'grids', row: grid }) })
   if (tab === 'sites') {
     const devChildren = devices.filter((x) => x.siteNo === (row as Site).siteNo).slice(0, 3)
     for (const c of devChildren) chain.push({ key: 'dev' + c.id, icon: '设备', tone: 'var(--color-brand-blue-300)', code: c.code, name: c.name, kindLabel: g.tabs.devices, go: () => onSwitch({ tab: 'devices', row: c }) })
