@@ -62,12 +62,6 @@ export default function SitePostEditorPage() {
     } catch (e) { setError(e instanceof Error ? e.message : s.saveFail); setBusy(false) }
   }
   const [pickCover, setPickCover] = useState(false)
-  const stLabel = (v: string) => (v === 'PUBLISHED' ? s.stPublished : v === 'OFFLINE' ? s.stOffline : s.stDraft)
-  // 分类展示名:语言覆盖 → 默认名 → code。
-  const catName = (code: string) => {
-    const c = cats.find((x) => x.code === code)
-    return c ? c.names?.[locale] || c.name : code
-  }
 
   return <div>
     <PageHead title={editing ? s.editTitle : s.newTitle} desc={s.desc} />
