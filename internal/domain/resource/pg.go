@@ -18,6 +18,15 @@ var ErrPortNotAvailable = errors.New("resource: port not available")
 // ErrForeignKeyViolation 关联实体不存在(孤儿数据防护)。
 var ErrForeignKeyViolation = errors.New("resource: foreign key violation")
 
+// ErrDuplicate 自然键唯一冲突(resources.code / ports.port_code / ports.quad_code)。
+var ErrDuplicate = errors.New("resource: duplicate")
+
+// isUniqueViolation 判定 PG 唯一约束冲突(23505),由 DB 索引兜底并发窗口。
+func isUniqueViolation(err error) bool {
+	var pgErr *pgconn.PgError
+	return errors.As(err, &pgErr) && pgErr.Code == "23505"
+}
+
 // dbtx 是 PGStore 依赖的最小数据库接口;*pgxpool.Pool 天然满足,单测用 pgxmock 注入。
 type dbtx interface {
 	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
@@ -87,6 +96,15 @@ func (s *PGStore) CreateResource(ctx context.Context, r Resource) (int64, error)
 			return 0, fmt.Errorf("resource: address %d: %w", r.AddressID, ErrForeignKeyViolation)
 		}
 	}
+	if r.ParentID > 0 {
+		ok, err := s.exists(ctx, "resources", r.ParentID)
+		if err != nil {
+			return 0, err
+		}
+		if !ok {
+			return 0, fmt.Errorf("resource: parent %d: %w", r.ParentID, ErrForeignKeyViolation)
+		}
+	}
 
 	var id int64
 	err := s.db.QueryRow(ctx, `
@@ -94,6 +112,9 @@ func (s *PGStore) CreateResource(ctx context.Context, r Resource) (int64, error)
 		VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING id`,
 		r.LegalEntityID, r.Code, r.Name, r.Type, idOrNil(r.ParentID), r.AddressID, r.Status).Scan(&id)
 	if err != nil {
+		if isUniqueViolation(err) {
+			return 0, fmt.Errorf("resource: code %s: %w", r.Code, ErrDuplicate)
+		}
 		return 0, fmt.Errorf("resource: create resource: %w", err)
 	}
 	return id, nil
@@ -152,8 +173,16 @@ func (s *PGStore) ListPorts(ctx context.Context, resourceID int64) ([]Port, erro
 }
 
 // CreatePort 新建端口,返回自增 id。
-// 校验 resource_id 和 address_id 存在性,防止孤儿端口。
+// 校验 resource_id/address_id 存在性防孤儿端口;quad_code 无 DB 唯一索引,
+// 预查给 40900 语义(port_code 由 DB UNIQUE 索引兜底并发窗口)。
 func (s *PGStore) CreatePort(ctx context.Context, p Port) (int64, error) {
+	var quadTaken bool
+	if err := s.db.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM ports WHERE quad_code = $1)", p.QuadCode).Scan(&quadTaken); err != nil {
+		return 0, fmt.Errorf("resource: check quad_code: %w", err)
+	}
+	if quadTaken {
+		return 0, fmt.Errorf("resource: quad_code %s: %w", p.QuadCode, ErrDuplicate)
+	}
 	// 关联完整性校验
 	if p.ResourceID > 0 {
 		ok, err := s.exists(ctx, "resources", p.ResourceID)
@@ -182,6 +211,9 @@ func (s *PGStore) CreatePort(ctx context.Context, p Port) (int64, error) {
 		p.PortCode, p.QuadCode, p.ResourceID, p.LegalEntityID, p.LegalEntityName,
 		p.AddressID, p.RegionID, p.RegionName, idOrNil(p.OrderID), p.Status).Scan(&id)
 	if err != nil {
+		if isUniqueViolation(err) {
+			return 0, fmt.Errorf("resource: port_code %s: %w", p.PortCode, ErrDuplicate)
+		}
 		return 0, fmt.Errorf("resource: create port: %w", err)
 	}
 	return id, nil

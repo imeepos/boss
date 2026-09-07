@@ -46,6 +46,10 @@ func TestPGStore_CreateResource(t *testing.T) {
 	mock.ExpectQuery(`SELECT EXISTS`).
 		WithArgs(int64(100)).
 		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
+	// FK validation: parent exists(T2 增:parentId 存在性防 23503)
+	mock.ExpectQuery(`SELECT EXISTS`).
+		WithArgs(int64(1)).
+		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
 
 	mock.ExpectQuery(`INSERT INTO resources`).
 		WithArgs(int64(1), "SPL-02", "望京分光器-02", "SPLITTER", int64(1), int64(100), "ONLINE").
@@ -147,6 +151,10 @@ func TestPGStore_CreatePort(t *testing.T) {
 	}
 	defer mock.Close()
 
+	// quad_code 唯一预查(T2 增:无 DB 索引,预查给 40900 语义)
+	mock.ExpectQuery(`SELECT EXISTS\(SELECT 1 FROM ports WHERE quad_code = \$1\)`).
+		WithArgs("P-SPL01-02").
+		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(false))
 	// FK validation: resource exists
 	mock.ExpectQuery(`SELECT EXISTS`).
 		WithArgs(int64(2)).
