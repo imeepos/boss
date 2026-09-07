@@ -2575,6 +2575,7 @@ columns: ['Code', 'Name', 'Sort', 'Enabled'],
       odnLayerFacility: 'Facilities',
       odnLayerSite: 'Sites',
       odnLayerDevice: 'Devices',
+      parentNode: 'Parent node',
     },
     gridInvestmentPage: {
       title: 'Investment Estimation',

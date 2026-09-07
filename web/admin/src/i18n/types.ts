@@ -2385,6 +2385,7 @@ export interface Translations {
       odnLayerFacility: string
       odnLayerSite: string
       odnLayerDevice: string
+      parentNode: string
     }
     gridInvestmentPage: {
       title: string

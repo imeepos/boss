@@ -2574,6 +2574,7 @@ columns: ['Kod', 'Nama', 'Susunan', 'Aktif'],
       odnLayerFacility: 'Kemudahan',
       odnLayerSite: 'Tapak',
       odnLayerDevice: 'Peranti',
+      parentNode: 'Nod induk',
     },
     gridInvestmentPage: {
       title: 'Anggaran Pelaburan',

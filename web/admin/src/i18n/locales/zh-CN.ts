@@ -2575,6 +2575,7 @@ columns: ['标识码', '名称', '排序', '启用'],
       odnLayerFacility: '设施',
       odnLayerSite: '局点',
       odnLayerDevice: '设备',
+      parentNode: '上级节点',
     },
     gridInvestmentPage: {
       title: '投资测算',
