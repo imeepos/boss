@@ -104,11 +104,26 @@ def quad_orphans():
 
 
 def create_grid(grid_code):
-    st, body = http("POST", "/odn/grids", {"prvCode": "PHL001", "cityPrefix": "MNL",
-        "gridCode": grid_code, "name": TAG + "-G" + str(grid_code), "coverage": TAG, "status": "ACTIVE"})
+    # prvCode/cityPrefix 是 query 参数(yaml /odn/grids post),body 只带 gridCode/name/coverage/status
+    st, body = http("POST", "/odn/grids?prvCode=PHL001&cityPrefix=MNL",
+        {"gridCode": grid_code, "name": TAG + "-G" + str(grid_code), "coverage": TAG, "status": "ACTIVE"})
     if st == 200 and code_of(body) == 0:
         return grid_code
+    bad("create grid " + str(grid_code), str((st, body))[:200])
     return None
+
+
+def pick_free_grids(need):
+    # 102 网格码可能被占用(如 91),先查现役网格再从 60~99 选空位
+    st, body = http("GET", "/odn/grids?prvCode=PHL001&cityPrefix=MNL")
+    taken = set()
+    if st == 200 and code_of(body) == 0:
+        for r in data_of(body) or []:
+            taken.add(int(r.get("gridCode")))
+    free = [c for c in range(60, 100) if c not in taken]
+    if len(free) < need:
+        raise RuntimeError("no free grid codes, taken=" + str(sorted(taken)))
+    return free[:need]
 
 
 def create_facility(kind, grid_code, seq):
@@ -235,8 +250,6 @@ def main():
     ok("ready probe: new binary deployed (/odn/city-investment 200 code=0)")
     base_quad = quad_orphans()
     print("[baseline] quad LINKED-but-not-DEPLOYED = " + str(base_quad))
-    grid_a = random.randint(80, 88)
-    grid_b = random.randint(89, 98)
     sfx = str(random.randint(700, 799))
     sfx2 = str(random.randint(800, 899))
     occ_s, odb_s, obd_s, sdb_s, sbd_s = "OCC" + sfx, "ODB" + sfx, "OBD" + sfx, "SDB" + sfx, "SBD" + sfx
@@ -249,6 +262,8 @@ def main():
     import_codes = [occ_i, odb_i, obd_i]
     try:
         # ---- Phase A: 造数全链:网格→设施→覆盖→项目挂预算→材料出库→资源链分光比 ----
+        free_grids = pick_free_grids(2)
+        grid_a, grid_b = free_grids[0], free_grids[1]
         if not create_grid(grid_a) or not create_grid(grid_b):
             raise RuntimeError("grid create failed")
         ok("grids created " + str(grid_a) + "/" + str(grid_b))
