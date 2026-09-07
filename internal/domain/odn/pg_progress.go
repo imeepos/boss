@@ -11,10 +11,15 @@ import (
 
 // 施工进度存储(P0-B,迁移 000213):幂等上报/列表/清单级聚合。
 
-const progressCols = "p.id, p.project_id, p.facility_code, p.done_qty, COALESCE(p.lat,0), COALESCE(p.lng,0), COALESCE(p.note,''), p.photo_ids, p.client_msg_id, COALESCE(p.reported_by,0), to_char(p.reported_at,'YYYY-MM-DD HH24:MI:SS')"
+const progressCols = "p.id, p.project_id, p.facility_code, p.done_qty, COALESCE(p.lat,0), COALESCE(p.lng,0), COALESCE(p.note,''), p.photo_ids, p.client_msg_id, p.reporter_type, COALESCE(p.reported_by,0), " +
+	"COALESCE(CASE WHEN p.reporter_type='WORKER' THEN w.name ELSE a.name END,''), to_char(p.reported_at,'YYYY-MM-DD HH24:MI:SS')"
+
+const progressFrom = " FROM construction_progress p " +
+	"LEFT JOIN workers w ON p.reporter_type='WORKER' AND w.id=p.reported_by " +
+	"LEFT JOIN accounts a ON p.reporter_type<>'WORKER' AND a.id=p.reported_by"
 
 func scanProgress(row pgx.Row, p *ProgressEntry) error {
-	return row.Scan(&p.ID, &p.ProjectID, &p.FacilityCode, &p.DoneQty, &p.Lat, &p.Lng, &p.Note, &p.PhotoIDs, &p.ClientMsgID, &p.ReportedBy, &p.ReportedAt)
+	return row.Scan(&p.ID, &p.ProjectID, &p.FacilityCode, &p.DoneQty, &p.Lat, &p.Lng, &p.Note, &p.PhotoIDs, &p.ClientMsgID, &p.ReporterType, &p.ReportedBy, &p.ReporterName, &p.ReportedAt)
 }
 
 // RecordProgress 幂等记录进度:唯一键冲突时返回既有 id 且 created=false(不重复计量)。
@@ -22,6 +27,10 @@ func scanProgress(row pgx.Row, p *ProgressEntry) error {
 func (s *PGStore) RecordProgress(ctx context.Context, p ProgressEntry) (int64, bool, error) {
 	if err := ValidateProgressEntry(p); err != nil {
 		return 0, false, err
+	}
+	rtype := p.ReporterType
+	if rtype == "" {
+		rtype = ProgressReporterAccount
 	}
 	var inScope bool
 	err := s.db.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM construction_items WHERE project_id=$1 AND facility_code=$2)", p.ProjectID, p.FacilityCode).Scan(&inScope)
@@ -32,12 +41,23 @@ func (s *PGStore) RecordProgress(ctx context.Context, p ProgressEntry) (int64, b
 	if !inScope {
 		return 0, false, fmt.Errorf("%w: fac=%s", ErrFacilityNotInScope, p.FacilityCode)
 	}
+	if rtype == ProgressReporterWorker {
+		var status string
+		err := s.db.QueryRow(ctx, "SELECT status FROM construction_projects WHERE id=$1", p.ProjectID).Scan(&status)
+		if err != nil {
+			log.Printf("[odn-construction] PROGRESS STATUS READ FAILED proj=%d: %v", p.ProjectID, err)
+			return 0, false, fmt.Errorf("odn: progress status read: %w", err)
+		}
+		if status != CBuilding {
+			return 0, false, fmt.Errorf("odn: project status=%s: %w", status, ErrInvalidProjStatus)
+		}
+	}
 	var id int64
 	err = s.db.QueryRow(ctx, "INSERT INTO construction_progress "+
-		"(project_id, facility_code, done_qty, lat, lng, note, photo_ids, client_msg_id, reported_by) "+
-		"VALUES ($1,$2,$3,NULLIF($4,0),NULLIF($5,0),$6,$7,$8,NULLIF($9,0)) "+
+		"(project_id, facility_code, done_qty, lat, lng, note, photo_ids, client_msg_id, reporter_type, reported_by) "+
+		"VALUES ($1,$2,$3,NULLIF($4,0),NULLIF($5,0),$6,$7,$8,$9,NULLIF($10,0)) "+
 		"ON CONFLICT (project_id, facility_code, client_msg_id) DO NOTHING RETURNING id",
-		p.ProjectID, p.FacilityCode, p.DoneQty, p.Lat, p.Lng, p.Note, p.PhotoIDs, p.ClientMsgID, p.ReportedBy).Scan(&id)
+		p.ProjectID, p.FacilityCode, p.DoneQty, p.Lat, p.Lng, p.Note, p.PhotoIDs, p.ClientMsgID, rtype, p.ReportedBy).Scan(&id)
 	if err == nil {
 		return id, true, nil
 	}
@@ -59,7 +79,7 @@ func (s *PGStore) ListProgress(ctx context.Context, projectID int64, limit int) 
 	if limit <= 0 || limit > 500 {
 		limit = 100
 	}
-	rows, err := s.db.Query(ctx, "SELECT "+progressCols+" FROM construction_progress p WHERE p.project_id=$1 ORDER BY p.id DESC LIMIT $2", projectID, limit)
+	rows, err := s.db.Query(ctx, "SELECT "+progressCols+progressFrom+" WHERE p.project_id=$1 ORDER BY p.id DESC LIMIT $2", projectID, limit)
 	if err != nil {
 		return nil, fmt.Errorf("odn: list progress: %w", err)
 	}
