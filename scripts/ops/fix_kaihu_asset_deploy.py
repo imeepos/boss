@@ -81,12 +81,12 @@ def stage_dryrun():
 def stage_apply():
     sql = chr(10).join([
         "BEGIN;",
+        "CREATE TEMP TABLE kfix_targets ON COMMIT DROP AS " + target_sql("DISTINCT ql.asset_id AS asset_id, ql.address_id") + ";",
         "UPDATE assets a SET status = " + Q + "DEPLOYED" + Q + ", address_id = t.address_id, updated_at = now()"
-        " FROM (" + target_sql("DISTINCT ql.asset_id AS asset_id, ql.address_id") + ") t",
-        " WHERE a.id = t.asset_id AND a.status = " + Q + "IN_STOCK" + Q + ";",
+        " FROM kfix_targets t WHERE a.id = t.asset_id AND a.status = " + Q + "IN_STOCK" + Q + ";",
         "INSERT INTO asset_lifecycles(asset_id, status, address_id, note, changed_at)",
         "SELECT t.asset_id, " + Q + "DEPLOYED" + Q + ", t.address_id, " + Q + NOTE + Q + ", now()",
-        " FROM (" + target_sql("DISTINCT ql.asset_id AS asset_id, ql.address_id") + ") t",
+        " FROM kfix_targets t",
         " WHERE NOT EXISTS (SELECT 1 FROM asset_lifecycles al WHERE al.asset_id = t.asset_id AND al.note = " + Q + NOTE + Q + ");",
         "COMMIT;",
     ])
@@ -119,6 +119,19 @@ def main():
         stage_dryrun()
     elif stage == "apply":
         stage_apply()
+    elif stage == "ledger":
+        # 已翻 DEPLOYED 但轨迹缺失时的补录段(幂等;apply 同事务轨迹已含 fix 标记则 0 行)。
+        deployed_where = TARGET_WHERE.replace("a.status = " + Q + "IN_STOCK" + Q, "a.status = " + Q + "DEPLOYED" + Q)
+        sql = chr(10).join([
+            "INSERT INTO asset_lifecycles(asset_id, status, address_id, note, changed_at)",
+            "SELECT DISTINCT ql.asset_id, " + Q + "DEPLOYED" + Q + ", ql.address_id, " + Q + NOTE + Q + ", now()",
+            " FROM quad_links ql JOIN assets a ON a.id = ql.asset_id JOIN asset_batches b ON b.id = a.batch_id",
+            " WHERE " + deployed_where,
+            " AND NOT EXISTS (SELECT 1 FROM asset_lifecycles al WHERE al.asset_id = ql.asset_id AND al.note = " + Q + NOTE + Q + ");",
+        ])
+        psql(sql)
+        added = psql_scalar("SELECT count(*) FROM asset_lifecycles WHERE note = " + Q + NOTE + Q)
+        print("[ledger] 轨迹标记行 = " + added)
     elif stage == "verify":
         stage_verify()
     else:
