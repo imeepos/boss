@@ -3,6 +3,7 @@
 // 计数缺接口时显示已加载行数(spec §2:不阻塞渲染,不为计数新增后端契约)。
 import { useMemo, useState, type ReactNode } from 'react'
 import { Building2, ChevronRight, Folder, HardHat, LayoutGrid, MapPin, Search, Server } from 'lucide-react'
+import { Input } from '../../../components/ui/input'
 import type { Grid, Facility, Site, Region, City } from './forms'
 import type { ResourceRow } from '../types'
 
@@ -153,8 +154,8 @@ export function ResourceTree({ regions, cities, prv, city, data, focus, g, onPrv
       <h3 className="m-0 px-3 pt-3 text-[13px] font-semibold text-[var(--shell-heading)]">{g.title}</h3>
       <div className="relative p-3">
         <Search className="pointer-events-none absolute left-5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--color-text-tertiary)]" />
-        <input value={kw} onChange={(e) => setKw(e.target.value)} placeholder={g.search} aria-label={g.search}
-          className="h-8 w-full rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] pl-8 pr-2 text-[13px] text-[var(--shell-input-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--shell-input-border-focus)]" />
+        <Input value={kw} onChange={(e) => setKw(e.target.value)} placeholder={g.search} aria-label={g.search}
+          className="h-8 w-full pl-8 pr-2 text-[13px]" />
       </div>
       <div role="tree" className="max-h-[calc(100vh-230px)] overflow-y-auto pb-2">
         {region && (
