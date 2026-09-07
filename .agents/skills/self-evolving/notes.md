@@ -1929,3 +1929,11 @@
   消费新日志格式前先 head -c 看真实形状(红线 23 的日志版)。
 - 纪律兑现:worktree --no-checkout 两段式秒回+后台 reset;commit 输出方括号核对分支名;push 前查远端分支未占号;
   主树零改动(反思惯例提交除外),合并留给负责人串行 ff。
+
+## 2026-09-07 PP2-W3 Phase B 修复轮(feat/pp2-w3-ops)
+
+- 最耗时坑:本地静态预览(preview)下 billing 两页不挂载而 console 零错——反复换 settle/profile 无果后按时间盒收口,
+  如实记「复验受限」而非硬凑绿;web-admin-check 唯一红项 ams 41% 属 W2 范围(本分支 diff 零 ams),归属上报而非代修。
+- 脚本批量插 i18n 键时 anchor 唯一性断言救了两回(x0 自卫式断言笔误、6 连中),批处理必须带 once-only 断言。
+- 子代理三域审计与本人抽查零矛盾才采信;后端路由核对集中在 Phase A 做掉,Phase B 实现时不再反查,省了一半上下文。
+- bash 工具 description 漏填连犯 3 次(红线 14 新形态):内层工具调用逐项默念必填键仍会漏,发车前先数参数个数。
