@@ -109,4 +109,6 @@
 | 2026-09-06 | AAA per-NAS 注册表按来源 IP 校验密钥(密文复用凭据 codec)+ CoA 用目标 NAS 密钥/端口 + 全局密钥降级默认关兼容开关 + 厂商 VSA 限速(华为 78/80 确定,中兴 84/86 待实机核对可配覆盖);单向哈希/FreeRADIUS nas 表全量建模/厂商字典库被否决 | adopted/2026-09-06-aaa-per-nas-vsa.md |
 
 | 2026-09-06 | AAA 凭据密钥经宿主机文件注入 102:/etc/boss-aaa/cred.key(0600,属主 1000:1000)+ bind mount + BOSS_AAA_CRED_KEY_FILE,值不进仓库/env/argv,文档只记指纹;compose 内联值/secret manager/放权 604 被否决 | adopted/2026-09-06-aaa-cred-key-file-injection.md |
+| 2026-09-07 | ROW 路权与 PECE 许可单工作流(000211):一表两域 kind CHECK 分域,状态机字典与资源链导入列对齐;开工前置门控 BOSS_ODN_PERMIT_GATE 灰度默认关,过期门控自动回写 EXPIRED+复验重走批准;NA=显式标记不适用;双表/审批流引擎/定时扫描过期被否决 | adopted/2026-09-07-odn-permit-workflow.md |
+| 2026-09-07 | 竣工验收联动覆盖新裁定(F6):ACCEPTED 与 address_coverage PENDING→SERVED 同事务翻转,联动数随竣工审计透出;BOSS_ODN_ACCEPT_COVERAGE_LINK 默认开 off 可关;事后异步任务/翻 UNSERVED/自动建覆盖行被否决 | adopted/2026-09-07-accept-coverage-linkage.md |
 > 维护规则：新增 note 当天同步本表；同一日多条按文件名升序；Amended 项不移动原位（决策代谢可追溯）。
