@@ -43,6 +43,7 @@
         "marketing-recon",
         "message",
         "monthly",
+        "payables",
         "provision",
         "provlog",
         "quadlink",
@@ -75,6 +76,7 @@
       "feOnly": [
         "aaasession",
         "capacity",
+        "payables",
         "permits"
       ],
       "beOnly": [

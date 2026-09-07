@@ -321,6 +321,7 @@ const enUS: Translations = {
       monthly: 'Monthly Reporting',
       'grid-investment': 'Investment Estimation',
       permits: 'Permits & ROW',
+      payables: 'Engineering Payables',
     },
   },
   attachmentManager: {

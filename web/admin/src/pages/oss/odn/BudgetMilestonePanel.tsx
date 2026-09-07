@@ -97,7 +97,7 @@ export function BudgetMilestonePanel({ project, onChanged }: {
         <label className={FIELD}><span className={LABEL}>计划完成日</span><Input value={planned} onChange={(e) => setPlanned(e.target.value)} placeholder='YYYY-MM-DD(可空)' /></label>
         <div className='flex items-end'><ToolbarButton primary disabled={busy} onClick={add}>追加里程碑</ToolbarButton></div>
       </div>}
-      {error && <div className='mb-2 text-xs text-[var(--color-text-danger)]'>{error}</div>}
+      {error && <div className='mb-2 text-xs text-[var(--color-danger)]'>{error}</div>}
       {rows.length === 0 ? <EmptyState text='暂无里程碑' /> : <div className='overflow-x-auto'><Table>
         <TableHeader><TableRow><TableHead>名称</TableHead><TableHead>计划完成日</TableHead><TableHead>状态</TableHead><TableHead>完成时间</TableHead><TableHead>操作</TableHead></TableRow></TableHeader>
         <TableBody>

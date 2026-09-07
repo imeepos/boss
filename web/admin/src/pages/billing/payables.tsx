@@ -126,7 +126,7 @@ export default function PayablesPage() {
       {rows.length === 0 ? <EmptyState text='暂无应付(SETTLED 结算单自动生成应付记录)' /> : <div className='overflow-x-auto'><Table>
         <TableHeader><TableRow><TableHead>应付单号</TableHead><TableHead>来源结算单</TableHead><TableHead>项目</TableHead><TableHead>承包商</TableHead><TableHead>应付金额</TableHead><TableHead>核减</TableHead><TableHead>已付</TableHead><TableHead>未付余额</TableHead><TableHead>状态</TableHead><TableHead>操作</TableHead></TableRow></TableHeader>
         <TableBody>
-          {rows.map((r) => <TableRow key={r.id} className={detail?.payable.id === r.id ? 'bg-[var(--shell-row-active)]' : ''}>
+          {rows.map((r) => <TableRow key={r.id} className={detail?.payable.id === r.id ? 'bg-[var(--shell-menu-hover-bg)]' : ''}>
             <TableCell className='font-mono'>{r.payableNo}</TableCell>
             <TableCell className='font-mono'>{r.settlementNo}</TableCell>
             <TableCell className='font-mono'>{r.projectNo}</TableCell>
@@ -154,7 +154,7 @@ export default function PayablesPage() {
           <span>已付合计:{fmtMoney(ap.paidAmount)}</span>
           <span>未付余额:{fmtMoney(ap.balance)}{ap.status === 'VOIDED' ? '(已冲销,余额可为负=超付)' : ''}</span>
         </div>
-        {ap.voidReason && <div className='mt-2 text-xs text-[var(--color-text-danger)]'>冲销原因:{ap.voidReason}</div>}
+        {ap.voidReason && <div className='mt-2 text-xs text-[var(--color-danger)]'>冲销原因:{ap.voidReason}</div>}
       </div>
       {canOperate && <div className='grid grid-cols-1 gap-3 lg:grid-cols-3'>
         <div className={CARD + ' p-4'}>

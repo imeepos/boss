@@ -321,6 +321,7 @@ const msMY: Translations = {
       monthly: 'Laporan Bulanan',
       'grid-investment': 'Anggaran Pelaburan',
       permits: 'Permit & ROW',
+      payables: 'Payables Kerja',
     },
   },
   attachmentManager: {

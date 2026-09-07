@@ -321,6 +321,7 @@ const zhCN: Translations = {
       monthly: '月度填报',
       'grid-investment': '投资测算',
       permits: '许可与路权',
+      payables: '工程应付台账',
     },
   },
   attachmentManager: {
