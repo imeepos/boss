@@ -331,6 +331,25 @@
 | 备注 | `Note` | note | 可空 |
 | 绑定时间 | `BoundAt` | bound_at | TIMESTAMPTZ |
 
+### 1.5.11 网格投资测算读模型（GET /odn/grid-investment，P-INFRA-1 W2，internal/domain/odn）
+
+> 纯只读聚合：零 DDL、零写路径；单连接两查询（网格全量 + 结算成本映射）。页面 `intel/grid-investment`（投资测算），
+> 菜单权限 `menu:grid-investment`（迁移 000207，授予 sysadmin/analyst/ops）；契约 admin/odn.yaml。
+> 口径裁定（W2 执行会话 2026-09-07，取与 odn 表结构一致的最小可解释口径）：
+> 1. 设施数：`odn_facility.grid_code` 非空行（即 P/MH）按 `lifecycle_status` 分组计数；TW/CLS/TBX 市域设施无网格维度，不进网格行。
+> 2. 覆盖地址数：`address_coverage` 经服务设施（`facility_code → odn_facility.grid_code`）归属网格，按 `status` 分组计数；
+>    仅挂核心设备（`device_id`）或未挂目标的行（UNSERVED 默认无目标）不进网格行，全网口径见覆盖页 `/odn/coverage*`。
+> 3. 已结算工程成本：读 W1 承包商结算数据（合并前标记 W2-COST-SOURCE-PENDING，读法见 internal/domain/odn/pg_investment.go）；
+>    结算源未登记或该网格无结算数据时 `settledCost=null`，页面显示「未登记」，禁止显示 0。
+> 4. 每可装地址成本：`settledCost ÷ coverageServed`；成本未登记或分母为 0 时同样 `null`（未登记）。
+
+| 页面列名 | API 字段 | 聚合源 | 枚举/说明 |
+|:---------|:---------|:-------|:----------|
+| 网格 | `prvCode` / `cityPrefix` / `gridCode` / `gridName` | odn_grid 复合主键全量行 | 无数据计 0；网格标签 `城市-网格码` |
+| 规划 / 施工中 / 在网 / 退役 | `facilitiesPlanned` / `facilitiesInBuild` / `facilitiesInService` / `facilitiesRetired` | odn_facility.lifecycle_status 计数 | 口径 1；枚举见 1.5.3（000198） |
+| 可装 / 规划在建 / 未覆盖 | `coverageServed` / `coveragePending` / `coverageUnserved` | address_coverage.status 计数 | 口径 2；枚举见 1.5.7（000197） |
+| 已结算工程成本 | `settledCost` | W1 结算数据 | null=未登记（禁止显示 0） |
+| 每可装地址成本 | `costPerServed` | settledCost ÷ coverageServed | null=未登记（分母 0 同） |
 ### 1.6 audit_logs（审计日志）· biz_params（业务参数）
 
 | 页面列名 | 字段名 | DB 列 | 枚举/说明 |
