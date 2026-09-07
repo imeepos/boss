@@ -1105,6 +1105,10 @@ export interface Translations {
       eScope: string
       diffHandle: string
       diffConfirm: string
+      createOk: string
+      diffHandleOk: string
+      handleOk: string
+      fAsset: string
       detail: string
       itemCols: string[]
       fAssetId: string
