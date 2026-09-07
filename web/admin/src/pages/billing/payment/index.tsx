@@ -1,6 +1,7 @@
 // 缴费管理页:列名按 fields.md 裁剪;契约 GET /payments(billId 过滤)。
 // 柜面收款入口(纪要 2026-08-28):menu:payment:cash 权限持有者可登记现金/柜面收款。
 import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { PageHead, pagerTexts } from '../../org/shared'
@@ -8,7 +9,8 @@ import { StatusTag } from '../../../components/StatusTag'
 import { Pagination } from '../../../components/Pagination'
 import { pageSlice, type PaymentRow } from '../types'
 import { fmtFee } from '../../../lib/format'
-import { TableStateRow } from '../../../components/business'
+import { TableStateRow, ErrorBanner } from '../../../components/business'
+import { useConfirm } from '../../../components/ConfirmDialog'
 import { useProfile } from '../../../layouts/profile'
 import { CounterPaymentForm } from './CounterPaymentForm'
 
@@ -19,6 +21,7 @@ export default function PaymentPage() {
   const canCollect = (profile.permissionCodes ?? []).includes('menu:payment:cash')
   const [rows, setRows] = useState<PaymentRow[]>([])
   const [error, setError] = useState('')
+  const confirm = useConfirm()
   const [notice, setNotice] = useState('')
   const [formOpen, setFormOpen] = useState(false)
   const [billId, setBillId] = useState('')
@@ -38,6 +41,21 @@ export default function PaymentPage() {
   }
   useEffect(load, []) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // 全额退款(000112):SUCCESS 流水行内入口;REFUNDED 留痕终态不可再退。
+  const refund = async (id: number) => {
+    if (busy) return
+    if (!(await confirm(p.refundConfirm, { danger: true }))) return
+    setBusy(true); setError('')
+    try {
+      await apiFetch(`/payments/${id}/refund`, { method: 'POST' })
+      toast.success(p.refundOk)
+      load()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : p.loadFail)
+      setBusy(false)
+    }
+  }
+
   const slice = pageSlice(rows, page, pageSize)
 
   return (
@@ -54,7 +72,7 @@ export default function PaymentPage() {
           )}
           <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
         </div>
-        {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : (
+        {error ? <ErrorBanner message={error} /> : (
           <div className="overflow-x-auto px-4 pb-4">
             <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
               <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{p.columns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
@@ -68,9 +86,13 @@ export default function PaymentPage() {
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><StatusTag domain="payment" value={r.status} /></td>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.siteName || '-'}</td>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.operatorName || '-'}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">
+                      {r.status === 'SUCCESS' && canCollect && <button className="px-1 text-xs text-[var(--color-danger)] bg-none border-none cursor-pointer hover:underline" disabled={busy} onClick={() => refund(r.id)}>{p.refundBtn}</button>}
+                      {r.status !== 'SUCCESS' && <span className="text-[var(--shell-group-title)]">—</span>}
+                    </td>
                   </tr>
                 ))}
-                {!slice.length && <TableStateRow colSpan={7} loading={busy} text={p.empty} />}
+                {!slice.length && <TableStateRow colSpan={8} loading={busy} text={p.empty} />}
               </tbody>
             </table>
           </div>
