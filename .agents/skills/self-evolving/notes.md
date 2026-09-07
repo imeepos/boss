@@ -2116,4 +2116,18 @@
 - 第三坑：odn 设施生命周期 PLANNED 无 API 入口（状态机只出不进，新建即 IN_SERVICE），e2e 造数须 psql 直设（W1 同款）。
 - 流程坑：验收脚本翻全局开关（灰度 env）必须「开局确定性复位 + finally 崩溃安全恢复」，否则中途崩溃污染下轮；db-patrol-gate 超限项按作用域分类，非本工作流存量债记 WARN 上报而非硬 FAIL。
 - 基础设施：deploy-102 CI 卡死复现（act_runner 0.2.11 拉任务后无 job 容器无错误行），重启 runner 无效；手动复刻 CI（同参数 build+push+compose up）可行，注意 102 ~/boss 运维副本 compose 会过期（曾缺 BOSS_AAA_CRED_KEY_FILE），部署前先 scp 同步。
+
+## 2026-09-07 W5 ODN 基础数据+资源链静态登记页（设计返工轮）
+- 最贵坑=需求抽象错位：用户给的是《ODN网络资源表模板.xlsx》说明 sheet 截图，第一版把 23 列平铺表格原样翻译成「电子表格模拟器」（示例行+行内校验+导出），被用户一句「完全不对，应该是多个基础数据 OLT设备管理 机房管理」推翻。返工后正确模型=主数据管理（机房/OLT/ODF/OCC/ODB/OBD/SDB/SBD 各一页 CRUD+引用删除保护）+资源链组装（级联下拉逐级带出+23 列投影导出）。教训：表格/模板类需求先还原关系模型——先问「这些列在真实系统里是几张表、谁是主数据谁是关系」，别做表的复读机。
+- 级联过滤键必须按契约 FK 不按流程直觉：fields.md 明写 SDB←ODB（经一级分光端口），首版拿「上一步选的 OBD」当 SDB 过滤键；且 refreshComposer 漏填 f_site/f_occ 两个顶级下拉（永不填充→永远选不上）。两 bug 都靠 headless 副本插桩（逐步 dump select value/options 长度+window.onerror）一轮定位。
+- 静态页零依赖交互测试配方：cp 页面到 /tmp+追加 harness script，dispatchEvent(new Event("change",{bubbles:true})) 驱动级联，断言写进 #test-result 再 --dump-dom grep。时序坑：校验渲染在 async audit（crypto.subtle 指纹）之后，dispatchEvent 后同步断言必 FAIL，延时 250ms 再读——异步渲染的 UI 断言一律等待后再读。
+- 台账+1：红线 #1（自己 write 的文件隔两轮后 edit 未重读，且 bash tail 看过的 notes.md 直接 edit 被拒——本节追加本身又中一枪）25→见 recidivism；bash 漏 workdir（git add 撞主树 pathspec，失败即停未落错树）7 次。原生 <select> 红线是 admin 前端语境（Dropdown.tsx 主题定制），零依赖静态工具页不适用，未记违规。
 - 102 真机验收价值实证：UnlinkPermitProject SQL 空串字面量被生成器吞掉（本地测试全绿），102 一跑就 500。
+## 2026-09-07 ODN 施工管理规范化轮(P0-A/B/C 交付+102 真机验收)
+
+- 最耗时坑:run_code 程序串里构造含引号/占位符的 bash 脚本,三犯红线11变体——①数组元素里嵌 $TS 包单引号提前闭合(ident parse error);②对象字面量尾随逗号(Unexpected token ,);③sed 的 \1 写进 JSON 串触发 octal escape 语法错。正解固化:复杂脚本一律 write 成文件再 bash 执行,不在 run_code 里拼内联脚本。
+- edit 的「先读后改」按绝对路径逐文件计:同会话改过 A 文件,再改 B 文件仍要先读 B;换 worktree 后路径全变,每个目标文件都要重新 read。
+- 红灯24变体再犯:rc 捕获写在管道 tail 之后,拿 tail 退出码当命令退出码,ff 失败被 MERGE_RC=0 掩码(本次无损害,推送时 up-to-date 兜底);修正:rc 捕获必须紧跟目标命令独立成行,管道只放显示层。ff 失败三次(并行会话持续推 main),按红线9处理零事故——吸收合并到 feature 侧、复跑门禁、重推、重试。
+- glob 工具报空不等于文件不存在:internal/domain/odn/*_test.go 误判为零,实际 construction_test.go 等一直在库里;存在性判断用 git ls-tree 兜底。
+- 102 真机验收再证价值:NULLIF($6,0) 让 PG 把参数推断成 integer,0.3 落库 22P02(本地单测+全门禁全绿仍漏);光功率 dBm 典型值为负,校验却限非负。两处都是真机验收抓出、可 grep 日志直指病灶。设施 POST /odn/facilities 默认 IN_SERVICE,施工夹具要 PLANNED 只能 psql 直设(W1 同款)。
+- 交接教训:agent 委派跑重型实现两次超时且零产出(各白耗约10分钟轮询),最终主会话自己做一次过;单会话可完成的编码任务不委派,委派仅用于真正独立的调研/扫尾。

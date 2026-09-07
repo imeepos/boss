@@ -36,7 +36,7 @@ func (s *PGStore) RecordTest(ctx context.Context, t QualityTest) (int64, error) 
 	var id int64
 	err := s.db.QueryRow(ctx, "INSERT INTO construction_tests "+
 		"(project_id, resource_type, resource_ref, test_kind, result, attenuation_db, power_dbm, note, reported_by) "+
-		"VALUES ($1,$2,$3,$4,$5,NULLIF($6,0),NULLIF($7,0),$8,NULLIF($9,0)) RETURNING id",
+		"VALUES ($1,$2,$3,$4,$5,NULLIF($6,0.0),NULLIF($7,0.0),$8,NULLIF($9,0)) RETURNING id",
 		t.ProjectID, t.ResourceType, t.ResourceRef, t.TestKind, t.Result, t.AttenuationDB, t.PowerDBM, t.Note, t.ReportedBy).Scan(&id)
 	if err != nil {
 		log.Printf("[odn-quality] TEST INSERT FAILED proj=%d ref=%s kind=%s: %v", t.ProjectID, t.ResourceRef, t.TestKind, err)

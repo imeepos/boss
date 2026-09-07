@@ -76,9 +76,10 @@ func ValidateQualityTest(t QualityTest) error {
 	if t.Result != TestPass && t.Result != TestFail {
 		return fmt.Errorf("odn: test result=%s: %w", t.Result, ErrInvalidInput)
 	}
-	if t.AttenuationDB < 0 || t.PowerDBM < 0 {
-		return fmt.Errorf("odn: test metrics negative: %w", ErrInvalidInput)
+	if t.AttenuationDB < 0 {
+		return fmt.Errorf("odn: test attenuation negative: %w", ErrInvalidInput)
 	}
+	// power_dbm 为 dBm,典型值为负;0 视为未录,不作符号限制。
 	return nil
 }
 
