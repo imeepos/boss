@@ -1886,6 +1886,8 @@ export interface Translations {
       saveFail: string
       actionFail: string
       empty: string
+      toastSaved: string,
+      toastDeleted: string,
       loadFail: string
     },
     siteCatsPage: {
@@ -1912,6 +1914,8 @@ export interface Translations {
       saveFail: string
       actionFail: string
       empty: string
+      toastSaved: string,
+      toastDeleted: string,
       loadFail: string
     },
     releasePage: {
@@ -1948,6 +1952,8 @@ export interface Translations {
       loadFail: string
       actionFail: string
       empty: string
+      toastUploadOk: string,
+      toastPatchOk: string,
     },
     licensePage: {
       title: string
@@ -1991,6 +1997,8 @@ export interface Translations {
       actionFail: string
       total: string
       empty: string
+      toastSaved: string,
+      toastDeleted: string,
       loadFail: string
       prev: string
       next: string
