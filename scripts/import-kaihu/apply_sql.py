@@ -51,11 +51,12 @@ def _sql_row_addresses(records):
 
 
 def _sql_resources(olts):
-    out = ['-- OLT 资源登记(自然键 code 幂等;地址挂占位节点满足 NOT NULL)']
+    out = ['-- OLT 资源登记(自然键 code 幂等;地址挂父根节点满足 NOT NULL)']
     for code in olts:
         out.append('INSERT INTO resources (legal_entity_id, code, name, type, address_id, status)')
         out.append('SELECT %d, %s, %s, %s,' % (DEFAULTS['legal_entity_id'], _q(code), _q(code), _q('OLT')))
-        out.append('       (SELECT id FROM addresses WHERE path = %s), %s;' % (_q(ADDRESS_ROOT_PATH), _q('ONLINE')))
+        out.append('       (SELECT id FROM addresses WHERE path = %s), %s' % (_q(ADDRESS_ROOT_PATH), _q('ONLINE')))
+        out.append('ON CONFLICT (code) DO NOTHING;')
     return out
 
 
