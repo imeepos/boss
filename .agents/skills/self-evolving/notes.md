@@ -2025,3 +2025,14 @@
   出现与本次改动无关的假红。
 - 收缩类历史提交标题(如 feat(oss) 带 ports 字样)不改写,以终态 API 面为准并在
   回报中显式声明,避免 force push 放大。
+
+## 2026-09-07 T3 修复轮(69519d69, customers.phone 伪登录号段)
+
+- edit 改名式误操作:想在函数前插入新函数,却把 old/new 写成『仅函数签名行』导致原函数被改名,
+  调用点断链;修正时 old_string 又凭记忆少抄行尾注释(拆机 CLOSED)再次 not found。
+  正解=插入类编辑的 old/new 都必须包含『完整上下文行』,改完立即 grep 函数名核对调用点闭环。
+- python %-format 与 SQL LIKE 通配符冲突:模板串里 '0999000%' 的 % 会被 %(_in_list) 当占位符,
+  ValueError unsupported format character;LIKE 通配符在 %-format 模板里必须写 %%,
+  且这类错误只在 build_sql 真被调用时才炸——生成 SQL 的代码路径要进 acceptance 覆盖。
+- 修复型任务先探测再动手:102 直查确认索引名/号段零冲突/残留行后,修复一次到位;
+  apply 幂等的重放语义在修复时要重新过一遍(查重跳过 + UPDATE 收敛 + 对账兜底三层)。
