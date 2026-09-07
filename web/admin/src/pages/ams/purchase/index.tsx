@@ -20,7 +20,8 @@ import { OrderDetailDrawer } from './OrderDetailDrawer'
 import { ConfirmReceiptDrawer } from './ConfirmReceiptDrawer'
 import { SuppliersDrawer } from './SuppliersDrawer'
 import { ReceiptsPanel } from './ReceiptsPanel'
-import { canEditOrder } from './purchaseLogic'
+import { canEditOrder, fmtAmount } from './purchaseLogic'
+import { ErrorBanner } from '../../../components/business/page-head'
 
 const STATUS_FILTERS = ['DRAFT', 'SUBMITTED', 'PARTIAL', 'RECEIVED', 'CANCELLED'] as const
 
@@ -61,9 +62,10 @@ export default function PurchasePage() {
     setBusy(true)
     try {
       await apiFetch(`/procurement/orders/${id}/submit`, { method: 'POST' })
+      toast.success(d.submitOk)
       load()
     } catch (e) {
-      setError(e instanceof Error ? e.message : d.opFail)
+      toast.error(e instanceof Error ? e.message : d.opFail)
       setBusy(false)
     }
   }
@@ -125,10 +127,8 @@ export default function PurchasePage() {
             {d.newOrder}
           </button>
         </div>
-        {error ? (
-          <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div>
-        ) : (
-          <div className="overflow-x-auto px-4 pb-4">
+        {error && <ErrorBanner message={error} />}
+        <div className="overflow-x-auto px-4 pb-4">
             <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
               <thead>
                 <tr>
@@ -147,7 +147,7 @@ export default function PurchasePage() {
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)]">{o.supplierName}</td>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)]">{o.legalEntityName}</td>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)]"><StatusTag domain="procurement" value={o.status} /></td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-right">{o.totalAmount.toFixed(2)}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-right">{fmtAmount(o.totalAmount)}</td>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)]">
                       <span className="inline-flex items-center gap-2">
                         <button type="button" disabled={busy} onClick={() => setDetailId(o.id)} className="h-7 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2 text-[12px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]">{d.orderDetail}</button>
@@ -174,7 +174,6 @@ export default function PurchasePage() {
               </tbody>
             </table>
           </div>
-        )}
         <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
           <Pagination
             total={filtered.length}
