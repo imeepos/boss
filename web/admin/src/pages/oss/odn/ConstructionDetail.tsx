@@ -1,11 +1,13 @@
 // 施工单详情:承包商指定 / 工程量清单编辑 / 结算发起与列表(P-INFRA-1 W1)。
-// 文案为字面量:W1 约束禁触 i18n 中央登记文件。
+// 设施关联走 pickers 选择器(2026-09-07 域改造);新增文案走 pages.odn 三语词条。
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { Input } from '../../../components/ui/input'
 import { Badge } from '../../../components/ui/badge'
-import { Dropdown } from '../../../components/Dropdown'
+import { Dropdown, type DropdownOption } from '../../../components/Dropdown'
+import { SimplePicker } from '../../../components/pickers/SimplePicker'
+import { useT } from '../../../i18n'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../../components/ui/table'
 import { EmptyState, ErrorBanner, ToolbarButton } from '../../../components/business/page-head'
 import { useConfirm } from '../../../components/ConfirmDialog'
@@ -26,11 +28,14 @@ interface Settlement {
   status: string; voidReason: string; createdAt: string; settledAt?: string; voidedAt?: string
 }
 interface Supplier { id: number; code: string; name: string; contractorType: string; status: string }
+// FacilityLite 设施选择器数据源行(/odn/facilities 全网 ≤500,字段以 internal/domain/odn 为准)。
+interface FacilityLite { code: string; name: string }
 const S_TEXT: Record<string, string> = { PENDING: '待结算', SETTLED: '已结算', VOIDED: '已作废' }
 const S_VARIANT: Record<string, 'info' | 'success' | 'danger'> = { PENDING: 'info', SETTLED: 'success', VOIDED: 'danger' }
 
 export function ConstructionDetail({ projectId, onChanged }: { projectId: number; onChanged: () => void }) {
   const confirmDialog = useConfirm()
+  const t = useT()
   const [project, setProject] = useState<Project | null>(null)
   const [items, setItems] = useState<Item[]>([])
   const [settlements, setSettlements] = useState<Settlement[]>([])
@@ -44,6 +49,7 @@ export function ConstructionDetail({ projectId, onChanged }: { projectId: number
   const [voidReason, setVoidReason] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  const [facOpts, setFacOpts] = useState<DropdownOption[]>([])
 
   const load = useCallback(async () => {
     setError('')
@@ -63,6 +69,15 @@ export function ConstructionDetail({ projectId, onChanged }: { projectId: number
         const all = (await apiFetch<Supplier[]>('/procurement/suppliers', { query: { limit: 500 } })) ?? []
         setSuppliers(all.filter((s) => s.contractorType === 'CONSTRUCTION' && s.status === 'ENABLED'))
       } catch { setSuppliers([]) }
+    })()
+  }, [])
+  // 设施主数据静态源(工程量清单选择器;coverage 页签同口径,空参=全网)。
+  useEffect(() => {
+    void (async () => {
+      try {
+        const facs = (await apiFetch<FacilityLite[]>('/odn/facilities')) ?? []
+        setFacOpts(facs.map((x) => ({ value: x.code, label: x.code + (x.name ? ' ' + x.name : '') })))
+      } catch { setFacOpts([]) }
     })()
   }, [])
 
@@ -140,7 +155,7 @@ export function ConstructionDetail({ projectId, onChanged }: { projectId: number
     <div className={CARD + ' p-4'}>
       <div className='mb-2 text-sm font-semibold'>工程量清单{project?.status === 'ACCEPTED' && <span className='ml-2 text-xs opacity-60'>已竣工锁定</span>}</div>
       {project && project.status !== 'ACCEPTED' && <div className='mb-3 grid grid-cols-2 gap-3 md:grid-cols-4'>
-        <label className={FIELD}><span className={LABEL}>设施编码</span><Input value={fac} onChange={(e) => setFac(e.target.value)} placeholder='CLS00001' /></label>
+        <label className={FIELD}><span className={LABEL}>设施编码</span><SimplePicker value={fac} onChange={setFac} options={facOpts} ariaLabel={t.pages.odn.pickFacility} searchPlaceholder={t.pages.odn.pickFacilitySearch} clearable clearLabel={t.pages.pickers.common.clear} minWidth={200} /></label>
         <label className={FIELD}><span className={LABEL}>数量</span><Input value={qty} onChange={(e) => setQty(e.target.value)} inputMode='decimal' /></label>
         <label className={FIELD}><span className={LABEL}>单价</span><Input value={price} onChange={(e) => setPrice(e.target.value)} inputMode='decimal' /></label>
         <div className='flex items-end'><ToolbarButton primary disabled={busy} onClick={addItem}>追加明细</ToolbarButton></div>
