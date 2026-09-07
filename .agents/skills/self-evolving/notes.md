@@ -1,5 +1,12 @@
 # Notes
 
+## 2026-09-07 OSS-ODN 域关联字段 picker 改造 7 处(feat/oss-odn-pickers,已 ff 回 main)
+
+- 最耗时坑(2 轮):cdp-admin-capture --no-proxy 放中间吞掉后一个参数,断言 eval 静默丢失而截图正常——像「页面没渲染」,实际是包装器 parseArgs 吞参;布尔旗标放最末一次过(已登 recidivism#17/techniques)。
+- 累犯:option onMouseDown(techniques.md 已有条目,开工前没 grep),与同日并行 pickers 会话同坑;附随发现同一组件族事件不一致——option=mousedown、触发器/清除钮=onClick,断言前读组件源码事件绑定,不外推。
+- 小坑:①curl 本地端口 000 是环境代理,no_proxy='*' 一次过;②断言 IIFE 漏尾部调用返回函数对象序列化成 {},像空数据;③vite dev 接 | head 管道 EPIPE 静默死,后台 job 裸跑。
+- 成功实践:ff-only 撞并行推进 128,按红线 9 回 worktree merge+复跑三门禁+重推重试零丢失;DialogPicker 首接入直接复用 pages.pickers.dialog 全套结构文案零新增;i18n/types.ts 是手写强类型,locale 加键必须同步 types(并行会话沉淀过,本轮提前规避一次 TS 报错)。
+
 ## 2026-09-07 pickers 三处改造(C1 BLOCKED/C2 SimplePicker/C3 DialogPicker 首接入)
 
 - 最耗时坑:CDP 交互断言里 option 用 el.click() 三轮无效,最后读 Dropdown 源码发现选择绑在 onMouseDown——而 techniques.md **已有这条**(CDP 断言自研 Dropdown 条目),开工前没 grep 该文件,白烧三轮采集。教训:skill 第 6 节『开工前 grep 关键词』必须真的做,场景词=组件名+『断言/click』。

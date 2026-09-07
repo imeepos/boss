@@ -8,6 +8,7 @@
 怎么用 → (2026-09-07 补:--eval 的 JS 代码经 bash 传递时,外层用**双引号**包裹、JS 内全用单引号字符串并避开 $/反引号/双引号;外层单引号会被 JS 内单引号截断成 SyntaxError。)选项的 onChange 绑在 **onMouseDown**(line ~106),onClick 被 preventDefault——eval 必须
 `opt.dispatchEvent(new MouseEvent('mousedown',{bubbles:true,cancelable:true}))`,`opt.click()` 静默无效(2026-09-07 报告中心轮实测连废两轮)。
 触发器用 click() 开合即可;定位用 button[aria-label="唯一标签"],别用 querySelectorAll 下标猜。
+cdp-admin-capture 包装器的布尔旗标(--no-proxy)必须放命令行**最末**——其 parseArgs 对旗标也 i+=2,放中间会吞掉紧跟参数致 --eval 静默丢失(2026-09-07 oss-odn 轮)。
 
 ## sonner toast action 按钮点击后 toast 即消失
 

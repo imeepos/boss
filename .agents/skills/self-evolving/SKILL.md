@@ -37,6 +37,8 @@ description: "MUST LOAD FIRST A self-evolving skill that grows through reflectio
 
 25. **【已犯 2 次】bash 命令严禁以 rm -rf 绝对路径开头（整条静默零输出）** —— 宿主安全钩子对该模式静默拦截，连 echo 都不出、无 marker 不报错，链上后续验证全部丢失（2026-09-07 T1 轮两连）；删目录用 mv 到仓库外备份名 / git worktree remove / git clean，确需 rm 用相对路径单独成命令。
 
+26. **【已犯 2 次】CDP eval 模拟组件交互必须按组件源码的事件绑定派发** —— Dropdown/MultiSelect/SimplePicker 的选项选值绑 onMouseDown(click 被 preventDefault),触发器开合与 SimplePicker 清除按钮是 onClick;凭 .click() 惯性点选项静默无效,像「组件坏/状态没变」。开工前先 grep techniques.md「Dropdown 断言」条目;断言函数漏 IIFE 尾部调用会返回函数对象序列化成 {},像空数据误判。
+
 # 上级叮嘱
 1. 按钮文字一定居中，上下左右预留合适的边距
 2. 元素和元素之间预留合适的边距，4xN，N表示元素语义之间的亲密关系
