@@ -56,9 +56,9 @@
     {
       "id": "U6",
       "title": "PP2 收尾整合:主树全量门禁(含 ams 采纳率转绿)+102 部署冒烟+专属会话归档",
-      "goal": "全量门禁已过(make check+web-admin-check 双 RC=0,ams 转绿);待跨域真实业务流走查(102 部署冒烟)后收口归档",
+      "goal": "已收口:make check+web-admin-check 双 RC=0(ams 转绿 below=0);U6 跨域四流程 14 路由 102 部署版冒烟全过(部署新鲜度特征串证实,console/网络 20 采集全零,三条事实登记);证据 docs/acceptance/2026-09-07-pp2-u6-smoke.md 已合并 main=c426a583;四会话产物三清,归档完成",
       "priority": "P1",
-      "status": "doing",
+      "status": "done",
       "acceptanceCommand": "make check && make web-admin-check"
     }
   ]
