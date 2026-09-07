@@ -2420,6 +2420,8 @@ export interface Translations {
       odnLayerFacility: string
       odnLayerSite: string
       odnLayerDevice: string
+      odnLayerSurvey: string
+      odnLayerProgress: string
       parentNode: string
     }
     gridInvestmentPage: {

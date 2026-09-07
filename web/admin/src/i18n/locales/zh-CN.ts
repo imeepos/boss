@@ -2592,6 +2592,8 @@ columns: ['标识码', '名称', '排序', '启用'],
       odnLayerFacility: '设施',
       odnLayerSite: '局点',
       odnLayerDevice: '设备',
+      odnLayerSurvey: '勘测打点(W7)',
+      odnLayerProgress: '施工进度(W7)',
       parentNode: '上级节点',
     },
     gridInvestmentPage: {

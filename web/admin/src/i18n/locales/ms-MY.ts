@@ -2591,6 +2591,8 @@ columns: ['Kod', 'Nama', 'Susunan', 'Aktif'],
       odnLayerFacility: 'Kemudahan',
       odnLayerSite: 'Tapak',
       odnLayerDevice: 'Peranti',
+      odnLayerSurvey: 'Titik Kaji Selidik (W7)',
+      odnLayerProgress: 'Kemajuan Pembinaan (W7)',
       parentNode: 'Nod induk',
     },
     gridInvestmentPage: {

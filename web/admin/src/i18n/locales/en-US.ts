@@ -2592,6 +2592,8 @@ columns: ['Code', 'Name', 'Sort', 'Enabled'],
       odnLayerFacility: 'Facilities',
       odnLayerSite: 'Sites',
       odnLayerDevice: 'Devices',
+      odnLayerSurvey: 'Survey Points (W7)',
+      odnLayerProgress: 'Build Progress (W7)',
       parentNode: 'Parent node',
     },
     gridInvestmentPage: {
