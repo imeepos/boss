@@ -220,6 +220,54 @@ paths:
                       id: { type: integer, format: int64 }
                       expansionNo: { type: string }
 
+  /expansions/{expansionNo}/execute:
+    post:
+      tags: [Oss]
+      summary: '执行扩容单(PENDING→DONE):目标设备按 expectedPorts 批量建端口(端口码续号,quad_code=端口码,IDLE 入池);已建满则直接完成;建口失败留 PENDING 可重试;设备须归属扩容单同一法人'
+      operationId: executeExpansion
+      parameters:
+        - { name: expansionNo, in: path, required: true, schema: { type: string } }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [resourceId]
+              properties:
+                resourceId: { type: integer, format: int64 }
+      responses:
+        '200':
+          description: 执行结果(data 含 created/existing/totalPorts/portCodes)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      created: { type: integer }
+                      existing: { type: integer }
+                      totalPorts: { type: integer }
+                      portCodes: { type: array, items: { type: string } }
+
+  /expansions/{expansionNo}/reject:
+    post:
+      tags: [Oss]
+      summary: 扩容驳回(PENDING→DONE 终态;仅 PENDING 可驳回)
+      operationId: rejectExpansion
+      parameters:
+        - { name: expansionNo, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: 驳回结果
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { nullable: true }
+
   /expansions/qos-templates:
     get:
       tags: [Oss]
