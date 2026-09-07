@@ -21,6 +21,7 @@ import { CategorySidebar } from './CategorySidebar'
 import { ListView } from './ListView'
 import { GridView } from './GridView'
 import { ViewToggle } from './ViewToggle'
+import { UploaderFilter } from './UploaderFilter'
 import { INPUT, CARD } from './styles'
 
 export interface AttachmentManagerProps {
@@ -182,28 +183,12 @@ export function AttachmentManager({
           options={categoryOptions}
         />
         {!fixedUploader && (
-          <>
-            <Dropdown
-              value={typeSel}
-              ariaLabel={t.allUploaders}
-              onChange={(v) => { setTypeSel(v); setPage(1) }}
-              options={[
-                { value: '', label: t.allUploaders },
-                { value: 'account', label: t.uploaderAccount },
-                { value: 'worker', label: t.uploaderWorker },
-                { value: 'customer', label: t.uploaderCustomer },
-              ]}
-            />
-            <input
-              className={INPUT}
-              value={uidInput}
-              inputMode="numeric"
-              placeholder={t.uploaderIdPlaceholder}
-              aria-label={t.uploaderIdPlaceholder}
-              disabled={!typeSel}
-              onChange={(e) => setUidInput(e.target.value.replace(/\D/g, ''))}
-            />
-          </>
+          <UploaderFilter
+            typeSel={typeSel}
+            onTypeChange={(v) => { setTypeSel(v); setPage(1) }}
+            uid={uidInput}
+            onUidChange={setUidInput}
+          />
         )}
         <span className="flex-1" />
         {selectable && selectedIds.length > 0 && (
