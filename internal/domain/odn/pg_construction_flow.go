@@ -43,7 +43,7 @@ func (s *PGStore) StartProject(ctx context.Context, id int64) (int64, error) {
 	return tag.RowsAffected(), nil
 }
 
-// AcceptProject 竣工验收 BUILDING→ACCEPTED(F6):事务内单内设施批量推 IN_SERVICE,
+// AcceptProject 竣工验收 BUILDING→ACCEPTED(F6,P0-C 前置:无未闭环整改):事务内单内设施批量推 IN_SERVICE,
 // 并把关联设施地址覆盖 PENDING→SERVED(联动开关 acceptCoverageLink,默认开)。
 // 返回设施翻转数与覆盖联动数;联动动作随竣工审计透出。
 func (s *PGStore) AcceptProject(ctx context.Context, id int64, acceptedBy int64, note string) (int64, int64, error) {
@@ -53,6 +53,15 @@ func (s *PGStore) AcceptProject(ctx context.Context, id int64, acceptedBy int64,
 		return 0, 0, fmt.Errorf("odn: accept begin: %w", err)
 	}
 	defer tx.Rollback(ctx)
+	var openDefects int64
+	if err := tx.QueryRow(ctx, "SELECT count(*) FROM construction_defects WHERE project_id=$1 AND status<>'VERIFIED'", id).Scan(&openDefects); err != nil {
+		log.Printf("[odn-quality] ACCEPT DEFECT COUNT FAILED proj=%d: %v", id, err)
+		return 0, 0, fmt.Errorf("odn: accept defect count: %w", err)
+	}
+	if openDefects > 0 {
+		log.Printf("[odn-quality] ACCEPT GATE REJECTED proj=%d openDefects=%d", id, openDefects)
+		return 0, 0, fmt.Errorf("%w: openDefects=%d", ErrOpenDefects, openDefects)
+	}
 	tag, err := tx.Exec(ctx, "UPDATE construction_projects SET status=$2, "+
 		"asbuilt_note=$3, accepted_by=$4, accepted_at=now(), updated_at=now() "+
 		"WHERE id=$1 AND status=$5", id, CAccepted, note, acceptedBy, CBuilding)

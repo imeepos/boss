@@ -144,6 +144,12 @@ type ODNService interface {
 	RecordProgress(ctx context.Context, p ProgressEntry) (int64, bool, error)
 	ListProgress(ctx context.Context, projectID int64, limit int) ([]ProgressEntry, error)
 	ItemProgressSummary(ctx context.Context, projectID int64) ([]ItemProgress, error)
+	// 质量测试与整改闭环(P0-C,迁移 000214):测试 append-only,整改 OPEN→RECTIFYING→VERIFIED。
+	RecordTest(ctx context.Context, t QualityTest) (int64, error)
+	ListTests(ctx context.Context, projectID int64, limit int) ([]QualityTest, error)
+	OpenDefect(ctx context.Context, d QualityDefect, openedBy int64) (int64, error)
+	ListDefects(ctx context.Context, projectID int64, status string, limit int) ([]QualityDefect, error)
+	TransitionDefect(ctx context.Context, defectID int64, to string, accountID int64) error
 	CreateSettlement(ctx context.Context, projectID, createdBy int64) (*Settlement, error)
 	ListSettlements(ctx context.Context, projectID int64) ([]Settlement, error)
 	GetSettlement(ctx context.Context, id int64) (*Settlement, error)
