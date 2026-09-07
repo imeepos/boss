@@ -295,6 +295,11 @@ def main():
             ok("gate env switched on")
         if not wait_ready():
             raise RuntimeError("ready after gate on")
+        # CI 中途重建(并发会话推送触发 deploy-102)可能冲掉门控;开始前复核,掉了补一次
+        if gate_state() != "on":
+            print("[warn] gate dropped after ready; re-applying once")
+            set_gate(True)
+            wait_ready()
         # ---- Phase B: 无许可开工被拒(40900+缺失明细) ----
         pg = create_project("g")
         if pg is None:
