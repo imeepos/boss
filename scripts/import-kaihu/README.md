@@ -44,6 +44,7 @@ legal_entity=平台总公司(id=6) / region=集团(id=1,POST /customers 需真�
 name=账号原文, needs_review=true, apply 自建, 治理队列消化)——满足 uq_quad_links_address 每地址至多一条
 非空活跃链路(000086), 347 行共用单节点第二条即撞。lo_accounts.region_id/region_name 同取缺省;
 ports.address_id 与 quad_links.address_id 指向本行节点; assets API 载荷无 addressId, 资产地址保持未部署态。
+  Amended 2026-09-07(W8 跨线修补,批复方案 B):SQL 段四码绑定后同语句置资产 DEPLOYED+挂行级地址+asset_lifecycles 轨迹——存量机实物已在用户侧,LINKED 而 IN_STOCK 属台账漂移;首次导入批次已由 scripts/ops/fix_kaihu_asset_deploy.py 修复。
 
 ## 假设与已知口径(报告 assumptions/needsReview 同步可见)
 

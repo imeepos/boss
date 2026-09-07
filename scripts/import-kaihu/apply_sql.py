@@ -114,6 +114,12 @@ def _sql_quad_links(records):
         out.append('     (SELECT id FROM customers WHERE name = %s AND legal_entity_id = %d ORDER BY id LIMIT 1) c,' % (_q(rec['account']), DEFAULTS['legal_entity_id']))
         out.append('     (SELECT id FROM ports WHERE port_code = %s) p' % _q(rec['port_code']))
         out.append("WHERE NOT EXISTS (SELECT 1 FROM quad_links q WHERE q.port_id = p.id AND q.status IN ('LINKED', 'CONFLICT'));")
+        # 资产归属同步(2026-09-07 W8 裁定,跨线修补):存量机已装在用户侧,四码 LINKED 即资产
+        # DEPLOYED+挂行级地址,杜绝导入即孤儿(LINKED but asset not DEPLOYED 巡检项);轨迹留痕。
+        out.append('UPDATE assets SET status = %s, address_id = (SELECT id FROM addresses WHERE path = %s)'
+                   % (_q('DEPLOYED'), _q(rec['address_path'])) + ' WHERE id = (SELECT id FROM assets WHERE loid = %s ORDER BY id LIMIT 1) AND status = %s;' % (_q(rec['account']), _q('IN_STOCK')))
+        out.append('INSERT INTO asset_lifecycles(asset_id, status, address_id, changed_at) SELECT id, %s, (SELECT id FROM addresses WHERE path = %s), now() FROM assets WHERE loid = %s AND status = %s;'
+                   % (_q('DEPLOYED'), _q(rec['address_path']), _q(rec['account']), _q('DEPLOYED')))
     return out
 
 
