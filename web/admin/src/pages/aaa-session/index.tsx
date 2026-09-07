@@ -118,6 +118,8 @@ export default function AaaSessionPage() {
               { value: '', label: s.allStatus },
               { value: 'ONLINE', label: s.statusOnline },
               { value: 'PENDING_OFFLINE', label: s.statusPendingOffline },
+              { value: 'OFFLINE', label: s.statusOffline },
+              { value: 'OFFLINE_FAILED', label: s.statusOfflineFailed },
             ]}
             onChange={(value) => { setStatus(value); setPage(1) }}
             ariaLabel={s.allStatus}

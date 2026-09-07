@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { Input } from '../../../components/ui/input'
 import { Badge } from '../../../components/ui/badge'
+import { Dropdown } from '../../../components/Dropdown'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../../components/ui/table'
 import { EmptyState, ErrorBanner, ToolbarButton } from '../../../components/business/page-head'
 import { BatchImportEntry } from '../../base/importer/BatchImportEntry'
@@ -26,11 +28,11 @@ function fmtCoord(v: number | null | undefined): string {
   return v == null ? '-' : String(v)
 }
 
-type FilterProps = { prv: string; city: string; setPrv: (v: string) => void; setCity: (v: string) => void }
-function CityFilter({ prv, city, setPrv, setCity }: FilterProps) {
+type FilterProps = { prv: string; city: string; setPrv: (v: string) => void; setCity: (v: string) => void; g: { prvLabel: string; cityLabel: string } }
+function CityFilter({ prv, city, setPrv, setCity, g }: FilterProps) {
   return <div className="flex flex-wrap items-end gap-2">
-    <label className={FIELD}><span className={LABEL}>PRV</span><Input value={prv} onChange={(e) => setPrv(e.target.value.toUpperCase())} placeholder="PHL001" /></label>
-    <label className={FIELD}><span className={LABEL}>城市前缀</span><Input value={city} onChange={(e) => setCity(e.target.value.toUpperCase())} placeholder="MNL" /></label>
+    <label className={FIELD}><span className={LABEL}>{g.prvLabel}</span><Input value={prv} onChange={(e) => setPrv(e.target.value.toUpperCase())} placeholder="PHL001" /></label>
+    <label className={FIELD}><span className={LABEL}>{g.cityLabel}</span><Input value={city} onChange={(e) => setCity(e.target.value.toUpperCase())} placeholder="MNL" /></label>
   </div>
 }
 
@@ -64,7 +66,7 @@ export default function ODNPage() {
 
   const submit = async (body: Record<string, unknown>, path: string) => {
     setBusy(true); setError('')
-    try { await apiFetch(path, { method: 'POST', query: { prvCode: prv, cityPrefix: city }, body }); setShowForm(false); await load() } catch (e) { setError(e instanceof Error ? e.message : g.saveFail) } finally { setBusy(false) }
+    try { await apiFetch(path, { method: 'POST', query: { prvCode: prv, cityPrefix: city }, body }); setShowForm(false); toast.success(g.saveOk); await load() } catch (e) { setError(e instanceof Error ? e.message : g.saveFail) } finally { setBusy(false) }
   }
 
   const retire = async (path: string) => {
@@ -76,24 +78,27 @@ export default function ODNPage() {
   return <div>
     <div className="mb-4 flex items-center justify-between"><div><h2 className="m-0 text-xl font-bold text-[var(--shell-heading)]">{g.title}</h2><p className="mt-1 text-xs text-[var(--shell-crumb-text)]">{g.subtitle}</p></div><div className="flex items-center gap-2">{TAB_KIND[tab] && <BatchImportEntry kind={TAB_KIND[tab]} onImported={load} />}{tab !== 'coverage' && <ToolbarButton primary onClick={() => setShowForm(!showForm)}>{showForm ? g.cancel : g.add}</ToolbarButton>}</div></div>
     <div className="mb-4 flex gap-6 border-b border-[var(--shell-side-border)]">{(['grids', 'facilities', 'sites', 'devices', 'coverage'] as Tab[]).map((key) => <button key={key} className={`cursor-pointer border-b-2 px-1 py-3 text-sm ${tab === key ? 'border-[var(--color-brand-gold-500)] font-semibold text-[var(--shell-heading)]' : 'border-transparent text-[var(--shell-content-text)]'}`} onClick={() => { setTab(key); setShowForm(false) }}>{g.tabs[key]}</button>)}</div>
-    <CityFilter prv={prv} city={city} setPrv={setPrv} setCity={setCity} />
+    <CityFilter prv={prv} city={city} setPrv={setPrv} setCity={setCity} g={g} />
     {error && <ErrorBanner message={error} className="mt-3" />}
-    {showForm && tab !== 'coverage' && <Form tab={tab} busy={busy} submit={submit} prv={prv} city={city} g={g} />}
+    {showForm && tab !== 'coverage' && <Form tab={tab} busy={busy} submit={submit} g={g} grids={grids} devices={devices} />}
     <section className={`${CARD} mt-4 overflow-hidden`}>
       {tab === 'grids' && <GridTable rows={grids} onRetire={(n) => retire(`/odn/grids/${n}`)} g={g} />}
       {tab === 'facilities' && <FacilityTable rows={facilities} onRetire={(code) => retire(`/odn/facilities/${encodeURIComponent(code)}`)} g={g} />}
       {tab === 'sites' && <SiteTable rows={sites} onRetire={(n) => retire(`/odn/sites/${n}`)} g={g} />}
       {tab === 'devices' && <DeviceTable rows={devices} onRetire={(id) => retire(`/odn/devices/${id}`)} g={g} />}
-      {tab === 'coverage' && <CoveragePanel g={g} />}
+      {tab === 'coverage' && <CoveragePanel g={g} prv={prv} city={city} />}
     </section>
   </div>
 }
 
-type FormProps = { tab: Tab; busy: boolean; submit: (body: Record<string, unknown>, path: string) => Promise<void>; prv: string; city: string; g: any }
-function Form({ tab, busy, submit, g }: FormProps) {
+type FormProps = { tab: Tab; busy: boolean; submit: (body: Record<string, unknown>, path: string) => Promise<void>; g: any; grids: Grid[]; devices: Device[] }
+function Form({ tab, busy, submit, g, grids, devices }: FormProps) {
   const [values, setValues] = useState<Record<string, string>>({})
   const set = (key: string, value: string) => setValues((v) => ({ ...v, [key]: value }))
   const field = (key: string, label: string, placeholder = '') => <label className={FIELD}><span className={LABEL}>{label}</span><Input value={values[key] ?? ''} placeholder={placeholder} onChange={(e) => set(key, e.target.value)} /></label>
+  // 枚举字段统一 Dropdown(路线图规则 3:可枚举输入禁自由文本);选项值为协议原值。
+  const select = (key: string, label: string, options: { value: string; label: string }[]) => <label className={FIELD}><span className={LABEL}>{label}</span><Dropdown value={values[key] ?? ''} options={[{ value: '', label: '—' }, ...options]} onChange={(v) => set(key, v)} ariaLabel={label} /></label>
+  const enumOpts = (xs: string[]) => xs.map((o) => ({ value: o, label: o }))
   const save = () => {
     const paths: Record<Tab, string> = { grids: '/odn/grids', facilities: '/odn/facilities', sites: '/odn/sites', devices: '/odn/devices', coverage: '' }
     const body = Object.fromEntries(Object.entries(values).map(([k, v]) => {
@@ -104,10 +109,10 @@ function Form({ tab, busy, submit, g }: FormProps) {
     void submit(body, paths[tab])
   }
   return <div className={`${CARD} mt-4 p-4`}><div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-    {tab === 'grids' && <>{field('gridCode', g.gridCode, '01~99')}{field('name', g.name)}{field('coverage', g.coverage)}{field('status', g.status, 'ACTIVE')}</>}
-    {tab === 'facilities' && <>{field('code', g.code, 'P01001')}{field('kind', g.kind, 'P / MH / TW / CLS / TBX')}{field('gridCode', g.gridCode, 'P/MH 必填')}{field('name', g.name)}{field('lat', g.lat, '14.55')}{field('lng', g.lng, '120.98')}</>}
+    {tab === 'grids' && <>{field('gridCode', g.gridCode, '01~99')}{field('name', g.name)}{field('coverage', g.coverage)}{select('status', g.status, enumOpts(['ACTIVE', 'RESERVED', 'RETIRED']))}</>}
+    {tab === 'facilities' && <>{field('code', g.code, 'P01001')}{select('kind', g.kind, enumOpts(['P', 'MH', 'TW', 'CLS', 'TBX']))}{select('gridCode', g.gridCode, grids.map((x) => ({ value: String(x.gridCode), label: String(x.gridCode).padStart(2, '0') + ' ' + x.name })))}{field('name', g.name)}{field('lat', g.lat, '14.55')}{field('lng', g.lng, '120.98')}</>}
     {tab === 'sites' && <>{field('siteNo', g.siteNo, '001~999')}{field('name', g.name)}{field('lat', g.lat, '14.55')}{field('lng', g.lng, '120.98')}</>}
-    {tab === 'devices' && <>{field('code', g.deviceCode, 'OLT001 / ODB001-2')}{field('kind', g.deviceKind, 'OLT / ODB / SDB ...')}{field('siteNo', g.siteNo)}{field('parentId', g.parentId)}{field('lat', g.lat, '14.55')}{field('lng', g.lng, '120.98')}</>}
+    {tab === 'devices' && <>{field('code', g.deviceCode, 'OLT001 / ODB001-2')}{select('kind', g.deviceKind, enumOpts(['SNW', 'OLT', 'ODF', 'OCC', 'ODB', 'SDB', 'PRT', 'TBP']))}{field('siteNo', g.siteNo)}{select('parentId', g.parentId, devices.map((x) => ({ value: String(x.id), label: x.code + (x.name ? ' ' + x.name : '') })))}{field('lat', g.lat, '14.55')}{field('lng', g.lng, '120.98')}</>}
   </div><div className="mt-3 flex justify-end"><ToolbarButton primary disabled={busy} onClick={save}>{busy ? g.saving : g.save}</ToolbarButton></div></div>
 }
 

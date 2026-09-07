@@ -18,6 +18,9 @@ interface RunResult {
   invoices: { issued: number; failedIds?: number[] }
 }
 
+// 账期格式与 paycheck 页 PERIOD_RE 同口径(YYYY-MM)。
+const PERIOD_RE = /^\d{4}-(0[1-9]|1[0-2])$/
+
 export function BillingRunModal({ open, onClose, onDone }: {
   open: boolean
   onClose: () => void
@@ -32,6 +35,7 @@ export function BillingRunModal({ open, onClose, onDone }: {
 
   const submit = () => {
     if (busy || !period.trim()) return
+    if (!PERIOD_RE.test(period.trim())) { setError(r.periodInvalid); return }
     setBusy(true); setError('')
     apiFetch<RunResult>('/billing-runs', { method: 'POST', body: { period: period.trim() } })
       .then((d) => {
@@ -58,7 +62,7 @@ export function BillingRunModal({ open, onClose, onDone }: {
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>{t.pages.company.cancel}</Button>
-          <Button disabled={busy || !period.trim()} onClick={submit}>
+          <Button disabled={busy || !period.trim() || !PERIOD_RE.test(period.trim())} onClick={submit}>
             {busy ? t.pages.account.submitting : t.pages.company.save}
           </Button>
         </DialogFooter>

@@ -48,6 +48,7 @@ export default function ProvisionTemplatePage() {
 
   const toggleStatus = async (x: ProvisionTemplateRow) => {
     const next = x.status === 'ENABLED' ? 'DISABLED' : 'ENABLED'
+    if (!(await confirmDialog(p.statusConfirm.replace('{status}', next), { danger: next === 'DISABLED' }))) return
     setBusy(true); setError('')
     try {
       await apiFetch(`/provision-templates/${x.id}/status`, { method: 'PUT', body: { status: next } })
