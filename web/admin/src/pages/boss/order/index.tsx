@@ -2,6 +2,7 @@
 // 环节推进 POST /orders/:orderNo/{check-resource,reserve,charge,cancel}(order_workflow.go);
 // 代客下单 POST /orders(线下受理场景)。
 import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import { useNavigate } from 'react-router-dom'
 import { useQueryInt, useQueryState } from '../../../lib/useQueryState'
 import { apiFetch } from '../../../api/client'
@@ -64,7 +65,7 @@ export default function OrderPage() {
     setTrackError('')
     apiFetch<{ order: OrderListRow; timeline: TimelineRow[]; latestLocation: WorkerLocationRow | null }>(`/orders/${encodeURIComponent(orderNo)}`)
       .then((d) => setTrack({ order: d?.order ?? null as unknown as OrderListRow, timeline: d?.timeline ?? [], latestLocation: d?.latestLocation ?? null }))
-      .catch(() => setTrackError(o.trackFail))
+      .catch((e) => setTrackError(e instanceof Error ? e.message : o.trackFail))
   }
 
   const openCheck = (row: OrderListRow) => {
@@ -88,7 +89,7 @@ export default function OrderPage() {
     if (!check || busy) return
     setBusy(true)
     apiFetch(`/orders/${encodeURIComponent(check.row.orderNo)}/reserve`, { method: 'POST' })
-      .then(() => { setCheck(null); load() })
+      .then(() => { setCheck(null); toast.success(o.toastReserveOk.replace('{no}', check.row.orderNo)); load() })
       .catch((e) => setCheck((x) => x ? { ...x, message: e instanceof Error ? e.message : o.actionFail } : x))
       .finally(() => setBusy(false))
   }
@@ -98,8 +99,9 @@ export default function OrderPage() {
     if (action === 'cancel' && !(await confirmDialog(o.confirmCancel.replace('{no}', row.orderNo), { danger: true }))) return
     setBusy(true)
     setError('')
+    const okMsg = (action === 'reserve' ? o.toastReserveOk : action === 'charge' ? o.toastChargeOk : o.toastCancelOk).replace('{no}', row.orderNo)
     apiFetch(`/orders/${encodeURIComponent(row.orderNo)}/${action}`, { method: 'POST' })
-      .then(() => load())
+      .then(() => { toast.success(okMsg); load() })
       .catch((e) => setError(e instanceof Error ? e.message : o.actionFail))
       .finally(() => setBusy(false))
   }
@@ -138,13 +140,14 @@ export default function OrderPage() {
       <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
         <div className="flex flex-wrap items-center gap-2 p-4">
           <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" placeholder={o.searchPlaceholder}
-            value={keyword} onChange={(e) => updateKeyword(e.target.value)} />
+            value={keyword} onChange={(e) => updateKeyword(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') load() }} />
           <Dropdown value={status} options={statusOptions} onChange={updateStatus} ariaLabel={o.allStatus} />
           <span className="spacer" />
           <button type="button" className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" onClick={() => setCreateOpen(true)}>{o.createBtn}</button>
           <button type="button" className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
         </div>
-        {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : (
+        {error && <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div>}
           <div className="overflow-x-auto px-4 pb-4">
             <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
               <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{o.columns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
@@ -181,7 +184,6 @@ export default function OrderPage() {
               </tbody>
             </table>
           </div>
-        )}
         <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
           <Pagination total={rows.length} page={page} pageSize={pageSize}
             onPage={(value) => { setPage(value); setUrlPage(value) }}
@@ -239,7 +241,7 @@ export default function OrderPage() {
       </Drawer>
       )}
       {createOpen && (
-        <OrderCreateDrawer open onClose={() => setCreateOpen(false)} onCreated={load} />
+        <OrderCreateDrawer open onClose={() => setCreateOpen(false)} onCreated={(no) => { if (no) toast.success(o.toastCreateOk.replace('{no}', no)); load() }} />
       )}
     </div>
   )
