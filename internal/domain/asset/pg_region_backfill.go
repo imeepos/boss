@@ -37,7 +37,7 @@ type RegionBackfillResult struct {
 // 失败路径:单资产回补失败记 [asset-region-backfill] 日志不中断,汇总错误上抛。
 func (s *PGStore) BackfillRegionSnapshots(ctx context.Context) (*RegionBackfillResult, error) {
 	rows, err := s.db.Query(ctx,
-		`SELECT a.id, a.asset_code, a.address_id, b.name FROM assets a
+		`SELECT a.id, a.asset_code, COALESCE(a.address_id, 0), b.name FROM assets a
 		 JOIN asset_batches b ON b.id = a.batch_id
 		 WHERE a.region_id IS NULL OR a.region_id = 0
 		 ORDER BY a.id`)
