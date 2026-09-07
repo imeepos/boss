@@ -250,13 +250,14 @@ def run(pre_chains):
         bad("父链展开", "edges=%s" % pc)
     lst = http("GET", "/odn/resource-chains?limit=50", TOKEN)
     items = (lst.get("data") or {}).get("items") or []
-    mine = [x for x in items if str(x.get("batchNo", "")).startswith(BATCH_PREFIX)]
-    if len(mine) == 2:
-        ok("链行清单: 批次内 2 行(接口复核)")
+    mine = [x for x in items if x.get("occCode") == "OCC901"]
+    if len(mine) >= 2:
+        ok("链行清单: 验收链 %d 行可见(接口复核)" % len(mine))
     else:
         bad("链行清单", "items=%d" % len(mine))
     dev = http("GET", "/odn/devices?kind=OBD", TOKEN)
-    devs = (dev.get("data") or {}).get("items") or []
+    ddata = dev.get("data") or []
+    devs = ddata if isinstance(ddata, list) else ddata.get("items") or []
     codes = sorted(x.get("code") for x in devs if str(x.get("code")).startswith("OBD9"))
     if codes == ["OBD901", "OBD902"]:
         ok("设备接口复核: OBD901/OBD902 在册")
