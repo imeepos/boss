@@ -1,6 +1,6 @@
 // 端口台账页:列名以 fields.md §4.2 为准;契约 GET /resources + GET /ports?resourceId。
 import { IdRef } from '../../../components/business'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { PageHead, pagerTexts } from '../../org/shared'
@@ -8,6 +8,7 @@ import { StatusTag } from '../../../components/StatusTag'
 import { Pagination } from '../../../components/Pagination'
 import { Drawer } from '../../../components/Drawer'
 import { Dropdown } from '../../../components/Dropdown'
+import { SimplePicker } from '../../../components/pickers/SimplePicker'
 import { fmtTime } from '../../../lib/format'
 import { pageSlice, type PortHistoryRow, type PortRow, type ResourceRow } from '../types'
 import { PathDrawer } from './path-drawer'
@@ -32,7 +33,10 @@ export default function ResourcePage() {
   const [historyRows, setHistoryRows] = useState<PortHistoryRow[] | null>(null)
   const [provOpen, setProvOpen] = useState(false)
   const [provDevice, setProvDevice] = useState(0)
-  const [provPort, setProvPort] = useState('')
+  const [provPortId, setProvPortId] = useState('')
+  const [provPortRow, setProvPortRow] = useState<PortRow | null>(null)
+  // /ports 每次开关抽屉重新拉取;检索在已取全量上做关键字收窄(接口无 keyword 参数)。
+  const provPortsRef = useRef<PortRow[] | null>(null)
   const [provError, setProvError] = useState('')
 
   const loadPorts = (rid: number) => {
@@ -59,10 +63,26 @@ export default function ResourcePage() {
       .catch(() => setHistoryRows([]))
   }
 
+  // 端口选择器数据源:SimplePicker 服务端模式,首拉 /ports 全量缓存,关键字按 portCode/quadCode 收窄。
+  const searchProvPorts = async (keyword: string): Promise<{ value: string; label: string }[] | null> => {
+    if (!provPortsRef.current) {
+      const d = await apiFetch<{ items: PortRow[] }>('/ports')
+      provPortsRef.current = d?.items ?? []
+    }
+    const kw = keyword.trim().toLowerCase()
+    return provPortsRef.current
+      .filter((p) => !kw || p.portCode.toLowerCase().includes(kw) || (p.quadCode ?? '').toLowerCase().includes(kw))
+      .map((p) => ({ value: String(p.portId), label: p.portCode + ' (#' + p.portId + ')' }))
+  }
+  const onProvPortPick = (v: string) => {
+    setProvPortId(v)
+    setProvPortRow(provPortsRef.current?.find((p) => String(p.portId) === v) ?? null)
+  }
+
   // provisionPort 置备端口:调 POST /provision/ports(权威置备端点,menu:provision 域),
   // 成功后刷新当前端口列表;portCode 唯一冲突/字段缺失由后端校验回显。
   const provisionPort = async () => {
-    if (busy || !provDevice || !provPort.trim()) return
+    if (busy || !provDevice || !provPortRow) return
     setBusy(true)
     setProvError('')
     try {
@@ -70,8 +90,8 @@ export default function ResourcePage() {
       await apiFetch('/provision/ports', {
         method: 'POST',
         body: {
-          portCode: provPort.trim(),
-          quadCode: provPort.trim(),
+          portCode: provPortRow.portCode,
+          quadCode: provPortRow.quadCode || provPortRow.portCode,
           resourceId: provDevice,
           addressId: dev?.addressId ?? 0,
           legalEntityId: dev?.legalEntityId ?? 0,
@@ -79,7 +99,8 @@ export default function ResourcePage() {
       })
       setProvOpen(false)
       setProvDevice(0)
-      setProvPort('')
+      setProvPortId('')
+      setProvPortRow(null)
       loadPorts(resourceId)
     } catch (e) {
       setProvError(e instanceof Error ? e.message : r.provSaveFail)
@@ -105,7 +126,7 @@ export default function ResourcePage() {
           />
           <span className="spacer" />
           <span title={canProvision ? undefined : r.provNoPerm}>
-            <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)] disabled:cursor-not-allowed" disabled={busy || !canProvision} onClick={() => { setProvOpen(true); setProvError('') }}>
+            <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)] disabled:cursor-not-allowed" disabled={busy || !canProvision} onClick={() => { setProvOpen(true); setProvError(''); provPortsRef.current = null }}>
               {r.provision}
             </button>
           </span>
@@ -151,7 +172,7 @@ export default function ResourcePage() {
             <>
               <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={() => setProvOpen(false)}>{t.pages.company.cancel}</button>
               <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]"
-                disabled={busy || !provDevice || !provPort.trim()} onClick={provisionPort}>
+                disabled={busy || !provDevice || !provPortRow} onClick={provisionPort}>
                 {busy ? t.pages.account.submitting : t.pages.company.save}
               </button>
             </>
@@ -175,8 +196,18 @@ export default function ResourcePage() {
             )}
             <div className="flex flex-col gap-1.5">
               <label><span className="mr-0.5 text-[var(--color-danger)]">*</span>{r.fPortCode}</label>
-              <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" value={provPort} placeholder={r.pPortCode}
-                onChange={(ev) => setProvPort(ev.target.value)} />
+              <SimplePicker
+                value={provPortId}
+                search={searchProvPorts}
+                onChange={onProvPortPick}
+                ariaLabel={r.fPortCode}
+                placeholder={r.pPortCode}
+                searchPlaceholder={r.pPortCode}
+                errorText={r.loadFail}
+                clearable
+                clearLabel={t.pages.pickers.common.clear}
+                minWidth={220}
+              />
             </div>
             {provError && <ErrorBanner message={provError} className="mx-0" />}
           </div>

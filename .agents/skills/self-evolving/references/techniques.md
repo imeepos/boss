@@ -5,7 +5,7 @@
 ## CDP 断言操作自研 Dropdown(web/admin components/Dropdown.tsx)
 
 场景 → 用 cdp-capture --eval 驱动全站唯一下拉选择器(Dropdown.tsx)做自动化验证。
-怎么用 → 选项的 onChange 绑在 **onMouseDown**(line ~106),onClick 被 preventDefault——eval 必须
+怎么用 → (2026-09-07 补:--eval 的 JS 代码经 bash 传递时,外层用**双引号**包裹、JS 内全用单引号字符串并避开 $/反引号/双引号;外层单引号会被 JS 内单引号截断成 SyntaxError。)选项的 onChange 绑在 **onMouseDown**(line ~106),onClick 被 preventDefault——eval 必须
 `opt.dispatchEvent(new MouseEvent('mousedown',{bubbles:true,cancelable:true}))`,`opt.click()` 静默无效(2026-09-07 报告中心轮实测连废两轮)。
 触发器用 click() 开合即可;定位用 button[aria-label="唯一标签"],别用 querySelectorAll 下标猜。
 

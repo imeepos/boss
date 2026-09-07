@@ -467,11 +467,13 @@ construction_payable_invoices（发票登记，纯登记不联动税局）：
 | 备注 | `Note` | note | 可空 |
 | 绑定时间 | `BoundAt` | bound_at | TIMESTAMPTZ |
 
-### 1.5.11 网格投资测算读模型（GET /odn/grid-investment，P-INFRA-1 W2，internal/domain/odn）
+### 1.5.11 投资测算读模型（GET /odn/grid-investment + /odn/city-investment + /odn/split-capacity，P-INFRA-1 W2/W5，internal/domain/odn）
 
-> 纯只读聚合：零 DDL、零写路径；单连接两查询（网格全量 + 结算成本映射）。页面 `intel/grid-investment`（投资测算），
-> 菜单权限 `menu:grid-investment`（迁移 000207，授予 sysadmin/analyst/ops）；契约 admin/odn.yaml。
-> 口径裁定（W2 执行会话 2026-09-07，取与 odn 表结构一致的最小可解释口径）：
+> 纯只读聚合：零业务写路径（分光比回写建模的唯一写路径见 1.5.15，000221）。
+> 页面 `intel/grid-investment`（投资测算，网格/城市/分光容量三视图），菜单权限 `menu:grid-investment`
+> （迁移 000207，授予 sysadmin/analyst/ops）；契约 admin/odn.yaml。
+> 口径裁定（W2 执行会话 2026-09-07 基础四条；W5 执行会话 2026-09-07 增补 5-8 条，
+> 维度归属总裁定见 adopted 2026-09-07-split-capacity-investment-depth）：
 > 1. 设施数：`odn_facility.grid_code` 非空行（即 P/MH）按 `lifecycle_status` 分组计数；TW/CLS/TBX 市域设施无网格维度，不进网格行。
 > 2. 覆盖地址数：`address_coverage` 经服务设施（`facility_code → odn_facility.grid_code`）归属网格，按 `status` 分组计数；
 >    仅挂核心设备（`device_id`）或未挂目标的行（UNSERVED 默认无目标）不进网格行，全网口径见覆盖页 `/odn/coverage*`。
@@ -480,6 +482,19 @@ construction_payable_invoices（发票登记，纯登记不联动税局）：
 >    VOIDED 作废不计）→ 项目明细设施归属网格 → 汇总明细金额；结算表存在而查询失败按错误上抛，禁止静默吞错；
 >    该网格无结算数据时 `settledCost=null`，页面显示「未登记」，禁止显示 0。
 > 4. 每可装地址成本：`settledCost ÷ coverageServed`；成本未登记或分母为 0 时同样 `null`（未登记）。
+> 5. 规划成本（W5 ①）：`construction_projects.budget_amount`（W6 000218，未开工项目也有预算信号）按**项目明细金额占比**
+>    分摊到网格——项目级总额无行级网格维度，占比=网格内明细金额÷项目有网格归属明细合计；零归属明细（无网格设施）的
+>    项目不摊，显式「未登记」不硬摊；`budget_amount` 列未部署（W6 代差）经 information_schema 探测回 null。
+> 6. 材料成本（W5 ②）：CONFIRMED 出库单（1.5.14）逐台资产经采购价链（`assets.batch_id → procurement_receipts →
+>    procurement_order_items` 同单同料取 id 最小一行）取采购单价合计，再按口径 5 同比例分摊；OPEN 备出库/CANCELLED 退库
+>    不计；无采购价链（手建批次/编码不匹配）的资产不计额；**与已结算人工成本分列（settledCost/materialCost 两列），禁止混算**。
+> 7. 城市卷积（W5 ④）：`GET /odn/city-investment` 网格行按 (prv,city) 向上卷积（与网格行同源 Go 层卷积，逐格一致）；
+>    成本列为城市内网格行已登记值合计（全未登记→null）。
+> 8. 容量户级口径（W5 ③，home-passed/潜在户数）：一条二级分光端口=一户；潜在户数 potentialHomes=Σ二级分光器容量
+>    +Σ无二级链的一级分光器容量（直达户）；已接户数 connectedHomes=Σ已用端口占用（链行端口标签去重）；可扩户数
+>    expandableHomes=潜在−已接；`costPerPotential`=(规划+材料+已结算合计)÷潜在户数（审查 F1「每户成本分母不是覆盖
+>    户数」）；容量住设备维度、设备无网格维度，**只进城市行（城市域设备）与全网/设备视图（/odn/split-capacity）**，
+>    不进网格行，不按比例分摊到网格（顺序五 W3 收口接通导入链与网格/设施后另行裁定）。
 
 | 页面列名 | API 字段 | 聚合源 | 枚举/说明 |
 |:---------|:---------|:-------|:----------|
@@ -487,13 +502,32 @@ construction_payable_invoices（发票登记，纯登记不联动税局）：
 | 规划 / 施工中 / 在网 / 退役 | `facilitiesPlanned` / `facilitiesInBuild` / `facilitiesInService` / `facilitiesRetired` | odn_facility.lifecycle_status 计数 | 口径 1；枚举见 1.5.3（000198） |
 | 可装 / 规划在建 / 未覆盖 | `coverageServed` / `coveragePending` / `coverageUnserved` | address_coverage.status 计数 | 口径 2；枚举见 1.5.7（000197） |
 | 已结算工程成本 | `settledCost` | W1 结算数据 | null=未登记（禁止显示 0） |
+| 规划成本 | `plannedCost` | W6 项目预算按明细金额占比分摊 | 口径 5；null=未登记（禁止显示 0） |
+| 材料成本 | `materialCost` | W8 CONFIRMED 出库采购价按同比例分摊 | 口径 6；与人工成本分列不混算 |
 | 每可装地址成本 | `costPerServed` | settledCost ÷ coverageServed | null=未登记（分母 0 同） |
+
+城市卷积行（GET /odn/city-investment，W5）：
+
+| 页面列名 | API 字段 | 聚合源 | 枚举/说明 |
+|:---------|:---------|:-------|:----------|
+| 城市 | `prvCode` / `cityPrefix` / `gridCount` | 网格行卷积 | 口径 7 |
+| 设施数 / 覆盖地址数 | 同网格行四+三列 | 网格行合计 | 口径 1/2 |
+| 已结算 / 规划 / 材料成本 | `settledCost` / `plannedCost` / `materialCost` | 网格行已登记值合计 | 全未登记→null |
+| 每可装地址成本 | `costPerServed` | 城市结算合计 ÷ 城市可装合计 | null=未登记 |
+| 潜在 / 已接 / 可扩户数 | `potentialHomes` / `connectedHomes` / `expandableHomes` | 城市域分光容量卷积 | 口径 8；null=城市无容量建模 |
+| 每潜在户数成本 | `costPerPotential` | 全口径成本合计 ÷ potentialHomes | 口径 8；分母不是覆盖户数 |
+
+设备分光容量视图（GET /odn/split-capacity，W5，只读）：行=容量模型设备（1.5.15），列
+`deviceId/code/kind/splitLevel/ratio/chainRows/usedPorts/expandable/prvCode/cityPrefix/lifecycleStatus/hasSecondary`
+（prv/city null=导入域设备）+ `summary`（全网 devices/potentialHomes/connectedHomes/expandableHomes，含导入域设备）。
+
 ### 1.5.12 odn_resource_chain（ODN 资源链批量导入，迁移 000210，internal/domain/odn）
 
 > P-INFRA-1 W3:需求源 docs/ODN网络资源表模板.xlsx(说明/ODN资源/枚举 三 sheet),一行=一条完整资源链(23 列),导入展开为系统关系数据:链上箱体编码(OCC/ODB/OBD/SDB/SBD;ODF 须规范格式)逐级取/建 odn_device 导入域设备(无城市,uq_odn_device_box,迁移 000209)。管理面 `menu:odn`,REST `/odn/resource-chains/import|patrol`、`GET /odn/resource-chains`(契约 admin/odn.yaml);导入中心历史 kind=odn-resource-chain;设备类型字典扩展见 1.5.5(000209)。
 > 说明页六规则即导入校验:①层级断链拒绝(OCC→ODB→OBD→一级分光→SDB→SBD→二级分光);②说明页约定前 N 数据行为示例行,过滤不导入;③留空=不入库该字段(NULL),枚举未知值拒绝,禁止默认值推断;④资源状态留空/规划态一律 PLANNED,绝不当作已安装/在网;⑤总分光比=一级×二级自动计算,填报不一致拒绝该行并报行号;⑥指纹(23 列归一化 SHA-256)唯一去重并报告。
 > 可观测:逐行 imported/failed/skipped_example/duplicate+原因,失败留 `[odn-import] ROW n FAILED` 可 grep 日志;完成后 `GET /odn/resource-chains/patrol` 孤儿/半链巡检(orphan_box_code 箱体孤儿/broken_ancestor 断祖/split_port_gap 分光半链/info_ref_missing 引用缺失,各采样行号 ≤5),链上箱体引用必须存在。
 > 机房/OLT/ODF 模板编码为站点前缀引用(如 SITE001/SITE001_OLT001/SITE001_ODF001_A),非规范设备格式,按文本引用承载不展开(不猜填);纤芯编号同理(规范 5.1 "--" 仅设计图纸不入库)。裁定 adopted 2026-09-07-odn-box-types-import-chain。
+> 分光比列(split1/split2/total_split)为**暂存事实**:W5 起经 `POST /odn/resource-chains/backfill-split` 回写建模至设备容量模型(1.5.15,000221);导入本身不自动回写(显式重建幂等可观测)。裁定 adopted 2026-09-07-split-capacity-investment-depth。
 
 | 模板列 | DB 列 | 枚举/映射(枚举 sheet 为校验字典) |
 |:-------|:------|:--------------------------------|
@@ -569,6 +603,32 @@ odn_material_issues / odn_material_issue_items（材料出库，台账连续性�
 | 状态 | `Status` | status | OPEN 备出库（资产不动）/ CONFIRMED 已出库（明细资产 IN_TRANSIT 在途，000216）/ CANCELLED（CONFIRMED 取消=退库回 IN_STOCK） |
 | 出库明细 | `AssetIDs` | odn_material_issue_items.asset_id | 逐台资产（issue_id,asset_id 唯一）；建单前置资产 IN_STOCK，确认/取消任一状态漂移即整体回滚 |
 | 备注/操作人 | `Remark`/`CreatedBy`/`IssuedBy`/`CancelledBy` | 同名 | remark ≤255；操作人 → accounts |
+
+### 1.5.15 odn_device_split_capacity（设备分光容量模型，迁移 000221，internal/domain/odn）
+
+> P-INFRA-1 W5（审查 F1 分光比建模；裁定 adopted 2026-09-07-split-capacity-investment-depth）：
+> W3 资源链暂存分光比（1.5.12）回写建模为**设备级容量事实**，承载「PON 口还能接几户」容量视角。
+> 唯一写路径 `POST /odn/resource-chains/backfill-split`（menu:odn，审计 odn.resource-chain.backfill-split，
+> 幂等全量重建，失败留 `[odn-split-backfill] FAILED|UNRESOLVED` 可 grep 日志）；读路径
+> `GET /odn/split-capacity`+城市卷积（1.5.11）零写。设备解析：城市域同名**唯一**设备优先
+> （容量随城市维度进城市行），跨城同名歧义不建模（不猜填），无城市域登记再退导入域影子设备
+> （prv_code IS NULL，只进全网/设备视图）。
+
+| 字段名 | DB 列 | 枚举/说明 |
+|:-------|:------|:----------|
+| 设备 | `DeviceID` | device_id PK → odn_device(id) ON DELETE CASCADE |
+| 分光级别 | `SplitLevel` | split_level：1=一级分光器(OBD) / 2=二级分光器(SBD)；按箱体类型裁定，非行内标签 |
+| 容量 | `Ratio` | ratio=分光比分母（2~128）=端口容量；同设备多链行不一致时取 MAX（容量是物理上限） |
+| 链行数 | `ChainRows` | chain_rows=参与建模的链行数（有分光比的行） |
+| 已用端口 | `UsedPorts` | used_ports=链行端口标签去重计数（空标签不计；不猜填，不解析标签格式） |
+| 下挂二级 | `HasSecondary` | has_secondary=BOOL_OR(链行带 SBD)；户级口径据此跳过下挂二级链的一级器 |
+| 更新时间 | `UpdatedAt` | updated_at TIMESTAMPTZ（重建时间） |
+
+> 户级口径：一条二级分光端口=一户；潜在户数=Σ二级容量+Σ无二级链的一级容量；已接=Σ已用端口；可扩=潜在−已接；
+> total_split（一级×二级）为链行暂存事实**不参与汇总**（两级相加会重复计数，裁定见 adopted note）。
+> odn_port（1.5.9）仍为订单流物理端口模型（IDLE/RESERVED/IN_SERVICE），与容量模型互补不相混：
+> 链行端口状态（可用/已使用/已预留/已封锁）语义不落 odn_port（枚举不同域，不强行映射）。
+
 ### 1.6 audit_logs（审计日志）· biz_params（业务参数）
 
 | 页面列名 | 字段名 | DB 列 | 枚举/说明 |
