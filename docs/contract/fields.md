@@ -331,6 +331,21 @@
 | 时间 | `CreatedAt`/`SettledAt`/`VoidedAt` | 同 | TIMESTAMPTZ |
 
 
+#### 1.5.8b construction_progress（施工进度记录，迁移 000213，internal/domain/odn）
+
+> P0-B 资源级现场事实（odn-construction-management-plan）：进度/坐标/照片绑定具体设施；`(project_id, facility_code, client_msg_id)` 唯一实现弱网重传幂等，重复上报不重复计量；上报设施必须已在项目明细范围内。管理面 `menu:odn` 施工页签内，REST `/odn/constructions/{id}/progress`（契约 admin/odn.yaml）。
+
+| 页面列名 | 字段名 | DB 列 | 枚举/说明 |
+|:---------|:-------|:------|:----------|
+| 施工项目 | `ProjectID` | project_id | FK → construction_projects |
+| 设施 | `FacilityCode` | facility_code | FK → odn_facility(code)，须在 construction_items 范围内 |
+| 累计完成量 | `DoneQty` | done_qty | NUMERIC(14,2) ≥0；聚合口径=同设施 SUM(done_qty) 对比清单 quantity |
+| 坐标 | `Lat`/`Lng` | lat/lng | DOUBLE PRECISION 可空，现场采集 |
+| 备注 | `Note` | note | ≤500 字 |
+| 照片 | `PhotoIDs` | photo_ids | BIGINT[] → attachments |
+| 幂等键 | `ClientMsgID` | client_msg_id | VARCHAR(64)，8-64 字符，弱网重传同键不重复计量 |
+| 上报人/时间 | `ReportedBy`/`ReportedAt` | reported_by/reported_at | → accounts / TIMESTAMPTZ |
+
 ### 1.5.9 odn_port（物理端口占用态，迁移 000200，internal/domain/odn）
 
 > P2 端口占用（路线图 T11）：分光器/终端盒端口级资源，订单预占的物理落地。`order_id` 为订单软引用（E10/E11 独立命名空间，不加 FK）。管理面 `menu:odn`，REST `/odn/devices/{id}/ports`、`/odn/ports/allocate-for-address`（覆盖关联兑现）等。

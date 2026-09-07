@@ -57,6 +57,7 @@ func registerODNConstructionRoutes(g *gin.RouterGroup, a *app.Application, perm 
 	g.PUT("/odn/constructions/:id/contractor", perm, odnAssignContractorHandler(a))
 	g.POST("/odn/constructions/:id/start", perm, odnStartProjectHandler(a))
 	g.POST("/odn/constructions/:id/accept", perm, odnAcceptProjectHandler(a))
+	registerODNProgressRoutes(g, a, perm)
 	registerODNSettlementRoutes(g, a, perm)
 }
 

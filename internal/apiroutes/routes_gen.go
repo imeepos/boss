@@ -287,6 +287,8 @@ var Portals = []Portal{
 		{"PUT", "/odn/constructions/{id}/contractor", "指定/更换承包商(引用采购域施工类供应商档案;名称快照;有有效结算单后锁定)"},
 		{"POST", "/odn/constructions/{id}/start", "开工(PENDING→BUILDING,单内 PLANNED 设施批量转 IN_BUILD)"},
 		{"POST", "/odn/constructions/{id}/accept", "竣工验收(BUILDING→ACCEPTED,设施批量回填 IN_SERVICE,记竣工人/时间/备注)"},
+		{"POST", "/odn/constructions/{id}/progress", "进度上报(P0-B:资源级现场完成量/坐标/照片;clientMsgId 幂等,重复不重复计量)"},
+		{"GET", "/odn/constructions/{id}/progress", "进度上报列表+清单级进度聚合(计划量 vs 累计完成量)"},
 		{"POST", "/odn/constructions/{id}/settlements", "发起结算(前置:项目 ACCEPTED 且已指定承包商;应付=清单金额汇总,后端计算)"},
 		{"GET", "/odn/constructions/{id}/settlements", "项目结算单列表(含作废历史,近单优先)"},
 		{"GET", "/odn/settlements/{id}", "结算单详情"},

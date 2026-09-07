@@ -461,6 +461,37 @@ paths:
                 note: { type: string, description: as-built 竣工备注 }
       responses: { '200': { $ref: '#/components/responses/Data' } }
 
+  /odn/constructions/{id}/progress:
+    post:
+      tags: [ODN]
+      summary: 进度上报(P0-B:资源级现场完成量/坐标/照片;clientMsgId 幂等,重复不重复计量)
+      operationId: recordOdnConstructionProgress
+      parameters: [ { name: id, in: path, required: true, schema: { type: integer } } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [facilityCode, clientMsgId]
+              properties:
+                facilityCode: { type: string, description: 设施编码(须在项目明细范围内) }
+                doneQty: { type: number, description: 累计完成量(>=0) }
+                lat: { type: number, description: 纬度可带 }
+                lng: { type: number, description: 经度可带 }
+                note: { type: string, description: 备注 <=500 字 }
+                photoIds: { type: array, items: { type: integer } }
+                clientMsgId: { type: string, description: 客户端消息幂等键(8-64 字符) }
+      responses: { '200': { $ref: '#/components/responses/Data' } }
+    get:
+      tags: [ODN]
+      summary: 进度上报列表+清单级进度聚合(计划量 vs 累计完成量)
+      operationId: listOdnConstructionProgress
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: limit, in: query, schema: { type: integer } }
+      responses: { '200': { $ref: '#/components/responses/Data' } }
+
   /odn/constructions/{id}/settlements:
     post:
       tags: [ODN]

@@ -140,6 +140,10 @@ type ODNService interface {
 	// AcceptProject 返回 (设施翻转数, 覆盖联动数, 错误);F6 竣工覆盖联动随事务(000211)。
 	AcceptProject(ctx context.Context, id int64, acceptedBy int64, note string) (int64, int64, error)
 	ListProjectItems(ctx context.Context, id int64) ([]ConstructionItem, error)
+	// RecordProgress 幂等进度上报(P0-B,000213):created=false=重复消息不重复计量。
+	RecordProgress(ctx context.Context, p ProgressEntry) (int64, bool, error)
+	ListProgress(ctx context.Context, projectID int64, limit int) ([]ProgressEntry, error)
+	ItemProgressSummary(ctx context.Context, projectID int64) ([]ItemProgress, error)
 	CreateSettlement(ctx context.Context, projectID, createdBy int64) (*Settlement, error)
 	ListSettlements(ctx context.Context, projectID int64) ([]Settlement, error)
 	GetSettlement(ctx context.Context, id int64) (*Settlement, error)
