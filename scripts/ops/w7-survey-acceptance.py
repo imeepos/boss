@@ -1,3 +1,77 @@
+#!/usr/bin/env python3
+# W7 勘测采集+施工进度上报验收(P-INFRA-1 W7,审查 F5a/F5b):对真实 102 环境逐断言打点。
+# 就绪探针:新二进制特有行为——/api/admin/v1/odn/surveys 与 /api/worker/v1/surveys
+# 无凭证访问,旧二进制 404(路由不存在),新二进制 401(路由存在进鉴权);双 401 才开跑。
+# 造数即清:验收自举勘测任务/施工项目/设施,收尾按 id 精确删除+孤儿巡检门禁。
+# 用法: python3 scripts/ops/w7-survey-acceptance.py [--wait]
+#   --wait: 轮询探针等待 CI 部署新二进制(每 10s 一次,上限 30 分钟)。
+# 环境: BASE_URL/ADMIN_API_KEY/WORKER_API_KEY/WORKER_ID/SSH_HOST 可覆盖。
+import argparse
+import json
+import os
+import subprocess
+import sys
+import time
+import urllib.error
+import urllib.request
+
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+BASE = os.environ.get("BASE_URL", "http://192.168.0.102:28080")
+ACCOUNTS = os.path.join(ROOT, ".agents", "skills", "bossctl-cli", "test-accounts.json")
+with open(ACCOUNTS) as f:
+    acc = json.load(f)
+AKEY = os.environ.get("ADMIN_API_KEY", acc["admin"]["apiKeys"][0]["key"])
+WKEY = os.environ.get("WORKER_API_KEY", acc["workers"][0]["apiKeys"][0]["key"])
+WID = int(os.environ.get("WORKER_ID", acc["workers"][0]["workerId"]))
+WNAME = os.environ.get("WORKER_NAME", acc["workers"][0]["name"])
+SSH_HOST = os.environ.get("SSH_HOST", "imeepos@192.168.0.102")
+STAMP = str(int(time.time()))
+OK = 0
+FAIL = 0
+TRACK = {"surveys": [], "facility": "", "project": 0}
+
+
+def http(method, path, key, body=None):
+    url = BASE + path
+    data = json.dumps(body).encode() if body is not None else None
+    req = urllib.request.Request(url, data=data, method=method)
+    req.add_header("X-API-Key", key)
+    req.add_header("Content-Type", "application/json")
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r:
+            return r.status, json.loads(r.read().decode())
+    except urllib.error.HTTPError as e:
+        return e.code, None
+
+
+def api(method, path, body=None, worker=False):
+    key = WKEY if worker else AKEY
+    code, env = http(method, path, key, body)
+    if code != 200 or not isinstance(env, dict) or env.get("code") not in (0, 200):
+        return None, code
+    return env.get("data"), code
+
+
+def check(name, cond, detail=""):
+    global OK, FAIL
+    if cond:
+        OK += 1
+        print("[PASS] " + name)
+    else:
+        FAIL += 1
+        print("[FAIL] " + name + (": " + str(detail) if detail else ""))
+
+
+def probe_ready():
+    a = http("GET", "/api/admin/v1/odn/surveys", "no-key")[0]
+    w = http("GET", "/api/worker/v1/surveys", "no-key")[0]
+    return a, w
+
+
+def sql(query):
+    cmd = ["ssh", "-o", "ConnectTimeout=10", "-o", "BatchMode=yes", SSH_HOST,
+           "docker exec -i boss-infra-postgres-1 psql -U boss -d boss -v ON_ERROR_STOP=1 -q -tA"]
+    return subprocess.run(cmd, input=query, capture_output=True, text=True, timeout=60)
 def cleanup():
     ids = ",".join(str(i) for i in TRACK["surveys"]) or "0"
     pid = str(TRACK["project"])
