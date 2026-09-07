@@ -303,7 +303,7 @@
 | 竣工备注 | `AsbuiltNote` | asbuilt_note | as-built 记录 |
 | 竣工人/时间 | `AcceptedBy`/`AcceptedAt` | accepted_by/accepted_at | → accounts；验收时落 |
 | 明细数 | `ItemCount` | —（聚合） | construction_items 计数 |
-| 承包商 | `ContractorID`/`ContractorName` | contractor_id/contractor_name | 软引用 → procurement_suppliers(id)（跨域不加 FK，adopted 2026-09-07）+ 名称快照；0/空=未指定（存量兼容）；有有效结算单后锁定（000206） |
+| 承包商 | `ContractorID`/`ContractorName` | contractor_id/contractor_name | 软引用 → procurement_suppliers(id)（跨域不加 FK，adopted 2026-09-07）+ 名称快照；NULL/空=未指定（存量兼容）；有有效结算单后锁定（列经 000208 补齐；000206 漏列事故见打回记录 2026-09-07） |
 | 清单金额 | `ItemsAmount` | —（聚合） | SUM(construction_items.amount)，页面展示列，结算应付同口径（000206） |
 
 #### construction_items 增列（工程量清单，迁移 000206）
