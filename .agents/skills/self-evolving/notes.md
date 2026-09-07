@@ -1,5 +1,12 @@
 # Notes
 
+## 2026-09-07 pickers 三处改造(C1 BLOCKED/C2 SimplePicker/C3 DialogPicker 首接入)
+
+- 最耗时坑:CDP 交互断言里 option 用 el.click() 三轮无效,最后读 Dropdown 源码发现选择绑在 onMouseDown——而 techniques.md **已有这条**(CDP 断言自研 Dropdown 条目),开工前没 grep 该文件,白烧三轮采集。教训:skill 第 6 节『开工前 grep 关键词』必须真的做,场景词=组件名+『断言/click』。
+- 次坑:bash 单引号包 --eval JS 参数,JS 内部单引号字符串把它截断,SyntaxError 不像代码错像工具坏;改双引号包参数(JS 内全用单引号字符串、避开 $/反引号/双引号)一次过。同红线 11 族。
+- 小坑:①read 并行 3 个大文件时返回 undefined lines,改串行恢复;②glob 在大目录(api 根)30s 超时两次,bash ls/find 秒回——目录枚举优先 bash。
+- C2 验证遇 102 bills 空表,学会先 curl API 证空再判『选择器坏』,避免误修;并用先例页(billing/billing,同一 Dropdown 基座+真实数据)佐证选中/回显链路。
+
 ## 2026-09-07 102 全量测试数据清理(主会话直做,无 worktree)
 
 - 最耗时坑:四件事叠一起。①ssh+psql 内联 -c 叠引号 3 连炸(红线9a已犯14次,换「本地写 SQL 文件 + ssh stdin 管道」一次过,该模式应默认化);②pg_stat_user_tables 估算全失真(assets 估219实566、bills 估0实4),差点按估算判「空表跳过」;③DELETE 脚本手工排 FK 序三连反序回滚(invoices→bills、coupon_redemptions→coupons、procurement_receipts→asset_batches),且 del_orders 临时表建了却漏写 orders 本体 DELETE,靠复核 count 抓出;④17:16 有并行终端用 admin@192.168.0.15 导入 346 个 OWPAL/OWTAC 客户壳+资产,落在我确认范围之后——停下来问用户,确认为造数后才纳入。
