@@ -2144,3 +2144,10 @@
 - 哪个坑浪费了最多时间？run_code 日志行里写了未声明变量赋值（s2 = c.exitCode）抛 ReferenceError；git 命令其实已执行，先核实状态再决定重跑，没白跑。教训：日志/返回表达式里禁止内联赋值。
 - skill 有没有提前预警？红线 11/14 覆盖了参数与字符串坑，这次没踩；交互约束（抽屉/选择器）是用户中途补充的，前两张图已发车——应对：不重生成整页，补发两张交互态图（新增抽屉全选择器/详情抽屉关联链），四图拼成完整方案。
 - 重来一次会怎么做？开工 prompt 里就预置项目已固化的交互红线（抽屉+选择器），这些是 repeat 裁定，不该等用户点名。
+
+## 2026-09-07 W6 工程预算里程碑+应付台账(P-INFRA-1 Phase 2)
+
+- 哪个坑浪费了最多时间? 一处 terms.md 编辑把主树路径直接塞进 file_path(主树在 main 分支!)——发现后立即 git checkout -- 还原再改 worktree;以及 odn.yaml 加路由后只跑了 gen-bossctl-routes 漏了 genrouteperms,make check 二轮才补齐。
+- skill 有没有提前预警? 红线 10(写前核对真实路径)在顶上,但当时并行发多个 edit 锚错了对象;漏 genrouteperms 是新知识(lessons 477 行只提了 CI 侧,没提本地 make check 链会红)。
+- 重来一次会怎么做? edit 调用前默念 file_path 是否 worktree 前缀;新增 openapi 路由的收尾动作固化为两连发:gen-bossctl-routes + genrouteperms 都跑完再 make check。新页面三件套(menu.def/App/i18n)之外还要 public/icons/items/<key>.svg + 只用 theme/tokens.css 里已定义的 CSS 变量(build 审计会拦)。
+- 正向沉淀: SETTLED 同事务生成应付/VOIDED 同事务冲销一次设计过验收;NUMERIC 列扫 int64 是 50000 常见根因(pg_settlement 1000.00 strconv),102 日志 [odn-settlement] SETTLE READ FAILED 一发定位——失败路径留痕红线直接变现;验收脚本全双引号 Python 字符串+行数组写入,零转义事故。

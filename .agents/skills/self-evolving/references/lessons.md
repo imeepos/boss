@@ -549,3 +549,7 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 当 glob 报空但怀疑文件存在:用 git ls-tree -r --name-only <ref> -- <dir> 兜底;glob 可能漏报已跟踪旧文件(2026-09-07 construction_test.go 实证)。
 - ODN 设施 POST /odn/facilities 默认 lifecycle IN_SERVICE;施工夹具需 PLANNED,且 API 无 IN_SERVICE→PLANNED 转移,psql 直设(W1/W4 同款,2026-09-07 P0 验收复用)。
 - gin 路径参数为空时(如 /odn/constructions//progress)不会 404 而是落到带默认值的查询,验收断言要先解析真实 id 再拼 URL(2026-09-07 P0 验收实证)。
+- 本仓新增 admin openapi 路由后本地门禁要过两道生成器:node scripts/gen-bossctl-routes.mjs(路由目录)+ go run ./scripts/genrouteperms(权限映射),漏任一 make check 都红(2026-09-07 W6,perms_test 目录路由无注册凭据)。
+- admin 前端新增菜单页第四件套是 web/admin/public/icons/items/<key>.svg(build ui-audit 拦截缺失);页面 CSS 只能用 theme/tokens.css 已定义变量,自造 --xxx 会红 build(用 --color-danger/--shell-menu-hover-bg 这类既有 token)。
+- pgx 扫 NUMERIC(14,2) 列一律 float64,扫 int64 在整数值也报 strconv ParseInt(如 1000.00);结算金额回读先查扫描类型(2026-09-07 W6 settle 50000 教训)。
+- edit 工具并发多发前逐个默念 file_path 是否目标 worktree 绝对路径;主树(main 分支)路径混进参数会直接改坏主分支文件,靠 git status 立即 checkout -- 才救回(2026-09-07 W6)。
