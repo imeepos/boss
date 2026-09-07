@@ -1,6 +1,6 @@
 {
   "note": "采集日已接受漂移;门禁=只减不增;修复后重跑 fetch-menu-perms.mjs + MENU_REGEN=1 刷新",
-  "capturedAt": "2026-09-04T18:30:10.802Z",
+  "capturedAt": "2026-09-07T10:03:16.179Z",
   "drift": {
     "technician": {
       "feOnly": [],
@@ -19,7 +19,6 @@
         "aaasession",
         "capacity",
         "dashboard",
-        "provision",
         "provlog"
       ],
       "beOnly": [
@@ -38,7 +37,6 @@
         "dashboard",
         "feedback",
         "gis",
-        "grid-investment",
         "knowledge",
         "marketing",
         "marketing-recon",
@@ -68,7 +66,6 @@
         "aaalog",
         "aaasession",
         "alarm",
-        "grid-investment",
         "monthly"
       ],
       "beOnly": []
@@ -76,8 +73,7 @@
     "sysadmin": {
       "feOnly": [
         "aaasession",
-        "capacity",
-        "grid-investment"
+        "capacity"
       ],
       "beOnly": [
         "menu:ai",

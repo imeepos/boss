@@ -1,5 +1,5 @@
 {
-  "capturedAt": "2026-09-04T18:30:10.802Z",
+  "capturedAt": "2026-09-07T10:03:16.179Z",
   "base": "http://192.168.0.102:28080",
   "roles": {
     "technician": {
@@ -36,6 +36,7 @@
         "menu:expand",
         "menu:loaccount",
         "menu:odn",
+        "menu:provision",
         "menu:reserve",
         "menu:resource",
         "menu:template",
@@ -54,6 +55,7 @@
         "menu:daily-close",
         "menu:dismantle",
         "menu:dispatch",
+        "menu:grid-investment",
         "menu:install-board",
         "menu:onboarding",
         "menu:order",
@@ -71,6 +73,7 @@
         "menu:analytics",
         "menu:dashboard",
         "menu:gis",
+        "menu:grid-investment",
         "menu:report"
       ]
     },
@@ -111,6 +114,7 @@
         "menu:feedback",
         "menu:geo",
         "menu:gis",
+        "menu:grid-investment",
         "menu:importer",
         "menu:install-board",
         "menu:inventory",
