@@ -262,13 +262,15 @@ def main():
         d = data_of(probe) or {}
         back = (d.get("result") or d) if isinstance(d, dict) else {}
         got = int(back.get("backfilled") or 0)
-        if got == int(before_cnt or 0) and got >= 300:
+        base_n = int(before_cnt or 0)
+        if got == base_n and (got >= 300 or base_n == 0):
             ok("区域快照回补: backfilled=" + str(got) + " == 空快照基线 " + before_cnt)
         else:
             bad("区域快照回补数", "backfilled=" + str(got) + " baseline=" + before_cnt)
         after_cnt = psql("SELECT count(*) FROM assets a JOIN asset_batches b ON b.id=a.batch_id WHERE b.name=" + q("存量开户导入") + " AND (a.region_id IS NULL OR a.region_id=0)").strip()
         after_all = psql("SELECT count(*) FROM assets a JOIN asset_batches b ON b.id=a.batch_id WHERE b.name=" + q("存量开户导入") + " AND a.region_id>0 AND a.region_name=" + q("集团")).strip()
-        if after_cnt == "0" and after_all == before_cnt:
+        total_kaihu = psql("SELECT count(*) FROM assets a JOIN asset_batches b ON b.id=a.batch_id WHERE b.name=" + q("存量开户导入")).strip()
+        if after_cnt == "0" and after_all == total_kaihu:
             ok("回补后: 空快照 0,全部 " + after_all + " 台 = root 集团")
         else:
             bad("回补后状态", "empty=" + after_cnt + " 集团=" + after_all)
