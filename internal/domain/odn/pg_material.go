@@ -68,6 +68,17 @@ func (s *PGStore) CreateIssue(ctx context.Context, projectID int64, assetIDs []i
 		if status != "IN_STOCK" {
 			return nil, fmt.Errorf("odn: asset %d status=%s: %w", id, status, ErrIssueAsset)
 		}
+		var busy int
+		err = tx.QueryRow(ctx, `SELECT count(*) FROM odn_material_issue_items it
+			JOIN odn_material_issues i ON i.id=it.issue_id
+			WHERE it.asset_id=$1 AND i.status IN ('OPEN','CONFIRMED')`, id).Scan(&busy)
+		if err != nil {
+			log.Printf("[odn-issue] BUSY CHECK FAILED asset=%d: %v", id, err)
+			return nil, fmt.Errorf("odn: issue busy check: %w", err)
+		}
+		if busy > 0 {
+			return nil, fmt.Errorf("odn: asset %d already on an active issue: %w", id, ErrIssueAsset)
+		}
 	}
 	no := nextIssueNo()
 	m := &MaterialIssue{IssueNo: no, ProjectID: projectID, ProjectNo: projNo,
