@@ -19,6 +19,7 @@
         "aaasession",
         "capacity",
         "dashboard",
+        "permits",
         "provlog"
       ],
       "beOnly": [
@@ -73,7 +74,8 @@
     "sysadmin": {
       "feOnly": [
         "aaasession",
-        "capacity"
+        "capacity",
+        "permits"
       ],
       "beOnly": [
         "menu:ai",

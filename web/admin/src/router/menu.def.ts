@@ -69,6 +69,7 @@ export const MENU_GROUPS: MenuGroup[] = [
     { key: 'resource', label: '端口台账', path: '/oss/resource' },
     { key: 'capacity', label: '容量视图', path: '/oss/capacity', perm: 'resource' },
     { key: 'odn', label: 'ODN 无源网络', path: '/oss/odn' },
+    { key: 'permits', label: '许可与路权', path: '/oss/permits' },
     { key: 'device', label: 'OLT 设备', path: '/oss/device' },
     { key: 'reserve', label: '预占与释放', path: '/oss/reserve' },
     { key: 'transfer', label: '跨区域调配', path: '/oss/transfer' },

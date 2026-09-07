@@ -61,6 +61,7 @@ const InventoryPage = lazy(() => import('./pages/ams/inventory'))
 const ResourcePage = lazy(() => import('./pages/oss/resource'))
 const CapacityPage = lazy(() => import('./pages/oss/capacity'))
 const ODNPage = lazy(() => import('./pages/oss/odn'))
+const PermitsPage = lazy(() => import('./pages/oss/odn/permits'))
 const ReservePage = lazy(() => import('./pages/oss/reserve'))
 const TransferPage = lazy(() => import('./pages/oss/transfer'))
 const DevicePage = lazy(() => import('./pages/oss/device'))
@@ -188,6 +189,7 @@ function MenuPage({ pageKey }: { pageKey: string }) {
   if (pageKey === 'resource') return <ResourcePage />
   if (pageKey === 'capacity') return <CapacityPage />
   if (pageKey === 'odn') return <ODNPage />
+  if (pageKey === 'permits') return <PermitsPage />
   if (pageKey === 'reserve') return <ReservePage />
   if (pageKey === 'transfer') return <TransferPage />
   if (pageKey === 'device') return <DevicePage />

@@ -320,6 +320,7 @@ const enUS: Translations = {
       report: 'Report Center',
       monthly: 'Monthly Reporting',
       'grid-investment': 'Investment Estimation',
+      permits: 'Permits & ROW',
     },
   },
   attachmentManager: {

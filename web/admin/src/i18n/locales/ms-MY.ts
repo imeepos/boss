@@ -320,6 +320,7 @@ const msMY: Translations = {
       report: 'Pusat Laporan',
       monthly: 'Laporan Bulanan',
       'grid-investment': 'Anggaran Pelaburan',
+      permits: 'Permit & ROW',
     },
   },
   attachmentManager: {
