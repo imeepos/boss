@@ -2123,3 +2123,11 @@
 - 静态页零依赖交互测试配方：cp 页面到 /tmp+追加 harness script，dispatchEvent(new Event("change",{bubbles:true})) 驱动级联，断言写进 #test-result 再 --dump-dom grep。时序坑：校验渲染在 async audit（crypto.subtle 指纹）之后，dispatchEvent 后同步断言必 FAIL，延时 250ms 再读——异步渲染的 UI 断言一律等待后再读。
 - 台账+1：红线 #1（自己 write 的文件隔两轮后 edit 未重读，且 bash tail 看过的 notes.md 直接 edit 被拒——本节追加本身又中一枪）25→见 recidivism；bash 漏 workdir（git add 撞主树 pathspec，失败即停未落错树）7 次。原生 <select> 红线是 admin 前端语境（Dropdown.tsx 主题定制），零依赖静态工具页不适用，未记违规。
 - 102 真机验收价值实证：UnlinkPermitProject SQL 空串字面量被生成器吞掉（本地测试全绿），102 一跑就 500。
+## 2026-09-07 ODN 施工管理规范化轮(P0-A/B/C 交付+102 真机验收)
+
+- 最耗时坑:run_code 程序串里构造含引号/占位符的 bash 脚本,三犯红线11变体——①数组元素里嵌 $TS 包单引号提前闭合(ident parse error);②对象字面量尾随逗号(Unexpected token ,);③sed 的 \1 写进 JSON 串触发 octal escape 语法错。正解固化:复杂脚本一律 write 成文件再 bash 执行,不在 run_code 里拼内联脚本。
+- edit 的「先读后改」按绝对路径逐文件计:同会话改过 A 文件,再改 B 文件仍要先读 B;换 worktree 后路径全变,每个目标文件都要重新 read。
+- 红灯24变体再犯:rc 捕获写在管道 tail 之后,拿 tail 退出码当命令退出码,ff 失败被 MERGE_RC=0 掩码(本次无损害,推送时 up-to-date 兜底);修正:rc 捕获必须紧跟目标命令独立成行,管道只放显示层。ff 失败三次(并行会话持续推 main),按红线9处理零事故——吸收合并到 feature 侧、复跑门禁、重推、重试。
+- glob 工具报空不等于文件不存在:internal/domain/odn/*_test.go 误判为零,实际 construction_test.go 等一直在库里;存在性判断用 git ls-tree 兜底。
+- 102 真机验收再证价值:NULLIF($6,0) 让 PG 把参数推断成 integer,0.3 落库 22P02(本地单测+全门禁全绿仍漏);光功率 dBm 典型值为负,校验却限非负。两处都是真机验收抓出、可 grep 日志直指病灶。设施 POST /odn/facilities 默认 IN_SERVICE,施工夹具要 PLANNED 只能 psql 直设(W1 同款)。
+- 交接教训:agent 委派跑重型实现两次超时且零产出(各白耗约10分钟轮询),最终主会话自己做一次过;单会话可完成的编码任务不委派,委派仅用于真正独立的调研/扫尾。
