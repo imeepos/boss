@@ -199,7 +199,7 @@ export function WorkerMessagesTab({ t }: { t: Ns }) {
             </label>
             <label className={formLabel}>
               {t.msgColumns[3]}
-              <input className={fieldInput} placeholder={t.sendContentPlaceholder} value={sendContent}
+              <textarea className={fieldInput} rows={3} placeholder={t.sendContentPlaceholder} value={sendContent}
                 onChange={(e) => setSendContent(e.target.value)} />
             </label>
             {hint && <span className="text-xs text-[var(--color-danger)]">{hint}</span>}
