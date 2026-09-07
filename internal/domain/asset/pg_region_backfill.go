@@ -28,8 +28,8 @@ type RegionBackfillSample struct {
 // RegionBackfillResult 回补结果(backfilled=回补数;skipped=无归属不猜填数;
 // samples=回补样本,默认返回前 5 条)。
 type RegionBackfillResult struct {
-	Backfilled int                   `json:"backfilled"`
-	Skipped    int                   `json:"skipped"`
+	Backfilled int                    `json:"backfilled"`
+	Skipped    int                    `json:"skipped"`
 	Samples    []RegionBackfillSample `json:"samples"`
 }
 
