@@ -1,0 +1,57 @@
+# 勘测任务域(师傅端,P-INFRA-1 W7):可见集/接单/现场回填(打点/照片/建议)。
+paths:
+  /surveys:
+    get:
+      tags: [Survey]
+      summary: 勘测任务可见集(指派给自己的+未指派抢单池;取消单不可见)
+      operationId: listWorkerSurveys
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: status, in: query, schema: { type: string, enum: [PENDING, ACCEPTED, BACKFILLED] } }
+        - { name: limit, in: query, schema: { type: integer } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /surveys/{id}:
+    get:
+      tags: [Survey]
+      summary: 勘测任务详情+回填记录(指派单仅指派师傅可见)
+      operationId: getWorkerSurvey
+      security: [{ bearerAuth: [] }]
+      parameters: [ { name: id, in: path, required: true, schema: { type: integer } } ]
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /surveys/{id}/accept:
+    post:
+      tags: [Survey]
+      summary: 接单(未指派单抢单占位;已指派单仅指派师傅)
+      operationId: acceptWorkerSurvey
+      security: [{ bearerAuth: [] }]
+      parameters: [ { name: id, in: path, required: true, schema: { type: integer } } ]
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /surveys/{id}/reports:
+    post:
+      tags: [Survey]
+      summary: 勘测回填(append-only;clientMsgId 幂等;须已接单且本人)
+      operationId: reportWorkerSurvey
+      security: [{ bearerAuth: [] }]
+      parameters: [ { name: id, in: path, required: true, schema: { type: integer } } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [suggestion, clientMsgId]
+              properties:
+                lat: { type: number, description: 现场打点纬度可带 }
+                lng: { type: number, description: 现场打点经度可带 }
+                facilityNote: { type: string, description: 设施状态备注 <=500 字 }
+                suggestion: { type: string, enum: [CAN_INSTALL, NEED_NEW_FACILITY], description: 建议(可装/需新建设施) }
+                photoIds: { type: array, items: { type: integer }, description: 附件 id(/attachments/upload 返回) }
+                clientMsgId: { type: string, description: 幂等键 8-64 字符,弱网重传不重复落行 }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }

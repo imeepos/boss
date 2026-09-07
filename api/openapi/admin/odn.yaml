@@ -825,6 +825,69 @@ paths:
                 note: { type: string, maxLength: 255 }
       responses: { '200': { $ref: '#/components/responses/Data' } }
 
+  /odn/surveys:
+    get:
+      tags: [ODN]
+      summary: 勘测任务列表(status/workerId 过滤,近单优先;P-INFRA-1 W7,000223)
+      operationId: listOdnSurveys
+      parameters:
+        - { name: status, in: query, schema: { type: string, enum: [PENDING, ACCEPTED, BACKFILLED, CANCELLED] } }
+        - { name: workerId, in: query, schema: { type: integer } }
+        - { name: limit, in: query, schema: { type: integer } }
+      responses: { '200': { $ref: '#/components/responses/Data' } }
+    post:
+      tags: [ODN]
+      summary: 创建勘测任务(目标区域/网格+说明,可带指派师傅;0=未指派进抢单池)
+      operationId: createOdnSurvey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title]
+              properties:
+                title: { type: string, maxLength: 128 }
+                description: { type: string, maxLength: 500 }
+                prvCode: { type: string }
+                cityPrefix: { type: string }
+                gridCode: { type: integer, description: 目标网格可带,0=不限 }
+                assignedWorkerId: { type: integer, description: 指派师傅可带 }
+      responses: { '200': { $ref: '#/components/responses/Data' } }
+
+  /odn/surveys/{id}:
+    get:
+      tags: [ODN]
+      summary: 勘测任务详情+回填记录(规划/备案输入)
+      operationId: getOdnSurvey
+      parameters: [ { name: id, in: path, required: true, schema: { type: integer } } ]
+      responses: { '200': { $ref: '#/components/responses/Data' } }
+
+  /odn/surveys/{id}/assign:
+    post:
+      tags: [ODN]
+      summary: 指派/改派师傅(仅 PENDING/ACCEPTED 可指派)
+      operationId: assignOdnSurvey
+      parameters: [ { name: id, in: path, required: true, schema: { type: integer } } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [workerId]
+              properties:
+                workerId: { type: integer }
+      responses: { '200': { $ref: '#/components/responses/Data' } }
+
+  /odn/surveys/{id}/cancel:
+    post:
+      tags: [ODN]
+      summary: 取消勘测任务(仅 PENDING/ACCEPTED 可取消;回填留痕不删)
+      operationId: cancelOdnSurvey
+      parameters: [ { name: id, in: path, required: true, schema: { type: integer } } ]
+      responses: { '200': { $ref: '#/components/responses/Data' } }
+
   /odn/permits:
     get:
       tags: [ODN]
