@@ -2,8 +2,8 @@ import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
-import { Input } from '../../../components/ui/input'
 import { Badge } from '../../../components/ui/badge'
+import { Dropdown } from '../../../components/Dropdown'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../../components/ui/table'
 import { EmptyState, ErrorBanner, ToolbarButton } from '../../../components/business/page-head'
 import { BatchImportEntry } from '../../base/importer/BatchImportEntry'
@@ -21,11 +21,14 @@ function fmtCoord(v: number | null | undefined): string {
   return v == null ? '-' : String(v)
 }
 
-type FilterProps = { prv: string; city: string; setPrv: (v: string) => void; setCity: (v: string) => void; g: { prvLabel: string; cityLabel: string } }
-function CityFilter({ prv, city, setPrv, setCity, g }: FilterProps) {
+type Region = { prvCode: string; name: string }
+type City = { cityPrefix: string; name: string }
+type FilterProps = { prv: string; city: string; setPrv: (v: string) => void; setCity: (v: string) => void; regions: Region[]; cities: City[]; g: { prvLabel: string; cityLabel: string } }
+// 省市级联下拉:数据源 /odn/regions 与 /odn/cities(000075 字典),替代手填编码文本框。
+function CityFilter({ prv, city, setPrv, setCity, regions, cities, g }: FilterProps) {
   return <div className="flex flex-wrap items-end gap-2">
-    <label className={FIELD}><span className={LABEL}>{g.prvLabel}</span><Input value={prv} onChange={(e) => setPrv(e.target.value.toUpperCase())} placeholder="PHL001" /></label>
-    <label className={FIELD}><span className={LABEL}>{g.cityLabel}</span><Input value={city} onChange={(e) => setCity(e.target.value.toUpperCase())} placeholder="MNL" /></label>
+    <label className={FIELD}><span className={LABEL}>{g.prvLabel}</span><Dropdown value={prv} options={regions.map((r) => ({ value: r.prvCode, label: r.prvCode + ' ' + r.name }))} onChange={setPrv} ariaLabel={g.prvLabel} /></label>
+    <label className={FIELD}><span className={LABEL}>{g.cityLabel}</span><Dropdown value={city} options={cities.map((ct) => ({ value: ct.cityPrefix, label: ct.cityPrefix + ' ' + ct.name }))} onChange={setCity} ariaLabel={g.cityLabel} /></label>
   </div>
 }
 
@@ -42,7 +45,20 @@ export default function ODNPage() {
   const [facilities, setFacilities] = useState<Facility[]>([])
   const [sites, setSites] = useState<Site[]>([])
   const [devices, setDevices] = useState<Device[]>([])
+  const [regions, setRegions] = useState<Region[]>([])
+  const [cities, setCities] = useState<City[]>([])
   const [showForm, setShowForm] = useState(false)
+
+  // 省级字典一次性加载;城市字典随省联动,当前城市不在新省列表时锚定首个。
+  useEffect(() => { void apiFetch<Region[]>('/odn/regions').then((xs) => setRegions(xs ?? [])).catch(() => setRegions([])) }, [])
+  useEffect(() => {
+    if (!prv) return
+    void apiFetch<City[]>('/odn/cities', { query: { prvCode: prv } }).then((xs) => {
+      const list = xs ?? []
+      setCities(list)
+      setCity((cur) => (list.some((ct) => ct.cityPrefix === cur) ? cur : (list[0]?.cityPrefix ?? '')))
+    }).catch(() => setCities([]))
+  }, [prv])
 
   const load = useCallback(async () => {
     if (!prv || !city) return
@@ -71,7 +87,7 @@ export default function ODNPage() {
   return <div>
     <div className="mb-4 flex items-center justify-between"><div><h2 className="m-0 text-xl font-bold text-[var(--shell-heading)]">{g.title}</h2><p className="mt-1 text-xs text-[var(--shell-crumb-text)]">{g.subtitle}</p></div><div className="flex items-center gap-2">{TAB_KIND[tab] && <BatchImportEntry kind={TAB_KIND[tab]} onImported={load} />}{tab !== 'coverage' && tab !== 'constructions' && <ToolbarButton primary onClick={() => setShowForm(!showForm)}>{showForm ? g.cancel : g.add}</ToolbarButton>}</div></div>
     <div className="mb-4 flex gap-6 border-b border-[var(--shell-side-border)]">{(['grids', 'facilities', 'sites', 'devices', 'coverage', 'constructions'] as Tab[]).map((key) => <button key={key} className={`cursor-pointer border-b-2 px-1 py-3 text-sm ${tab === key ? 'border-[var(--color-brand-gold-500)] font-semibold text-[var(--shell-heading)]' : 'border-transparent text-[var(--shell-content-text)]'}`} onClick={() => { setTab(key); setShowForm(false) }}>{key === 'constructions' ? '施工项目' : g.tabs[key]}</button>)}</div>
-    <CityFilter prv={prv} city={city} setPrv={setPrv} setCity={setCity} g={g} />
+    <CityFilter prv={prv} city={city} setPrv={setPrv} setCity={setCity} regions={regions} cities={cities} g={g} />
     {error && <ErrorBanner message={error} className="mt-3" />}
     {showForm && tab !== 'coverage' && tab !== 'constructions' && <ODNForm tab={tab} busy={busy} submit={submit} g={g} grids={grids} devices={devices} />}
     <section className={`${CARD} mt-4 overflow-hidden`}>
