@@ -26,11 +26,11 @@ export default function WorkerOpsPage() {
     if (key === 'maint') {
       apiFetch<{ items: MaintenanceRow[] }>('/device/maintenances')
         .then((d) => setMaints(d?.items ?? []))
-        .catch(() => setError(w.loadFail))
+        .catch((e) => setError(e instanceof Error ? e.message : w.loadFail))
     } else if (key === 'hall') {
       apiFetch<{ items: DispatchTicketRow[] }>('/dispatch/pool')
         .then((d) => setPool(d?.items ?? []))
-        .catch(() => setError(w.loadFail))
+        .catch((e) => setError(e instanceof Error ? e.message : w.loadFail))
     }
   }
   useEffect(() => { loadTab(tab) }, [tab]) // eslint-disable-line react-hooks/exhaustive-deps
