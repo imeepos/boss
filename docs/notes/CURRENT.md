@@ -14,6 +14,7 @@
 - ODN 物理层升级业务基础:地址覆盖关联→端口占用态→逻辑物理绑定三阶段推进;编码命名空间仍独立,桥接走关系表(2026-09-06, odn-business-linkage)
 - 存量开户数据:线路 VLAN 四元组挂 ports(不挂账号);非 ODN 规范编码的光缆层级以 ports.legacy_path 单列承接;存量月数挂 lo_accounts.contract_months;不伪造历史订单(2026-09-07, legacy-vlan-on-ports)
 - ODN 设备字典十类(SNW/OLT/ODF/OCC/ODB/OBD/SDB/SBD/PRT/TBP):OBD 归 ODB、SBD 归 SDB 为箱内部件扩展;导入域箱体设备可无城市分域唯一;资源链导入留空不猜填、规划态一律 PLANNED(2026-09-07, odn-box-types-import-chain)
+- 投资口径维度归属:容量(分光户数)按设备维度只进城市/全网视图不摊网格;项目级总额(预算/材料成本)按明细金额占比分摊,零归属显式未登记;分光容量经 backfill-split 幂等回写 odn_device_split_capacity(000221,W5,split-capacity-investment-depth)
 
 ## 订单与状态机
 
