@@ -10,12 +10,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 import { EmptyState, ErrorBanner, ToolbarButton } from '../../../components/business/page-head'
 import { useConfirm } from '../../../components/ConfirmDialog'
 import { fmtMoney, type Project } from './constructions'
+import { PERMIT_KIND_TEXT, PERMIT_STATUS_TEXT, PERMIT_STATUS_VARIANT } from './permits'
 
 const CARD = 'rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]'
 const FIELD = 'flex flex-col gap-1'
 const LABEL = 'text-xs text-[var(--shell-content-text)]'
 
 interface Item { id: number; projectId: number; facilityCode: string; quantity: number; unitPrice: number; amount: number }
+interface PermitLite { id: number; permitNo: string; kind: string; status: string; validUntil?: string }
 interface Settlement {
   id: number; settlementNo: string; projectId: number; projectNo: string
   contractorId: number; contractorName: string; totalAmount: number; itemCount: number
@@ -31,6 +33,9 @@ export function ConstructionDetail({ projectId, onChanged }: { projectId: number
   const [project, setProject] = useState<Project | null>(null)
   const [items, setItems] = useState<Item[]>([])
   const [settlements, setSettlements] = useState<Settlement[]>([])
+  const [permits, setPermits] = useState<PermitLite[]>([])
+  const [unlinked, setUnlinked] = useState<PermitLite[]>([])
+  const [linkId, setLinkId] = useState('')
   const [suppliers, setSuppliers] = useState<Supplier[]>([])
   const [contractorId, setContractorId] = useState('')
   const [fac, setFac] = useState(''); const [qty, setQty] = useState(''); const [price, setPrice] = useState('')
@@ -45,6 +50,8 @@ export function ConstructionDetail({ projectId, onChanged }: { projectId: number
       const d = await apiFetch<{ project: Project; items: Item[] }>('/odn/constructions/' + projectId)
       setProject(d?.project ?? null); setItems(d?.items ?? [])
       setSettlements((await apiFetch<Settlement[]>('/odn/constructions/' + projectId + '/settlements')) ?? [])
+      setPermits((await apiFetch<PermitLite[]>('/odn/constructions/' + projectId + '/permits')) ?? [])
+      setUnlinked((await apiFetch<PermitLite[]>('/odn/permits', { query: { unlinked: 1, limit: 200 } })) ?? [])
     } catch (e) { setError(e instanceof Error ? e.message : '加载失败') }
   }, [projectId])
 
@@ -78,6 +85,12 @@ export function ConstructionDetail({ projectId, onChanged }: { projectId: number
       quantity: Number(e.quantity) || 0, unitPrice: Number(e.unitPrice) || 0 } }), '定额已保存')
   }
   const start = () => act(() => apiFetch('/odn/constructions/' + projectId + '/start', { method: 'POST' }), '已开工')
+  const linkPermit = () => {
+    if (!linkId) { setError('选择要关联的许可单'); return }
+    void act(() => apiFetch('/odn/permits/' + linkId + '/link', { method: 'POST', body: { projectId } }), '许可已关联')
+      .then(() => setLinkId(''))
+  }
+  const unlinkPermit = (id: number) => void act(() => apiFetch('/odn/permits/' + id + '/unlink', { method: 'POST' }), '许可已解除关联')
   const accept = async () => {
     if (!(await confirmDialog('确认竣工验收?竣工后明细与清单锁定,单内设施回填在服。', { danger: true }))) return
     void act(() => apiFetch('/odn/constructions/' + projectId + '/accept', { method: 'POST', body: { note: '' } }), '已竣工')
@@ -149,6 +162,28 @@ export function ConstructionDetail({ projectId, onChanged }: { projectId: number
               </>}
             </TableRow>
           })}
+        </TableBody>
+      </Table></div>}
+    </div>
+
+    <div className={CARD + ' p-4'}>
+      <div className='mb-2 text-sm font-semibold'>开工许可<span className='ml-2 text-xs font-normal opacity-60'>许可前置门控开启时,未获批/未盖章的许可将拒绝开工(P-INFRA-1 W4)</span></div>
+      <div className='mb-3 flex flex-wrap items-end gap-2'>
+        <Dropdown value={linkId} ariaLabel='选择待关联许可' placeholder='选择未关联许可单' searchable searchPlaceholder='搜索单号'
+          options={unlinked.map((p) => ({ value: String(p.id), label: p.permitNo + ' (' + (PERMIT_KIND_TEXT[p.kind] ?? p.kind) + ')' }))}
+          onChange={(v) => setLinkId(v)} />
+        <ToolbarButton primary disabled={busy || !linkId} onClick={linkPermit}>关联许可</ToolbarButton>
+      </div>
+      {permits.length === 0 ? <EmptyState text='暂无关联许可(覆盖门控开启时开工将被拒绝)' /> : <div className='overflow-x-auto'><Table>
+        <TableHeader><TableRow><TableHead>许可单号</TableHead><TableHead>类型</TableHead><TableHead>状态</TableHead><TableHead>有效期止</TableHead><TableHead>操作</TableHead></TableRow></TableHeader>
+        <TableBody>
+          {permits.map((p) => <TableRow key={p.id}>
+            <TableCell className='font-mono'>{p.permitNo}</TableCell>
+            <TableCell>{PERMIT_KIND_TEXT[p.kind] ?? p.kind}</TableCell>
+            <TableCell><Badge variant={PERMIT_STATUS_VARIANT[p.status] ?? 'default'}>{PERMIT_STATUS_TEXT[p.status] ?? p.status}</Badge></TableCell>
+            <TableCell>{p.validUntil || '-'}</TableCell>
+            <TableCell><ToolbarButton disabled={busy} onClick={() => unlinkPermit(p.id)}>解除关联</ToolbarButton></TableCell>
+          </TableRow>)}
         </TableBody>
       </Table></div>}
     </div>
