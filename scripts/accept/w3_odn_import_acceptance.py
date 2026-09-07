@@ -57,7 +57,8 @@ def psql(sql):
 
 def cleanup(token, pre_chains):
     try:
-        psql("DELETE FROM odn_resource_chain WHERE batch_no LIKE '" + BATCH_PREFIX + "%'")
+        psql("DELETE FROM odn_resource_chain WHERE occ_code='OCC901'"
+             " OR odb_code IN ('ODB902','ODB903')")
         psql("DELETE FROM odn_device WHERE prv_code IS NULL AND code IN (" +
              ",".join("'" + c + "'" for c in CODES) + ")")
         p = http("GET", "/odn/resource-chains/patrol", token)

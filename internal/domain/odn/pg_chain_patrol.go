@@ -30,7 +30,7 @@ func (s *PGStore) PatrolResourceChains(ctx context.Context) (*ChainPatrol, error
 	p := &ChainPatrol{Samples: map[string][]int64{}}
 	orphan := chainOrphanWhere()
 	sql := "SELECT (SELECT count(*) FROM odn_resource_chain),"
-	sql += " (SELECT count(*) FROM odn_resource_chain c WHERE" + orphan + "),"
+	sql += " (SELECT count(*) FROM odn_resource_chain c WHERE 1=1" + orphan + "),"
 	sql += " (SELECT count(*) FROM odn_device d WHERE d.prv_code IS NULL AND d.status <>" + q("RETIRED")
 	sql += " AND d.kind IN (" + q("ODB") + "," + q("OBD") + "," + q("SDB") + "," + q("SBD") + ")"
 	sql += " AND (d.parent_id IS NULL OR NOT EXISTS (SELECT 1 FROM odn_device p WHERE p.id=d.parent_id AND p.status <>" + q("RETIRED") + "))),"
@@ -119,9 +119,10 @@ func (s *PGStore) ListResourceChains(ctx context.Context, batch string, limit in
 	if limit <= 0 || limit > 1000 {
 		limit = 200
 	}
-	sql := "SELECT id, batch_no, line_no, lifecycle_status, site_code, site_name, olt_code, odf_code, odf_port"
-	sql += ", occ_code, odb_code, obd_code, split1_ratio, split1_port, sdb_code, sbd_code, split2_ratio, split2_port"
-	sql += ", total_split, fiber_code, fr_to, port_status, laying_method, row_status, pece_status, remark, created_at"
+	sql := "SELECT id, batch_no, line_no, lifecycle_status, site_code, site_name, olt_code, COALESCE(odf_code,''), COALESCE(odf_port,'')"
+	sql += ", COALESCE(occ_code,''), COALESCE(odb_code,''), COALESCE(obd_code,''), COALESCE(split1_ratio,0), COALESCE(split1_port,''), COALESCE(sdb_code,''), COALESCE(sbd_code,'')"
+	sql += ", COALESCE(split2_ratio,0), COALESCE(split2_port,''), COALESCE(total_split,0), COALESCE(fiber_code,''), COALESCE(fr_to,''), COALESCE(port_status,''), COALESCE(laying_method,'')"
+	sql += ", COALESCE(row_status,''), COALESCE(pece_status,''), COALESCE(remark,''), created_at"
 	sql += " FROM odn_resource_chain WHERE ($1=" + q("") + " OR batch_no=$1) ORDER BY id DESC"
 	rows, err := s.db.Query(ctx, sql+" LIMIT "+fmt.Sprint(limit), batch)
 	if err != nil {

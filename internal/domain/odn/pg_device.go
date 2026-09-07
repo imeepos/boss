@@ -118,7 +118,7 @@ func (s *PGStore) insertChildDevice(ctx context.Context, d Device, wantKind stri
 
 // ListDevices 设备列表(kind 可空;城市可空=全网)。
 func (s *PGStore) ListDevices(ctx context.Context, kind, prvCode, cityPrefix string) ([]Device, error) {
-	rows, err := s.db.Query(ctx, `SELECT id, code, kind, prv_code, city_prefix,
+	rows, err := s.db.Query(ctx, `SELECT id, code, kind, COALESCE(prv_code,''), COALESCE(city_prefix,''),
 			COALESCE(site_no,0), COALESCE(parent_id,0), COALESCE(name,''), lat, lng, status, lifecycle_status
 		FROM odn_device WHERE ($1='' OR kind=$1) AND ($2='' OR (prv_code=$2 AND city_prefix=$3))
 		ORDER BY code LIMIT 500`, kind, prvCode, cityPrefix)
