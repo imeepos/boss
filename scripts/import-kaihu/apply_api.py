@@ -36,12 +36,22 @@ def ensure_asset_models(client, records):
 
 def ensure_batch(client):
     # 建一个导入专用入库批次(资产建档 batchId 必填);按名称幂等。
+    # POST 撞重名 409(并行/残留)时重新按名 list 取 id,幂等语义以服务端唯一约束为权威。
     items = items_of(client.request('GET', '/assets/batches'))
     for it in items:
         if _norm(it.get('name')) == BATCH_NAME:
             return it.get('id')
-    data = client.request('POST', '/asset-batches', {'name': BATCH_NAME, 'legalEntityId': DEFAULTS['legal_entity_id']})
-    return data.get('id')
+    try:
+        data = client.request('POST', '/asset-batches', {'name': BATCH_NAME, 'legalEntityId': DEFAULTS['legal_entity_id']})
+        return data.get('id')
+    except ApiError as exc:
+        if exc.code != CODE_CONFLICT:
+            raise
+        items = items_of(client.request('GET', '/assets/batches'))
+        for it in items:
+            if _norm(it.get('name')) == BATCH_NAME:
+                return it.get('id')
+        raise ApiError('GET', '/assets/batches', 'missing', 'batch conflict but name not found after re-list')
 
 
 def ensure_products(client, records, fee_20m, fee_50m):
@@ -102,8 +112,12 @@ def ensure_customers(client, records):
         try:
             client.request('POST', '/customers', payload)
         except ApiError as exc:
-            print('[import-kaihu] API FAILED customer row=%d account=%s %s' % (rec['row'], account, exc))
-            raise
+            if exc.code != CODE_CONFLICT:
+                print('[import-kaihu] API FAILED customer row=%d account=%s %s' % (rec['row'], account, exc))
+                raise
+            # 40900=唯一约束(phone/name 残留)已存在,幂等权威在服务端,计 skipped 不中断。
+            skipped += 1
+            continue
         created += 1
     return created, skipped
 

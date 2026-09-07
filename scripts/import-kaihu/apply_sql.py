@@ -132,7 +132,7 @@ def _sql_verify(records):
     out.append("SELECT 'quad_links' AS item, count(*) AS n FROM quad_links WHERE status = 'LINKED' AND port_id IN (SELECT id FROM ports WHERE port_code IN (%s));" % _in_list(pcs))
     out.append("SELECT 'customers' AS item, count(*) AS n FROM customers WHERE name IN (%s);" % _in_list(loids))
     out.append("SELECT 'customers_phone' AS item, count(*) AS n FROM customers WHERE phone LIKE '0999000%%' AND name IN (%s);" % _in_list(loids))
-    out.append("SELECT 'row_addresses' AS item, count(*) AS n FROM addresses WHERE path LIKE 'legacy_import.%%';")
+    out.append("SELECT 'row_addresses' AS item, count(*) AS n FROM addresses WHERE path::text LIKE 'legacy_import.%%';")
     return out
 
 
