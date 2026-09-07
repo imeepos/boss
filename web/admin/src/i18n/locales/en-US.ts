@@ -560,6 +560,7 @@ const enUS: Translations = {
       addressId: 'Address ID', addressName: 'Address', covFacility: 'Serving Facility', covDevice: 'Serving Device ID', covStatus: 'Installability', covNote: 'Note', updatedAt: 'Updated', resolveBtn: 'Check Installability', distance: 'Distance', covServed: 'Servable', covPending: 'In Build', covUnserved: 'Unserved',
       add: 'Add', cancel: 'Cancel', save: 'Save', saving: 'Saving…', loadFail: 'Load failed', saveFail: 'Save failed', empty: 'No data', retire: 'Retire', retireConfirm: 'Retire this ODN resource? This cannot be undone.', warn: 'Capacity warning',
       gridCode: 'Grid code', name: 'Name', coverage: 'Coverage', usage: 'Usage', status: 'Status', actions: 'Actions', code: 'Code', kind: 'Type', nodeCode: 'NodeCode', siteNo: 'Site number', parentId: 'Parent ID', deviceCode: 'Device code', deviceKind: 'Device type', lat: 'Latitude', lng: 'Longitude',
+      autoCode: 'Code (auto-generated)', autoSiteNo: 'Site number (auto-generated)', parentSite: 'Home site', noSite: 'City-level device (no site)', parentDevice: 'Parent device', noParent: 'Top-level device (no parent)', hintNeedGrid: 'No grids registered for this city yet: pole/manhole codes embed a grid segment — register grids first', hintGotoGrids: 'Go to Grids', hintNeedSite: 'No sites yet: register one first, or pick a city-level device (no site)', nextNoFail: 'Failed to fetch next number',
     },
     importer: {
       title: 'Data Import Center',

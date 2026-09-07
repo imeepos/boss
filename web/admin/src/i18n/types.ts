@@ -328,6 +328,16 @@ export interface Translations {
       code: string
       kind: string
       nodeCode: string
+      autoCode: string
+      autoSiteNo: string
+      parentSite: string
+      noSite: string
+      parentDevice: string
+      noParent: string
+      hintNeedGrid: string
+      hintGotoGrids: string
+      hintNeedSite: string
+      nextNoFail: string
       siteNo: string
       parentId: string
       deviceCode: string
