@@ -554,7 +554,7 @@ const msMY: Translations = {
     },
     odn: {
       title: 'Rangkaian Pasif ODN', subtitle: 'Grid · Infrastruktur · Tapak & Peranti Teras',
-      tabs: { grids: 'Grid', facilities: 'Infrastruktur', sites: 'Tapak', devices: 'Peranti Teras', coverage: 'Liputan', constructions: 'Pembinaan', assets: 'Aset' },
+      tabs: { grids: 'Grid', facilities: 'Infrastruktur', sites: 'Tapak', devices: 'Peranti Teras', coverage: 'Liputan', constructions: 'Pembinaan', surveys: 'Kaji Selidik', assets: 'Aset' },
       tree: { title: 'Katalog Sumber', search: 'Cari katalog', groupOlts: 'Peranti OLT', groupGrids: 'Grid ODN', groupSites: 'Tapak', groupConstructions: 'Pembinaan', clearFilter: 'Kosongkan tapisan pokok' },
       kpi: { grids: 'Jumlah Grid', facilities: 'Jumlah Kemudahan', sites: 'Jumlah Tapak', linkedOlt: 'OLT Berkaitan', capacity: 'Penggunaan grid puncak' },
       chain: { title: 'Rantai Relasi', olt: 'Peranti OLT', site: 'Tapak', splitter: 'Pembahagi', closure: 'Kotak Sambung', terminal: 'Kotak Terminal', coverage: 'Liputan', servedCount: 'Diliputi {served}/{total}', empty: 'Tiada data rantai untuk bandar ini — daftar tapak/kemudahan dahulu' },
@@ -2600,6 +2600,8 @@ columns: ['Kod', 'Nama', 'Susunan', 'Aktif'],
       odnLayerFacility: 'Kemudahan',
       odnLayerSite: 'Tapak',
       odnLayerDevice: 'Peranti',
+      odnLayerSurvey: 'Titik Kaji Selidik (W7)',
+      odnLayerProgress: 'Kemajuan Pembinaan (W7)',
       parentNode: 'Nod induk',
       // Laci semakan titik ODN (T14-1)
       revTitle: 'Semakan Titik ODN',

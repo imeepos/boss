@@ -554,7 +554,7 @@ const zhCN: Translations = {
     },
     odn: {
       title: 'ODN 无源网络', subtitle: '网格分区 · 基础设施 · 局点与核心链路设备',
-      tabs: { grids: '网格分区', facilities: '基础设施', sites: '局点', devices: '核心设备', coverage: '覆盖关联', constructions: '施工项目', assets: '资产化' },
+      tabs: { grids: '网格分区', facilities: '基础设施', sites: '局点', devices: '核心设备', coverage: '覆盖关联', constructions: '施工项目', surveys: '勘测任务', assets: '资产化' },
       tree: { title: '资源目录', search: '搜索目录', groupOlts: 'OLT 设备', groupGrids: 'ODN 网格', groupSites: '局点', groupConstructions: '施工项目', clearFilter: '清除树过滤' },
       kpi: { grids: '网格总数', facilities: '设施总数', sites: '局点总数', linkedOlt: '关联 OLT', capacity: '最高网格占用' },
       chain: { title: '关联链', olt: 'OLT 设备', site: '局点', splitter: '分光器', closure: '接头盒', terminal: '终端盒', coverage: '覆盖', servedCount: '已覆盖 {served}/{total}', empty: '当前市暂无链路数据,备案局点/设施后自动成链' },
@@ -2601,6 +2601,8 @@ columns: ['标识码', '名称', '排序', '启用'],
       odnLayerFacility: '设施',
       odnLayerSite: '局点',
       odnLayerDevice: '设备',
+      odnLayerSurvey: '勘测打点(W7)',
+      odnLayerProgress: '施工进度(W7)',
       parentNode: '上级节点',
       // ODN 点位反查抽屉(T14-1)
       revTitle: 'ODN 点位反查',

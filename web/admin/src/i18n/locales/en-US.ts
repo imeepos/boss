@@ -554,7 +554,7 @@ const enUS: Translations = {
     },
     odn: {
       title: 'ODN Passive Network', subtitle: 'Grids · Infrastructure · Sites & Core Devices',
-      tabs: { grids: 'Grids', facilities: 'Infrastructure', sites: 'Sites', devices: 'Core Devices', coverage: 'Coverage', constructions: 'Constructions', assets: 'Assets' },
+      tabs: { grids: 'Grids', facilities: 'Infrastructure', sites: 'Sites', devices: 'Core Devices', coverage: 'Coverage', constructions: 'Constructions', surveys: 'Surveys', assets: 'Assets' },
       tree: { title: 'Resource Catalog', search: 'Search catalog', groupOlts: 'OLT Devices', groupGrids: 'ODN Grids', groupSites: 'Sites', groupConstructions: 'Constructions', clearFilter: 'Clear tree filter' },
       kpi: { grids: 'Total Grids', facilities: 'Total Facilities', sites: 'Total Sites', linkedOlt: 'Linked OLT', capacity: 'Peak grid usage' },
       chain: { title: 'Relation Chain', olt: 'OLT Device', site: 'Site', splitter: 'Splitter', closure: 'Closure', terminal: 'Terminal Box', coverage: 'Coverage', servedCount: 'Served {served}/{total}', empty: 'No chain data for this city yet — register sites/facilities to build one' },
@@ -2601,6 +2601,8 @@ columns: ['Code', 'Name', 'Sort', 'Enabled'],
       odnLayerFacility: 'Facilities',
       odnLayerSite: 'Sites',
       odnLayerDevice: 'Devices',
+      odnLayerSurvey: 'Survey Points (W7)',
+      odnLayerProgress: 'Build Progress (W7)',
       parentNode: 'Parent node',
       // ODN point reverse lookup drawer (T14-1)
       revTitle: 'ODN Point Lookup',

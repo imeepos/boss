@@ -5,7 +5,7 @@ export const CARD = 'rounded-md border border-[var(--shell-card-border)] bg-[var
 export const FIELD = 'flex flex-col gap-1'
 export const LABEL = 'text-xs text-[var(--shell-content-text)]'
 
-export type Tab = 'grids' | 'facilities' | 'sites' | 'devices' | 'coverage' | 'constructions' | 'assets'
+export type Tab = 'grids' | 'facilities' | 'sites' | 'devices' | 'coverage' | 'constructions' | 'surveys' | 'assets'
 export type Region = { prvCode: string; name: string }
 export type City = { cityPrefix: string; name: string }
 export type Grid = { prvCode: string; cityPrefix: string; gridCode: number; name: string; coverage: string; status: string; facilities: number; warn: boolean }

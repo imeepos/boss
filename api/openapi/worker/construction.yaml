@@ -1,0 +1,47 @@
+# 施工进度上报(师傅端,P-INFRA-1 W7,F5a):BUILDING 项目列表/上下文/进度上报。
+paths:
+  /constructions:
+    get:
+      tags: [Construction]
+      summary: 施工中项目列表(仅 BUILDING,师傅上报对象)
+      operationId: listWorkerConstructions
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: limit, in: query, schema: { type: integer } }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /constructions/{id}:
+    get:
+      tags: [Construction]
+      summary: 上报上下文(清单级计划量/累计完成量;非 BUILDING 拒)
+      operationId: getWorkerConstruction
+      security: [{ bearerAuth: [] }]
+      parameters: [ { name: id, in: path, required: true, schema: { type: integer } } ]
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
+
+  /constructions/{id}/progress:
+    post:
+      tags: [Construction]
+      summary: 进度上报(上报人代次 WORKER;只增不改;clientMsgId 幂等不重复计量)
+      operationId: reportWorkerConstructionProgress
+      security: [{ bearerAuth: [] }]
+      parameters: [ { name: id, in: path, required: true, schema: { type: integer } } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [facilityCode, clientMsgId]
+              properties:
+                facilityCode: { type: string, description: 设施编码(须在项目明细范围内) }
+                doneQty: { type: number, description: 累计完成量(>=0) }
+                lat: { type: number, description: 纬度可带 }
+                lng: { type: number, description: 经度可带 }
+                note: { type: string, description: 备注 <=500 字 }
+                photoIds: { type: array, items: { type: integer } }
+                clientMsgId: { type: string, description: 幂等键 8-64 字符 }
+      responses:
+        '200': { $ref: './schemas.yaml#/components/responses/Ok' }

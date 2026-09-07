@@ -30,6 +30,10 @@ tags:
     description: 我的 / 绩效 / 排期日历 / 接单设置 / 满意度反馈
   - name: Misc
     description: 消息 / 公告 / 排障手册 / 联系调度 / 安全上报
+  - name: Survey
+    description: 勘测任务(P-INFRA-1 W7):可见集 / 接单 / 现场回填
+  - name: Construction
+    description: 施工进度上报(P-INFRA-1 W7,F5a):BUILDING 项目 / 进度留痕
 
 paths:
   # ---------- Auth ----------
@@ -112,6 +116,17 @@ paths:
   /attachments/upload: { $ref: './worker/misc.yaml#/paths/~1attachments~1upload' }
   /client/latest: { $ref: './worker/client.yaml#/paths/~1client~1latest' }
   /client/apk/{id}: { $ref: './worker/client.yaml#/paths/~1client~1apk~1{id}' }
+
+  # ---------- Survey(勘测任务 W7) ----------
+  /surveys: { $ref: './worker/survey.yaml#/paths/~1surveys' }
+  /surveys/{id}: { $ref: './worker/survey.yaml#/paths/~1surveys~1{id}' }
+  /surveys/{id}/accept: { $ref: './worker/survey.yaml#/paths/~1surveys~1{id}~1accept' }
+  /surveys/{id}/reports: { $ref: './worker/survey.yaml#/paths/~1surveys~1{id}~1reports' }
+
+  # ---------- Construction(施工进度上报 W7) ----------
+  /constructions: { $ref: './worker/construction.yaml#/paths/~1constructions' }
+  /constructions/{id}: { $ref: './worker/construction.yaml#/paths/~1constructions~1{id}' }
+  /constructions/{id}/progress: { $ref: './worker/construction.yaml#/paths/~1constructions~1{id}~1progress' }
 
 components:
   securitySchemes:

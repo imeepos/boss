@@ -34,8 +34,8 @@ export default function GisPage() {
   const [detail, setDetail] = useState<GisResourceDetail | null>(null)
   const [detailError, setDetailError] = useState('')
   const [theme, setTheme] = useLocalStorage<Theme>('intel.gis.theme', 'light')
-  // ODN 图层(odn-points):'off'|'facility'|'site'|'device'。
-  const [odnLayer, setOdnLayer] = useState<'off' | 'facility' | 'site' | 'device'>('off')
+  // ODN 图层(odn-points):'off'|'facility'|'site'|'device'|'survey'|'progress'(W7 勘测/进度)。
+  const [odnLayer, setOdnLayer] = useState<'off' | 'facility' | 'site' | 'device' | 'survey' | 'progress'>('off')
   const [odnPoints, setOdnPoints] = useState<GisPoint[]>([])
   // ODN 点位反查抽屉(T14-1):与 drill 点位详情抽屉互不干扰。
   const [odnTarget, setOdnTarget] = useState<GisPoint | null>(null)
@@ -84,7 +84,7 @@ export default function GisPage() {
 
   // ODN 图层点位:entity 显式传入(不用闭包 odnLayer,避免 state 未刷新误判 off);
   // bbox 空=全量(图层为概览层,不随视域收缩)。
-  const loadOdnPoints = (entity: 'facility' | 'site' | 'device') => {
+  const loadOdnPoints = (entity: 'facility' | 'site' | 'device' | 'survey' | 'progress') => {
     setPointsError('')
     apiFetch<{ items: GisPointRow[] }>('/gis/odn-points', { query: { entity } })
       .then((d) => setOdnPoints((d?.items ?? []).map((r) => ({
@@ -94,7 +94,7 @@ export default function GisPage() {
       }))))
       .catch((e) => setPointsError(e instanceof Error ? e.message : g.mapLoadFail))
   }
-  const switchOdnLayer = (v: 'off' | 'facility' | 'site' | 'device') => {
+  const switchOdnLayer = (v: 'off' | 'facility' | 'site' | 'device' | 'survey' | 'progress') => {
     setOdnLayer(v)
     if (v === 'off') setOdnPoints([])
     else loadOdnPoints(v)
@@ -167,8 +167,10 @@ export default function GisPage() {
             { value: 'facility', label: g.odnLayerFacility },
             { value: 'site', label: g.odnLayerSite },
             { value: 'device', label: g.odnLayerDevice },
+            { value: 'survey', label: g.odnLayerSurvey },
+            { value: 'progress', label: g.odnLayerProgress },
           ]}
-          onChange={(v) => switchOdnLayer(v as 'off' | 'facility' | 'site' | 'device')}
+          onChange={(v) => switchOdnLayer(v as 'off' | 'facility' | 'site' | 'device' | 'survey' | 'progress')}
           ariaLabel={g.odnLayerTitle}
         />
         <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" title={g.themeSwitchHint} onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}>

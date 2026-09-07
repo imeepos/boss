@@ -124,6 +124,9 @@
 | 工程应付 construction_payables.status | OPEN / PARTIAL / PAID / VOIDED | 未付 / 部分付款 / 已付清 / 已冲销(000219,W6,审查 F8)。应付由 SETTLED 结算单**同事务自动生成**(金额=结算应付快照,settlement_id 唯一来源引用,一结算单一应付);状态按付款与核减流水派生维护:OPEN(未付)→PARTIAL(0<已付<净应付)→PAID(已付≥净应付)。净应付=应付金额-核减合计,未付余额=净应付-已付,均只读派生不落列。**结算单 VOIDED 同事务冲销应付**(status=VOIDED,原因与结算单作废原因同源);冲销后付款流水保留为历史,余额按净应付-已付可为负(超付如实展示),不做退款单复杂化;作废后重开结算单以新单表达,对应生成新应付。fields.md 1.5.8e |
 | 应付付款方式 construction_payable_payments.method | TRANSFER / CASH / CHEQUE / OTHER | 银行转账 / 现金 / 支票 / 其他(000219,W6;应付域自有登记枚举,与 billing 缴费 method 枚举互不混用)。部分付款与分期=多次登记付款流水至未付余额耗尽;单笔不超余额(40900),超登记拒绝 |
 | 分光容量 odn_device_split_capacity | split_level 1=一级分光器(OBD) / 2=二级分光器(SBD);ratio 2~128=分光比分母(端口容量);used_ports=链行端口标签去重占用;has_secondary=一级器下挂二级链 | 设备分光容量模型(000221,W5):odn_resource_chain 暂存分光比经 POST /odn/resource-chains/backfill-split 幂等回写(唯一写路径,导入不自动回写);户级口径:一条二级分光端口=一户,潜在户数=Σ二级容量+Σ无二级链的一级容量,已接=Σ占用,可扩=潜在−已接;total_split 暂存不参与汇总(两级相加重复计数);容量住设备维度只进城市/全网视图,不按比例分摊到网格;裁定 adopted 2026-09-07-split-capacity-investment-depth;fields.md 1.5.15 |
+| 勘测任务 survey_tasks.status | PENDING / ACCEPTED / BACKFILLED / CANCELLED | 待执行 / 已接单 / 已回填 / 已取消(000223,W7,审查 F5b)。PENDING→ACCEPTED(师傅接单:未指派单任意在职师傅可抢单占位,已指派单仅指派师傅);ACCEPTED→BACKFILLED(首次回填自动置,其后追加不再改状态);PENDING/ACCEPTED→CANCELLED(admin 取消);指派/改派仅 PENDING/ACCEPTED,回填后锁定。回填 append-only 只增不改不删,(task_id, client_msg_id) 幂等弱网重传不重复落行。fields.md 1.5.16 |
+| 勘测建议 survey_task_reports.suggestion | CAN_INSTALL / NEED_NEW_FACILITY | 可装 / 需新建设施(000223,W7);现场打点坐标+设施状态备注+照片随回填落库,作规划/备案输入,GIS entity=survey 点位读取 |
+| 进度上报人代次 construction_progress.reporter_type | ACCOUNT / WORKER | 管理账号 / 师傅(000224,W7,审查 F5a);reported_by 语义=reporter_type 域内 id(ACCOUNT→accounts.id / WORKER→workers.id),存量行 ACCOUNT;WORKER 上报仅限 BUILDING 项目;进度记录只增不改(留痕),幂等键不变 |
 
 ## 5. 关键术语
 

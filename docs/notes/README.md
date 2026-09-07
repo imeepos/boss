@@ -113,4 +113,5 @@
 | 2026-09-07 | 竣工验收联动覆盖新裁定(F6):ACCEPTED 与 address_coverage PENDING→SERVED 同事务翻转,联动数随竣工审计透出;BOSS_ODN_ACCEPT_COVERAGE_LINK 默认开 off 可关;事后异步任务/翻 UNSERVED/自动建覆盖行被否决 | adopted/2026-09-07-accept-coverage-linkage.md |
 | 2026-09-07 | 工程应付台账与预算里程碑(W6/F8/G2,000218-000220):应付域 AP 归 odn 结算域延伸与 billing 零衔接(billing 分组仅呈现);SETTLED 同事务生成应付 1:1 唯一来源引用,VOIDED 同事务冲销;净应付/余额只读派生,付款/核减 append-only,部分付款=多次流水至余额耗尽,核减防超付;预算执行进度只读派生;应付落 billing 包事件联动/退款单/核减审批流/付款计划表被否决 | adopted/2026-09-07-engineering-payable-ledger.md |
 | 2026-09-07 | 分光容量建模与投资口径维度归属(W5/F1,000221):容量按设备维度归属只进城市/全网视图不摊网格,项目级总额(预算/材料)按明细金额占比分摊零归属不硬摊;链行分光比经 backfill-split 幂等回写 odn_device_split_capacity;户级口径=二级端口,total_split 不参与汇总;容量物化进 odn_port/导入自动回写被否决 | adopted/2026-09-07-split-capacity-investment-depth.md |
+| 2026-09-07 | 勘测采集与施工进度上报模型(W7/F5a+F5b,000223-000224):勘测任务域落 odn 包,抢单池接单占位+回填 append-only 幂等;进度上报人代次 reporter_type(ACCOUNT/WORKER,reported_by=域内 id,存量 ACCOUNT 零迁移),WORKER 仅限 BUILDING;GIS 复用 odn-points entity 扩展 level 12/13 不物化;独立域包/双列上报人/单记录回填/点位物化表被否决 | adopted/2026-09-07-infra-w7-survey-progress-model.md |
 > 维护规则：新增 note 当天同步本表；同一日多条按文件名升序；Amended 项不移动原位（决策代谢可追溯）。

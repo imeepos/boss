@@ -15,6 +15,7 @@ import { useConfirm } from '../../../components/ConfirmDialog'
 import { AssetsPanel } from './AssetsPanel'
 import { CoveragePanel } from './coverage'
 import ConstructionsPanel from './constructions'
+import SurveysPanel from './SurveysPanel'
 import { ResourceTree, type GroupKey, type LeafFocus, type ConstructionLite } from './ResourceTree'
 import { KpiCards } from './KpiCards'
 import { RelationChain, type ChainCoverage } from './RelationChain'
@@ -26,7 +27,7 @@ import type { ResourceRow } from '../types'
 // constructions tab (P-INFRA-1 W1): panel has own literals (i18n central files frozen for W1).
 /** tab → 批量导入实体 kind(与 base/importer/entities.ts 对齐;coverage 无批量导入)。 */
 const TAB_KIND: Partial<Record<Tab, string>> = { grids: 'odn_grid', facilities: 'odn_facility', sites: 'odn_site', devices: 'odn_device' }
-const TABS: Tab[] = ['grids', 'facilities', 'sites', 'devices', 'coverage', 'constructions', 'assets']
+const TABS: Tab[] = ['grids', 'facilities', 'sites', 'devices', 'coverage', 'constructions', 'surveys', 'assets']
 
 export default function ODNPage() {
   const t = useT()
@@ -197,9 +198,10 @@ export default function ODNPage() {
         {tab === 'devices' && paged}
         {tab === 'coverage' && <CoveragePanel g={g} prv={prv} city={city} />}
         {tab === 'constructions' && <ConstructionsPanel />}
+        {tab === 'surveys' && <SurveysPanel />}
         {tab === 'assets' && <AssetsPanel />}
       </section>
-      {countOf > 0 && tab !== 'coverage' && tab !== 'constructions' && tab !== 'assets' && (
+      {countOf > 0 && tab !== 'coverage' && tab !== 'constructions' && tab !== 'surveys' && tab !== 'assets' && (
         <Pagination page={page} pageSize={pageSize} total={countOf} onPage={setPage} onSize={(n) => { setPageSize(n); setPage(1) }} {...pagerTexts(g)} />
       )}
       {drawer && <ResourceDrawer target={drawer} prv={prv} city={city} regions={regions} grids={grids} sites={sites} devices={devices} g={g} onClose={() => setDrawer(null)} onSaved={load} />}

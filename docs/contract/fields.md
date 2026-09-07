@@ -344,7 +344,9 @@
 | 备注 | `Note` | note | ≤500 字 |
 | 照片 | `PhotoIDs` | photo_ids | BIGINT[] → attachments |
 | 幂等键 | `ClientMsgID` | client_msg_id | VARCHAR(64)，8-64 字符，弱网重传同键不重复计量 |
-| 上报人/时间 | `ReportedBy`/`ReportedAt` | reported_by/reported_at | → accounts / TIMESTAMPTZ |
+| 上报人/时间 | `ReportedBy`/`ReportedAt` | reported_by/reported_at | TIMESTAMPTZ；reported_by 语义随 reporter_type 代次（000224，W7） |
+| 上报人代次 | `ReporterType` | reporter_type | ACCOUNT / WORKER（000224，W7，F5a）：ACCOUNT→accounts.id / WORKER→workers.id，存量行 ACCOUNT；WORKER 上报仅限 BUILDING 项目；`ReporterName` 为联表展示列不落库 |
+| 坐标 | `Lat`/`Lng` | lat/lng | DOUBLE PRECISION 可空；GIS entity=progress 点位（level 13）读非空行 |
 
 #### 1.5.8c construction_tests / construction_defects（质量测试与整改，迁移 000214，internal/domain/odn）
 
@@ -639,6 +641,41 @@ odn_material_issues / odn_material_issue_items（材料出库，台账连续性�
 > total_split（一级×二级）为链行暂存事实**不参与汇总**（两级相加会重复计数，裁定见 adopted note）。
 > odn_port（1.5.9）仍为订单流物理端口模型（IDLE/RESERVED/IN_SERVICE），与容量模型互补不相混：
 > 链行端口状态（可用/已使用/已预留/已封锁）语义不落 odn_port（枚举不同域，不强行映射）。
+
+### 1.5.16 survey_tasks / survey_task_reports（勘测任务与现场回填，迁移 000223，internal/domain/odn）
+
+> P-INFRA-1 W7（审查 F5b：勘测采集无人做、师傅端零覆盖、坐标靠桌面录入）。admin 创建勘测任务
+> （目标区域/网格+说明，可带指派师傅，0=未指派进抢单池），师傅端可见可接；现场回填（打点坐标/照片/设施状态备注/
+> 建议）append-only 只增不改不删，作规划/备案输入；管理面 `menu:odn` ODN 页勘测页签，
+> REST `/odn/surveys*`（契约 admin/odn.yaml）；师傅端 REST `/surveys*`（契约 worker/survey.yaml）。
+> 状态机与枚举见 terms.md §4；GIS entity=survey 点位（level 12）读回填非空坐标行。
+
+survey_tasks：
+
+| 页面列名 | 字段名 | DB 列 | 枚举/说明 |
+|:---------|:-------|:------|:----------|
+| 任务号 | `TaskNo` | task_no | VARCHAR(32) 唯一（SV-YYYYMMDD-NNNNN，后端生成兜底） |
+| 标题 | `Title` | title | VARCHAR(128) 必填 |
+| 说明 | `Description` | description | VARCHAR(500) 可空 |
+| 目标区域 | `PrvCode`/`CityPrefix` | prv_code/city_prefix | 可空 |
+| 目标网格 | `GridCode` | grid_code | INTEGER 可带，0=不限 |
+| 指派师傅 | `AssignedWorkerID`/`WorkerName` | assigned_worker_id | → workers 可空；NULL=未指派抢单池；`WorkerName` 联表展示列 |
+| 状态 | `Status` | status | PENDING / ACCEPTED / BACKFILLED / CANCELLED（terms.md §4） |
+| 回填数 | `ReportCount` | —（聚合） | survey_task_reports 计数 |
+| 创建人/时间 | `CreatedBy`/`CreatedAt` | created_by/created_at | → accounts / TIMESTAMPTZ |
+
+survey_task_reports（append-only）：
+
+| 页面列名 | 字段名 | DB 列 | 枚举/说明 |
+|:---------|:-------|:------|:----------|
+| 任务 | `TaskID` | task_id | FK → survey_tasks |
+| 回填师傅 | `WorkerID`/`WorkerName` | worker_id | FK → workers；须为该任务指派师傅；`WorkerName` 联表展示列 |
+| 打点坐标 | `Lat`/`Lng` | lat/lng | DOUBLE PRECISION 可空；GIS entity=survey 点位读非空行 |
+| 设施状态备注 | `FacilityNote` | facility_note | VARCHAR(500) 可空 |
+| 建议 | `Suggestion` | suggestion | CAN_INSTALL 可装 / NEED_NEW_FACILITY 需新建设施 |
+| 照片 | `PhotoIDs` | photo_ids | BIGINT[] → attachments（师傅端 /attachments/upload） |
+| 幂等键 | `ClientMsgID` | client_msg_id | VARCHAR(64)，UNIQUE(task_id, client_msg_id) 弱网重传不重复落行 |
+| 回填时间 | `ReportedAt` | reported_at | TIMESTAMPTZ |
 
 ### 1.6 audit_logs（审计日志）· biz_params（业务参数）
 

@@ -293,7 +293,7 @@ export interface Translations {
     odn: {
       title: string
       subtitle: string
-      tabs: { grids: string; facilities: string; sites: string; devices: string; coverage: string; constructions: string; assets: string }
+      tabs: { grids: string; facilities: string; sites: string; devices: string; coverage: string; constructions: string; surveys: string; assets: string }
       tree: { title: string; search: string; groupOlts: string; groupGrids: string; groupSites: string; groupConstructions: string; clearFilter: string }
       kpi: { grids: string; facilities: string; sites: string; linkedOlt: string; capacity: string }
       chain: { title: string; olt: string; site: string; splitter: string; closure: string; terminal: string; coverage: string; servedCount: string; empty: string }
@@ -2429,6 +2429,8 @@ export interface Translations {
       odnLayerFacility: string
       odnLayerSite: string
       odnLayerDevice: string
+      odnLayerSurvey: string
+      odnLayerProgress: string
       parentNode: string
       // ODN 点位反查抽屉(T14-1)
       revTitle: string

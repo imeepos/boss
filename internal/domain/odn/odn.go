@@ -145,10 +145,22 @@ type ODNService interface {
 	// AcceptProject 返回 (设施翻转数, 覆盖联动数, 错误);F6 竣工覆盖联动随事务(000211)。
 	AcceptProject(ctx context.Context, id int64, acceptedBy int64, note string) (int64, int64, error)
 	ListProjectItems(ctx context.Context, id int64) ([]ConstructionItem, error)
-	// RecordProgress 幂等进度上报(P0-B,000213):created=false=重复消息不重复计量。
+	// RecordProgress 幂等进度上报(P0-B,000213;W7 000224 上报人代次):created=false=重复消息不重复计量。
 	RecordProgress(ctx context.Context, p ProgressEntry) (int64, bool, error)
 	ListProgress(ctx context.Context, projectID int64, limit int) ([]ProgressEntry, error)
 	ItemProgressSummary(ctx context.Context, projectID int64) ([]ItemProgress, error)
+	// 勘测任务域(P-INFRA-1 W7,迁移 000223,F5b):状态机见 survey.go。
+	CreateSurvey(ctx context.Context, in SurveyCreateInput) (*SurveyTask, error)
+	ListSurveys(ctx context.Context, status string, assigneeID int64, limit int) ([]SurveyTask, error)
+	ListSurveysForWorker(ctx context.Context, workerID int64, status string, limit int) ([]SurveyTask, error)
+	GetSurvey(ctx context.Context, id int64) (*SurveyTask, []SurveyReport, error)
+	AssignSurvey(ctx context.Context, id, workerID int64) error
+	CancelSurvey(ctx context.Context, id int64) error
+	AcceptSurvey(ctx context.Context, id, workerID int64) error
+	AddSurveyReport(ctx context.Context, r SurveyReport) (int64, bool, error)
+	// 师傅侧施工进度(W7,F5a):BUILDING 项目可见与上报上下文。
+	ListBuildingProjects(ctx context.Context, limit int) ([]Construction, error)
+	GetProjectWorkerView(ctx context.Context, id int64) (*Construction, []ItemProgress, error)
 	// 质量测试与整改闭环(P0-C,迁移 000214):测试 append-only,整改 OPEN→RECTIFYING→VERIFIED。
 	RecordTest(ctx context.Context, t QualityTest) (int64, error)
 	ListTests(ctx context.Context, projectID int64, limit int) ([]QualityTest, error)

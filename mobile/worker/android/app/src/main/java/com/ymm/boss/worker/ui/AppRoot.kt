@@ -120,6 +120,8 @@ fun AppRoot(loggedIn: Boolean) {
                 is Screen.Replace -> ReplaceScreen(nav, cur.no)
                 is Screen.Retire -> RetireScreen(nav, cur.no)
                 is Screen.Hall -> HallScreen(nav)
+                is Screen.Surveys -> SurveysScreen(nav)
+                is Screen.SurveyDetail -> SurveyDetailScreen(nav, cur.id)
                 is Screen.Pickup -> PickupScreen(nav)
                 is Screen.Tool -> ToolScreen(nav, cur.no)
                 is Screen.Maintenance -> MaintenanceScreen(nav)
