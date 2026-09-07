@@ -335,30 +335,28 @@ def main():
         grows = grid_rows()
         ga = grid_row_for(grows, grid_a)
         gb = grid_row_for(grows, grid_b)
-        # SQL 直查:规划成本(预算×明细金额占比)与材料成本(出库采购价合计×同占比)
-        sql_planned = psql("SELECT fl.grid_code, SUM(cp.budget_amount * g.part / t.total)::numeric(14,2) "
+        # SQL 直查对照(与域层同形态 CTE):规划成本=预算x明细金额占比;材料成本=出库采购价合计x同占比
+        pid = str(proj)
+        sql_planned = psql("WITH item_grid AS (SELECT ci.project_id, fl.grid_code, SUM(ci.amount) AS part "
             "FROM construction_items ci JOIN odn_facility fl ON fl.code = ci.facility_code AND fl.grid_code IS NOT NULL "
-            "JOIN construction_projects cp ON cp.id = ci.project_id AND cp.budget_amount IS NOT NULL "
-            "JOIN (SELECT ci2.project_id, fl2.grid_code, SUM(ci2.amount) part FROM construction_items ci2 "
-            "JOIN odn_facility fl2 ON fl2.code = ci2.facility_code AND fl2.grid_code IS NOT NULL "
-            "WHERE ci2.project_id = " + str(proj) + " GROUP BY ci2.project_id, fl2.grid_code) g ON true "
-            "JOIN (SELECT SUM(part) total FROM (SELECT SUM(ci3.amount) part FROM construction_items ci3 "
-            "JOIN odn_facility fl3 ON fl3.code = ci3.facility_code AND fl3.grid_code IS NOT NULL "
-            "WHERE ci3.project_id = " + str(proj) + " GROUP BY fl3.grid_code) s) t "
-            "WHERE ci.project_id = " + str(proj) + " GROUP BY fl.grid_code, g.part, t.total ORDER BY fl.grid_code")
-        sql_mat = psql("SELECT fl.grid_code, SUM(pr.unit_amount * g.part / t.total)::numeric(14,2) "
-            "FROM odn_material_issues mi JOIN odn_material_issue_items it ON it.issue_id = mi.id "
-            "JOIN assets a ON a.id = it.asset_id "
+            "WHERE ci.project_id = " + pid + " GROUP BY ci.project_id, fl.grid_code), "
+            "proj_total AS (SELECT SUM(part) AS total FROM item_grid) "
+            "SELECT i.grid_code, SUM(cp.budget_amount * i.part / p.total)::numeric(14,2) "
+            "FROM item_grid i JOIN proj_total p ON true JOIN construction_projects cp ON cp.id = i.project_id "
+            "WHERE cp.budget_amount IS NOT NULL AND p.total > 0 GROUP BY i.grid_code ORDER BY i.grid_code")
+        sql_mat = psql("WITH asset_price AS (SELECT DISTINCT ON (a.id) a.id, oi.unit_amount FROM assets a "
             "JOIN procurement_receipts r ON r.batch_id = a.batch_id "
-            "JOIN procurement_order_items oi ON oi.order_id = r.order_id AND oi.material_code = a.type "
-            "JOIN LATERAL (SELECT oi.unit_amount) pr ON true "
-            "JOIN construction_items ci ON ci.project_id = mi.project_id "
+            "JOIN procurement_order_items oi ON oi.order_id = r.order_id AND oi.material_code = a.type), "
+            "issue_cost AS (SELECT mi.project_id, SUM(p.unit_amount) AS cost FROM odn_material_issues mi "
+            "JOIN odn_material_issue_items it ON it.issue_id = mi.id JOIN asset_price p ON p.id = it.asset_id "
+            "WHERE mi.project_id = " + pid + " AND mi.status = " + q("CONFIRMED") + " GROUP BY mi.project_id), "
+            "item_grid AS (SELECT ci.project_id, fl.grid_code, SUM(ci.amount) AS part FROM construction_items ci "
             "JOIN odn_facility fl ON fl.code = ci.facility_code AND fl.grid_code IS NOT NULL "
-            "JOIN (SELECT ci2.project_id, fl2.grid_code, SUM(ci2.amount) part FROM construction_items ci2 "
-            "JOIN odn_facility fl2 ON fl2.code = ci2.facility_code AND fl2.grid_code IS NOT NULL "
-            "WHERE ci2.project_id = " + str(proj) + " GROUP BY ci2.project_id, fl2.grid_code) g ON true "
-            "WHERE mi.project_id = " + str(proj) + " AND mi.status = " + q("CONFIRMED") + " "
-            "GROUP BY fl.grid_code, g.part, t.total ORDER BY fl.grid_code")
+            "WHERE ci.project_id = " + pid + " GROUP BY ci.project_id, fl.grid_code), "
+            "proj_total AS (SELECT SUM(part) AS total FROM item_grid) "
+            "SELECT i.grid_code, SUM(ic.cost * i.part / t.total)::numeric(14,2) "
+            "FROM item_grid i JOIN proj_total t ON true JOIN issue_cost ic ON ic.project_id = i.project_id "
+            "GROUP BY i.grid_code ORDER BY i.grid_code")
         planned_map = {}
         for line in sql_planned.splitlines():
             parts_ = line.split("|")
