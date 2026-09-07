@@ -6,7 +6,12 @@ import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { Drawer } from '../../../components/Drawer'
 import { Dropdown } from '../../../components/Dropdown'
-import { SCAN_STATUSES, type StocktakeItemRow } from '../types'
+import { SimplePicker } from '../../../components/pickers/SimplePicker'
+import { statusTagLabel } from '../../../components/StatusTag'
+import { TableStateRow } from '../../../components/business'
+import { FormField } from '../../../components/business/form-field'
+import { ErrorBanner } from '../../../components/business/page-head'
+import { SCAN_STATUSES, type AssetRow, type StocktakeItemRow } from '../types'
 
 const td = 'h-10 px-2.5 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)]'
 const input = 'h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]'
@@ -70,6 +75,7 @@ export function ItemsDrawer({ taskId, canEdit, onClose, onChanged }: {
         method: 'POST',
         body: { action, note: note.trim() },
       })
+      toast.success(s.handleOk)
       setNote('')
       load()
       onChanged()
@@ -88,17 +94,25 @@ export function ItemsDrawer({ taskId, canEdit, onClose, onChanged }: {
       <div className="flex flex-col gap-3">
         {canEdit && (
           <div className="flex flex-wrap items-end gap-2 rounded-sm border border-[var(--shell-side-border)] p-3">
-            <div className="flex flex-col gap-1">
-              <label className="text-xs text-[var(--shell-group-title)]">{s.fAssetId}</label>
-              <input className={`${input} w-32`} value={assetId} placeholder={s.pAssetId}
-                onChange={(e) => setAssetId(e.target.value.replace(/\D/g, ''))} />
-            </div>
-            <div className="flex flex-col gap-1">
-              <label className="text-xs text-[var(--shell-group-title)]">{s.fScanStatus}</label>
+            <FormField label={s.fAsset} required>
+              <SimplePicker value={assetId} onChange={setAssetId} ariaLabel={s.fAsset}
+                placeholder={s.pAssetId}
+                search={async (kw) => {
+                  const d = await apiFetch<{ items: AssetRow[] }>('/assets', { query: { q: kw || undefined, limit: 20 } })
+                  return (d?.items ?? []).map((a) => ({ value: String(a.assetId), label: (a.assetCode || '#' + a.assetId) + ' · ' + a.status }))
+                }}
+                errorText={s.loadFail}
+                minWidth={280}
+              />
+            </FormField>
+            <FormField label={s.fScanStatus}>
               <Dropdown value={scanStatus} triggerStyle={{ width: 144 }}
-                options={SCAN_STATUSES.map((x) => ({ value: x, label: x }))}
+                options={SCAN_STATUSES.map((x) => ({ value: x, label: statusTagLabel('asset', x, t.common.statusTags) }))}
                 onChange={setScanStatus} ariaLabel={s.fScanStatus} />
-            </div>
+            </FormField>
+            <FormField label={s.notePrompt}>
+              <input className={`${input} w-56`} value={note} onChange={(e) => setNote(e.target.value)} />
+            </FormField>
             <button className={`h-8 border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)] disabled:opacity-50`} disabled={busy || !assetId} onClick={scan}>{s.scan}</button>
           </div>
         )}
@@ -130,17 +144,11 @@ export function ItemsDrawer({ taskId, canEdit, onClose, onChanged }: {
                   )}
                 </tr>
               ))}
-              {!items.length && <tr><td className={`${td} text-center`} colSpan={canEdit ? 8 : 7}>{busy ? t.common.loading : s.emptyItems}</td></tr>}
+              {!items.length && <TableStateRow colSpan={canEdit ? 8 : 7} loading={busy} text={s.emptyItems} />}
             </tbody>
           </table>
         </div>
-        {canEdit && (
-          <div className="flex flex-col gap-1">
-            <label className="text-xs text-[var(--shell-group-title)]">{s.notePrompt}</label>
-            <input className={input} value={note} onChange={(e) => setNote(e.target.value)} />
-          </div>
-        )}
-        {error && <div className="rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div>}
+        {error && <ErrorBanner message={error} />}
       </div>
     </Drawer>
   )
