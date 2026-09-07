@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 import { EmptyState, ErrorBanner, ToolbarButton } from '../../../components/business/page-head'
 import { useConfirm } from '../../../components/ConfirmDialog'
 import { fmtMoney, type Project } from './constructions'
+import { BudgetMilestonePanel } from './BudgetMilestonePanel'
 import { PERMIT_KIND_TEXT, PERMIT_STATUS_TEXT, PERMIT_STATUS_VARIANT } from './permits'
 
 const CARD = 'rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]'
@@ -136,6 +137,7 @@ export function ConstructionDetail({ projectId, onChanged }: { projectId: number
 
   return <div className='mt-4 space-y-3'>
     {error && <ErrorBanner message={error} />}
+    <BudgetMilestonePanel project={project} onChanged={onChanged} />
     <div className={CARD + ' p-4'}>
       <div className='mb-2 flex flex-wrap items-center gap-2'>
         <span className='text-sm font-semibold'>承包商</span>
