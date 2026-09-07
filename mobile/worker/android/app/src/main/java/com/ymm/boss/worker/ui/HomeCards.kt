@@ -187,6 +187,7 @@ internal fun QuickActions(nav: NavHost) {
         QuickAction(R.string.qa_schedule, Icons.Outlined.EventNote, Primary, Screen.Schedule),
         QuickAction(R.string.qa_notice, Icons.Outlined.Campaign, Success, Screen.Notice),
         QuickAction(R.string.qa_hall, Icons.Outlined.Assignment, Warn, Screen.Hall),
+        QuickAction(R.string.qa_survey, Icons.Outlined.LocationOn, Primary, Screen.Surveys),
         QuickAction(R.string.qa_help, Icons.Outlined.MenuBook, Primary, Screen.Help),
         QuickAction(R.string.qa_speed, Icons.Outlined.Speed, Success, Screen.Tool()),
         QuickAction(R.string.qa_pickup, Icons.Outlined.Inventory, Warn, Screen.Pickup),

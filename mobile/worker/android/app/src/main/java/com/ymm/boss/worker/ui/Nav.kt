@@ -38,6 +38,10 @@ sealed interface Screen {
     data class Replace(val no: String) : Screen       // 换机
     data class Retire(val no: String) : Screen        // 退网
 
+    // 勘测任务(W7):列表 + 详情/接单/回填,详情携带任务 id
+    data object Surveys : Screen
+    data class SurveyDetail(val id: Long) : Screen
+
     // 独立工具页(快捷入口/菜单可达)
     data object Hall : Screen          // 任务池
     data object Pickup : Screen        // 领料
