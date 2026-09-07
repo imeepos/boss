@@ -1,6 +1,7 @@
 // 客服知识库列表页:cs_knowledge_articles CRUD(后端复用 menu:complaint 权限,前端菜单 key=knowledge)。
 // 状态枚举 DRAFT/PUBLISHED/OFFLINE 与 sitePage 同源,stLabel 三语映射;颜色全走主题 token。
 import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { PageHead, pagerTexts } from '../../org/shared'
@@ -45,13 +46,14 @@ export default function KnowledgePage() {
     setBusy(true)
     try {
       await apiFetch(editing ? `/knowledge-articles/${editing.id}` : '/knowledge-articles', { method: editing ? 'PUT' : 'POST', body: form })
+      toast.success(k.toastSaved)
       setEditing(null); load()
     } catch (e) { setError(e instanceof Error ? e.message : k.saveFail); setBusy(false) }
   }
   const remove = async (a: Article) => {
     if (!(await confirm(k.deleteConfirm, { danger: true }))) return
     setBusy(true)
-    try { await apiFetch(`/knowledge-articles/${a.id}`, { method: 'DELETE' }); load() }
+    try { await apiFetch(`/knowledge-articles/${a.id}`, { method: 'DELETE' }); toast.success(k.toastDeleted); load() }
     catch (e) { setError(e instanceof Error ? e.message : k.actionFail); setBusy(false) }
   }
 
@@ -99,7 +101,7 @@ export default function KnowledgePage() {
         <label className="text-xs">{k.fTitle}<input className={`mt-1 ${inputCls}`} value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></label>
         <label className="text-xs md:col-span-2">{k.fContent}<textarea className={`mt-1 min-h-32 ${inputCls}`} value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} /></label>
         <label className="text-xs">{k.fStatus}
-          <div className="mt-1"><Dropdown value={stLabel(form.status)} options={statusOptions} onChange={(value) => setForm({ ...form, status: value })} ariaLabel={k.fStatus} /></div>
+          <div className="mt-1"><Dropdown value={form.status} options={statusOptions} onChange={(value) => setForm({ ...form, status: value })} ariaLabel={k.fStatus} /></div>
         </label>
       </div>
       <div className="mt-4"><ToolbarButton primary disabled={busy} onClick={save}>{k.save}</ToolbarButton></div>
