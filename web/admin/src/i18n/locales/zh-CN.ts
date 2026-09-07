@@ -1035,6 +1035,13 @@ const zhCN: Translations = {
       title: '柜台日结',
       desc: '当日现金流水按网点/操作员汇总 · 收入与退款分列 · 实点回填不平自动留痕',
       date: '日期',
+      prev: '上一页',
+      next: '下一页',
+      perPage: '每页',
+      rangeText: '第 {from}-{to} 条/共 {total} 条',
+      jumpText: '跳至',
+      pageUnit: '页',
+
       columns: ['网点', '操作员', '收入合计', '退款合计', '净额', '实点金额', '状态'],
       countedPlaceholder: '钱箱实点',
       save: '回填',

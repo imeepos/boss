@@ -818,6 +818,12 @@ export interface Translations {
       save: string
       saving: string
       saved: string
+      prev: string
+      next: string
+      perPage: string
+      rangeText: string
+      jumpText: string
+      pageUnit: string
       balanced: string
       diff: string
       noPerm: string

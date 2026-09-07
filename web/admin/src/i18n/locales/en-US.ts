@@ -1035,6 +1035,13 @@ const enUS: Translations = {
       title: 'Counter Daily Closing',
       desc: 'Daily cash flow by site/operator · income & refunds split · counted-amount backfill with diff alerts',
       date: 'Date',
+      prev: 'Prev',
+      next: 'Next',
+      perPage: 'Per page',
+      rangeText: 'Rows {from}-{to} of {total}',
+      jumpText: 'Go to',
+      pageUnit: 'Page',
+
       columns: ['Site', 'Operator', 'Income', 'Refunds', 'Net', 'Counted', 'Status'],
       countedPlaceholder: 'Cash counted',
       save: 'Save',
