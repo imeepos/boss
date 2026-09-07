@@ -30,7 +30,7 @@ func (s *PGStore) PatrolResourceChains(ctx context.Context) (*ChainPatrol, error
 	p := &ChainPatrol{Samples: map[string][]int64{}}
 	orphan := chainOrphanWhere()
 	sql := "SELECT (SELECT count(*) FROM odn_resource_chain),"
-	sql += " (SELECT count(*) FROM odn_resource_chain c WHERE 1=1" + orphan + "),"
+	sql += " (SELECT count(*) FROM odn_resource_chain c WHERE" + orphan[4:] + "),"
 	sql += " (SELECT count(*) FROM odn_device d WHERE d.prv_code IS NULL AND d.status <>" + q("RETIRED")
 	sql += " AND d.kind IN (" + q("ODB") + "," + q("OBD") + "," + q("SDB") + "," + q("SBD") + ")"
 	sql += " AND (d.parent_id IS NULL OR NOT EXISTS (SELECT 1 FROM odn_device p WHERE p.id=d.parent_id AND p.status <>" + q("RETIRED") + "))),"
