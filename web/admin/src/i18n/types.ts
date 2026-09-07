@@ -512,6 +512,9 @@ export interface Translations {
         enableConfirm: string
         disableConfirm: string
         eUsernameRequired: string
+        saved: string
+        statusOk: string
+        resetPwdOk: string
         ePasswordShort: string
         eRealNameRequired: string
         save: string
@@ -532,6 +535,9 @@ export interface Translations {
       del: string
       delDeptConfirm: string
       delPostConfirm: string
+      delOk: string
+      saved: string
+      statusOk: string
       addMember: string
       columns: string[]
       empty: string
@@ -2476,6 +2482,8 @@ export interface Translations {
       revoke: string
       revokeConfirm: string
       plainOnce: string
+      createOk: string
+      revokeOk: string
     },
     apidocs: {
       title: string
@@ -2506,6 +2514,13 @@ export interface Translations {
       enable: string
       disable: string
       secretOnce: string
+      createOk: string
+      statusOk: string
+      statusConfirm: string
+      testOk: string
+      requeueOk: string
+      delSubOk: string
+      dlvTruncated: string
       fName: string
       pName: string
       fRpm: string
@@ -2554,6 +2569,7 @@ export interface Translations {
       columns: string[]
       coverageNone: string
       assignFail: string
+      assignConfirm: string
       detail: string
       drill: string
       total: string
@@ -2588,6 +2604,9 @@ export interface Translations {
       jumpText: string
       pageUnit: string
       roleTitle: string,
+      roleSaveOk: string
+      roleDelOk: string
+      permSearch: string
       createRole: string,
       editRole: string,
       roleName: string,
@@ -3134,7 +3153,7 @@ export interface Translations {
       colStatus: string; colSubmitted: string; colOp: string; email: string; businessDesc: string
       rejectReason: string; rejectReasonPlaceholder: string; approve: string; reject: string
       confirmReject: string; cancel: string; approveResultTitle: string; approveResultUser: string
-      approveResultPwd: string; pwdTip: string; close: string; empty: string; loadFail: string
+      approveResultPwd: string; pwdTip: string; close: string; empty: string; loadFail: string; rejectOk: string
       refresh: string
     }
     partnerHome: {
