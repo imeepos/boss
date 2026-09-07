@@ -168,7 +168,9 @@ func RespondErr(c *gin.Context, err error) {
 		errors.Is(err, cms.ErrPostNotFound),
 		errors.Is(err, cms.ErrCategoryNotFound),
 		errors.Is(err, monthly.ErrUnknownTable),
-		errors.Is(err, monthly.ErrNotFound):
+		errors.Is(err, monthly.ErrNotFound),
+		errors.Is(err, odn.ErrNotFound),
+		errors.Is(err, odn.ErrBindingNotFound):
 		Respond(c, apitypes.CodeNotFound, nil)
 	case errors.Is(err, backup.ErrBusy):
 		Respond(c, apitypes.CodeResourceBusy, nil)
@@ -181,9 +183,8 @@ func RespondErr(c *gin.Context, err error) {
 		Respond(c, apitypes.CodeConflict, nil)
 	case errors.Is(err, worker.ErrLeaderNotMember):
 		Respond(c, apitypes.CodeInvalidParam, nil)
-	case errors.Is(err, odn.ErrDuplicate):
-		Respond(c, apitypes.CodeConflict, nil)
-	case errors.Is(err, odn.ErrInvalidLifecycle),
+	case errors.Is(err, odn.ErrDuplicate),
+		errors.Is(err, odn.ErrInvalidLifecycle),
 		errors.Is(err, odn.ErrInvalidPortState),
 		errors.Is(err, odn.ErrInvalidProjStatus),
 		errors.Is(err, odn.ErrItemLocked),
@@ -196,17 +197,13 @@ func RespondErr(c *gin.Context, err error) {
 	case errors.Is(err, odn.ErrPortNotInService):
 		// 绑定要求端口 IN_SERVICE:40900,管理员可见为什么绑不上。
 		Respond(c, apitypes.CodeConflict, gin.H{"reason": err.Error()})
-	case errors.Is(err, odn.ErrBindingNotFound):
-		Respond(c, apitypes.CodeNotFound, nil)
 	case errors.Is(err, odn.ErrNotServable):
 		// 下单覆盖门控拒单(T12):40900 + 透传地址/状态,运营可见为什么拒。
 		Respond(c, apitypes.CodeConflict, gin.H{"reason": err.Error()})
 	case errors.Is(err, odn.ErrNoContractor), errors.Is(err, odn.ErrSettlementState),
-		errors.Is(err, odn.ErrFacilityNotInScope),
-		errors.Is(err, odn.ErrRegConflict), errors.Is(err, odn.ErrRegState),
-		errors.Is(err, odn.ErrIssueState), errors.Is(err, odn.ErrIssueAsset):
-		// 结算发起前置缺失/状态冲突(000204);资产化凭证与出库单状态冲突(W8 000215):
-		// 40900 + 原因,管理员可见为什么拒。
+		errors.Is(err, odn.ErrFacilityNotInScope), errors.Is(err, odn.ErrRegConflict),
+		errors.Is(err, odn.ErrRegState), errors.Is(err, odn.ErrIssueState), errors.Is(err, odn.ErrIssueAsset):
+		// 结算/资产化凭证/出库单前置缺失或状态冲突(000204/000215):40900 + 原因,管理员可见为什么拒。
 		Respond(c, apitypes.CodeConflict, gin.H{"reason": err.Error()})
 	case errors.Is(err, odn.ErrPermitRequired),
 		errors.Is(err, odn.ErrPermitState),
@@ -223,8 +220,6 @@ func RespondErr(c *gin.Context, err error) {
 		errors.Is(err, odn.ErrInvalidInput),
 		errors.Is(err, odn.ErrRegInput), errors.Is(err, odn.ErrIssueInput):
 		Respond(c, apitypes.CodeInvalidParam, nil)
-	case errors.Is(err, odn.ErrNotFound):
-		Respond(c, apitypes.CodeNotFound, nil)
 	case errors.Is(err, resource.ErrIllegalTransition),
 		errors.Is(err, resource.ErrPortNotAvailable),
 		errors.Is(err, aaa.ErrIllegalTransition),
