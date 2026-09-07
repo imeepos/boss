@@ -81,7 +81,7 @@ func runOSSAuditIfDue(ctx context.Context, d ossAuditDeps, now time.Time) {
 	}
 	cctx, cancel := context.WithTimeout(ctx, 5*time.Minute)
 	defer cancel()
-	rep, err := runOSSAuditSnapshot(cctx, d)
+	rep, err := runOSSAuditSnapshot(cctx, d, now)
 	if err != nil {
 		log.Printf("[oss-audit] DAILY SNAPSHOT FAILED: %v", err)
 		return
@@ -93,13 +93,13 @@ func runOSSAuditIfDue(ctx context.Context, d ossAuditDeps, now time.Time) {
 }
 
 // runOSSAuditSnapshot 执行一轮稽核并落当日快照。
-func runOSSAuditSnapshot(ctx context.Context, d ossAuditDeps) (*resource.AuditReport, error) {
+func runOSSAuditSnapshot(ctx context.Context, d ossAuditDeps, now time.Time) (*resource.AuditReport, error) {
 	opts := resource.AuditOptions{ReservedStaleHours: ossAuditStaleHours(ctx, d.pg)}
 	rep, err := d.res.AuditInventory(ctx, opts)
 	if err != nil {
 		return nil, fmt.Errorf("audit inventory: %w", err)
 	}
-	if _, err := d.rep.SaveOSSAudit(ctx, rep, time.Now()); err != nil {
+	if _, err := d.rep.SaveOSSAudit(ctx, rep, now); err != nil {
 		return nil, fmt.Errorf("save snapshot: %w", err)
 	}
 	return rep, nil

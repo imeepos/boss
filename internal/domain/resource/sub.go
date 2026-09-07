@@ -58,6 +58,11 @@ type ResourceSubService interface {
 	// ApproveTransfer/RejectTransfer 调拨审批(仅 PENDING 可审;驳回→DONE 终态)。
 	ApproveTransfer(ctx context.Context, transferNo string) error
 	RejectTransfer(ctx context.Context, transferNo string) error
+	// ExecuteExpansion 执行扩容单(P5 补齐):目标设备按 expectedPorts 批量建端口(续号),
+	// 全部就位→DONE;建口失败留 PENDING 可重试;设备须归属扩容单同一法人。
+	ExecuteExpansion(ctx context.Context, expansionNo string, resourceID int64) (*ExpansionResult, error)
+	// RejectExpansion 扩容驳回:PENDING→DONE 终态。
+	RejectExpansion(ctx context.Context, expansionNo string) error
 	// ReleaseReserve 手动释放预占(oss.yaml releaseReserve):回收端口 + 记录置 RELEASED。
 	ReleaseReserve(ctx context.Context, reserveID int64) error
 }

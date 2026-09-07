@@ -35,5 +35,7 @@ func registerResourceRoutes(g *gin.RouterGroup, a *app.Application) {
 	tr.GET("/transfers", listTransfersHandler(a))
 	tr.GET("/expansions", listExpansionsHandler(a))
 	tr.POST("/expansions", createExpansionHandler(a))
+	tr.POST("/expansions/:expansionNo/execute", executeExpansionHandler(a))
+	tr.POST("/expansions/:expansionNo/reject", rejectExpansionHandler(a))
 	tr.GET("/expansions/qos-templates", listQosTemplatesHandler(a))
 }
