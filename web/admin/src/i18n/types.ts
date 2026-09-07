@@ -293,7 +293,7 @@ export interface Translations {
     odn: {
       title: string
       subtitle: string
-      tabs: { grids: string; facilities: string; sites: string; devices: string; coverage: string; constructions: string; assets: string }
+      tabs: { grids: string; facilities: string; sites: string; devices: string; coverage: string; constructions: string; surveys: string; assets: string }
       tree: { title: string; search: string; groupOlts: string; groupGrids: string; groupSites: string; groupConstructions: string; clearFilter: string }
       kpi: { grids: string; facilities: string; sites: string; linkedOlt: string; capacity: string }
       chain: { title: string; olt: string; site: string; splitter: string; closure: string; terminal: string; coverage: string; servedCount: string; empty: string }
