@@ -170,3 +170,8 @@
 ## runtime/102 环境(2026-09-07,报告中心轮部署验证时发现)
 
 - **迁移卫生｜000197_address_coverage 非幂等,表已存在时 boss-server 崩溃循环**:feat/odn-coverage-p1 合入 main 的 000197 up 迁移用裸 `CREATE TABLE address_coverage`(down 侧反而用了 IF EXISTS);102 库表先已被该会话验收脚本建出(0 行、结构与索引与迁移完全一致)但 schema_migrations 无记录,部署后 migrate 重复应用报 42P07,wiring 失败 → boss-server Restarting 循环,28080 全站不可用约 8 分钟。**已应急(2026-09-07 当日)**:核对表结构与 idx_address_coverage_facility/device 索引齐全后,INSERT schema_migrations('000197_address_coverage') 标记应用,server 秒级恢复。**根治建议(待 ODN 会话)**:建表类迁移一律 IF NOT EXISTS + CREATE INDEX IF NOT EXISTS,或验收脚本建表路径与迁移注册二选一,勿让"手工先建、迁移后跑"的窗口存在。
+
+## 后端守卫缺口(2026-09-07,PP2-W3 计费运维域审计发现,前端不改后端只登记)
+
+- **provision 模板删除守卫不足,可产生悬空引用**:DELETE /provision-templates/:templateId 为物理删,守卫仅查 provision_tasks 引用(internal/.../pg_template_custom.go:47-55);被套餐(provision binding)引用但尚无任务的模板可被删除,套餐侧 templateId 悬空。修法建议:守卫补套餐绑定检查,或删除前提示强制解绑。来源:docs/plan/pp2-audit-ops.md 第四节。
+- **AAA NAS 真删无前端管理入口(能力盲区非缺陷)**:DELETE /aaa/nas/:id 为真物理删(带审计,aaa_nas.go:136-154),但全前端零调用零 UI;若后续补管理入口必须 danger ConfirmDialog 且明示不可恢复。来源:docs/plan/pp2-audit-ops.md 第四节。

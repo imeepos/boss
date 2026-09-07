@@ -1,56 +1,56 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-07T11:52:00+08:00",
+  "updatedAt": "2026-09-07T12:10:00+08:00",
   "project": "boss",
   "phase": "PP2 前端页面体验打磨",
   "tasks": [
     {
       "id": "U0",
       "title": "PP2-W0 全局选择器基座体验统一(公共地基,最高优先)",
-      "goal": "Dropdown/SimplePicker/DialogPicker/域选择器/MultiSelect/RegionCascade 统一体验契约(加载/空态/失败重试/清空/键盘/aria/三语),ResourcePicker 兼容层让直用页零改动受益,picker-guide 同步;值契约防御三层落地",
+      "goal": "已交付并合并 main=bef4e5ad;会话已清理 worktree/分支四步全 RC=0",
       "priority": "P0",
-      "status": "doing",
-      "acceptanceCommand": "pnpm --dir web/admin typecheck && pnpm --dir web/admin test && pnpm --dir web/admin build && bash -c '! git grep -n \"<select\" -- web/admin/src/components' && bash -c '! git grep -nE \"(^|[^.a-zA-Z])alert[(]\" -- web/admin/src/components' && test -f docs/admin/picker-guide.md"
+      "status": "done",
+      "acceptanceCommand": "bash scripts/accept/pp2-gate.sh web/admin/src/components"
     },
     {
       "id": "U1",
       "title": "PP2-W1 boss 域逐页体验打磨(32 页:订单/派单/装机看板/师傅/消息/拆机等)",
-      "goal": "Phase A 审计已交付;Phase B 逐页修复反馈链/表单/表格/选择器,值契约违例 9 处修正,102 真实走查证据落档",
+      "goal": "Phase B 进行中:值契约违例修正+反馈链统一+错误横幅不替表;证据落 docs/acceptance/2026-09-07-pp2-w1-boss.md",
       "priority": "P1",
       "status": "doing",
-      "acceptanceCommand": "pnpm --dir web/admin typecheck && pnpm --dir web/admin test && pnpm --dir web/admin build && bash -c '! git grep -nE \"(^|[^.a-zA-Z])alert[(]\" -- web/admin/src/pages/boss' && test -f docs/plan/pp2-audit-boss.md && test -f docs/acceptance/2026-09-07-pp2-w1-boss.md"
+      "acceptanceCommand": "bash scripts/accept/pp2-gate.sh web/admin/src/pages/boss && test -f docs/acceptance/2026-09-07-pp2-w1-boss.md"
     },
     {
       "id": "U2",
       "title": "PP2-W2 ams+org 域逐页体验打磨(16 路由组:资产/库存/采购/换新/组织/权限等)",
-      "goal": "Phase A 审计已交付;Phase B 逐页修复+清偿 ams 设计体系采纳率债(check-ds-adoption ams 41%→≥80% 转绿)+死代码处置",
+      "goal": "Phase B 进行中:含 ams 采纳率 41%→≥80% 转绿交付条件+死代码处置",
       "priority": "P1",
       "status": "doing",
-      "acceptanceCommand": "pnpm --dir web/admin typecheck && pnpm --dir web/admin test && pnpm --dir web/admin build && node scripts/check-ds-adoption.js && bash -c '! git grep -nE \"(^|[^.a-zA-Z])alert[(]\" -- web/admin/src/pages/ams web/admin/src/pages/org' && test -f docs/plan/pp2-audit-ams-org.md && test -f docs/acceptance/2026-09-07-pp2-w2-ams-org.md"
+      "acceptanceCommand": "bash scripts/accept/pp2-gate.sh --adoption web/admin/src/pages/ams web/admin/src/pages/org && test -f docs/acceptance/2026-09-07-pp2-w2-ams-org.md"
     },
     {
       "id": "U3",
       "title": "PP2-W3 计费+运维域逐页体验打磨(billing/oss 全域+provision/quad/alarm+intel 残留+aaa 双页)",
-      "goal": "Phase A 审计已交付;Phase B 逐页修复+清偿 PP1-C 登记债(quad/alarm 内联 style、provision toast)+payment 资金通道 P0",
+      "goal": "Phase B 进行中:P0 三项+PP1-C 遗债清偿(quad/alarm 内联 style 归零)+能力入口按裁定",
       "priority": "P1",
       "status": "doing",
-      "acceptanceCommand": "pnpm --dir web/admin typecheck && pnpm --dir web/admin test && pnpm --dir web/admin build && bash -c '! grep -rn \"style={{\" web/admin/src/pages/quad web/admin/src/pages/alarm' && bash -c '! git grep -nE \"(^|[^.a-zA-Z])alert[(]\" -- web/admin/src/pages/billing web/admin/src/pages/oss web/admin/src/pages/provision web/admin/src/pages/quad web/admin/src/pages/alarm' && test -f docs/plan/pp2-audit-ops.md && test -f docs/acceptance/2026-09-07-pp2-w3-ops.md"
+      "acceptanceCommand": "bash scripts/accept/pp2-gate.sh --no-inline web/admin/src/pages/quad --no-inline web/admin/src/pages/alarm web/admin/src/pages/billing web/admin/src/pages/oss web/admin/src/pages/provision && test -f docs/acceptance/2026-09-07-pp2-w3-ops.md"
     },
     {
       "id": "U4",
-      "title": "PP2-W4 base+辅助页逐页体验打磨(base 全域+profile/backup/dashboard 等)",
-      "goal": "W1-W3 收尾后派发,同两阶段节奏",
+      "title": "PP2-W4 base+辅助页逐页体验打磨(base 全域 16 组+profile/backup/dashboard 等 21 组 22 路由)",
+      "goal": "Phase A 审计已交付(feat/pp2-w4-base-aux@a1b5ba2a);Phase B 进行中:P1 params 批量保存失败语义+P2 五项+P3 自判",
       "priority": "P2",
-      "status": "todo",
-      "acceptanceCommand": "pnpm --dir web/admin typecheck && pnpm --dir web/admin test && pnpm --dir web/admin build && test -f docs/plan/pp2-audit-base-aux.md && test -f docs/acceptance/2026-09-07-pp2-w4-base-aux.md"
+      "status": "doing",
+      "acceptanceCommand": "bash scripts/accept/pp2-gate.sh web/admin/src/pages/base && test -f docs/plan/pp2-audit-base-aux.md && test -f docs/acceptance/2026-09-07-pp2-w4-base-aux.md"
     },
     {
       "id": "U5",
       "title": "T14 ODN 前端强化 rider(GIS 点位点击反查弹窗+下单页可装性徽标)",
-      "goal": "后端数据链 T4-T13 已全通;归 W3 会话余力执行,不做不合并",
+      "goal": "归 W3 会话余力执行,不做不罚,做则单独提交+独立验收文档",
       "priority": "P2",
       "status": "todo",
-      "acceptanceCommand": "pnpm --dir web/admin typecheck && pnpm --dir web/admin test && pnpm --dir web/admin build && test -f docs/acceptance/2026-09-07-pp2-t14-odn.md"
+      "acceptanceCommand": "bash scripts/accept/pp2-gate.sh web/admin/src/pages/intel web/admin/src/pages/oss && test -f docs/acceptance/2026-09-07-pp2-t14-odn.md"
     },
     {
       "id": "U6",
