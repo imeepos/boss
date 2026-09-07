@@ -129,7 +129,7 @@ def pick_free_grids(need):
 def create_facility(kind, grid_code, seq):
     code = kind + ("%02d" % grid_code) + ("%03d" % seq)
     st, body = http("POST", "/odn/facilities", {"code": code, "kind": kind, "name": TAG + "-" + code,
-        "prvCode": "PHL001", "cityPrefix": "MNL"})
+        "prvCode": "PHL001", "cityPrefix": "MNL", "gridCode": grid_code})
     if st == 200 and code_of(body) == 0:
         psql("UPDATE odn_facility SET lifecycle_status = " + q("PLANNED") + " WHERE code = " + q(code))
         return code
