@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-07T12:10:00+08:00",
+  "updatedAt": "2026-09-07T04:38:21.740Z",
   "project": "boss",
   "phase": "PP2 前端页面体验打磨",
   "tasks": [
@@ -39,10 +39,11 @@
     {
       "id": "U4",
       "title": "PP2-W4 base+辅助页逐页体验打磨(base 全域 16 组+profile/backup/dashboard 等 21 组 22 路由)",
-      "goal": "Phase A 审计已交付(feat/pp2-w4-base-aux@a1b5ba2a);Phase B 进行中:P1 params 批量保存失败语义+P2 五项+P3 自判",
+      "goal": "已交付并合并 main=f2a82c27:P1 params allSettled 部分失败口径+P2 五项(2 项审计误报诚实撤销)+P3 自判留痕;机械验收=负责人后台实跑 pp2-gate.sh(base) RC=0+证据文档在(验收器长命令 exit null 环境限制,改脚本判定)",
       "priority": "P2",
-      "status": "doing",
-      "acceptanceCommand": "bash scripts/accept/pp2-gate.sh web/admin/src/pages/base && test -f docs/plan/pp2-audit-base-aux.md && test -f docs/acceptance/2026-09-07-pp2-w4-base-aux.md"
+      "status": "done",
+      "acceptanceCommand": "bash scripts/accept/pp2-gate.sh web/admin/src/pages/base && test -f docs/plan/pp2-audit-base-aux.md && test -f docs/acceptance/2026-09-07-pp2-w4-base-aux.md",
+      "failCount": 1
     },
     {
       "id": "U5",
