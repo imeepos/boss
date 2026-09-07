@@ -553,7 +553,9 @@ const enUS: Translations = {
     },
     odn: {
       title: 'ODN Passive Network', subtitle: 'Grids · Infrastructure · Sites & Core Devices',
-      tabs: { grids: 'Grids', facilities: 'Infrastructure', sites: 'Sites', devices: 'Core Devices', coverage: 'Coverage' },
+      tabs: { grids: 'Grids', facilities: 'Infrastructure', sites: 'Sites', devices: 'Core Devices', coverage: 'Coverage', constructions: 'Constructions', assets: 'Assets' },
+      tree: { title: 'Resource Catalog', search: 'Search catalog', groupOlts: 'OLT Devices', groupGrids: 'ODN Grids', groupSites: 'Sites', groupConstructions: 'Constructions', clearFilter: 'Clear tree filter' },
+      rangeText: '{from}-{to} of {count}', prev: 'Prev', next: 'Next', perPage: '/ page', jumpText: 'Jump to', pageUnit: 'page',
       prvLabel: 'PRV',
       cityLabel: 'City prefix',
       saveOk: 'Saved',

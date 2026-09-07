@@ -553,7 +553,9 @@ const zhCN: Translations = {
     },
     odn: {
       title: 'ODN 无源网络', subtitle: '网格分区 · 基础设施 · 局点与核心链路设备',
-      tabs: { grids: '网格分区', facilities: '基础设施', sites: '局点', devices: '核心设备', coverage: '覆盖关联' },
+      tabs: { grids: '网格分区', facilities: '基础设施', sites: '局点', devices: '核心设备', coverage: '覆盖关联', constructions: '施工项目', assets: '资产化' },
+      tree: { title: '资源目录', search: '搜索目录', groupOlts: 'OLT 设备', groupGrids: 'ODN 网格', groupSites: '局点', groupConstructions: '施工项目', clearFilter: '清除树过滤' },
+      rangeText: '第 {from}-{to} 条,共 {count} 条', prev: '上一页', next: '下一页', perPage: '条/页', jumpText: '跳至', pageUnit: '页',
       prvLabel: 'PRV',
       cityLabel: '城市前缀',
       saveOk: '已保存',

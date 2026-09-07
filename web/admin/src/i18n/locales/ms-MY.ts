@@ -553,7 +553,9 @@ const msMY: Translations = {
     },
     odn: {
       title: 'Rangkaian Pasif ODN', subtitle: 'Grid · Infrastruktur · Tapak & Peranti Teras',
-      tabs: { grids: 'Grid', facilities: 'Infrastruktur', sites: 'Tapak', devices: 'Peranti Teras', coverage: 'Liputan' },
+      tabs: { grids: 'Grid', facilities: 'Infrastruktur', sites: 'Tapak', devices: 'Peranti Teras', coverage: 'Liputan', constructions: 'Pembinaan', assets: 'Aset' },
+      tree: { title: 'Katalog Sumber', search: 'Cari katalog', groupOlts: 'Peranti OLT', groupGrids: 'Grid ODN', groupSites: 'Tapak', groupConstructions: 'Pembinaan', clearFilter: 'Kosongkan tapisan pokok' },
+      rangeText: '{from}-{to} daripada {count}', prev: 'Sebelum', next: 'Seterusnya', perPage: '/ halaman', jumpText: 'Lompat ke', pageUnit: 'halaman',
       prvLabel: 'PRV',
       cityLabel: 'Awalan bandar',
       saveOk: 'Disimpan',

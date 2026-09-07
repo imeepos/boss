@@ -293,7 +293,14 @@ export interface Translations {
     odn: {
       title: string
       subtitle: string
-      tabs: { grids: string; facilities: string; sites: string; devices: string; coverage: string }
+      tabs: { grids: string; facilities: string; sites: string; devices: string; coverage: string; constructions: string; assets: string }
+      tree: { title: string; search: string; groupOlts: string; groupGrids: string; groupSites: string; groupConstructions: string; clearFilter: string }
+      rangeText: string
+      prev: string
+      next: string
+      perPage: string
+      jumpText: string
+      pageUnit: string
       prvLabel: string
       cityLabel: string
       saveOk: string

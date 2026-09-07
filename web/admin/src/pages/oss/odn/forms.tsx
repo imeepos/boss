@@ -14,6 +14,8 @@ export const LABEL = 'text-xs text-[var(--shell-content-text)]'
 const CARD_PADDED = CARD + ' mt-4 p-4'
 
 export type Tab = 'grids' | 'facilities' | 'sites' | 'devices' | 'coverage' | 'constructions' | 'assets'
+export type Region = { prvCode: string; name: string }
+export type City = { cityPrefix: string; name: string }
 export type Grid = { prvCode: string; cityPrefix: string; gridCode: number; name: string; coverage: string; status: string; facilities: number; warn: boolean }
 export type AssetReg = { registrationNo: string; assetId: number; assetCode: string; assetStatus: string }
 export type Facility = { code: string; kind: string; prvCode: string; cityPrefix: string; gridCode: number; name: string; lat: number | null; lng: number | null; status: string; assetReg?: AssetReg | null }
