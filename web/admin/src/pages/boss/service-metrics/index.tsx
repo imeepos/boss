@@ -13,12 +13,17 @@ export default function ServiceMetricsPage() {
   const [cs, setCS] = useState<CSMetrics | null>(null)
   const [ar, setAR] = useState<ARMetrics | null>(null)
   const [error, setError] = useState('')
+  const [busy, setBusy] = useState(false)
 
-  useEffect(() => {
+  const load = () => {
+    setError('')
+    setBusy(true)
     Promise.all([apiFetch<CSMetrics>('/complaint-metrics'), apiFetch<ARMetrics>('/ar-metrics')])
       .then(([m, a]) => { setCS(m); setAR(a) })
       .catch((e) => setError(e instanceof Error ? e.message : c.loadFail))
-  }, [c.loadFail])
+      .finally(() => setBusy(false))
+  }
+  useEffect(load, [c.loadFail])
 
   const csCards = cs && [
     [c.csCards.open, cs.openCount],
@@ -32,6 +37,9 @@ export default function ServiceMetricsPage() {
   return (
     <div>
       <PageHead title={c.title} desc={c.desc} />
+      <div className="mb-4 flex justify-end">
+        <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
+      </div>
       {error && (
         <div className="mb-4 text-sm text-[var(--color-danger)]">{error}</div>
       )}
