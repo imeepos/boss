@@ -15,6 +15,8 @@ import {
   type ServerDraft,
 } from '../../../lib/serverConfig'
 import { useConfirm } from '../../../components/ConfirmDialog'
+import { toast } from 'sonner'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../../components/ui/dialog'
 
 const ACT_CLS = 'mr-2.5 border-none bg-none px-0 text-xs text-[var(--color-text-link)] cursor-pointer hover:underline'
 const DANGER_CLS = ACT_CLS + ' text-[var(--color-danger)]'
@@ -26,7 +28,6 @@ export default function ServersPage() {
   const [active, setActive] = useState<string | null>(null)
   const [editing, setEditing] = useState<ServerDraft | null>(null)
   const [errors, setErrors] = useState<{ name?: string; baseUrl?: string }>({})
-  const [toast, setToast] = useState('')
 
   const reload = () => {
     setItems(listServers())
@@ -35,10 +36,6 @@ export default function ServersPage() {
 
   useEffect(reload, [])
 
-  const flash = (msg: string) => {
-    setToast(msg)
-    window.setTimeout(() => setToast(''), 2500)
-  }
 
   const openCreate = () => {
     setErrors({})
@@ -60,14 +57,14 @@ export default function ServersPage() {
     setEditing(null)
     setErrors({})
     reload()
-    flash(t.pages.servers.saved)
+    toast.success(t.pages.servers.saved)
   }
 
   const del = async (it: ServerConfig) => {
     if (!(await confirmDialog(t.pages.servers.deleteConfirm.replace('{name}', it.name), { danger: true }))) return
     removeServer(it.id)
     reload()
-    flash(t.pages.servers.deleted)
+    toast.success(t.pages.servers.deleted)
   }
 
   const use = async (it: ServerConfig) => {
@@ -129,13 +126,16 @@ export default function ServersPage() {
         )}
         <div className="mt-3.5 flex items-center gap-2">
           {items.length > 0 && <ToolbarButton onClick={openCreate}>{t.pages.servers.add}</ToolbarButton>}
-          {toast && <span className="text-xs text-[var(--color-success)]">{toast}</span>}
+
         </div>
       </Card>
-      {editing && (
-        <div className="fixed inset-0 z-page-modal flex items-center justify-center bg-black/45" onClick={() => setEditing(null)}>
-          <div className="w-95 rounded-md bg-[var(--shell-card-bg)] p-5 shadow-[var(--shadow-panel)]" onClick={(e) => e.stopPropagation()}>
-            <h3 className="mb-3 text-base font-semibold text-[var(--shell-heading)]">{editing.id ? t.pages.servers.editTitle : t.pages.servers.addTitle}</h3>
+      <Dialog open={editing !== null} onOpenChange={(v) => { if (!v) setEditing(null) }}>
+        <DialogContent className="w-95">
+          <DialogHeader>
+            <DialogTitle>{editing?.id ? t.pages.servers.editTitle : t.pages.servers.addTitle}</DialogTitle>
+          </DialogHeader>
+          {editing && (
+            <div>
             <dl className="mb-4 grid grid-cols-[80px_1fr] gap-x-3 gap-y-2 text-[13px]">
               <dt className="text-[var(--shell-crumb-text)]">{t.pages.servers.colName}</dt>
               <dd className="m-0">
@@ -162,9 +162,10 @@ export default function ServersPage() {
               <ToolbarButton primary onClick={submit}>{t.pages.servers.save}</ToolbarButton>
               <ToolbarButton onClick={() => setEditing(null)}>{t.pages.servers.cancel}</ToolbarButton>
             </div>
-          </div>
-        </div>
-      )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

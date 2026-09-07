@@ -52,7 +52,7 @@ export function AdminNotifsTab() {
       },
     })
       .then((d) => { setRows(d?.items ?? []); setTotal(d?.total ?? 0) })
-      .catch(() => setError(n.loadFail))
+      .catch((e) => setError(e instanceof Error ? e.message : n.loadFail))
   }, [catUrl, levelUrl, unreadUrl, page, pageSize, n.loadFail])
 
   useEffect(() => { void load() }, [load])

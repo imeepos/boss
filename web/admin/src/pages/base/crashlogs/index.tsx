@@ -6,6 +6,7 @@ import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { PageHead, ErrorBanner, ToolbarButton } from '../../../components/business/page-head'
 import { EmptyState } from '../../../components/business/feedback'
+import { Pagination } from '../../../components/Pagination'
 
 const TH = 'h-9 px-3 text-left text-xs font-semibold whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]'
 const TD = 'px-3 py-2.5 align-top text-[13px] whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)]'
@@ -16,6 +17,9 @@ export default function CrashLogsPage() {
   const [logs, setLogs] = useState<CrashLog[]>([])
   const [error, setError] = useState('')
   const [openId, setOpenId] = useState<number | null>(null)
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
+  const slice = logs.slice((page - 1) * pageSize, page * pageSize)
 
   const load = () => {
     setError('')
@@ -48,7 +52,7 @@ export default function CrashLogsPage() {
               </tr>
             </thead>
             <tbody>
-              {logs.map((l) => (
+              {slice.map((l) => (
                 <Fragment key={l.id}>
                   <tr className="border-b border-[var(--shell-side-border)] hover:bg-[var(--shell-menu-hover-bg)]">
                     <td className={TD}>{new Date(l.createdAt).toLocaleString()}</td>
@@ -73,6 +77,23 @@ export default function CrashLogsPage() {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+      {logs.length > 0 && (
+        <div className="mt-3 flex justify-end px-1 text-xs text-[var(--shell-group-title)]">
+          <Pagination
+            total={logs.length}
+            page={page}
+            pageSize={pageSize}
+            onPage={setPage}
+            onSize={(n) => { setPageSize(n); setPage(1) }}
+            rangeText={t.pages.company.rangeText}
+            prevText={t.pages.company.prev}
+            nextText={t.pages.company.next}
+            perPageText={t.pages.company.perPage}
+            jumpText={t.pages.company.jumpText}
+            pageUnitText={t.pages.company.pageUnit}
+          />
         </div>
       )}
     </div>

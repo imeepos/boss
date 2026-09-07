@@ -2,6 +2,7 @@
 // code 被文章引用时后端拒删/拒改 code(40900),前端转成可读提示。
 // 名称多语言(000155):name 为默认/回退,zh/en/ms 覆盖名可留空(官网按语言展示)。
 import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { useT, useLocale } from '../../../i18n'
 import { PageHead } from '../../org/shared'
@@ -53,6 +54,7 @@ export default function SiteCategoriesPage() {
     setBusy(true)
     try {
       await apiFetch(editing ? `/site-categories/${editing.id}` : '/site-categories', { method: editing ? 'PUT' : 'POST', body: { ...form, names: namesBody() } })
+      toast.success(s.toastSaved)
       setEditing(undefined); load()
     } catch (e) {
       setError(isConflict(e) ? s.inUse : e instanceof Error ? e.message : s.saveFail)
@@ -62,7 +64,7 @@ export default function SiteCategoriesPage() {
   const remove = async (c: Cat) => {
     if (!(await confirm(s.deleteConfirm, { danger: true }))) return
     setBusy(true)
-    try { await apiFetch(`/site-categories/${c.id}`, { method: 'DELETE' }); load() }
+    try { await apiFetch(`/site-categories/${c.id}`, { method: 'DELETE' }); toast.success(s.toastDeleted); load() }
     catch (e) {
       setError(isConflict(e) ? s.inUse : e instanceof Error ? e.message : s.actionFail)
       setBusy(false)
@@ -108,7 +110,7 @@ export default function SiteCategoriesPage() {
         <label className="text-xs">{s.fNameMy}<input className={inputCls + ' mt-1'} value={form.names['ms-MY'] ?? ''} onChange={(e) => setForm({ ...form, names: { ...form.names, 'ms-MY': e.target.value } })} /></label>
         <label className="text-xs">{s.fSort}<input className={inputCls + ' mt-1'} type="number" value={form.sortNo} onChange={(e) => setForm({ ...form, sortNo: Number(e.target.value) })} /></label>
         <label className="text-xs">{s.fEnabled}
-          <div className="mt-1"><Dropdown options={[{ value: 'on', label: s.enabledOn }, { value: 'off', label: s.enabledOff }]} value={form.enabled ? s.enabledOn : s.enabledOff} onChange={(v) => setForm({ ...form, enabled: v === 'on' })} ariaLabel={s.fEnabled} /></div>
+          <div className="mt-1"><Dropdown options={[{ value: 'on', label: s.enabledOn }, { value: 'off', label: s.enabledOff }]} value={form.enabled ? 'on' : 'off'} onChange={(v) => setForm({ ...form, enabled: v === 'on' })} ariaLabel={s.fEnabled} /></div>
         </label>
       </div>
       <div className="mt-4 flex gap-3">

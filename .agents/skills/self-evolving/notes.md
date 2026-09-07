@@ -1,5 +1,18 @@
 # Notes
 
+## 2026-09-07 PP2-W4 base+辅助页 Phase A/B(feat/pp2-w4-base-aux)
+
+- 最耗时坑:无。本轮最大收获是「审计误报的勘误机制」:Phase A 用 grep -c | head -1
+  做每目录计数,只取了第一个命中文件的行数,把 address(已有 ErrorBanner)与
+  realname-review(已有服务端分页)误判为缺口;Phase B 逐文件复核时两条 P2 撤销。
+  grep -c 输出是多文件多行,head -1 只代表第一个文件——目录级结论必须逐文件或全量统计。
+- skill 有没有预警:红线 14(键名手滑/漏 description)本轮犯了 2 次(bash 缺 description、
+  description" 多引号),都是连发快节奏下发生;发车前默念必填键应成为肌肉记忆。
+- 重来一次:审计类任务先写「证据采集脚本」再下结论;发现清单每条标注证据等级
+  (源码行号/现场断言/推断),Phase B 勘误就有据可依。
+- 额外收获:负责人中场指令引用的 scripts/accept/pp2-gate.sh 在切分支后进的 main,
+  worktree 里没有——先 merge main 反向同步再找基建,是并行波次的常规操作。
+
 ## 2026-09-07 PP2-W0 选择器基座(U0,feat/pp2-w0-pickers)
 
 - 最耗时坑:CDP 断言用 document.querySelector('aside') 当抽屉锚点,但页面有导航 aside + 抽屉 aside 两个,查错子树导致「错误行不存在/面板没打开」的假象,连烧 4 轮才用全文档 [role=alert] 计数定性;同段 discovered Esc 冒泡被 Radix Drawer dismiss 层接走、整只抽屉被关——一个真 UX bug 藏在假象后面。
@@ -1900,6 +1913,10 @@
 - 102 后端会因并行会话 CI 部署崩循环(本轮实证:000197_address_coverage 迁移撞已存在表,boss-server Restarting)。走查前先 curl 探活;「失败横幅出现」本身可能恰好是失败链路的真实验收,先分辨再判 FAIL。
 - 修文件时 " 转义被宿主预解码成裸引号再次炸 parse error(红线 22 变体):生成脚本一律「外层单引号+内层双引号」,程序串里零反斜杠;\\d 这类正则转义在单引号串里写 \\d。
 - 收获:工作台打磨的验收走查(8 场景 20 断言)全部基于真实 102 数据,点击/跳转/失败注入(fetch 替换)都在真实业务 DOM 断言;截图仅存档供人工复核(当前模型不吃图)。
+- 2026-09-07 PP2-W1 Phase A(boss 16 页走查):最省时间的是「批量清单轮+交互断言轮」两段式,16 页按钮/行数/占位一次聚合成总评表;最伤的一次是文档先写「基线已绿」而 web-admin-check 实跑 RC=2(ams 采用率 41%,非 boss),靠实跑日志当场抓回改口——验证声称必须后于验证动作。
+- 新登 known-issues:Dropdown 值契约违例簇(9+ 处把显示文案当 value,触发器回退 ariaLabel),W2/W3 大概率同病,先 grep value={xLabel( 再动手。
+- 自伤复发:read_image 在 GLM-5.3-Flash 又被拒(第 8 次)——开工第一步就该查当前模型能力声明,本次靠 DOM 断言全程兜住,零图也能完成走查。
+
 
 ## 2026-09-07 PP2-W3 计费运维域 Phase A 走查轮(feat/pp2-w3-ops)
 
@@ -1912,3 +1929,11 @@
   消费新日志格式前先 head -c 看真实形状(红线 23 的日志版)。
 - 纪律兑现:worktree --no-checkout 两段式秒回+后台 reset;commit 输出方括号核对分支名;push 前查远端分支未占号;
   主树零改动(反思惯例提交除外),合并留给负责人串行 ff。
+
+## 2026-09-07 PP2-W3 Phase B 修复轮(feat/pp2-w3-ops)
+
+- 最耗时坑:本地静态预览(preview)下 billing 两页不挂载而 console 零错——反复换 settle/profile 无果后按时间盒收口,
+  如实记「复验受限」而非硬凑绿;web-admin-check 唯一红项 ams 41% 属 W2 范围(本分支 diff 零 ams),归属上报而非代修。
+- 脚本批量插 i18n 键时 anchor 唯一性断言救了两回(x0 自卫式断言笔误、6 连中),批处理必须带 once-only 断言。
+- 子代理三域审计与本人抽查零矛盾才采信;后端路由核对集中在 Phase A 做掉,Phase B 实现时不再反查,省了一半上下文。
+- bash 工具 description 漏填连犯 3 次(红线 14 新形态):内层工具调用逐项默念必填键仍会漏,发车前先数参数个数。

@@ -34,7 +34,7 @@ export function NoticesTab({ t }: { t: Ns }) {
     setHint('')
     apiFetch<{ items: NoticeEntry[] }>('/notices')
       .then((d) => setRows(d?.items ?? []))
-      .catch(() => setError(t.loadFail))
+      .catch((e) => setError(e instanceof Error ? e.message : t.loadFail))
   }
 
   useEffect(load, []) // eslint-disable-line react-hooks/exhaustive-deps
@@ -55,13 +55,13 @@ export function NoticesTab({ t }: { t: Ns }) {
     setHint('')
     apiFetch('/notices', { method: 'POST', body: { title: title.trim(), category: category.trim() } })
       .then(() => { setBusy(false); closeForm(); toast.success(t.published); load() })
-      .catch(() => { setBusy(false); setHint(t.publishFail) })
+      .catch((e) => { setBusy(false); setHint(e instanceof Error ? e.message : t.publishFail) })
   }
 
   const toggle = (id: number) => {
     apiFetch(`/notices/${id}/toggle`, { method: 'PUT' })
       .then(load)
-      .catch(() => toast.error(t.toggleFail))
+      .catch((e) => toast.error(e instanceof Error ? e.message : t.toggleFail))
   }
 
   return (
