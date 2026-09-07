@@ -1734,6 +1734,8 @@ export interface Translations {
       transfer: string
       fMaster: string
       pMaster: string
+      toastAssignOk: string
+      toastTransferOk: string
       fReason: string
       pReason: string
       eInput: string
