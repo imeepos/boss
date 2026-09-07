@@ -562,6 +562,13 @@ const msMY: Translations = {
       add: 'Tambah', cancel: 'Batal', save: 'Simpan', saving: 'Menyimpan…', loadFail: 'Gagal memuatkan', saveFail: 'Gagal menyimpan', empty: 'Tiada data', retire: 'Lupus', retireConfirm: 'Lupuskan sumber ODN ini? Tindakan ini tidak boleh dibuat asal.', warn: 'Amaran kapasiti',
       gridCode: 'Kod grid', name: 'Nama', coverage: 'Liputan', usage: 'Penggunaan', status: 'Status', actions: 'Tindakan', code: 'Kod', kind: 'Jenis', nodeCode: 'NodeCode', siteNo: 'Nombor tapak', parentId: 'ID induk', deviceCode: 'Kod peranti', deviceKind: 'Jenis peranti', lat: 'Latitud', lng: 'Longitud',
       autoCode: 'Kod (jana automatik)', autoSiteNo: 'Nombor tapak (jana automatik)', parentSite: 'Tapak utama', noSite: 'Peranti bandar (tanpa tapak)', parentDevice: 'Peranti induk', noParent: 'Peranti peringkat atas (tiada induk)', hintNeedGrid: 'Bandar ini belum ada grid daftar: kod tiang/lorong mengandungi segmen grid — daftarkan grid dahulu', hintGotoGrids: 'Pergi ke Grid', hintNeedSite: 'Belum ada tapak: daftar dahulu, atau pilih peranti bandar (tanpa tapak)', nextNoFail: 'Gagal mendapatkan nombor seterusnya',
+      pickDevice: 'Peranti', pickDeviceSearch: 'Cari kod/nama peranti',
+      pickAsset: 'Aset', pickAssetSearch: 'Cari kod aset',
+      pickProject: 'Projek pembinaan', pickProjectSearch: 'Cari no/nama projek',
+      pickFacility: 'Fasiliti', pickFacilitySearch: 'Cari kod/nama fasiliti',
+      projStatus: { PENDING: 'Menunggu', BUILDING: 'Dalam pembinaan', ACCEPTED: 'Siap diterima' },
+      issuePickBtn: 'Pilih aset', issuePickTitle: 'Pilih aset untuk terbitan', issueNeedAsset: 'Pilih sekurang-kurangnya satu aset (IN_STOCK) dahulu',
+      issueColCode: 'Kod aset', issueColType: 'Jenis', issueColStatus: 'Status',
     },
     importer: {
       title: 'Pusat Import Data',

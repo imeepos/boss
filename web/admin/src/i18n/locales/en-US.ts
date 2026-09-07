@@ -562,6 +562,13 @@ const enUS: Translations = {
       add: 'Add', cancel: 'Cancel', save: 'Save', saving: 'Saving…', loadFail: 'Load failed', saveFail: 'Save failed', empty: 'No data', retire: 'Retire', retireConfirm: 'Retire this ODN resource? This cannot be undone.', warn: 'Capacity warning',
       gridCode: 'Grid code', name: 'Name', coverage: 'Coverage', usage: 'Usage', status: 'Status', actions: 'Actions', code: 'Code', kind: 'Type', nodeCode: 'NodeCode', siteNo: 'Site number', parentId: 'Parent ID', deviceCode: 'Device code', deviceKind: 'Device type', lat: 'Latitude', lng: 'Longitude',
       autoCode: 'Code (auto-generated)', autoSiteNo: 'Site number (auto-generated)', parentSite: 'Home site', noSite: 'City-level device (no site)', parentDevice: 'Parent device', noParent: 'Top-level device (no parent)', hintNeedGrid: 'No grids registered for this city yet: pole/manhole codes embed a grid segment — register grids first', hintGotoGrids: 'Go to Grids', hintNeedSite: 'No sites yet: register one first, or pick a city-level device (no site)', nextNoFail: 'Failed to fetch next number',
+      pickDevice: 'Device', pickDeviceSearch: 'Search device code/name',
+      pickAsset: 'Asset', pickAssetSearch: 'Search asset code',
+      pickProject: 'Construction project', pickProjectSearch: 'Search project no/name',
+      pickFacility: 'Facility', pickFacilitySearch: 'Search facility code/name',
+      projStatus: { PENDING: 'Pending', BUILDING: 'Building', ACCEPTED: 'Accepted' },
+      issuePickBtn: 'Select assets', issuePickTitle: 'Select assets to issue', issueNeedAsset: 'Select at least one asset to issue (IN_STOCK)',
+      issueColCode: 'Asset code', issueColType: 'Type', issueColStatus: 'Status',
     },
     importer: {
       title: 'Data Import Center',
