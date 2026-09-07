@@ -8,10 +8,13 @@ import { Pagination } from '../../../components/Pagination'
 import { ResourcePicker } from '../../../components/ResourcePicker'
 import { searchCustomers } from '../../../api/pickers'
 import { pagerTexts } from '../../org/shared'
-import { fmtFee } from '../../../lib/format'
+import { fmtFee, fmtTime } from '../../../lib/format'
+import { Drawer } from '../../../components/Drawer'
 import type { InvoiceRow } from '../types'
 import { INVOICES_REFRESH } from './run-modal'
 import { pageSlice } from '../types'
+
+interface TaxEventRow { id: number; event: string; taxStatusAfter: string; taxNo: string; failReason: string; externalId: string; createdAt: string }
 import { TableStateRow } from '../../../components/business'
 
 export function InvoicePanel() {
@@ -26,6 +29,33 @@ export function InvoicePanel() {
   const [act, setAct] = useState<{ kind: 'void' | 'reissue' | 'backfill'; row: InvoiceRow } | null>(null)
   const [input, setInput] = useState('')
   const [actError, setActError] = useState('')
+  // 税局写口与轨迹(P1-E:对齐 POST tax-submit/retry/replay + GET tax-events)。
+  const [taxBusy, setTaxBusy] = useState(false)
+  const [eventsFor, setEventsFor] = useState<InvoiceRow | null>(null)
+  const [events, setEvents] = useState<TaxEventRow[]>([])
+
+  const taxAct = async (row: InvoiceRow, action: 'tax-submit' | 'tax-retry' | 'tax-replay') => {
+    if (taxBusy) return
+    setTaxBusy(true)
+    try {
+      await apiFetch(`/invoices/${row.id}/${action}`, { method: 'POST' })
+      toast.success(action === 'tax-submit' ? v.taxSubmitOk : action === 'tax-retry' ? v.taxRetryOk : v.taxReplayOk)
+      load()
+    } catch (e) {
+      setActError(e instanceof Error ? e.message : v.actFail)
+    } finally {
+      setTaxBusy(false)
+    }
+  }
+
+  const openEvents = async (row: InvoiceRow) => {
+    setEventsFor(row)
+    setEvents([])
+    try {
+      const d = await apiFetch<{ items: TaxEventRow[] }>(`/invoices/${row.id}/tax-events`)
+      setEvents(d?.items ?? [])
+    } catch { setEvents([]) }
+  }
 
   const load = () => {
     setError('')
@@ -92,6 +122,10 @@ export function InvoicePanel() {
                       {r.status === 'ISSUED' && <button onClick={() => { setAct({ kind: 'void', row: r }); setInput(''); setActError('') }}>{v.voidBtn}</button>}
                       {r.status === 'ISSUED' && r.taxStatus !== 'ISSUED' && <button onClick={() => { setAct({ kind: 'backfill', row: r }); setInput(''); setActError('') }}>{v.backfillBtn}</button>}
                       {r.status === 'VOIDED' && <button onClick={() => { setAct({ kind: 'reissue', row: r }); setActError('') }}>{v.reissueBtn}</button>}
+                      {r.taxStatus === 'PENDING' && <button disabled={taxBusy} onClick={() => taxAct(r, 'tax-submit')}>{v.taxSubmitBtn}</button>}
+                      {r.taxStatus === 'FAILED' && <button disabled={taxBusy} onClick={() => taxAct(r, 'tax-retry')}>{v.taxRetryBtn}</button>}
+                      {r.taxStatus === 'FAILED' && <button disabled={taxBusy} onClick={() => taxAct(r, 'tax-replay')}>{v.taxReplayBtn}</button>}
+                      <button onClick={() => openEvents(r)}>{v.eventsBtn}</button>
                     </span>
                   </td>
                 </tr>
@@ -124,6 +158,23 @@ export function InvoicePanel() {
             </div>
           </div>
         </div>
+      )}
+
+      {eventsFor && (
+        <Drawer title={v.taxEventsTitle + ' · ' + eventsFor.invoiceNo} onClose={() => setEventsFor(null)}>
+          {events.length === 0 ? <p className="m-0 text-[13px] text-[var(--shell-group-title)]">{v.taxEventsEmpty}</p> : (
+            <ul className="m-0 flex list-none flex-col gap-2 p-0 text-[13px]">
+              {events.map((ev) => (
+                <li key={ev.id} className="rounded-sm border border-[var(--shell-side-border)] px-3 py-2">
+                  <span className="font-medium text-[var(--shell-heading)]">{ev.event}</span>
+                  <span className="ml-2 text-[var(--shell-group-title)]">{ev.taxStatusAfter}{ev.taxNo ? ' · ' + ev.taxNo : ''}</span>
+                  {ev.failReason && <span className="ml-2 text-[var(--color-danger)]">{ev.failReason}</span>}
+                  <span className="ml-2 text-[var(--shell-group-title)]">{fmtTime(ev.createdAt)}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Drawer>
       )}
     </div>
   )
