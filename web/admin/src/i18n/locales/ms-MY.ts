@@ -569,6 +569,7 @@ const msMY: Translations = {
       projStatus: { PENDING: 'Menunggu', BUILDING: 'Dalam pembinaan', ACCEPTED: 'Siap diterima' },
       issuePickBtn: 'Pilih aset', issuePickTitle: 'Pilih aset untuk terbitan', issueNeedAsset: 'Pilih sekurang-kurangnya satu aset (IN_STOCK) dahulu',
       issueColCode: 'Kod aset', issueColType: 'Jenis', issueColStatus: 'Status',
+      issueField: 'Aset (mesti IN_STOCK)',
     },
     importer: {
       title: 'Pusat Import Data',

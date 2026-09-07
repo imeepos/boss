@@ -569,6 +569,7 @@ const enUS: Translations = {
       projStatus: { PENDING: 'Pending', BUILDING: 'Building', ACCEPTED: 'Accepted' },
       issuePickBtn: 'Select assets', issuePickTitle: 'Select assets to issue', issueNeedAsset: 'Select at least one asset to issue (IN_STOCK)',
       issueColCode: 'Asset code', issueColType: 'Type', issueColStatus: 'Status',
+      issueField: 'Assets (must be IN_STOCK)',
     },
     importer: {
       title: 'Data Import Center',

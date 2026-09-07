@@ -569,6 +569,7 @@ const zhCN: Translations = {
       projStatus: { PENDING: '待开工', BUILDING: '施工中', ACCEPTED: '已竣工' },
       issuePickBtn: '选择资产', issuePickTitle: '选择出库资产', issueNeedAsset: '请先选择要出库的资产(IN_STOCK)',
       issueColCode: '资产编码', issueColType: '类型', issueColStatus: '状态',
+      issueField: '资产(须 IN_STOCK)',
     },
     importer: {
       title: '数据导入中心',
