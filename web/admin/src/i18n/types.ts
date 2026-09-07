@@ -2421,6 +2421,38 @@ export interface Translations {
       odnLayerSite: string
       odnLayerDevice: string
       parentNode: string
+      // ODN 点位反查抽屉(T14-1)
+      revTitle: string
+      revLifecycle: string
+      revLifePlanned: string
+      revLifeInBuild: string
+      revLifeInService: string
+      revLifeRetired: string
+      revStatusInUse: string
+      revStatusRetired: string
+      revStatusActive: string
+      revStatusIdle: string
+      revStatusReserved: string
+      revStatusInService: string
+      revGrid: string
+      revSite: string
+      revParentDev: string
+      revCoords: string
+      revBindings: string
+      revBindEmpty: string
+      revPort: string
+      revOrder: string
+      revBoundAt: string
+      revServability: string
+      revNearest: string
+      revLoadFail: string
+      revRetry: string
+      revDevKind: { SNW: string; OLT: string; ODF: string; OCC: string; ODB: string; OBD: string; SDB: string; SBD: string; PRT: string; TBP: string }
+      revFacKind: { P: string; MH: string; TW: string; CLS: string; TBX: string }
+      revSiteType: string
+      revServeOk: string
+      revServePend: string
+      revServeNo: string
     }
     gridInvestmentPage: {
       title: string
