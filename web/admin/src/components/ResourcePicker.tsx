@@ -1,9 +1,10 @@
-// 通用资源选择器:异步加载列表项并复用 Dropdown 视觉;支持可选空值、
-// label/value 映射与关键字搜索;加载失败仅就地提示,不阻塞表单提交。
-// search 模式:关键字经 debounce 后请求服务端(keyword 检索),关闭本地过滤。
+// 兼容层(W0 定位):既有约 20 处直用页面的 props 契约原样保留(load/search + toOption),
+// 内部统一转发 SimplePicker —— 服务端检索的防抖/loading/空态/失败重试/键盘可达/回显钉选
+// 由基座统一供给,直用页面零改动受益。新页面勿再直用本组件:小数据量 SimplePicker,
+// 大数据量 DialogPicker(见 docs/admin/picker-guide.md)。
 import { useEffect, useRef, useState } from 'react'
-import { Dropdown, type DropdownOption } from './Dropdown'
-import { mergeOptions } from './pickers/pickerCore'
+import { SimplePicker } from './pickers/SimplePicker'
+import type { DropdownOption } from './Dropdown'
 
 export interface ResourcePickerProps<T> {
   value: string
@@ -29,62 +30,68 @@ export interface ResourcePickerProps<T> {
   placeholder?: string
 }
 
-export function ResourcePicker<T>({ value, onChange, load, search, debounceMs = 300, toOption, ariaLabel, emptyLabel, pinnedOptions, searchPlaceholder, errorText, disabled, minWidth = 220, placeholder }: ResourcePickerProps<T>) {
-  const [items, setItems] = useState<T[]>([])
-  const [loadError, setLoadError] = useState('')
-  const [keyword, setKeyword] = useState('')
-  const seqRef = useRef(0)
+/** load 模式一次性全量拉取:loading/error/重试由本层持有,拉完交静态源本地过滤。 */
+function useLoadOnce<T>(load: (() => Promise<T[] | null>) | undefined, toOption: (item: T) => DropdownOption) {
+  const [items, setItems] = useState<DropdownOption[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(false)
+  const [tick, setTick] = useState(0)
+  const loadRef = useRef(load)
+  loadRef.current = load
+  const mapRef = useRef(toOption)
+  mapRef.current = toOption
 
-  const run = (kw: string) => {
-    if (!search) return
-    const seq = ++seqRef.current
-    search(kw)
-      .then((data) => { if (seq === seqRef.current) setItems(data ?? []) })
-      .catch(() => { if (seq === seqRef.current) setLoadError(errorText ?? ariaLabel) })
-  }
-
-  // 首屏:search 模式取全量(空关键字),load 模式一次性加载。
   useEffect(() => {
+    const req = loadRef.current
+    if (!req) return undefined
     let alive = true
-    const seq = ++seqRef.current
-    const req = search ? search('') : load?.()
-    req
-      ?.then((data) => { if (alive && seq === seqRef.current) setItems(data ?? []) })
-      ?.catch(() => { if (alive && seq === seqRef.current) setLoadError(errorText ?? ariaLabel) })
+    setLoading(true)
+    setError(false)
+    req()
+      .then((data) => { if (alive) { setItems((data ?? []).map(mapRef.current)); setLoading(false) } })
+      .catch(() => { if (alive) { setItems([]); setError(true); setLoading(false) } })
     return () => { alive = false }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [tick])
 
-  // search 模式:关键字防抖后请求服务端,seq 保证只采最新响应。
-  useEffect(() => {
-    if (!search) return undefined
-    const timer = setTimeout(() => run(keyword), debounceMs)
-    return () => clearTimeout(timer)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [keyword])
+  return { items, loading, error, retry: () => setTick((n) => n + 1) }
+}
 
-  const options = mergeOptions(
-    emptyLabel ? [{ value: '', label: emptyLabel }] : undefined,
-    pinnedOptions,
-    items.map(toOption),
-  )
-
-  return (
-    <div>
-      <Dropdown
+export function ResourcePicker<T>({ value, onChange, load, search, debounceMs, toOption, ariaLabel, emptyLabel, pinnedOptions, searchPlaceholder, errorText, disabled, minWidth, placeholder }: ResourcePickerProps<T>) {
+  const loaded = useLoadOnce(load, toOption)
+  if (load) {
+    return (
+      <SimplePicker
         value={value}
-        options={options}
         onChange={onChange}
+        options={loaded.items}
+        loading={loaded.loading}
+        error={loaded.error}
+        onRetry={loaded.retry}
         ariaLabel={ariaLabel}
-        disabled={disabled}
-        searchable
-        remote={!!search}
-        onKeywordChange={search ? setKeyword : undefined}
-        searchPlaceholder={searchPlaceholder}
         placeholder={placeholder}
-        triggerStyle={{ minWidth }}
+        emptyLabel={emptyLabel}
+        pinnedOptions={pinnedOptions}
+        searchPlaceholder={searchPlaceholder}
+        errorText={errorText}
+        disabled={disabled}
+        minWidth={minWidth}
       />
-      {loadError && <div className="mt-1 text-[11px] text-[var(--color-danger)]">{loadError}</div>}
-    </div>
+    )
+  }
+  return (
+    <SimplePicker
+      value={value}
+      onChange={onChange}
+      search={search ? (kw) => search(kw).then((items) => (items ?? []).map(toOption)) : undefined}
+      debounceMs={debounceMs}
+      ariaLabel={ariaLabel}
+      placeholder={placeholder}
+      emptyLabel={emptyLabel}
+      pinnedOptions={pinnedOptions}
+      searchPlaceholder={searchPlaceholder}
+      errorText={errorText}
+      disabled={disabled}
+      minWidth={minWidth}
+    />
   )
 }

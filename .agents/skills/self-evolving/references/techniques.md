@@ -678,4 +678,12 @@ SQL
 - 场景:16+ 页逐页走查反馈链/表单/表格/选择器,逐页手看太慢且漏按钮。
 - 做法:①批量轮一个循环脚本对每页跑同一 inventory eval(buttons 全文/select 数/表格行数/placeholders),logs 存 JSON 再用 python 脚本统一扫 console>=warn 与 net>=400;②交互轮对抽屉/弹层逐个点击+DOM 断言(labels 全文、drawer 存在性),一轮只改一个变量。
 - 产出:总评表(如 toast 覆盖面)直接由清单聚合;根因定位(如 Dropdown 值契约违例)靠交互轮 label 全文对照源码。
+## 抽屉/多 aside 页面的 CDP 断言锚定与 fetch 造障时序(2026-09-07 PP2-W0)
+
+场景 → 页面存在多个同名容器(导航 aside + 抽屉 aside)或要在前端拦截请求造障时。
+怎么用 → ① 断言选择器必须 role/aria-label 唯一锚定(如 aside[role="dialog"] 限定抽屉、
+[aria-label=选择客户] 限定触发器),裸 querySelector('aside') 会抓到导航;先
+document.querySelectorAll('aside').length 数一遍。② 造障走 eval 覆写 window.fetch,必须
+在目标请求发生前装好(先覆写再点开抽屉;页面 mount 即发的请求拦不到,只能拦后续触发的)。③
+恢复原 fetch 后点「重试」按钮即可当场验证失败→恢复全链路,不伤真实后端。
 

@@ -523,4 +523,6 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 当 RFC 层面某报文「服务端不可验证」(Access-Request 的 Request Authenticator 为随机数),错密钥的可观测面只在可验证报文(Accounting/CoA 的 MD5 验证子)与 PAP 解密垃圾间接暴露——测试造错密钥场景要选可验证报文类型,别对不可验证协议行为硬断言(2026-09-06 AAA-A5,RFC 2865/2866)。
 - 当用 eval 做「点击后断言」,修复是断言只查 DOM 状态(dialog 存在/文本变化),别用 click() 返回值判断——click() 恒返 undefined,b?.click()||"no-btn" 永远打出 fallback,成功失败无法区分(2026-09-07 PP2-W1)。
 - 当按 button 文本找元素点击,修复是用 textContent.trim() 精确匹配或取匹配集最后一个:侧边栏菜单项(配置下发)会先于页面按钮(+ 下发)命中 includes(下发),点错直接导航走(2026-09-07 PP2-W1 message 页实证)。
+- 当自定义下拉/浮层嵌在 Radix Dialog/Drawer 里,修复是键盘分支(Esc 尤甚)必须 stopPropagation,否则事件冒泡到 document 被全局 dismiss 层接住、整层容器连同表单一起被关(2026-09-07 PP2-W0 走查实证:Esc 想关下拉却关了整只下单抽屉);面板关闭态按 Esc 仍要放行,保留容器级 Esc 语义。
+- 当 vitest 全量跑出现「Test timed out in 5000ms + jsdom 环境启动 80-160s」,修复是先单文件隔离复跑 + main 树基线对照再定性——资源型 flake(并发 transform 挤占)会伪装成业务回归,本例 519/519 两轮全过(2026-09-07 PP2-W0)。
 
