@@ -18,26 +18,32 @@ var ErrInvalidProjStatus = errors.New("odn: invalid project status transition")
 // ErrItemLocked 明细变更被拒(ACCEPTED 后锁定/设施不可施工)。
 var ErrItemLocked = errors.New("odn: construction item locked")
 
-// Construction 施工项目(含 as-built 竣工信息)。
+// Construction 施工项目(含 as-built 竣工信息与承包商;000203/000204 扩展)。
 type Construction struct {
-	ID          int64  `json:"id"`
-	ProjNo      string `json:"projNo"`
-	Name        string `json:"name"`
-	PrvCode     string `json:"prvCode,omitempty"`
-	CityPrefix  string `json:"cityPrefix,omitempty"`
-	Status      string `json:"status"`
-	AsbuiltNote string `json:"asbuiltNote"`
-	AcceptedBy  int64  `json:"acceptedBy"`
-	AcceptedAt  string `json:"acceptedAt,omitempty"`
-	ItemCount   int64  `json:"itemCount"`
-	UpdatedAt   string `json:"updatedAt"`
+	ID             int64   `json:"id"`
+	ProjNo         string  `json:"projNo"`
+	Name           string  `json:"name"`
+	PrvCode        string  `json:"prvCode,omitempty"`
+	CityPrefix     string  `json:"cityPrefix,omitempty"`
+	Status         string  `json:"status"`
+	AsbuiltNote    string  `json:"asbuiltNote"`
+	AcceptedBy     int64   `json:"acceptedBy"`
+	AcceptedAt     string  `json:"acceptedAt,omitempty"`
+	ItemCount      int64   `json:"itemCount"`
+	UpdatedAt      string  `json:"updatedAt"`
+	ContractorID   int64   `json:"contractorId"`   // 软引用 procurement_suppliers,0=未指定(存量兼容)
+	ContractorName string  `json:"contractorName"` // 指定时名称快照
+	ItemsAmount    float64 `json:"itemsAmount"`    // 清单金额汇总 SUM(amount),结算应付口径
 }
 
-// ConstructionItem 单-设施明细。
+// ConstructionItem 单-设施明细(工程量清单行;amount 为生成列,后端计算)。
 type ConstructionItem struct {
-	ID           int64  `json:"id"`
-	ProjectID    int64  `json:"projectId"`
-	FacilityCode string `json:"facilityCode"`
+	ID           int64   `json:"id"`
+	ProjectID    int64   `json:"projectId"`
+	FacilityCode string  `json:"facilityCode"`
+	Quantity     float64 `json:"quantity"`
+	UnitPrice    float64 `json:"unitPrice"`
+	Amount       float64 `json:"amount"`
 }
 
 // ValidateProjectTransition 施工单状态转移:线性 PENDING→BUILDING→ACCEPTED,同态 no-op。
@@ -60,8 +66,11 @@ type ConstructionStore interface {
 	CreateProject(ctx context.Context, p Construction) error
 	GetProject(ctx context.Context, id int64) (*Construction, error)
 	ListProjects(ctx context.Context, limit int) ([]Construction, error)
-	AddProjectItem(ctx context.Context, projectID int64, facilityCode string) error
+	AddProjectItem(ctx context.Context, projectID int64, facilityCode string, qty, unitPrice float64) error
+	UpdateProjectItem(ctx context.Context, projectID, itemID int64, qty, unitPrice float64) error
 	StartProject(ctx context.Context, id int64) (int64, error)
 	AcceptProject(ctx context.Context, id int64, acceptedBy int64, note string) (int64, error)
 	ListProjectItems(ctx context.Context, id int64) ([]ConstructionItem, error)
+	// SetProjectContractor 指定/更换承包商(名称快照);存在有效结算单后锁定。
+	SetProjectContractor(ctx context.Context, projectID, contractorID int64, contractorName string) error
 }

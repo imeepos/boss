@@ -56,18 +56,25 @@ func (s *PGStore) CreateSupplier(ctx context.Context, sup Supplier) (int64, erro
 	if sup.Status == "" {
 		sup.Status = "ENABLED"
 	}
+	ct, err := normalizeContractorType(sup.ContractorType)
+	if err != nil {
+		return 0, err
+	}
+	if err := validateQualification(sup.Qualification); err != nil {
+		return 0, err
+	}
 	if ok, err := s.exists(ctx, "legal_entities", sup.LegalEntityID); err != nil {
 		return 0, err
 	} else if !ok {
 		return 0, fmt.Errorf("procurement: legal entity %d: %w", sup.LegalEntityID, ErrForeignKey)
 	}
 	var id int64
-	err := s.db.QueryRow(ctx,
+	err = s.db.QueryRow(ctx,
 		`INSERT INTO procurement_suppliers(code, name, contact_name, contact_phone,
-		   legal_entity_id, status, remark)
-		 VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING id`,
+		   legal_entity_id, status, remark, contractor_type, qualification)
+		 VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id`,
 		sup.Code, sup.Name, sup.ContactName, sup.ContactPhone,
-		sup.LegalEntityID, sup.Status, sup.Remark).Scan(&id)
+		sup.LegalEntityID, sup.Status, sup.Remark, ct, sup.Qualification).Scan(&id)
 	if err != nil {
 		return 0, fmt.Errorf("procurement: create supplier: %w", err)
 	}
@@ -77,7 +84,8 @@ func (s *PGStore) CreateSupplier(ctx context.Context, sup Supplier) (int64, erro
 // ListSuppliers 列供应商(按企业过滤;legalEntityID=0=全部)。
 func (s *PGStore) ListSuppliers(ctx context.Context, legalEntityID int64) ([]Supplier, error) {
 	q := `SELECT id, code, name, COALESCE(contact_name,''), COALESCE(contact_phone,''),
-	             legal_entity_id, status, COALESCE(remark,''), created_at, updated_at
+	             legal_entity_id, status, COALESCE(remark,''), created_at, updated_at,
+	             contractor_type, COALESCE(qualification,'')
 	      FROM procurement_suppliers`
 	args := []any{}
 	if legalEntityID > 0 {
@@ -94,7 +102,8 @@ func (s *PGStore) ListSuppliers(ctx context.Context, legalEntityID int64) ([]Sup
 	for rows.Next() {
 		var s Supplier
 		if err := rows.Scan(&s.ID, &s.Code, &s.Name, &s.ContactName, &s.ContactPhone,
-			&s.LegalEntityID, &s.Status, &s.Remark, &s.CreatedAt, &s.UpdatedAt); err != nil {
+			&s.LegalEntityID, &s.Status, &s.Remark, &s.CreatedAt, &s.UpdatedAt,
+			&s.ContractorType, &s.Qualification); err != nil {
 			return nil, err
 		}
 		out = append(out, s)

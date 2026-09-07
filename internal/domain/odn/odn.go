@@ -129,13 +129,21 @@ type ODNService interface {
 	SetDeviceLifecycle(ctx context.Context, id int64, to string) error
 
 	// 施工项目与竣工回填(P6,迁移 000199;线性 PENDING→BUILDING→ACCEPTED)。
+	// 000204 扩展:承包商指定、工程量清单(数量/单价/金额后端计算)、工程结算。
 	CreateProject(ctx context.Context, p Construction) error
 	GetProject(ctx context.Context, id int64) (*Construction, error)
 	ListProjects(ctx context.Context, limit int) ([]Construction, error)
-	AddProjectItem(ctx context.Context, projectID int64, facilityCode string) error
+	AddProjectItem(ctx context.Context, projectID int64, facilityCode string, qty, unitPrice float64) error
+	UpdateProjectItem(ctx context.Context, projectID, itemID int64, qty, unitPrice float64) error
+	SetProjectContractor(ctx context.Context, projectID, contractorID int64, contractorName string) error
 	StartProject(ctx context.Context, id int64) (int64, error)
 	AcceptProject(ctx context.Context, id int64, acceptedBy int64, note string) (int64, error)
 	ListProjectItems(ctx context.Context, id int64) ([]ConstructionItem, error)
+	CreateSettlement(ctx context.Context, projectID, createdBy int64) (*Settlement, error)
+	ListSettlements(ctx context.Context, projectID int64) ([]Settlement, error)
+	GetSettlement(ctx context.Context, id int64) (*Settlement, error)
+	SettleSettlement(ctx context.Context, id, accountID int64) error
+	VoidSettlement(ctx context.Context, id, accountID int64, reason string) error
 
 	// 物理端口占用态(P2,迁移 000200;下单门控数据基础)。
 	ListPorts(ctx context.Context, deviceID int64) ([]ODNPort, error)

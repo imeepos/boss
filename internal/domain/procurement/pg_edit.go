@@ -13,10 +13,12 @@ import (
 // 编码不在入参中,结构性不可改;禁用态同样可改资料(WHERE 不带 status 条件),
 // 状态流转归 disable/enable 端点专管。
 type SupplierUpdate struct {
-	Name         *string `json:"name"`
-	ContactName  *string `json:"contactName"`
-	ContactPhone *string `json:"contactPhone"`
-	Remark       *string `json:"remark"`
+	Name           *string `json:"name"`
+	ContactName    *string `json:"contactName"`
+	ContactPhone   *string `json:"contactPhone"`
+	Remark         *string `json:"remark"`
+	ContractorType *string `json:"contractorType"`
+	Qualification  *string `json:"qualification"`
 }
 
 // OrderDraftUpdate 采购单草稿编辑入参(PUT):Remark/ExpectedDate nil = 保持原值;
@@ -32,13 +34,26 @@ func (s *PGStore) UpdateSupplier(ctx context.Context, id int64, in SupplierUpdat
 	if in.Name != nil && *in.Name == "" {
 		return fmt.Errorf("procurement: supplier %d: %w", id, ErrInvalidInput)
 	}
+	if in.ContractorType != nil {
+		ct, err := normalizeContractorType(*in.ContractorType)
+		if err != nil {
+			return fmt.Errorf("procurement: supplier %d: %w", id, err)
+		}
+		in.ContractorType = &ct
+	}
+	if in.Qualification != nil {
+		if err := validateQualification(*in.Qualification); err != nil {
+			return fmt.Errorf("procurement: supplier %d: %w", id, err)
+		}
+	}
 	tag, err := s.db.Exec(ctx,
 		`UPDATE procurement_suppliers
 		 SET name = COALESCE($2, name), contact_name = COALESCE($3, contact_name),
 		     contact_phone = COALESCE($4, contact_phone), remark = COALESCE($5, remark),
+		     contractor_type = COALESCE($6, contractor_type), qualification = COALESCE($7, qualification),
 		     updated_at = now()
 		 WHERE id = $1`,
-		id, in.Name, in.ContactName, in.ContactPhone, in.Remark)
+		id, in.Name, in.ContactName, in.ContactPhone, in.Remark, in.ContractorType, in.Qualification)
 	if err != nil {
 		return fmt.Errorf("procurement: update supplier: %w", err)
 	}
@@ -139,6 +154,46 @@ func (s *PGStore) UpdateOrderDraft(ctx context.Context, id int64, in OrderDraftU
 	}
 	if err := tx.Commit(ctx); err != nil {
 		return fmt.Errorf("procurement: commit: %w", err)
+	}
+	return nil
+}
+
+// GetSupplier 查供应商(含承建类型维度;未命中 nil,不报错)。
+func (s *PGStore) GetSupplier(ctx context.Context, id int64) (*Supplier, error) {
+	var sup Supplier
+	err := s.db.QueryRow(ctx,
+		`SELECT id, code, name, COALESCE(contact_name,''), COALESCE(contact_phone,''),
+		       legal_entity_id, status, COALESCE(remark,''), created_at, updated_at,
+		       contractor_type, COALESCE(qualification,'')
+		 FROM procurement_suppliers WHERE id=$1`, id).Scan(
+		&sup.ID, &sup.Code, &sup.Name, &sup.ContactName, &sup.ContactPhone,
+		&sup.LegalEntityID, &sup.Status, &sup.Remark, &sup.CreatedAt, &sup.UpdatedAt,
+		&sup.ContractorType, &sup.Qualification)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("procurement: get supplier: %w", err)
+	}
+	return &sup, nil
+}
+
+// normalizeContractorType 承建类型归一:空值=材料类(存量语义),其余必须为枚举值。
+func normalizeContractorType(s string) (string, error) {
+	switch s {
+	case "":
+		return ContractorMaterial, nil
+	case ContractorMaterial, ContractorConstruction:
+		return s, nil
+	default:
+		return "", fmt.Errorf("contractor_type %q: %w", s, ErrInvalidInput)
+	}
+}
+
+// validateQualification 资质信息长度守卫(与列 VARCHAR(255) 对齐,超长走 42200 而非库错误)。
+func validateQualification(q string) error {
+	if len(q) > 255 {
+		return fmt.Errorf("qualification %d bytes: %w", len(q), ErrInvalidInput)
 	}
 	return nil
 }

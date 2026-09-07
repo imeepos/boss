@@ -23,7 +23,7 @@ func TestPGStore_CreateSupplier_OK(t *testing.T) {
 		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
 
 	mock.ExpectQuery(`INSERT INTO procurement_suppliers`).
-		WithArgs("S-01", "上海供应商", "张三", "13800000000", int64(1), "ENABLED", "").
+		WithArgs("S-01", "上海供应商", "张三", "13800000000", int64(1), "ENABLED", "", "MATERIAL", "").
 		WillReturnRows(mock.NewRows([]string{"id"}).AddRow(int64(42)))
 
 	s := NewPGStore(mock)

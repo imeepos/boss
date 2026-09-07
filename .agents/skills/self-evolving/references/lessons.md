@@ -319,6 +319,7 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 2026-08-28: go build 连 -x 都零输出且挂死 → 先查 GOPATH/GOMODCACHE 是否在外置卷(~/go 软链 /Volumes/sker 停摆),本地 GOPATH 绕行再定位。
 - 2026-08-28: pgx 把 nil 切片编码为 SQL NULL,显式 INSERT 列不吃表 DEFAULT → 撞 NOT NULL;落库前 nil 兜底空切片。
 - 2026-08-28: multipart/DB 落库链路的 bug 域单测挡不住(缺省值/驱动编码/语义),必须 102 实测冒烟;gin 同段 :id 与 static 冲突注册期 panic,公开面用独立段(/site/downloads)。
+- 当迁移号来自任务书『预分配』时,修复是把它当建议当落盘事实——并行会话可能在你的开工核查之后、提交之前把同号先合入 main,撞号后按让号规则改名+改文件内注释+重跑 D 检查一次做完,并把顺延事实写进 adopted note 与回报(2026-09-07 W1 轮 000203→000205)。
 - 2026-08-28: UI 验证用 cdp-capture --eval 打 innerText 断言比截图可靠(无图像输入能力时);admin 页登录注入 localStorage boss.token 后 location.href 跳转。
 - (2026-08-24 全面迁移)sker 盘(disk7,1TB USB,历史多次 I/O 卡死)上的全部构建工具链已迁离:.vite-plus 8.4G(node/pnpm/dsh/claude)→ ext512/dev-toolchain;.gradle 25G、.android 4.3G、.venvs、.hermes/.kimi-code/.cloakbrowser → ext512/dev-cache;pnpm store-dir(~/.config/pnpm/rc)与 npm cache(~/.npmrc)改指 ext512/dev-cache。全部用符号链接原位替换,零 shell 配置改动(Android SDK 本就在 ~/Library 内置盘)。内置盘仅 9Gi 放不下,ext512(disk4,独立外置盘,450G 空闲,boss 仓库所在)是唯一可行落点。sker 上仍留纯数据(workspace/archives/gitea/verdaccio 等 26 个链接)与旧副本备份,确认稳定后可清理。
 - 迁移时遇并行会话 Gradle/Kotlin daemon classpath 已解析到旧盘绝对路径:不杀 daemon(误伤在途构建),换链接后旧 daemon 读旧路径继续跑,自然消亡后新构建走新盘;rsync 报 exit 23(源文件中途消失)补一轮增量即可。
