@@ -70,12 +70,22 @@ func expandChainAnchor(ctx context.Context, tx pgx.Tx, rec *ChainRecord) error {
 	if err != nil {
 		return fmt.Errorf("odn: anchor code: %w", err)
 	}
+	// 并发导入同链同网格时编码冲突:DO NOTHING 后重查,幂等复用(不整行失败)。
 	if _, err := tx.Exec(ctx,
 		`INSERT INTO odn_facility
 		 (code, kind, prv_code, city_prefix, grid_code, name, status, lifecycle_status)
-		 VALUES ($1,$2,$3,$4,$5,$6,'IN_USE',$7)`, code, KindManhole,
-		rec.PrvCode, rec.CityPrefix, rec.GridCode, name, rec.Lifecycle); err != nil {
+		 VALUES ($1,$2,$3,$4,$5,$6,'IN_USE',$7)
+		 ON CONFLICT (code) DO NOTHING`,
+		code, KindManhole, rec.PrvCode, rec.CityPrefix, rec.GridCode, name, rec.Lifecycle); err != nil {
 		return fmt.Errorf("odn: insert chain anchor: %w", err)
+	}
+	// 冲突时由先提交事务写入,重查确认存在即复用。
+	var got string
+	if err := tx.QueryRow(ctx,
+		`SELECT code FROM odn_facility WHERE prv_code=$1 AND city_prefix=$2 AND grid_code=$3
+		   AND kind='MH' AND name=$4 AND status <> 'RETIRED' ORDER BY id LIMIT 1`,
+		rec.PrvCode, rec.CityPrefix, rec.GridCode, name).Scan(&got); err != nil {
+		return fmt.Errorf("odn: reload chain anchor: %w", err)
 	}
 	return nil
 }
