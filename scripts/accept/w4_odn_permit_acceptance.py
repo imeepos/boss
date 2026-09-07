@@ -149,7 +149,7 @@ def create_project(name_suffix):
 
 def create_facility(suffix):
     code = "CLS9" + str(random.randint(1000, 9999))
-    st, body = http("POST", "/odn/facilities", {"code": code, "kind": "CLS", "name": FAC_PREFIX + suffix})
+    st, body = http("POST", "/odn/facilities", {"code": code, "kind": "CLS", "name": FAC_PREFIX + suffix, "prvCode": "PHL001", "cityPrefix": "MNL"})
     if st != 200 or not body or body.get("code") != 0:
         bad("create_facility", str(body))
         return None
