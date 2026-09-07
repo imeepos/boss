@@ -362,6 +362,85 @@
 | 描述 | `Description` | description | VARCHAR(255) 必填 |
 | 复验人/时间 | `VerifiedBy`/`VerifiedAt` | verified_by/verified_at | → accounts / TIMESTAMPTZ |
 
+#### 1.5.8d 工程预算与里程碑（construction_projects 增列 + construction_milestones，迁移 000218，W6/G2）
+
+> P-INFRA-1 W6（G2 剩余；审查 F8 合并设计）。项目可挂预算金额与里程碑清单（名称/计划完成日/状态）；
+> 预算与里程碑清单仅项目 PENDING（BUILDING 前）可改，里程碑状态可标记至 ACCEPTED 前，ACCEPTED 后锁定（terms.md §4）。
+> 预算执行进度=已结算金额/预算金额，**只读派生**：已结算金额=同项目 SETTLED 结算单合计（VOIDED 不计），禁止直写；
+> 预算未登记（NULL）显示「未登记」而非 0（口径同 1.5.11 settledCost）。管理面 `menu:odn` 施工页签内，
+> REST `PUT /odn/constructions/{id}/budget`、`/odn/constructions/{id}/milestones*`、`/odn/milestones/{id}/complete|reopen`（契约 admin/odn.yaml）。
+
+construction_projects 增列：
+
+| 页面列名 | 字段名 | DB 列 | 枚举/说明 |
+|:---------|:-------|:------|:----------|
+| 预算金额 | `BudgetAmount` | budget_amount | NUMERIC(14,2) 可空 NULL=未登记；>=0；仅 PENDING 可改（000218） |
+| 已结算金额 | `SettledAmount` | —（派生） | SUM(SETTLED settlements.total_amount)，页面展示列，只读派生 |
+
+construction_milestones：
+
+| 页面列名 | 字段名 | DB 列 | 枚举/说明 |
+|:---------|:-------|:------|:----------|
+| 施工项目 | `ProjectID` | project_id | FK → construction_projects |
+| 名称 | `Name` | name | VARCHAR(128) 必填 |
+| 计划完成日 | `PlannedDate` | planned_date | DATE 可空（YYYY-MM-DD） |
+| 状态 | `Status` | status | PENDING / DONE（terms.md §4）；DONE 落 done_at |
+| 完成时间 | `DoneAt` | done_at | TIMESTAMPTZ 可空 |
+
+#### 1.5.8e 工程应付台账（construction_payables + payments/deductions/invoices，迁移 000219，W6/F8）
+
+> P-INFRA-1 W6（审查 F8：SETTLED 即终点→应付台账闭环）。应付由 SETTLED 结算单**同事务自动生成**
+> （金额=结算应付快照，settlement_id 唯一来源引用，一结算单一应付，作废后重开以新结算单+新应付表达）；
+> 结算单 VOIDED 同事务冲销应付（原因同源，付款流水保留历史）。部分付款与分期=多次登记付款流水至未付余额耗尽，
+> 单笔不超余额（40900）；核减=复审减项（原因必填，append-only），净应付/余额只读派生不落列。
+> 管理面 `menu:payables`（挂 billing 分组呈现，域归属见 domain-map §2.1），
+> REST `/odn/payables*`（契约 admin/odn.yaml）。状态枚举与 VOIDED 联动规则见 terms.md §4。
+
+construction_payables（应付单头）：
+
+| 页面列名 | 字段名 | DB 列 | 枚举/说明 |
+|:---------|:-------|:------|:----------|
+| 应付单号 | `PayableNo` | payable_no | VARCHAR(32) 唯一（AP-YYYYMMDD-NNNNN，后端生成兜底） |
+| 来源结算单 | `SettlementID`/`SettlementNo` | settlement_id/settlement_no | settlement_id UNIQUE → construction_settlements + 单号快照（单据链回放锚点） |
+| 施工项目 | `ProjectID`/`ProjectNo` | project_id/project_no | 快照自结算单 |
+| 承包商 | `ContractorID`/`ContractorName` | contractor_id/contractor_name | 快照自结算单（软引用，同 1.5.8a） |
+| 应付金额 | `PayableAmount` | payable_amount | NUMERIC(14,2) = 结算应付快照 |
+| 状态 | `Status` | status | OPEN / PARTIAL / PAID / VOIDED（terms.md §4；按流水派生维护） |
+| 冲销原因 | `VoidReason` | void_reason | 随结算单作废原因同源 |
+| 核减合计/已付/未付余额 | `DeductedAmount`/`PaidAmount`/`Balance` | —（派生） | 子查询 SUM；余额=净应付-已付，VOIDED 可为负（超付如实展示） |
+| 生成/更新时间 | `CreatedAt`/`UpdatedAt` | 同 | TIMESTAMPTZ |
+
+construction_payable_payments（付款流水登记）：
+
+| 页面列名 | 字段名 | DB 列 | 枚举/说明 |
+|:---------|:-------|:------|:----------|
+| 应付 | `PayableID` | payable_id | FK → construction_payables |
+| 付款流水号 | `PaymentNo` | payment_no | VARCHAR(32) 唯一（PAY-YYYYMMDD-NNNNN，后端生成兜底） |
+| 金额 | `Amount` | amount | NUMERIC(14,2) >0；单笔不超未付余额（40900） |
+| 方式 | `Method` | method | TRANSFER / CASH / CHEQUE / OTHER（terms.md §4） |
+| 付款时间 | `PaidAt` | paid_at | TIMESTAMPTZ 可空缺省当前 |
+| 凭证号/备注 | `Reference`/`Note` | reference/note | ≤64/≤255 可空 |
+| 登记人 | `CreatedBy` | created_by | → accounts |
+
+construction_payable_deductions（核减明细，append-only）：
+
+| 页面列名 | 字段名 | DB 列 | 枚举/说明 |
+|:---------|:-------|:------|:----------|
+| 应付 | `PayableID` | payable_id | FK → construction_payables |
+| 金额 | `Amount` | amount | NUMERIC(14,2) >0；累计不超应付金额；核减后净应付不得低于已付（40900） |
+| 原因 | `Reason` | reason | VARCHAR(255) 必填（留痕） |
+| 登记人/时间 | `CreatedBy`/`CreatedAt` | 同 | → accounts / TIMESTAMPTZ |
+
+construction_payable_invoices（发票登记，纯登记不联动税局）：
+
+| 页面列名 | 字段名 | DB 列 | 枚举/说明 |
+|:---------|:-------|:------|:----------|
+| 应付 | `PayableID` | payable_id | FK → construction_payables |
+| 发票号 | `InvoiceNo` | invoice_no | VARCHAR(64)；UNIQUE(payable_id, invoice_no) 同应付内唯一 |
+| 金额 | `Amount` | amount | NUMERIC(14,2) >0 |
+| 开票日 | `InvoicedAt` | invoiced_at | DATE 可空 |
+| 备注/登记人 | `Note`/`CreatedBy` | 同 | ≤255 / → accounts |
+
 ### 1.5.9 odn_port（物理端口占用态，迁移 000200，internal/domain/odn）
 
 > P2 端口占用（路线图 T11）：分光器/终端盒端口级资源，订单预占的物理落地。`order_id` 为订单软引用（E10/E11 独立命名空间，不加 FK）。管理面 `menu:odn`，REST `/odn/devices/{id}/ports`、`/odn/ports/allocate-for-address`（覆盖关联兑现）等。
