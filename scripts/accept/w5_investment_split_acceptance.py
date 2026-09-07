@@ -173,7 +173,7 @@ def chain_row(occ, odb, obd, s1r, s1p, sdb, sbd, s2r, s2p):
         "sdbCode": sdb, "sbdCode": sbd,
         "split2Ratio": s2r, "split2Port": s2p,
         "totalSplit": "", "fiberCode": TAG + "-F", "frTo": TAG + "-FRTO",
-        "portStatus": "可用", "layingMethod": "架空", "rowStatus": "NA", "peceStatus": "NA",
+        "portStatus": "可用", "layingMethod": "架空", "rowStatus": "不适用", "peceStatus": "不适用",
         "remark": TAG}
 
 def import_chains(rows):
