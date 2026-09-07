@@ -3,6 +3,7 @@
 // 分类下拉读 /site-categories 字典(启用项,按界面语言展示本地化名);
 // 语言(000155)选变体:同 slug 多语言各存一行,公开端按 ?lang= 命中。
 import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import { useNavigate, useParams } from 'react-router-dom'
 import { apiFetch } from '../../../api/client'
 import { AttachmentPickerDialog } from '../../../components/AttachmentManager/PickerDialog'
@@ -56,6 +57,7 @@ export default function SitePostEditorPage() {
     try {
       const body = { ...form, category: form.category || cats[0]?.code || 'NEWS' }
       await apiFetch(editing ? `/site-posts/${postId}` : '/site-posts', { method: editing ? 'PUT' : 'POST', body })
+      toast.success(s.toastSaved)
       nav('/boss/site')
     } catch (e) { setError(e instanceof Error ? e.message : s.saveFail); setBusy(false) }
   }
@@ -75,13 +77,13 @@ export default function SitePostEditorPage() {
         <label className="text-xs">{s.fTitle}<Input className="mt-1" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></label>
         <label className="text-xs">{s.fSlug}<Input className="mt-1" value={form.slug} placeholder="hello-world" onChange={(e) => setForm({ ...form, slug: e.target.value })} /></label>
         <label className="text-xs">{s.fLang}
-          <div className="mt-1"><Dropdown options={localeOptions()} value={localeOptions().find((o) => o.value === form.lang)?.label ?? form.lang} onChange={(v) => setForm({ ...form, lang: v as Locale })} ariaLabel={s.fLang} /></div>
+          <div className="mt-1"><Dropdown options={localeOptions()} value={form.lang} onChange={(v) => setForm({ ...form, lang: v as Locale })} ariaLabel={s.fLang} /></div>
         </label>
         <label className="text-xs">{s.fCategory}
-          <div className="mt-1"><Dropdown options={cats.map((c) => ({ value: c.code, label: c.names?.[locale] || c.name }))} value={catName(form.category || cats[0]?.code || '')} onChange={(v) => setForm({ ...form, category: v })} ariaLabel={s.fCategory} /></div>
+          <div className="mt-1"><Dropdown options={cats.map((c) => ({ value: c.code, label: c.names?.[locale] || c.name }))} value={form.category || cats[0]?.code || ''} onChange={(v) => setForm({ ...form, category: v })} ariaLabel={s.fCategory} /></div>
         </label>
         <label className="text-xs">{s.fStatus}
-          <div className="mt-1"><Dropdown options={[{ value: 'DRAFT', label: s.stDraft }, { value: 'PUBLISHED', label: s.stPublished }, { value: 'OFFLINE', label: s.stOffline }]} value={stLabel(form.status)} onChange={(v) => setForm({ ...form, status: v })} ariaLabel={s.fStatus} /></div>
+          <div className="mt-1"><Dropdown options={[{ value: 'DRAFT', label: s.stDraft }, { value: 'PUBLISHED', label: s.stPublished }, { value: 'OFFLINE', label: s.stOffline }]} value={form.status} onChange={(v) => setForm({ ...form, status: v })} ariaLabel={s.fStatus} /></div>
         </label>
         <label className="text-xs">{s.fAuthor}<Input className="mt-1" value={form.authorName} onChange={(e) => setForm({ ...form, authorName: e.target.value })} /></label>
         <div className="text-xs">{s.fCover}
