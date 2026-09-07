@@ -32,6 +32,11 @@ export function ErrorBanner({ message, className = '' }: { message: string; clas
   )
 }
 
+/** IdRef: 内部编号降级展示(muted mono #id)——取不到人读名时统一口径并留痕(路线图规则 4)。 */
+export function IdRef({ value }: { value: number | string }) {
+  return <span className="font-mono text-xs text-[var(--shell-group-title)]">#{value}</span>
+}
+
 /** ActionLinks: action buttons row with separator, replaces .inline-flex items-center */
 export function ActionLinks({ children }: { children: React.ReactNode }) {
   return <span className="inline-flex items-center gap-0">{children}</span>

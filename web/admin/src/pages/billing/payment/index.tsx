@@ -9,7 +9,7 @@ import { StatusTag } from '../../../components/StatusTag'
 import { Pagination } from '../../../components/Pagination'
 import { pageSlice, type PaymentRow } from '../types'
 import { fmtFee } from '../../../lib/format'
-import { TableStateRow, ErrorBanner } from '../../../components/business'
+import { TableStateRow, ErrorBanner, IdRef } from '../../../components/business'
 import { useConfirm } from '../../../components/ConfirmDialog'
 import { useProfile } from '../../../layouts/profile'
 import { CounterPaymentForm } from './CounterPaymentForm'
@@ -80,7 +80,7 @@ export default function PaymentPage() {
                 {slice.map((r) => (
                   <tr key={r.id}>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.payNo}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">#{r.billId}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><IdRef value={r.billId} /></td>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{fmtFee(r.amount)}</td>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{p.methods[r.method] ?? r.method}</td>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><StatusTag domain="payment" value={r.status} /></td>

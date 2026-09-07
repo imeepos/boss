@@ -2,6 +2,7 @@
 // 当日 cash 流水按网点+操作员汇总,收入/退款分列(退款按流水发生日归属);
 // 实点金额当日回填(perm menu:payment:cash),不平由后端落 [paycheck] DIFF 日志;
 // 明细区逐笔下钻含 REFUNDED 凭证与退款原因。
+import { IdRef } from '../../../components/business'
 import { useEffect, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
@@ -130,7 +131,7 @@ export default function DailyClosePage() {
               {slice.map((r) => (
                 <tr key={r.id}>
                   <td className={tdCls}>{r.payNo}</td>
-                  <td className={tdCls}>{r.billId ? `#${r.billId}` : '-'}</td>
+                  <td className={tdCls}>{r.billId ? <IdRef value={r.billId} /> : '-'}</td>
                   <td className={tdCls}>{fmtFee(r.amount)}</td>
                   <td className={tdCls}><StatusTag domain="payment" value={r.status} /></td>
                   <td className={tdCls}>{r.refundReason || '-'}</td>
@@ -144,7 +145,7 @@ export default function DailyClosePage() {
         </div>
         <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
           <Pagination total={items.length} page={page} pageSize={pageSize}
-            onPage={setPage} onSize={setPageSize} {...pagerTexts(t.pages.payment)} />
+            onPage={setPage} onSize={setPageSize} {...pagerTexts(p)} />
         </div>
       </div>
     </div>

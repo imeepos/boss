@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
-import { PageHead, pagerTexts, ErrorBanner, ToolbarButton, TableStateRow } from '../../../components/business'
+import { PageHead, pagerTexts, ErrorBanner, ToolbarButton, TableStateRow, IdRef } from '../../../components/business'
 import { Pagination } from '../../../components/Pagination'
 import { useConfirm } from '../../../components/ConfirmDialog'
 import { pageSlice, type CollectionTaskRow } from '../types'
@@ -86,7 +86,7 @@ export default function CollectionTasksPage() {
               <tbody>
                 {slice.map((x) => (
                   <tr key={x.id} className="border-b border-[var(--shell-side-border)] hover:bg-[var(--shell-menu-hover-bg)]">
-                    <td className="h-11 px-3 whitespace-nowrap">{x.id}</td>
+                    <td className="h-11 px-3 whitespace-nowrap"><IdRef value={x.id} /></td>
                     <td className="h-11 px-3 whitespace-nowrap">{x.customer || `#${x.customerId}`}</td>
                     <td className="h-11 px-3 whitespace-nowrap">{fmtFee(x.amount)} / {x.days}d</td>
                     <td className="h-11 px-3 whitespace-nowrap">{x.priority}</td>

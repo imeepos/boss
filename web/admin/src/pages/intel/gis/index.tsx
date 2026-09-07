@@ -10,7 +10,7 @@ import { DetailDrawer } from '../../org/shared'
 import { fmtTime } from '../../../lib/format'
 import { useLocalStorage } from '../../../lib/useLocalStorage'
 import { pageSlice, type GisNode, type GisPointRow, type GisResourceDetail } from '../types'
-import { TableStateRow } from '../../../components/business'
+import { TableStateRow, IdRef } from '../../../components/business'
 import { CardShell, StatCard } from '../../../components/business/charts'
 import { PgisMap, type GisPoint, type Theme } from '../../../components/business/maps'
 
@@ -176,7 +176,7 @@ export default function GisPage() {
               <tbody>
                 {slice.map((n) => (
                   <tr key={n.id}>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">#{n.id}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><IdRef value={n.id} /></td>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{n.name}</td>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{n.level}. {g.levels[n.level - 1] ?? n.level}</td>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{n.count}</td>
