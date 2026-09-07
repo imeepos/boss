@@ -93,3 +93,20 @@ export interface ReportPayload {
   maintenance: AnalyticsMaintRow[]
   conclusions?: string[]
 }
+
+/** 网格投资测算行:GET /odn/grid-investment(items);口径 docs/contract/fields.md 1.5.11。 */
+export interface GridInvestmentRow {
+  prvCode: string
+  cityPrefix: string
+  gridCode: number
+  gridName: string
+  facilitiesPlanned: number
+  facilitiesInBuild: number
+  facilitiesInService: number
+  facilitiesRetired: number
+  coverageServed: number
+  coveragePending: number
+  coverageUnserved: number
+  settledCost: number | null // null=未登记(W1 结算源缺失或该网格无数据),禁止显示 0
+  costPerServed: number | null // null=未登记(分母 0 或成本未登记)
+}
