@@ -69,11 +69,46 @@ func (s *PGStore) GridInvestment(ctx context.Context) ([]GridInvestmentRow, erro
 	return out, nil
 }
 
-// settledCosts 按网格聚合已结算工程成本(W1 承包商结算数据源)。
-// W1(P-INFRA-1)尚未合并进 main:结算表不存在,返回 hasCost=false,
-// 页面对全部网格显示「未登记」(禁止显示 0)。
-// W2 合并前反向同步 main 拿到结算数据源后,此处替换为真实结算表聚合,
-// 口径见 fields.md 1.5.11;替换前标记:W2-COST-SOURCE-PENDING。
-func (s *PGStore) settledCosts(_ context.Context) (map[gridKey]float64, bool, error) {
-	return nil, false, nil
+// settledCostByGridSQL 已结算工程成本按网格归集(W1 工程结算数据源,迁移 000206):
+// 结算单 SETTLED(已结算;PENDING 未结算/VOIDED 作废不计)→ 项目明细设施归属网格
+// → 汇总明细金额(ACCEPTED 后明细锁定,项目应付总额=明细金额和,不漂移)。
+var settledCostByGridSQL = `SELECT fl.prv_code, fl.city_prefix, fl.grid_code, SUM(ci.amount)
+	FROM construction_settlements cs
+	JOIN construction_projects cp ON cp.id = cs.project_id
+	JOIN construction_items ci ON ci.project_id = cp.id
+	JOIN odn_facility fl ON fl.code = ci.facility_code AND fl.grid_code IS NOT NULL
+	WHERE cs.status = 'SETTLED'
+	GROUP BY fl.prv_code, fl.city_prefix, fl.grid_code`
+
+// settledCosts 按网格聚合已结算工程成本(W1 承包商结算数据源,迁移 000206)。
+// 结算表未建(W1 尚未合并/102 未部署该迁移)时返回 hasCost=false,页面显示
+// 「未登记」,禁止显示 0;表存在而查询失败按错误上抛,禁止静默吞错。
+// 口径:cs.status=SETTLED;明细经 facility_code 归网格,无网格维度设施
+// (TW/CLS/TBX)的明细金额不进网格行,详见 fields.md 1.5.11。
+func (s *PGStore) settledCosts(ctx context.Context) (map[gridKey]float64, bool, error) {
+	var reg any
+	if err := s.db.QueryRow(ctx, `SELECT to_regclass('construction_settlements')`).Scan(&reg); err != nil {
+		return nil, false, fmt.Errorf("odn: settled cost probe: %w", err)
+	}
+	if reg == nil {
+		return nil, false, nil // W1 结算源未登记:显式未登记而非 0
+	}
+	rows, err := s.db.Query(ctx, settledCostByGridSQL)
+	if err != nil {
+		return nil, false, fmt.Errorf("odn: settled cost query: %w", err)
+	}
+	defer rows.Close()
+	out := map[gridKey]float64{}
+	for rows.Next() {
+		var k gridKey
+		var amount float64
+		if err := rows.Scan(&k.prvCode, &k.cityPrefix, &k.gridCode, &amount); err != nil {
+			return nil, false, fmt.Errorf("odn: settled cost scan: %w", err)
+		}
+		out[k] = amount
+	}
+	if err := rows.Err(); err != nil {
+		return nil, false, fmt.Errorf("odn: settled cost rows: %w", err)
+	}
+	return out, true, nil
 }

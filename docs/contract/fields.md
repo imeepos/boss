@@ -339,8 +339,10 @@
 > 1. 设施数：`odn_facility.grid_code` 非空行（即 P/MH）按 `lifecycle_status` 分组计数；TW/CLS/TBX 市域设施无网格维度，不进网格行。
 > 2. 覆盖地址数：`address_coverage` 经服务设施（`facility_code → odn_facility.grid_code`）归属网格，按 `status` 分组计数；
 >    仅挂核心设备（`device_id`）或未挂目标的行（UNSERVED 默认无目标）不进网格行，全网口径见覆盖页 `/odn/coverage*`。
-> 3. 已结算工程成本：读 W1 承包商结算数据（合并前标记 W2-COST-SOURCE-PENDING，读法见 internal/domain/odn/pg_investment.go）；
->    结算源未登记或该网格无结算数据时 `settledCost=null`，页面显示「未登记」，禁止显示 0。
+> 3. 已结算工程成本：读 W1 承包商结算数据（`construction_settlements`，迁移 000206；读法 internal/domain/odn/pg_investment.go，
+>    `to_regclass` 守卫：结算表未建即 W1 未合并/未部署时全表 `settledCost=null`）；归集口径 = 结算单 `SETTLED`（PENDING 未结算、
+>    VOIDED 作废不计）→ 项目明细设施归属网格 → 汇总明细金额；结算表存在而查询失败按错误上抛，禁止静默吞错；
+>    该网格无结算数据时 `settledCost=null`，页面显示「未登记」，禁止显示 0。
 > 4. 每可装地址成本：`settledCost ÷ coverageServed`；成本未登记或分母为 0 时同样 `null`（未登记）。
 
 | 页面列名 | API 字段 | 聚合源 | 枚举/说明 |
