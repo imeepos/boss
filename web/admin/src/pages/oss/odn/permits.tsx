@@ -77,7 +77,7 @@ export default function PermitsPage() {
       } catch { setFacOpts([]) }
       try {
         const projs = (await apiFetch<ProjectLite[]>('/odn/constructions', { query: { limit: 100 } })) ?? []
-        setProjectOpts(projs.map((p) => ({ value: String(p.id), label: p.projNo + ' ' + (p.name || '') + ' [' + (o.projStatus[p.status] ?? p.status) + ']' })))
+        setProjectOpts(projs.map((p) => ({ value: String(p.id), label: p.projNo + ' ' + (p.name || '') + ' [' + (o.projStatus[p.status as keyof typeof o.projStatus] ?? p.status) + ']' })))
       } catch { setProjectOpts([]) }
     })()
   }, [])
