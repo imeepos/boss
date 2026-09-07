@@ -69,7 +69,8 @@ type ConstructionStore interface {
 	AddProjectItem(ctx context.Context, projectID int64, facilityCode string, qty, unitPrice float64) error
 	UpdateProjectItem(ctx context.Context, projectID, itemID int64, qty, unitPrice float64) error
 	StartProject(ctx context.Context, id int64) (int64, error)
-	AcceptProject(ctx context.Context, id int64, acceptedBy int64, note string) (int64, error)
+	// AcceptProject 返回 (设施翻转数, 覆盖联动数, 错误);F6 竣工覆盖联动随事务(000211)。
+	AcceptProject(ctx context.Context, id int64, acceptedBy int64, note string) (int64, int64, error)
 	ListProjectItems(ctx context.Context, id int64) ([]ConstructionItem, error)
 	// SetProjectContractor 指定/更换承包商(名称快照);存在有效结算单后锁定。
 	SetProjectContractor(ctx context.Context, projectID, contractorID int64, contractorName string) error

@@ -137,7 +137,8 @@ type ODNService interface {
 	UpdateProjectItem(ctx context.Context, projectID, itemID int64, qty, unitPrice float64) error
 	SetProjectContractor(ctx context.Context, projectID, contractorID int64, contractorName string) error
 	StartProject(ctx context.Context, id int64) (int64, error)
-	AcceptProject(ctx context.Context, id int64, acceptedBy int64, note string) (int64, error)
+	// AcceptProject 返回 (设施翻转数, 覆盖联动数, 错误);F6 竣工覆盖联动随事务(000211)。
+	AcceptProject(ctx context.Context, id int64, acceptedBy int64, note string) (int64, int64, error)
 	ListProjectItems(ctx context.Context, id int64) ([]ConstructionItem, error)
 	CreateSettlement(ctx context.Context, projectID, createdBy int64) (*Settlement, error)
 	ListSettlements(ctx context.Context, projectID int64) ([]Settlement, error)
@@ -174,6 +175,16 @@ type ODNService interface {
 	GetCoverageByAddress(ctx context.Context, addressID int64) (*Coverage, error)
 	ListCoverage(ctx context.Context, limit int) ([]Coverage, error)
 	ResolveLatLng(ctx context.Context, lat, lng float64) (*CoverageResolved, error)
+	// 许可单(P-INFRA-1 W4,迁移 000211;ROW 路权/PECE 许可,状态机 terms.md 4)。
+	CreatePermit(ctx context.Context, p Permit, createdBy int64) (*Permit, error)
+	GetPermit(ctx context.Context, id int64) (*Permit, error)
+	ListPermits(ctx context.Context, kind, status string, projectID int64, unlinked bool, limit int) ([]Permit, error)
+	UpdatePermitArchive(ctx context.Context, id int64, p Permit) error
+	TransitionPermit(ctx context.Context, id, accountID int64, to, reason, approvalNo, validFrom, validUntil string) (*Permit, error)
+	LinkPermitProject(ctx context.Context, id, projectID int64) error
+	UnlinkPermitProject(ctx context.Context, id int64) error
+	ListProjectPermits(ctx context.Context, projectID int64) ([]Permit, error)
+	CheckProjectPermits(ctx context.Context, projectID int64) (*PermitGateReport, error)
 }
 
 // GridRef 网格定位(城市 + 网格码)。

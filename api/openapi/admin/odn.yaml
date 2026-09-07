@@ -508,6 +508,120 @@ paths:
                 reason: { type: string, maxLength: 255, description: 作废原因 }
       responses: { '200': { $ref: '#/components/responses/Data' } }
 
+  /odn/permits:
+    get:
+      tags: [ODN]
+      summary: 许可单列表(kind/status/projectId/unlinked 过滤,近单优先;P-INFRA-1 W4,000211)
+      operationId: listOdnPermits
+      parameters:
+        - { name: kind, in: query, schema: { type: string, enum: [ROW, PECE] } }
+        - { name: status, in: query, schema: { type: string } }
+        - { name: projectId, in: query, schema: { type: integer } }
+        - { name: unlinked, in: query, schema: { type: string, enum: ['1'] }, description: 仅未关联项目许可 }
+        - { name: limit, in: query, schema: { type: integer, default: 100, maximum: 500 } }
+      responses: { '200': { $ref: '#/components/responses/Array' } }
+    post:
+      tags: [ODN]
+      summary: 新建许可单(ROW 初始 NOT_STARTED,PECE 初始 PENDING_SIGN;证照档案要素可后补)
+      operationId: createOdnPermit
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [kind]
+              properties:
+                kind: { type: string, enum: [ROW, PECE], description: 许可类型 }
+                title: { type: string, description: 名称 }
+                approvalNo: { type: string, description: 批复号(批准时必填,可先占位后补录) }
+                authority: { type: string, description: 管辖机构 }
+                validFrom: { type: string, description: 有效期起 YYYY-MM-DD }
+                validUntil: { type: string, description: 有效期止 YYYY-MM-DD(ROW 批准时必填) }
+                projectId: { type: integer, description: 关联施工项目(可空) }
+                facilityCode: { type: string, description: 关联设施(可空) }
+                chainId: { type: integer, description: 关联资源链(可空软引用) }
+                attachmentIds: { type: array, items: { type: integer }, description: 证照附件引用 }
+                note: { type: string }
+      responses: { '200': { $ref: '#/components/responses/Data' } }
+
+  /odn/permits/{id}:
+    get:
+      tags: [ODN]
+      summary: 许可单详情(证照档案要素+状态)
+      operationId: getOdnPermit
+      parameters: [ { name: id, in: path, required: true, schema: { type: integer } } ]
+      responses: { '200': { $ref: '#/components/responses/Data' } }
+    put:
+      tags: [ODN]
+      summary: 证照档案要素补录(批复号/机构/有效期/附件/备注;任何状态可补,状态不变)
+      operationId: updateOdnPermit
+      parameters: [ { name: id, in: path, required: true, schema: { type: integer } } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, properties: { title: { type: string }, approvalNo: { type: string }, authority: { type: string }, validFrom: { type: string }, validUntil: { type: string }, facilityCode: { type: string }, chainId: { type: integer }, attachmentIds: { type: array, items: { type: integer } }, note: { type: string } } }
+      responses: { '200': { $ref: '#/components/responses/Data' } }
+
+  /odn/permits/{id}/transition:
+    post:
+      tags: [ODN]
+      summary: 许可单状态流转(转移表见 terms.md;ROW 批准须 approvalNo+validUntil;驳回/退回/作废须 reason)
+      operationId: transitionOdnPermit
+      parameters: [ { name: id, in: path, required: true, schema: { type: integer } } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [to]
+              properties:
+                to: { type: string, description: 目标状态(须符合该 kind 转移表) }
+                reason: { type: string, description: 驳回/退回/作废原因 }
+                approvalNo: { type: string, description: 批复号(ROW 批准时必填) }
+                validFrom: { type: string, description: 有效期起(批准时空=当日) }
+                validUntil: { type: string, description: 有效期止(ROW 批准时必填) }
+      responses: { '200': { $ref: '#/components/responses/Data' } }
+
+  /odn/permits/{id}/link:
+    post:
+      tags: [ODN]
+      summary: 关联施工项目(单号快照)
+      operationId: linkOdnPermit
+      parameters: [ { name: id, in: path, required: true, schema: { type: integer } } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [projectId], properties: { projectId: { type: integer } } }
+      responses: { '200': { $ref: '#/components/responses/Data' } }
+
+  /odn/permits/{id}/unlink:
+    post:
+      tags: [ODN]
+      summary: 解除项目关联
+      operationId: unlinkOdnPermit
+      parameters: [ { name: id, in: path, required: true, schema: { type: integer } } ]
+      responses: { '200': { $ref: '#/components/responses/Data' } }
+
+  /odn/constructions/{id}/permits:
+    get:
+      tags: [ODN]
+      summary: 项目关联许可清单
+      operationId: listOdnConstructionPermits
+      parameters: [ { name: id, in: path, required: true, schema: { type: integer } } ]
+      responses: { '200': { $ref: '#/components/responses/Array' } }
+
+  /odn/constructions/{id}/permits-check:
+    post:
+      tags: [ODN]
+      summary: 开工许可门控预检(干跑;返回缺失明细;过期许可自动回写 EXPIRED)
+      operationId: checkOdnConstructionPermits
+      parameters: [ { name: id, in: path, required: true, schema: { type: integer } } ]
+      responses: { '200': { $ref: '#/components/responses/Data' } }
+
   /odn/impact:
     get:
       tags: [ODN]

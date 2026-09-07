@@ -12,11 +12,21 @@ import (
 
 // PGStore odn 域 PostgreSQL 存储(网格分区部分)。
 type PGStore struct {
-	db *pgxpool.Pool
+	db                 *pgxpool.Pool
+	permitGate         bool // F3 开工许可门控灰度(BOSS_ODN_PERMIT_GATE=on,默认关)
+	acceptCoverageLink bool // F6 竣工覆盖联动开关(BOSS_ODN_ACCEPT_COVERAGE_LINK=off 可关,默认开)
 }
 
-// NewPGStore 构造 PGStore。
-func NewPGStore(db *pgxpool.Pool) *PGStore { return &PGStore{db: db} }
+// NewPGStore 构造 PGStore(竣工覆盖联动默认开,门控默认关)。
+func NewPGStore(db *pgxpool.Pool) *PGStore {
+	return &PGStore{db: db, acceptCoverageLink: true}
+}
+
+// SetPermitGate 开工许可门控开关(F3,装配层注入)。
+func (s *PGStore) SetPermitGate(on bool) { s.permitGate = on }
+
+// SetAcceptCoverageLink 竣工覆盖联动开关(F6,装配层注入)。
+func (s *PGStore) SetAcceptCoverageLink(on bool) { s.acceptCoverageLink = on }
 
 // mapErr 写操作错误归一:唯一/PK 冲突→ErrDuplicate,零行→ErrNotFound。
 func mapErr(err error, notFound error) error {

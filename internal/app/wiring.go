@@ -199,6 +199,18 @@ func New(ctx context.Context, cfg *config.Config, migrationsDir string) (*Applic
 	if os.Getenv("BOSS_ODN_COVERAGE_GATE") == "on" {
 		ord.SetCoverageGate(app.ODN)
 	}
+	// F3 开工许可门控灰度(000211;BOSS_ODN_PERMIT_GATE=on 启用施工开工许可前置,默认关,同覆盖门控模式)。
+	if os.Getenv("BOSS_ODN_PERMIT_GATE") == "on" {
+		if gs, ok := any(app.ODN).(interface{ SetPermitGate(bool) }); ok {
+			gs.SetPermitGate(true)
+		}
+	}
+	// F6 竣工覆盖联动(000211;项目 ACCEPTED 时关联地址覆盖 PENDING→SERVED,默认开,off 显式关闭)。
+	if os.Getenv("BOSS_ODN_ACCEPT_COVERAGE_LINK") == "off" {
+		if gs, ok := any(app.ODN).(interface{ SetAcceptCoverageLink(bool) }); ok {
+			gs.SetAcceptCoverageLink(false)
+		}
+	}
 	wireAAAInfra(app, pool, aaastore, pushSender, provStore)
 	// 订单环节推进广播到开放平台 Webhook(000125 outbox;尽力而为,失败不影响推进)。
 	ord.SetStageNotifier(app.OpenWebhook)

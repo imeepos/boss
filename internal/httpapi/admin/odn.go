@@ -60,6 +60,7 @@ func registerODNRoutes(g *gin.RouterGroup, a *app.Application) {
 	registerODNCoverageRoutes(g, a, perm)
 	registerODNLifecycleRoutes(g, a, perm)
 	registerODNConstructionRoutes(g, a, perm)
+	registerODNPermitRoutes(g, a)
 	registerODNResourceChainRoutes(g, a, perm)
 	registerODNImpactRoutes(g, a, perm)
 	registerODNPortRoutes(g, a, perm)

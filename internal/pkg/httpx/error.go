@@ -205,6 +205,10 @@ func RespondErr(c *gin.Context, err error) {
 		errors.Is(err, odn.ErrSettlementState):
 		// 结算发起前置缺失/状态冲突(000204):40900 + 原因,管理员可见为什么拒。
 		Respond(c, apitypes.CodeConflict, gin.H{"reason": err.Error()})
+	case errors.Is(err, odn.ErrPermitRequired),
+		errors.Is(err, odn.ErrPermitState):
+		// 开工许可门控拒/许可状态转移拒(000211):40900 + 缺失明细,管理员可见为什么拒。
+		Respond(c, apitypes.CodeConflict, gin.H{"reason": err.Error()})
 	case errors.Is(err, odn.ErrInvalidCode),
 		errors.Is(err, odn.ErrGridMissing),
 		errors.Is(err, odn.ErrGridFull),

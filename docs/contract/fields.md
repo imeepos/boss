@@ -404,6 +404,30 @@
 | PECE状态 | pece_status | 待签署→PENDING_SIGN/已签署→SIGNED/已盖章→STAMPED/不适用→NA |
 | 备注 | remark | 文本 |
 | (批次/行号/指纹) | batch_no/line_no/fingerprint | 指纹=23 列归一化 SHA-256,唯一去重 |
+### 1.5.13 odn_permits（ROW 路权与 PECE 许可单，迁移 000211，internal/domain/odn）
+
+> P-INFRA-1 W4（审查 F3 提级）：ROW/PECE 从资源链导入列升为独立工作流实体，可关联施工项目/设施/资源链，
+> 含证照档案要素（批复号/管辖机构/有效期/附件引用）。状态机登记 terms.md §4；管理面 `menu:odn`
+> （许可与路权页 `/oss/permits`，perm 复用 odn；施工项目详情页有许可关联入口）；
+> REST `/odn/permits*`、`/odn/constructions/{id}/permits|permits-check`（契约 admin/odn.yaml）。
+> 开工门控（F3）：BOSS_ODN_PERMIT_GATE=on 时项目开工前置校验每类许可达标（ROW=APPROVED 且在有效期；PECE=STAMPED；NA=不适用），
+> 未满足 40900+缺失明细拒绝；APPROVED 且 valid_until 已过自动回写 EXPIRED；过期复验走 EXPIRED→PENDING→APPROVED。默认关，与覆盖门控同模式。
+> 竣工覆盖联动（F6，BOSS_ODN_ACCEPT_COVERAGE_LINK 默认开，off 关闭）：项目 ACCEPTED 事务内关联设施地址覆盖 PENDING→SERVED，联动数随竣工审计透出；裁定 adopted 2026-09-07-odn-permit-workflow 与 2026-09-07-accept-coverage-linkage。
+
+| 页面列名 | 字段名 | DB 列 | 枚举/说明 |
+|:---------|:-------|:------|:----------|
+| 许可单号 | `PermitNo` | permit_no | VARCHAR(32) 唯一（PM-YYYYMMDD-NNNNN，后端生成兜底） |
+| 类型 | `Kind` | kind | ROW 路权 / PECE；建单初始状态 ROW=NOT_STARTED、PECE=PENDING_SIGN |
+| 名称 | `Title` | title | 可空 |
+| 批复号 | `ApprovalNo` | approval_no | ROW 批准时必填回填（transition approvalNo） |
+| 管辖机构 | `Authority` | authority | 可空 |
+| 有效期 | `ValidFrom`/`ValidUntil` | valid_from/valid_until | DATE 可空；ROW 批准必填（起缺省当日）；valid_until 过期由开工门控自动回写 EXPIRED |
+| 状态 | `Status` | status | terms.md §4 状态机；CHECK 随 kind 分域 |
+| 关联项目 | `ProjectID`/`ProjectNo` | project_id/project_no | FK construction_projects(id) + 单号快照；可空，link/unlink 维护 |
+| 关联设施 | `FacilityCode` | facility_code | → odn_facility(code)，可空 |
+| 关联资源链 | `ChainID` | chain_id | 软引用 odn_resource_chain(id)，无 FK |
+| 证照附件 | `AttachmentIDs` | attachment_ids | BIGINT[]，attachments(id) 引用（档案页可选附件管理器） |
+| 备注/驳回原因 | `Note`/`RejectReason` | note/reject_reason | 驳回/退回/作废原因必填场景见状态机 |
 ### 1.6 audit_logs（审计日志）· biz_params（业务参数）
 
 | 页面列名 | 字段名 | DB 列 | 枚举/说明 |

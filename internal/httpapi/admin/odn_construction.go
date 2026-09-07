@@ -208,12 +208,12 @@ func odnAcceptProjectHandler(a *app.Application) gin.HandlerFunc {
 		}
 		id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
 		operator := httpx.ClaimsAccountID(c)
-		flipped, err := a.ODN.AcceptProject(c.Request.Context(), id, operator, req.Note)
+		flipped, served, err := a.ODN.AcceptProject(c.Request.Context(), id, operator, req.Note)
 		if err != nil {
 			respondErr(c, err)
 			return
 		}
-		httpx.RecordAudit(a, c, "odn.construction.accept", "construction_projects", c.Param("id"), map[string]any{"flipped": flipped, "note": req.Note})
-		respond(c, apitypes.CodeOK, gin.H{"id": id, "status": "ACCEPTED", "flipped": flipped})
+		httpx.RecordAudit(a, c, "odn.construction.accept", "construction_projects", c.Param("id"), map[string]any{"flipped": flipped, "coverageServed": served, "note": req.Note})
+		respond(c, apitypes.CodeOK, gin.H{"id": id, "status": "ACCEPTED", "flipped": flipped, "coverageServed": served})
 	}
 }

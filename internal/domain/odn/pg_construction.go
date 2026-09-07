@@ -116,45 +116,6 @@ func (s *PGStore) AddProjectItem(ctx context.Context, projectID int64, facilityC
 	return nil
 }
 
-// StartProject 开工 PENDING→BUILDING,单内 PLANNED 设施批量推 IN_BUILD。返回翻转数。
-func (s *PGStore) StartProject(ctx context.Context, id int64) (int64, error) {
-	if err := s.casProjectStatus(ctx, id, CPending, CBuilding); err != nil {
-		return 0, err
-	}
-	tag, err := s.db.Exec(ctx, `UPDATE odn_facility f SET lifecycle_status='IN_BUILD'
-		FROM construction_items i WHERE i.facility_code=f.code AND i.project_id=$1
-		AND f.lifecycle_status='PLANNED'`, id)
-	if err != nil {
-		log.Printf("[odn-construction] START FLIP FAILED proj=%d: %v", id, err)
-		return 0, fmt.Errorf("odn: start flip: %w", err)
-	}
-	return tag.RowsAffected(), nil
-}
-
-// AcceptProject 竣工验收 BUILDING→ACCEPTED,单内设施批量推 IN_SERVICE(as-built 回填)。返回翻转数。
-func (s *PGStore) AcceptProject(ctx context.Context, id int64, acceptedBy int64, note string) (int64, error) {
-	tag, err := s.db.Exec(ctx, `UPDATE construction_projects SET status='ACCEPTED',
-		asbuilt_note=$2, accepted_by=$3, accepted_at=now(), updated_at=now()
-		WHERE id=$1 AND status='BUILDING'`, id, note, acceptedBy)
-	if err != nil {
-		return 0, fmt.Errorf("odn: accept project: %w", err)
-	}
-	if tag.RowsAffected() == 0 {
-		if _, err := s.projectStatus(ctx, id); err != nil {
-			return 0, err
-		}
-		return 0, ErrInvalidProjStatus
-	}
-	tag, err = s.db.Exec(ctx, `UPDATE odn_facility f SET lifecycle_status='IN_SERVICE'
-		FROM construction_items i WHERE i.facility_code=f.code AND i.project_id=$1
-		AND f.lifecycle_status IN ('PLANNED','IN_BUILD')`, id)
-	if err != nil {
-		log.Printf("[odn-construction] ACCEPT FLIP FAILED proj=%d: %v", id, err)
-		return 0, fmt.Errorf("odn: accept flip: %w", err)
-	}
-	return tag.RowsAffected(), nil
-}
-
 // ListProjectItems 单内明细清单。
 func (s *PGStore) ListProjectItems(ctx context.Context, id int64) ([]ConstructionItem, error) {
 	rows, err := s.db.Query(ctx, `SELECT id, project_id, facility_code, quantity, unit_price, amount
