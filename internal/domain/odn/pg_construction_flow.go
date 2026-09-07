@@ -13,13 +13,22 @@ import (
 
 // StartProject 开工 PENDING→BUILDING:F3 门控开启时先校验关联许可
 // (ROW 已批准且在有效期/PECE 已盖章/NA,过期自动回写 EXPIRED),
-// 通过后单内 PLANNED 设施批量推 IN_BUILD。返回设施翻转数。
+// 通过后校验资源范围非空(ErrEmptyScope, P0-A),单内 PLANNED 设施批量推 IN_BUILD。返回设施翻转数。
 func (s *PGStore) StartProject(ctx context.Context, id int64) (int64, error) {
 	if s.permitGate {
 		if _, err := s.CheckProjectPermits(ctx, id); err != nil {
 			log.Printf("[odn-permit] START GATE REJECTED proj=%d: %v", id, err)
 			return 0, err
 		}
+	}
+	var items int64
+	if err := s.db.QueryRow(ctx, "SELECT count(*) FROM construction_items WHERE project_id=$1", id).Scan(&items); err != nil {
+		log.Printf("[odn-construction] START SCOPE READ FAILED proj=%d: %v", id, err)
+		return 0, fmt.Errorf("odn: start scope read: %w", err)
+	}
+	if err := ValidateStartReady(items); err != nil {
+		log.Printf("[odn-construction] START GATE REJECTED proj=%d items=%d: %v", id, items, err)
+		return 0, err
 	}
 	if err := s.casProjectStatus(ctx, id, CPending, CBuilding); err != nil {
 		return 0, err

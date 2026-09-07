@@ -18,6 +18,9 @@ var ErrInvalidProjStatus = errors.New("odn: invalid project status transition")
 // ErrItemLocked 明细变更被拒(ACCEPTED 后锁定/设施不可施工)。
 var ErrItemLocked = errors.New("odn: construction item locked")
 
+// ErrEmptyScope 开工前置缺失:施工范围为空(单内无任何资源明细),禁止空转开工。
+var ErrEmptyScope = errors.New("odn: construction start blocked: empty resource scope")
+
 // Construction 施工项目(含 as-built 竣工信息与承包商;000203/000204 扩展)。
 type Construction struct {
 	ID             int64   `json:"id"`
@@ -59,6 +62,14 @@ func ValidateProjectTransition(from, to string) error {
 	default:
 		return ErrInvalidProjStatus
 	}
+}
+
+// ValidateStartReady 开工前置纯校验:资源范围非空方可开工;状态合法性由 CAS 兜底。
+func ValidateStartReady(itemCount int64) error {
+	if itemCount <= 0 {
+		return ErrEmptyScope
+	}
+	return nil
 }
 
 // ConstructionStore 施工项目存储口(PGStore 实现)。
