@@ -526,3 +526,6 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 当自定义下拉/浮层嵌在 Radix Dialog/Drawer 里,修复是键盘分支(Esc 尤甚)必须 stopPropagation,否则事件冒泡到 document 被全局 dismiss 层接住、整层容器连同表单一起被关(2026-09-07 PP2-W0 走查实证:Esc 想关下拉却关了整只下单抽屉);面板关闭态按 Esc 仍要放行,保留容器级 Esc 语义。
 - 当 vitest 全量跑出现「Test timed out in 5000ms + jsdom 环境启动 80-160s」,修复是先单文件隔离复跑 + main 树基线对照再定性——资源型 flake(并发 transform 挤占)会伪装成业务回归,本例 519/519 两轮全过(2026-09-07 PP2-W0)。
 
+- 当用 grep -c 统计「每目录命中」时,修复是逐文件或全量复核再下结论——grep -c 输出多文件多行,head -1 只取首个文件,多文件目录的缺口会被漏计(PP2-W4 Phase A 两条 P2 误报的根因,Phase B 源码复核勘误)。2026-09-07。
+- 当负责人指令引用的脚本/文件在 worktree 里不存在时,修复是先 git fetch + merge main 反向同步再找——并行波次的基建常在切分支后进 main(PP2-W4 的 scripts/accept/pp2-gate.sh 即如此)。2026-09-07。
+

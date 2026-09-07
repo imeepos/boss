@@ -4,6 +4,7 @@
 // 不另设重复删除入口(结论见 docs/acceptance/2026-09-05-pp1a-page-polish.md 清单5)。
 import { useEffect, useMemo, useState } from 'react'
 import { apiFetch } from '../../../api/client'
+import { toast } from 'sonner'
 import { useT } from '../../../i18n'
 import { Dropdown } from '../../../components/Dropdown'
 import { StatusTag } from '../../../components/StatusTag'
@@ -57,6 +58,7 @@ export default function AccountListPage() {
       const body = buildAccountPayload(form, Boolean(form.id))
       if (form.id) await apiFetch(`/accounts/${form.id}`, { method: 'PUT', body })
       else await apiFetch('/accounts', { method: 'POST', body })
+      toast.success(t.pages.account.saved)
       setForm(null)
       load()
     } catch (e) {
@@ -80,9 +82,11 @@ export default function AccountListPage() {
           status: row.status === 1 ? 0 : 1,
         },
       })
+      toast.success(t.pages.account.statusUpdated)
       load()
     } catch (e) {
-      setFormError(e instanceof Error ? e.message : t.pages.account.saveFail)
+      // 行内停用失败:抽屉未开,formError 不可见,必须走 toast。
+      toast.error(e instanceof Error ? e.message : t.pages.account.saveFail)
     } finally {
       setBusy(false)
     }

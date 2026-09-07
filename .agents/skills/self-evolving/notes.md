@@ -1,5 +1,18 @@
 # Notes
 
+## 2026-09-07 PP2-W4 base+辅助页 Phase A/B(feat/pp2-w4-base-aux)
+
+- 最耗时坑:无。本轮最大收获是「审计误报的勘误机制」:Phase A 用 grep -c | head -1
+  做每目录计数,只取了第一个命中文件的行数,把 address(已有 ErrorBanner)与
+  realname-review(已有服务端分页)误判为缺口;Phase B 逐文件复核时两条 P2 撤销。
+  grep -c 输出是多文件多行,head -1 只代表第一个文件——目录级结论必须逐文件或全量统计。
+- skill 有没有预警:红线 14(键名手滑/漏 description)本轮犯了 2 次(bash 缺 description、
+  description" 多引号),都是连发快节奏下发生;发车前默念必填键应成为肌肉记忆。
+- 重来一次:审计类任务先写「证据采集脚本」再下结论;发现清单每条标注证据等级
+  (源码行号/现场断言/推断),Phase B 勘误就有据可依。
+- 额外收获:负责人中场指令引用的 scripts/accept/pp2-gate.sh 在切分支后进的 main,
+  worktree 里没有——先 merge main 反向同步再找基建,是并行波次的常规操作。
+
 ## 2026-09-07 PP2-W0 选择器基座(U0,feat/pp2-w0-pickers)
 
 - 最耗时坑:CDP 断言用 document.querySelector('aside') 当抽屉锚点,但页面有导航 aside + 抽屉 aside 两个,查错子树导致「错误行不存在/面板没打开」的假象,连烧 4 轮才用全文档 [role=alert] 计数定性;同段 discovered Esc 冒泡被 Radix Drawer dismiss 层接走、整只抽屉被关——一个真 UX bug 藏在假象后面。

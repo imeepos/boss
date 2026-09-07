@@ -403,6 +403,8 @@ export interface Translations {
       taskRetryRegister: string
     }
     account: {
+      saved: string
+      statusUpdated: string
       title: string
       desc: string
       searchPlaceholder: string
@@ -2674,6 +2676,7 @@ export interface Translations {
       save: string
       saving: string
       saved: string
+      savePartial: string,
       saveFail: string,
       resetForm: string
       detailTitle: string
@@ -3077,6 +3080,7 @@ export interface Translations {
       loadFail: string
     }
     backup: {
+      deleted: string
       title: string
       desc: string
       refresh: string
