@@ -1,5 +1,6 @@
 // 欠费停复机页:契约 GET /arrears;操作 POST /arrears/:customerId/stop|resume(W6 即时生效)。
 import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { PageHead, pagerTexts } from '../../org/shared'
@@ -7,7 +8,7 @@ import { Pagination } from '../../../components/Pagination'
 import { pageSlice, type ArrearsRow, type ARMetrics, type CollectionTaskRow } from '../types'
 import { fmtFee } from '../../../lib/format'
 import { useConfirm } from '../../../components/ConfirmDialog'
-import { TableStateRow } from '../../../components/business'
+import { TableStateRow, ErrorBanner } from '../../../components/business'
 
 export default function ArrearsPage() {
   const t = useT()
@@ -42,6 +43,7 @@ export default function ArrearsPage() {
     setBusy(true)
     try {
       await apiFetch(`/arrears/${customerId}/${action}`, { method: 'POST' })
+      toast.success(action === 'stop' ? a.stopOk : a.resumeOk)
       load()
     } catch (e) {
       setError(e instanceof Error ? e.message : a.actionFail)
@@ -67,7 +69,7 @@ export default function ArrearsPage() {
           <span className="spacer" />
           <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
         </div>
-        {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : (
+        {error ? <ErrorBanner message={error} /> : (
           <div className="overflow-x-auto px-4 pb-4">
             <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
               <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{a.columns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
@@ -80,9 +82,8 @@ export default function ArrearsPage() {
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.status || '—'}</td>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">
                       <span className="inline-flex items-center">
-                        <button disabled={busy} onClick={() => act(r.customerId, 'stop')}>{a.stop}</button>
-                        <span className="text-[var(--shell-side-border)]">|</span>
-                        <button disabled={busy} onClick={() => act(r.customerId, 'resume')}>{a.resume}</button>
+                        {r.status !== 'STOPPED' && <button disabled={busy} onClick={() => act(r.customerId, 'stop')}>{a.stop}</button>}
+                        {r.status === 'STOPPED' && <button disabled={busy} onClick={() => act(r.customerId, 'resume')}>{a.resume}</button>}
                       </span>
                     </td>
                   </tr>

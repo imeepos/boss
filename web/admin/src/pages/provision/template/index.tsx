@@ -1,5 +1,6 @@
 // 配置模板页:列表 + 新建/编辑(PUT /:id)+ 状态切换(PUT /:id/status)+ 删除未被引用模板(DELETE /:id)。
 import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { PageHead, pagerTexts } from '../../org/shared'
@@ -50,6 +51,7 @@ export default function ProvisionTemplatePage() {
     setBusy(true); setError('')
     try {
       await apiFetch(`/provision-templates/${x.id}/status`, { method: 'PUT', body: { status: next } })
+      toast.success(p.statusOk)
       load()
     } catch (e) {
       setError(e instanceof Error ? e.message : p.loadFail)
@@ -63,6 +65,7 @@ export default function ProvisionTemplatePage() {
     setBusy(true); setError('')
     try {
       await apiFetch(`/provision-templates/${x.id}`, { method: 'DELETE' })
+      toast.success(p.deleteOk)
       load()
     } catch (e) {
       setError(e instanceof Error ? e.message : p.loadFail)

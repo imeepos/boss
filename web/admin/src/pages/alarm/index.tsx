@@ -1,5 +1,6 @@
 // 告警列表页:契约 GET /alarms?resourceId + POST /alarms/:id/ack + POST /alarms/batch-retest。
 import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import { apiFetch } from '../../api/client'
 import { useQueryState } from '../../lib/useQueryState'
 import { useT } from '../../i18n'
@@ -19,7 +20,6 @@ export default function AlarmPage() {
   const a = t.pages.alarmPage
   const [rows, setRows] = useState<AlarmRow[]>([])
   const [error, setError] = useState('')
-  const [hint, setHint] = useState('')
   const [resourceId, setResourceId] = useState('')
   const [urlStatus] = useQueryState('status', '')
   const [page, setPage] = useState(1)
@@ -43,6 +43,7 @@ export default function AlarmPage() {
     setBusy(true)
     try {
       await apiFetch(`/alarms/${alarmId}/ack`, { method: 'POST' })
+      toast.success(a.ackOk)
       load()
     } catch (e) {
       setError(e instanceof Error ? e.message : a.actionFail)
@@ -54,12 +55,11 @@ export default function AlarmPage() {
   const retest = async () => {
     if (busy || !scope.trim()) return
     setBusy(true)
-    setHint('')
     try {
       const r = await apiFetch<{ taskNo: string }>('/alarms/batch-retest', {
         method: 'POST', body: { scope: scope.trim() },
       })
-      setHint(a.retestDone.replace('{no}', r?.taskNo ?? ''))
+      toast.success(a.retestDone.replace('{no}', r?.taskNo ?? ''))
       setRetestOpen(false)
       setScope('')
     } catch (e) {
@@ -91,7 +91,6 @@ export default function AlarmPage() {
           <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
           <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" onClick={() => setRetestOpen(true)}>{a.batchRetest}</button>
         </div>
-        {hint && <div style={{ padding: '4px 12px', color: '#1677ff', fontSize: 13 }}>{hint}</div>}
         {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : (
           <div className="overflow-x-auto px-4 pb-4">
             <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
@@ -139,7 +138,6 @@ export default function AlarmPage() {
               <label><span className="mr-0.5 text-[var(--color-danger)]">*</span>{a.fScope}</label>
               <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" value={scope} placeholder={a.pScope}
                 onChange={(e) => setScope(e.target.value)} />
-              {!scope.trim() && scope !== '' && <span className="text-[11px] text-[var(--color-danger)]">{a.eScope}</span>}
             </div>
           </div>
         </Drawer>

@@ -1,5 +1,6 @@
 // 渠道对账页:双页签——渠道对账(GET /reconciliations) + 账实核对(GET /billing/ledger-recon)。
 import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { PageHead, pagerTexts } from '../../org/shared'
@@ -80,6 +81,7 @@ export default function PayCheckPage() {
     setBusy(true)
     try {
       await apiFetch(`/reconciliations/${encodeURIComponent(batchNo)}/settle`, { method: 'POST' })
+      toast.success(p.settleOk)
       loadChannel()
     } catch (e) {
       setError(e instanceof Error ? e.message : p.actionFail)

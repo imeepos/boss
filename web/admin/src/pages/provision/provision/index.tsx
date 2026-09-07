@@ -1,5 +1,6 @@
 // 下发任务页:契约 GET /provision-tasks(裸 items)+ POST /provision-tasks/{taskNo}/retry。
 import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { PageHead, pagerTexts } from '../../org/shared'
@@ -38,6 +39,7 @@ export default function ProvisionTaskPage() {
     setBusy(true)
     try {
       await apiFetch(`/provision-tasks/${encodeURIComponent(taskNo)}/retry`, { method: 'POST' })
+      toast.success(p.retryOk)
       load()
     } catch (e) {
       setError(e instanceof Error ? e.message : p.actionFail)

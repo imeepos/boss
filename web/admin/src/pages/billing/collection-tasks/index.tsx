@@ -3,6 +3,7 @@
 // 人工接管)。字段口径对齐 docs/contract/fields.md §8B 与 internal/domain/billing。
 // 文案/颜色走 i18n + 主题令牌;状态过滤/动作按钮全部 i18n 化。
 import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { PageHead, pagerTexts, ErrorBanner, ToolbarButton, TableStateRow } from '../../../components/business'
@@ -37,11 +38,12 @@ export default function CollectionTasksPage() {
 
   const update = async (task: CollectionTaskRow, next: CollectionStatus) => {
     const msg = c.actionConfirm.replace('{status}', c.statuses[next] ?? next)
-    if (!(await confirmDialog(msg))) return
+    if (!(await confirmDialog(msg, { danger: next === 'FAILED' }))) return
     setBusy(true)
     setError('')
     try {
       await apiFetch(`/collection-tasks/${task.id}/status`, { method: 'POST', body: { status: next } })
+      toast.success(c.updateOk.replace('{status}', c.statuses[next] ?? next))
       load()
     } catch (e) {
       setError(e instanceof Error ? e.message : c.actionFailMsg)

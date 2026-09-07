@@ -1,5 +1,6 @@
 // 对账与告警页:契约 GET /quad-conflicts + POST /quad-conflicts/:id/resolve + POST /quad-links/reconcile。
 import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { useQueryState } from '../../../lib/useQueryState'
 import { useT } from '../../../i18n'
@@ -18,7 +19,6 @@ export default function QuadCheckPage() {
   const c = t.pages.quadCheckPage
   const [rows, setRows] = useState<QuadLinkRow[]>([])
   const [error, setError] = useState('')
-  const [hint, setHint] = useState('')
   const [urlStatus] = useQueryState('status', '')
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
@@ -37,10 +37,9 @@ export default function QuadCheckPage() {
   const reconcile = async () => {
     if (busy || !(await confirmDialog(c.reconcileConfirm))) return
     setBusy(true)
-    setHint('')
     try {
       const rep = await apiFetch<ReconReport>('/quad-links/reconcile', { method: 'POST' })
-      setHint(c.reconcileDone
+      toast.success(c.reconcileDone
         .replace('{total}', String(rep?.Total ?? 0))
         .replace('{linked}', String(rep?.Linked ?? 0))
         .replace('{conflict}', String(rep?.Conflict ?? 0))
@@ -58,6 +57,7 @@ export default function QuadCheckPage() {
     setBusy(true)
     try {
       await apiFetch(`/quad-conflicts/${id}/resolve`, { method: 'POST' })
+      toast.success(c.resolveOk)
       load()
     } catch (e) {
       setError(e instanceof Error ? e.message : c.actionFail)
@@ -78,7 +78,6 @@ export default function QuadCheckPage() {
           <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
           <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" disabled={busy} onClick={reconcile}>{c.reconcile}</button>
         </div>
-        {hint && <div className="px-3 py-1 text-[13px] text-[var(--color-text-link)]" style={{ padding: '4px 12px', color: '#1677ff', fontSize: 13 }}>{hint}</div>}
         {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : (
           <div className="overflow-x-auto px-4 pb-4">
             <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">

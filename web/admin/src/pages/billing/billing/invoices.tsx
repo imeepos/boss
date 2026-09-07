@@ -1,6 +1,7 @@
 // 发票面板(TAX/AG-04):契约 GET /invoices + 作废/重开/人工回填(http_tax.go)。
 // 入 billing 页(domain-map 裁定:发票无专用页);manual 通道回填税局票号。
 import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { Pagination } from '../../../components/Pagination'
@@ -45,7 +46,10 @@ export function InvoicePanel() {
     const url = `/invoices/${act.row.id}/${act.kind === 'void' ? 'void' : act.kind === 'reissue' ? 'reissue' : 'tax-backfill'}`
     const body = act.kind === 'void' ? { reason: input.trim() } : act.kind === 'backfill' ? { taxNo: input.trim() } : undefined
     apiFetch(url, { method: 'POST', ...(body ? { body } : {}) })
-      .then(() => { setAct(null); setInput(''); load() })
+      .then(() => {
+        toast.success(act.kind === 'void' ? v.voidOk : act.kind === 'reissue' ? v.reissueOk : v.backfillOk)
+        setAct(null); setInput(''); load()
+      })
       .catch((e) => setActError(e instanceof Error ? e.message : v.actFail))
       .finally(() => setBusy(false))
   }
@@ -54,7 +58,7 @@ export function InvoicePanel() {
   const actText = act?.kind === 'void' ? v.voidConfirm : act?.kind === 'reissue' ? v.reissueConfirm : v.backfillTip
 
   return (
-    <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]" style={{ marginTop: 12 }}>
+    <div className="mt-3 mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
       <div className="flex flex-wrap items-center gap-2 p-4">
         <strong>{v.title}</strong>
         <ResourcePicker
@@ -111,7 +115,7 @@ export function InvoicePanel() {
                 placeholder={act.kind === 'void' ? v.voidReasonPh : v.taxNoPh}
                 onChange={(e) => setInput(e.target.value)} />
             )}
-            {actError && <p className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]" style={{ margin: '8px 0 0' }}>{actError}</p>}
+            {actError && <p className="mt-2 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{actError}</p>}
             <div className="mt-4 flex justify-end gap-2">
               <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={() => setAct(null)}>{t.pages.company.cancel}</button>
               <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" disabled={busy || (act.kind !== 'reissue' && !input.trim())} onClick={run}>
