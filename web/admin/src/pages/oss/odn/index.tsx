@@ -88,6 +88,8 @@ export default function ODNPage() {
     <div className="mb-4 flex items-center justify-between"><div><h2 className="m-0 text-xl font-bold text-[var(--shell-heading)]">{g.title}</h2><p className="mt-1 text-xs text-[var(--shell-crumb-text)]">{g.subtitle}</p></div><div className="flex items-center gap-2">{TAB_KIND[tab] && <BatchImportEntry kind={TAB_KIND[tab]} onImported={load} />}{tab !== 'coverage' && tab !== 'constructions' && <ToolbarButton primary onClick={() => setShowForm(!showForm)}>{showForm ? g.cancel : g.add}</ToolbarButton>}</div></div>
     <div className="mb-4 flex gap-6 border-b border-[var(--shell-side-border)]">{(['grids', 'facilities', 'sites', 'devices', 'coverage', 'constructions'] as Tab[]).map((key) => <button key={key} className={`cursor-pointer border-b-2 px-1 py-3 text-sm ${tab === key ? 'border-[var(--color-brand-gold-500)] font-semibold text-[var(--shell-heading)]' : 'border-transparent text-[var(--shell-content-text)]'}`} onClick={() => { setTab(key); setShowForm(false) }}>{key === 'constructions' ? '施工项目' : g.tabs[key]}</button>)}</div>
     <CityFilter prv={prv} city={city} setPrv={setPrv} setCity={setCity} regions={regions} cities={cities} g={g} />
+    <DependencyHint show={tab === 'facilities' && grids.length === 0} message={g.hintNeedGrid} action={g.hintGotoGrids} onAction={() => { setTab('grids'); setShowForm(false) }} />
+    <DependencyHint show={tab === 'devices' && sites.length === 0} variant="info" message={g.hintNeedSite} action={g.tabs.sites} onAction={() => { setTab('sites'); setShowForm(false) }} />
     {error && <ErrorBanner message={error} className="mt-3" />}
     {showForm && tab !== 'coverage' && tab !== 'constructions' && <ODNForm tab={tab} busy={busy} prv={prv} city={city} submit={submit} g={g} grids={grids} sites={sites} devices={devices} />}
     <section className={`${CARD} mt-4 overflow-hidden`}>
@@ -98,6 +100,15 @@ export default function ODNPage() {
       {tab === 'coverage' && <CoveragePanel g={g} prv={prv} city={city} />}
       {tab === 'constructions' && <ConstructionsPanel />}
     </section>
+  </div>
+}
+
+// DependencyHint 前置依赖提示:资源按 网格→设施→局点→设备 顺序建,缺前置时空态引导跳转。
+function DependencyHint({ show, message, action, onAction, variant = 'warning' }: { show: boolean; message: string; action: string; onAction: () => void; variant?: 'warning' | 'info' }) {
+  if (!show) return null
+  return <div className="mt-3 flex items-center justify-between gap-3 rounded-md border border-[var(--shell-side-border)] bg-[var(--shell-card-bg)] px-3 py-2">
+    <div className="flex items-center gap-2"><Badge variant={variant}>{variant === 'warning' ? '!' : 'i'}</Badge><span className={LABEL}>{message}</span></div>
+    <ToolbarButton onClick={onAction}>{action}</ToolbarButton>
   </div>
 }
 
