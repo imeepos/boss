@@ -388,7 +388,7 @@ def main():
             ok("coverage SERVED after accept (F6 assertion)")
         else:
             bad("coverage after accept", str(cov2))
-        acc = psql("SELECT count(*) FROM audit_logs WHERE action = " + chr(39) + "odn.construction.accept" + chr(39) + " AND target_id = " + str(pg_id) + " AND detail::text LIKE " + chr(39) + "%coverageServed%" + chr(39))
+        acc = psql("SELECT count(*) FROM audit_logs WHERE action = " + chr(39) + "odn.construction.accept" + chr(39) + " AND target_id = " + chr(39) + str(pg_id) + chr(39) + " AND detail::text LIKE " + chr(39) + "%coverageServed%" + chr(39))
         if acc.strip() == "1":
             ok("audit odn.construction.accept carries coverageServed detail")
         else:
