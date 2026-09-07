@@ -1811,6 +1811,13 @@ export interface Translations {
       columns: string[]
       close: string
       closeConfirm: string
+      accept: string
+      acceptOk: string
+      closeOk: string
+      eventsBtn: string
+      eventsTitle: string
+      eventsColumns: string[]
+      eventsEmpty: string
       actionFail: string
       total: string
       empty: string
