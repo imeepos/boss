@@ -2014,6 +2014,7 @@ export interface Translations {
       needReviewNo: string
       review: string
       reviewConfirm: string
+      toastReviewOk: string
       actionFail: string
       total: string
       empty: string
