@@ -2,11 +2,12 @@
 // 受控 open/onPick/onClose;列定义与查询函数由调用方注入,组件不绑定业务域;
 // 布局对齐附件选择器弹框(筛选区 + 列表区 + 底部确认);文案(含 aria)一律由调用方 i18n 传入。
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useT } from '../../i18n'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog'
 import { Pagination } from '../Pagination'
 import { Loading } from '../Loading'
 import { ToolbarButton } from '../business/page-head'
-import { togglePickKey, pickSingleKey, toSelectionChips } from './pickerCore'
+import { PICKER_DEBOUNCE_MS, pickSingleKey, toSelectionChips, togglePickKey } from './pickerCore'
 import { PickerChips, PickerFilterBar, PickerTable } from './DialogPickerParts'
 
 export interface DialogPickerColumn<T> {
@@ -46,6 +47,8 @@ export interface DialogPickerTexts {
   cancel: string
   loadFail: string
   empty: string
+  /** 失败重试按钮文案;缺省取 pages.pickers.common.retry(存量 texts 对象免改)。 */
+  retry?: string
   /** 关键字输入 placeholder 与 aria。 */
   keywordPh: string
   /** 已选计数模板,含 {n}。 */
@@ -81,7 +84,6 @@ export interface DialogPickerProps<T> {
   texts: DialogPickerTexts
 }
 
-const KEYWORD_DEBOUNCE_MS = 300
 const DEFAULT_PAGE_SIZE = 10
 
 /** 列表数据流:关键字防抖 / 条件变页重置 / 服务端分页查询(seq 防竞态)。 */
@@ -100,6 +102,7 @@ function usePickerDialogData<T>(args: {
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(false)
   const [loadErr, setLoadErr] = useState(false)
+  const [retryTick, setRetryTick] = useState(0)
   const seqRef = useRef(0)
   const queryRef = useRef(query)
   queryRef.current = query
@@ -111,7 +114,7 @@ function usePickerDialogData<T>(args: {
   }, [open])
 
   useEffect(() => {
-    const timer = setTimeout(() => setCommitted(keyword.trim()), KEYWORD_DEBOUNCE_MS)
+    const timer = setTimeout(() => setCommitted(keyword.trim()), PICKER_DEBOUNCE_MS)
     return () => clearTimeout(timer)
   }, [keyword])
 
@@ -131,12 +134,12 @@ function usePickerDialogData<T>(args: {
         setItems([]); setTotal(0); setLoadErr(true); setLoading(false)
       })
     return () => { seqRef.current += 1 }
-  }, [open, committed, filterVals, page, pageSize])
+  }, [open, committed, filterVals, page, pageSize, retryTick])
 
   const onFilter = (key: string, value: string) => setFilterVals((prev) => ({ ...prev, [key]: value }))
   const onPage = (p: number) => setPageRaw(p)
   const onPageSize = (n: number) => { setPageSizeRaw(n); setPageRaw(1) }
-  return { keyword, onKeyword: setKeyword, filterVals, onFilter, page, pageSize, onPage, onPageSize, items, total, loading, loadErr }
+  return { keyword, onKeyword: setKeyword, filterVals, onFilter, page, pageSize, onPage, onPageSize, items, total, loading, loadErr, onRetry: () => setRetryTick((n) => n + 1) }
 }
 
 /** 选择集合:单选替换 / 多选累选(跨页保持),key→label/item 索引增量维护供回显与回传。 */
@@ -173,6 +176,7 @@ export function DialogPicker<T>({
   rowKey, rowLabel, filters = [], initialPageSize, texts,
 }: DialogPickerProps<T>) {
   const data = usePickerDialogData<T>({ open, query, initialPageSize })
+  const commonRetry = useT().pages.pickers.common.retry
   const sel = usePickerSelection<T>(mode, rowKey, rowLabel)
   useEffect(() => {
     if (open) sel.reset()
@@ -198,7 +202,14 @@ export function DialogPicker<T>({
             values={data.filterVals}
             onFilter={data.onFilter}
           />
-          {data.loadErr && <div className="py-2 text-xs text-[var(--color-danger)]" role="alert">{texts.loadFail}</div>}
+          {data.loadErr && (
+            <div className="flex items-center gap-3 py-2 text-xs text-[var(--color-danger)]" role="alert">
+              <span>{texts.loadFail}</span>
+              <button type="button" className="cursor-pointer border-none bg-none p-0 text-xs font-medium text-[var(--color-text-link)] hover:underline" onClick={data.onRetry}>
+                {texts.retry ?? commonRetry}
+              </button>
+            </div>
+          )}
           {data.loading ? (
             <Loading />
           ) : !data.loadErr && data.items.length === 0 ? (

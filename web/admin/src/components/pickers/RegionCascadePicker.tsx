@@ -28,6 +28,7 @@ const MAX_LEVELS = 4
 
 export function RegionCascadePicker({ value, countryCode, onChange, disabled, fetchImpl }: RegionCascadePickerProps) {
   const rc = useT().pages.pickers.regionCascade
+  const pickerCommon = useT().pages.pickers.common
   const source = useMemo(() => new RegionCascadeSource(fetchImpl), [fetchImpl])
   const [countries, setCountries] = useState<CountryLite[]>([])
   const [country, setCountry] = useState<string>(countryCode ?? '')
@@ -40,8 +41,9 @@ export function RegionCascadePicker({ value, countryCode, onChange, disabled, fe
   const [directKw, setDirectKw] = useState('')
   const [directRows, setDirectRows] = useState<SubdivRow[]>([])
   const [directBusy, setDirectBusy] = useState(false)
+  const [reloadTick, setReloadTick] = useState(0)
   const booted = useRef(false)
-  const colParent = useRef<(string | null)[]>([])
+  const colParent = useRef<(string | null | undefined)[]>([])
   const [expandedFor, setExpandedFor] = useState<string | null>(null)
 
   // 国家列表（地址页既有端点，menu:geo 门禁由页面持有）。
@@ -51,7 +53,7 @@ export function RegionCascadePicker({ value, countryCode, onChange, disabled, fe
       .then((list) => { if (alive) setCountries(list) })
       .catch((err) => { if (alive) { console.warn('[region-picker] countries load failed:', err); setError(rc.loadFail) } })
     return () => { alive = false }
-  }, [source, rc.loadFail])
+  }, [source, rc.loadFail, reloadTick])
 
   // 默认国家 boot：未显式传 countryCode 时读端点，空值/失败兜底 PH（契约 N3）。
   useEffect(() => {
@@ -89,7 +91,7 @@ export function RegionCascadePicker({ value, countryCode, onChange, disabled, fe
         setRows([[]])
       })
     return () => { alive = false }
-  }, [country, source, rc.loadFail])
+  }, [country, source, rc.loadFail, reloadTick])
 
   // 编辑回显：value 变化且未展开过 → resolvePath 反查链并铺开路径（契约 N4）。
   useEffect(() => {
@@ -126,6 +128,8 @@ export function RegionCascadePicker({ value, countryCode, onChange, disabled, fe
           if (!alive) return
           console.warn('[region-picker] column load failed:', err)
           setError(rc.loadFail)
+          // 失败不缓存父码:再次点选同节点即可重试拉取。
+          colParent.current[j] = undefined
           setRows((prev) => { const next = [...prev]; next[j] = []; return next })
         })
     }
@@ -199,7 +203,13 @@ export function RegionCascadePicker({ value, countryCode, onChange, disabled, fe
   const selCode = sel?.code ?? value ?? ''
   return (
     <div className="flex flex-col gap-2" aria-label={rc.aria}>
-      {error && <p className="text-xs text-[var(--color-danger)]">{error}</p>}
+      {error && (
+        <p className="flex items-center gap-2 text-xs text-[var(--color-danger)]" role="alert">
+          <span>{error}</span>
+          <button type="button" className="cursor-pointer border-none bg-none p-0 text-[11px] font-medium text-[var(--color-text-link)] hover:underline"
+            onClick={() => setReloadTick((n) => n + 1)}>{pickerCommon.retry}</button>
+        </p>
+      )}
       <Input value={directKw} disabled={disabled} placeholder={rc.directSearch}
         onChange={(e) => { setDirectKw(e.target.value); directDebounced(e.target.value) }} />
       {sel && sel.code && (

@@ -672,3 +672,12 @@ SQL
 - 页面常有多个 listbox 触发器(顶栏服务端切换器等),querySelector("[aria-haspopup=listbox]") 全局首个不一定是目标;先定位目标区块(如含标题文本的 section)再在其中找触发器。
 - 401 假象排查:注入 token 时若把 JWT 连引号存入(双重 JSON.stringify),请求头变成 Bearer "eyJ..." 全线 401;用 CDP Network.requestWillBeSent 看实际 Authorization 头,一击定位。
 - 长时序 UI 断言(loading→data)不要单点采样:Node 侧 70ms 轮询取快照,并同 expr 同时采 busy/disabled 等关联状态,避免两次 evaluate 之间状态已翻页。
+## 抽屉/多 aside 页面的 CDP 断言锚定与 fetch 造障时序(2026-09-07 PP2-W0)
+
+场景 → 页面存在多个同名容器(导航 aside + 抽屉 aside)或要在前端拦截请求造障时。
+怎么用 → ① 断言选择器必须 role/aria-label 唯一锚定(如 aside[role="dialog"] 限定抽屉、
+[aria-label=选择客户] 限定触发器),裸 querySelector('aside') 会抓到导航;先
+document.querySelectorAll('aside').length 数一遍。② 造障走 eval 覆写 window.fetch,必须
+在目标请求发生前装好(先覆写再点开抽屉;页面 mount 即发的请求拦不到,只能拦后续触发的)。③
+恢复原 fetch 后点「重试」按钮即可当场验证失败→恢复全链路,不伤真实后端。
+

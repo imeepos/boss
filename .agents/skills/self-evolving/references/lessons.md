@@ -521,3 +521,6 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 当测试断言异步 goroutine 写入的标准 log/ErrorLog 缓冲,修复是用互斥缓冲(结构体内嵌 sync.Mutex 的 Write/String),strings.Builder 直连必被 -race 拦截;PacketServer.ErrorLog 用 log.New(互斥buf, 完成双保险(2026-09-06 AAA-A5 secret_source_test)。
 - 当 go build ./cmd/xxx 会在 cwd 留下同名二进制污染 git status,修复是验证编译用 go build ./... 或 go vet、或 -o /dev/null;残留二进制(abp 包名场景)会被误当成新目录(2026-09-06 AAA-A5 ./aaa 事故)。
 - 当 RFC 层面某报文「服务端不可验证」(Access-Request 的 Request Authenticator 为随机数),错密钥的可观测面只在可验证报文(Accounting/CoA 的 MD5 验证子)与 PAP 解密垃圾间接暴露——测试造错密钥场景要选可验证报文类型,别对不可验证协议行为硬断言(2026-09-06 AAA-A5,RFC 2865/2866)。
+- 当自定义下拉/浮层嵌在 Radix Dialog/Drawer 里,修复是键盘分支(Esc 尤甚)必须 stopPropagation,否则事件冒泡到 document 被全局 dismiss 层接住、整层容器连同表单一起被关(2026-09-07 PP2-W0 走查实证:Esc 想关下拉却关了整只下单抽屉);面板关闭态按 Esc 仍要放行,保留容器级 Esc 语义。
+- 当 vitest 全量跑出现「Test timed out in 5000ms + jsdom 环境启动 80-160s」,修复是先单文件隔离复跑 + main 树基线对照再定性——资源型 flake(并发 transform 挤占)会伪装成业务回归,本例 519/519 两轮全过(2026-09-07 PP2-W0)。
+
