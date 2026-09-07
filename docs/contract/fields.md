@@ -978,6 +978,15 @@ stocktake_items（盘点差异明细，建单冻结快照 + 扫码回填 + 逐�
 
 > PONID 组装：`PONID="NA-<pon_frame>-<pon_slot>-<pon_port>"`（设计 §4）；`ports` 的 PON 四列与 `onu_no`（NULL=未分配）承载装维定位（§4.2 已增列）。
 
+### 4.5 OSS 建号写接口（POST /resources、POST /ports，T2 存量导入配套）
+
+| 端点 | 必填 | 缺省 | 错误语义 |
+|:-----|:-----|:-----|:---------|
+| POST /resources | code/type/addressId/legalEntityId | status=ONLINE（白名单 ONLINE/OFFLINE/FAULT） | type 白名单外/必填缺失 42200；code 撞 resources.code UNIQUE → 40900（resource.ErrDuplicate）；parentId/addressId 不存在 42200（ErrForeignKeyViolation） |
+| POST /ports | portCode/quadCode/resourceId/addressId/regionId/regionName | status=IDLE（新建仅收 IDLE/DISABLED，RESERVED/USED 走业务流转）；legalEntityId 缺省取归属资源企业快照 | port_code 撞 DB UNIQUE / quad_code 预查命中 → 40900；resourceId/addressId/parentId 不存在 42200 |
+
+> 两端点均挂 `menu:resource`；type 仅收 OLT/SPLITTER。T1 迁移（000202）的 VLAN/PON 扩展列本期不接收，payload struct 留扩展位（加字段透传即可）。审计：RecordAudit target=resource/port。
+
 ## 5. 阶段6 · 四码合一（internal/domain/quadlink）
 
 ### 5.1 quad_link（四码关联，源自全案 4.2 + REQ-AMS-003）
@@ -1861,6 +1870,19 @@ input-average-rate=84 / output-peak-rate=85 / output-average-rate=86。
 | 配置 | env | 默认 | 说明 |
 |:-----|:----|:-----|:-----|
 | 全局密钥兼容 | `BOSS_AAA_GLOBAL_SECRET_COMPAT` | 关 | 开启后未注册 NAS 的 RADIUS 报文与 CoA 下发回退全局密钥 `BOSS_AAA_SECRET` 与 `BOSS_AAA_COA_PORT`;**停用(enabled=false)NAS 不回退,一律拒绝** |
+
+## 8K. AAA 建号写接口(POST /lo-accounts,internal/domain/aaa,T2 存量导入配套)
+
+| 项 | 契约 |
+|:---|:-----|
+| 必填 | loid/customerId/offerId/qosTemplateId（缺失 42200） |
+| 唯一 | loid 全局唯一:预查 + DB `lo_accounts.loid` UNIQUE 双保险 → 40900（aaa.ErrDuplicate,reason 含 loid） |
+| 引用 | offer 须 PUBLISHED（非在售 40900 ErrOfferNotPublished）;qos_template 软引用须存在/法人存在 → 42200（ErrForeignKeyViolation） |
+| 缺省 | status 固定 ACTIVE;billing_mode 可选缺省 POSTPAID(白名单 PREPAID/POSTPAID,白名单外 42200);法人缺省平台总公司(is_platform,000077 兜底链),region_id 缺省 0、region_name 空(导入裁定,设计 §3) |
+| 门禁 | `menu:loaccount`;审计 target=lo_account |
+| 实现 | `aaa.LoAccountAdminService.CreateLoAccountChecked`(PGStore 扩展);环节 6 既有 CreateLoAccount 链路不受影响;billing_mode 继承逻辑(客户最近订单)仅在直调 CreateLoAccount 时生效 |
+
+> 与 §3.1 LO 契约的关系:本节是管理端建号入口,订单环节 6 建号仍走 order.UserProfileCreator(§3.1 offer 对齐语义不变)。
 
 迁移路径(全局密钥退役,不中断业务):
 
