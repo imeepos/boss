@@ -13,6 +13,24 @@ describe('实体定义', () => {
     expect(kinds.length).toBe(new Set(kinds).size)
     for (const k of kinds) expect(k).toMatch(re)
   })
+  it('ODN 示例行符合 DB CHECK 正则(防示例自身无法入库:facilities ^(P|MH|TW|CLS|TBX)[0-9]{5}$、devices 前缀+3位号)', () => {
+    const facRe = /^(P|MH|TW|CLS|TBX)[0-9]{5}$/
+    const devRe = /^(SNW|OLT|ODF|OCC|ODB|OBD|SDB|SBD|PRT|TBP)[0-9]{3}(-([2-9]|[1-9][0-9]+))?$/
+    for (const e of IMPORT_ENTITIES) {
+      for (const s of e.samples) {
+        const code = (s as Record<string, unknown>).code
+        if (e.kind === 'odn_facility') {
+          expect(String(code)).toMatch(facRe)
+          expect(String(code).startsWith(String((s as Record<string, unknown>).kind))).toBe(true)
+        }
+        if (e.kind === 'odn_device') {
+          expect(String(code)).toMatch(devRe)
+          expect(String(code).startsWith(String((s as Record<string, unknown>).kind))).toBe(true)
+          expect((s as Record<string, unknown>).parentId).toBeUndefined()
+        }
+      }
+    }
+  })
   it('10 个项目均含端点、必填列与权限码', () => {
     expect(IMPORT_ENTITIES.map((e) => e.kind)).toEqual(['account', 'legal_entity', 'department', 'post', 'product', 'odn_site', 'odn_grid', 'customer', 'odn_device', 'odn_facility'])
     expect(new Set(IMPORT_ENTITIES.map((e) => e.perm)).size).toBeGreaterThan(0)

@@ -187,7 +187,8 @@ export const IMPORT_ENTITIES: EntityDef[] = [
       { key: 'name', required: false, type: 'string' },
     ],
     samples: [
-      { code: 'OLT001', kind: 'OLT', prvCode: 'PHL001', cityPrefix: 'MNL', siteNo: 88, parentId: 0, name: '示例核心设备' },
+      // 示例行必须能通过后端校验真实入库:OLT 顶层设备可不挂 parent(禁填内部 id 0)。
+      { code: 'OLT001', kind: 'OLT', prvCode: 'PHL001', cityPrefix: 'MNL', siteNo: 88, name: '示例核心设备' },
     ],
   },
   {
@@ -208,7 +209,8 @@ export const IMPORT_ENTITIES: EntityDef[] = [
       { key: 'lng', required: false, type: 'number' },
     ],
     samples: [
-      { code: 'ODN-FAC-001', kind: 'MH', prvCode: 'PHL001', cityPrefix: 'MNL', gridCode: 12, name: '示例设施', lat: 14.6, lng: 121.0 },
+      // 编码须符合 DB CHECK:^(P|MH|TW|CLS|TBX)[0-9]{5}$;MH+网格 12 → MH12001。
+      { code: 'MH12001', kind: 'MH', prvCode: 'PHL001', cityPrefix: 'MNL', gridCode: 12, name: '示例设施', lat: 14.6, lng: 121.0 },
     ],
   },
 ]
