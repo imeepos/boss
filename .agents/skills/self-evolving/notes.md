@@ -2178,3 +2178,8 @@
 - 哪个坑浪费了最多时间? read 工具按字节截断(非行数),把 2143 行的 fields.md 当全量读到整文件回写,静默截掉尾部 143 行;本轮又对 notes.md/recidivism.md 重蹈(已在本条目修复),靠 wc -l 对账才发现。损失数轮+差点丢契约尾部。
 - 这个 skill 有没有提前警告我? 没有——skill 只警告了编辑前必须 read,没警告 read 的全量可能是被截断的全量。已喂回红线 26(本轮二犯即登)。
 - 重来一次我会怎么做? ①大文件一律 edit 锚点编辑或 shell 追加,绝不 read 回写;②造数脚本动笔前先逐字段核对 yaml 请求形状与枚举字典(grids prv/city 是 query 参数、facility gridCode 必填、label 必须小写、receipt confirm 必须带 items、链行枚举传中文标签——五坑五轮);③共享 main 上 ff-only 失败后严禁继续 && 链(本次 push 顺带推了别人未推的 commit,幸无损);④新增路由先跑 gen-bossctl-routes + genrouteperms 再进 make check。
+
+## 2026-09-08 oss-odn v2 负责人轮(O1-O5 派发+验收+合并收口)
+- 哪个坑浪费了最多时间? 验收命令两处静态缺陷(select 锚点 [<] 被重定向吞掉、O5 证据路径少一层 ../)直到收尾全量门禁才爆;以及键名引号五连 parse error。
+- skill 有没有提前警告? 部分有:红线 24 管道吞退出码让我保留了显式 RC,才定位到链里真假混杂;但「验收器跑在活 worktree 上与执行者并发」无预警,本轮已喂回 techniques。
+- 重来一次我会怎么做? ①派单前把验收命令逐条在真实仓库路径 dry-run 一遍(本可前移暴露两处锚点缺陷);②从第一轮就建立快照 worktree 验收模式,不试探活工作区;③长组合命令拆小步显式 RC,尤其在清理链附近。

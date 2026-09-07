@@ -696,3 +696,6 @@ document.querySelectorAll('aside').length 数一遍。② 造障走 eval 覆写 
 shell 用单引号+$( 替代 ${} 默认值、README 用缩进代码块替代反引号）；② 确需引号字符时用
 chr(39)/String.fromCharCode(34) 运行时构造；③ 正则字符类 [0-9] 替代 \\d 类转义；④ 落盘后
 立即跑语法门禁（py_compile/sh -n/go vet）再谈下一步。本轮 9 文件 975 行零 parse error。
+
+- 负责人验收执行者会话仍在写码:机械验收一律对提交做独立 detach 快照 worktree(git worktree add --detach)逐 commit 实跑,绝不碰执行会话的活 worktree(与其写码并发=红线「测试与工作区改写禁并发」);换验收对象=git checkout --detach <hash> 复用同一快照。
+- 账本/脚本 grep 锚点含 < 时方括号 [<] 不防重定向(shell 词法在 glob 之前,<[ ]x 仍被解析为重定向),必须整体加引号;写 ../ 相对路径前先 pwd 校验层级深度(web/admin 距仓库根两层,../docs 会指到 web/docs)。
