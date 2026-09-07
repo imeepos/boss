@@ -2,9 +2,11 @@
 // 契约: GET /params、PUT /params/{key}(sys.yaml;已上线,失败展示错误占位)。
 // 行内编辑 + 批量保存:值列 input,dirty 行标"已修改",保存时逐项 PUT。
 import { useEffect, useMemo, useState } from 'react'
+import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { Dropdown } from '../../../components/Dropdown'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../../components/ui/dialog'
 import { PageHead, ErrorBanner, EmptyState, ToolbarButton } from '../../../components/business/page-head'
 import { Card } from '../../../components/ui/card'
 import { Input } from '../../../components/ui/input'
@@ -21,7 +23,6 @@ export default function ParamsPage() {
   const [status, setStatus] = useState('')
   const [detail, setDetail] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
-  const [toast, setToast] = useState('')
 
   const load = () => {
     setError('')
@@ -43,18 +44,32 @@ export default function ParamsPage() {
 
   const dirty = origin.filter((p) => draft[p.key] !== p.value)
 
+  // 批量保存:P1 裁定——allSettled 聚合口径,部分失败必须失败呈现(成功 N/失败 M+原因),
+  // 只回写成功项;禁止一把成功色。
   const save = async () => {
     if (!dirty.length || saving) return
     setSaving(true)
     try {
-      await Promise.all(dirty.map((p) => apiFetch(`/params/${encodeURIComponent(p.key)}`, {
+      const results = await Promise.allSettled(dirty.map((p) => apiFetch(`/params/${encodeURIComponent(p.key)}`, {
         method: 'PUT',
         body: { value: draft[p.key] },
       })))
-      setOrigin(origin.map((p) => ({ ...p, value: draft[p.key] ?? p.value })))
-      setToast(t.pages.params.saved.replace('{count}', String(dirty.length)))
-    } catch (e) {
-      setToast((e instanceof Error ? e.message : t.pages.params.saveFail))
+      const failed = results.filter((r) => r.status === 'rejected')
+      const ok = results.length - failed.length
+      if (failed.length === 0) {
+        toast.success(t.pages.params.saved.replace('{count}', String(ok)))
+      } else {
+        const first = failed[0]
+        const reason = first.reason instanceof Error ? first.reason.message : t.pages.params.saveFail
+        toast.error(t.pages.params.savePartial
+          .replace('{ok}', String(ok))
+          .replace('{fail}', String(failed.length))
+          .replace('{reason}', reason))
+      }
+      if (ok > 0) {
+        const okKeys = new Set(dirty.filter((_, i) => results[i].status === 'fulfilled').map((p) => p.key))
+        setOrigin(origin.map((p) => (okKeys.has(p.key) ? { ...p, value: draft[p.key] ?? p.value } : p)))
+      }
     } finally {
       setSaving(false)
     }
@@ -131,24 +146,25 @@ export default function ParamsPage() {
             {saving ? t.pages.params.saving : t.pages.params.save}
           </ToolbarButton>
           <ToolbarButton onClick={load}>{t.pages.params.resetForm}</ToolbarButton>
-          {toast && <span className="text-xs text-[var(--color-success)]">{toast}</span>}
         </div>
       </Card>
-      {detailRow && (
-        <div className="fixed inset-0 z-page-modal flex items-center justify-center bg-black/45" onClick={() => setDetail(null)}>
-          <div className="w-95 rounded-md bg-[var(--shell-card-bg)] p-5 shadow-[var(--shadow-panel)]" onClick={(e) => e.stopPropagation()}>
-            <h3 className="mb-3 text-base font-semibold text-[var(--shell-heading)]">{t.pages.params.detailTitle}</h3>
-            <dl className="mb-4 grid grid-cols-[80px_1fr] gap-x-3 gap-y-2 text-[13px]">
+      <Dialog open={detailRow !== null} onOpenChange={(v) => { if (!v) setDetail(null) }}>
+        <DialogContent className="w-95">
+          <DialogHeader>
+            <DialogTitle>{t.pages.params.detailTitle}</DialogTitle>
+          </DialogHeader>
+          {detailRow && (
+            <dl className="grid grid-cols-[80px_1fr] gap-x-3 gap-y-2 text-[13px]">
               <dt className="text-[var(--shell-crumb-text)]">{t.pages.params.colName}</dt><dd className="m-0">{paramLabel(detailRow)}</dd>
               <dt className="text-[var(--shell-crumb-text)]">Key</dt><dd className="m-0">{detailRow.key}</dd>
               <dt className="text-[var(--shell-crumb-text)]">{t.pages.params.currentValue}</dt><dd className="m-0">{draft[detailRow.key]}</dd>
               <dt className="text-[var(--shell-crumb-text)]">{t.pages.params.originValue}</dt><dd className="m-0">{detailRow.value}</dd>
               <dt className="text-[var(--shell-crumb-text)]">{t.pages.params.colDesc}</dt><dd className="m-0">{detailRow.desc}</dd>
             </dl>
-            <ToolbarButton primary onClick={() => setDetail(null)}>{t.pages.params.close}</ToolbarButton>
-          </div>
-        </div>
-      )}
+          )}
+          <ToolbarButton primary onClick={() => setDetail(null)}>{t.pages.params.close}</ToolbarButton>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
