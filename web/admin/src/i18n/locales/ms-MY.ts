@@ -3265,7 +3265,7 @@ columns: ['Kod', 'Nama', 'Susunan', 'Aktif'],
       pageUnit: 'halaman',
     },
     pickers: {
-      common: { placeholder: 'Cari mengikut nama / no. kakitangan / telefon / kod', loadFail: 'Gagal memuatkan pilihan', viewDetail: 'Butiran', detailFail: 'Gagal memuatkan butiran', close: 'Tutup', jumpToList: 'Buka halaman pengurusan', all: 'Semua', clear: 'Kosongkan' },
+      common: { placeholder: 'Cari mengikut nama / no. kakitangan / telefon / kod', loadFail: 'Gagal memuatkan pilihan', viewDetail: 'Butiran', detailFail: 'Gagal memuatkan butiran', close: 'Tutup', jumpToList: 'Buka halaman pengurusan', all: 'Semua', clear: 'Kosongkan', loading: 'Memuat…', empty: 'Tiada padanan', retry: 'Cuba lagi' },
       dialog: {
         confirm: 'Sahkan', cancel: 'Batal', loadFail: 'Gagal memuatkan senarai', empty: 'Tiada data tersedia', keywordPh: 'Cari dengan kata kunci',
         selectedCount: '{n} dipilih', clearAll: 'Kosongkan pilihan', remove: 'Buang',

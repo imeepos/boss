@@ -3265,7 +3265,7 @@ columns: ['Code', 'Name', 'Sort', 'Enabled'],
       pageUnit: 'page',
     },
     pickers: {
-      common: { placeholder: 'Search by name / staff no. / phone / code', loadFail: 'Failed to load options', viewDetail: 'Detail', detailFail: 'Failed to load detail', close: 'Close', jumpToList: 'Open manage page', all: 'All', clear: 'Clear' },
+      common: { placeholder: 'Search by name / staff no. / phone / code', loadFail: 'Failed to load options', viewDetail: 'Detail', detailFail: 'Failed to load detail', close: 'Close', jumpToList: 'Open manage page', all: 'All', clear: 'Clear', loading: 'Loading…', empty: 'No matches', retry: 'Retry' },
       dialog: {
         confirm: 'OK', cancel: 'Cancel', loadFail: 'Failed to load list', empty: 'No data available', keywordPh: 'Search by keyword',
         selectedCount: '{n} selected', clearAll: 'Clear selection', remove: 'Remove',

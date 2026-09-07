@@ -3264,7 +3264,7 @@ columns: ['标识码', '名称', '排序', '启用'],
       pageUnit: '页',
     },
     pickers: {
-      common: { placeholder: '输入姓名/工号/手机号或编码检索', loadFail: '选项加载失败', viewDetail: '详情', detailFail: '详情加载失败', close: '关闭', jumpToList: '前往管理页', all: '全部', clear: '清除' },
+      common: { placeholder: '输入姓名/工号/手机号或编码检索', loadFail: '选项加载失败', viewDetail: '详情', detailFail: '详情加载失败', close: '关闭', jumpToList: '前往管理页', all: '全部', clear: '清除', loading: '加载中…', empty: '暂无匹配结果', retry: '重试' },
       dialog: {
         confirm: '确认', cancel: '取消', loadFail: '列表加载失败', empty: '暂无可选数据', keywordPh: '输入关键字搜索',
         selectedCount: '已选 {n} 项', clearAll: '清空已选', remove: '移除',
