@@ -299,6 +299,7 @@ export interface Translations {
       chain: { title: string; olt: string; site: string; splitter: string; closure: string; terminal: string; coverage: string; servedCount: string; empty: string }
       relGrid: string
       relSite: string
+      drawer: { createTitle: string; editTitle: string; hintOverride: string; lifecycle: string; edit: string; missingRequired: string; kindP: string; kindMH: string; kindTW: string; kindCLS: string; kindTBX: string }
       rangeText: string
       prev: string
       next: string

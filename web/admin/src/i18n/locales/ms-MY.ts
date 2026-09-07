@@ -558,6 +558,7 @@ const msMY: Translations = {
       kpi: { grids: 'Jumlah Grid', facilities: 'Jumlah Kemudahan', sites: 'Jumlah Tapak', linkedOlt: 'OLT Berkaitan', capacity: 'Penggunaan grid puncak' },
       chain: { title: 'Rantai Relasi', olt: 'Peranti OLT', site: 'Tapak', splitter: 'Pembahagi', closure: 'Kotak Sambung', terminal: 'Kotak Terminal', coverage: 'Liputan', servedCount: 'Diliputi {served}/{total}', empty: 'Tiada data rantai untuk bandar ini — daftar tapak/kemudahan dahulu' },
       relGrid: 'Grid Utama', relSite: 'Tapak Utama',
+      drawer: { createTitle: 'Tambah Sumber', editTitle: 'Sunting Sumber', hintOverride: 'Kod jana automatik, boleh ubah', lifecycle: 'Kitaran Hayat', edit: 'Sunting', missingRequired: 'Sila lengkapkan medan wajib', kindP: 'Tiang P', kindMH: 'Telaga MH', kindTW: 'Menara TW', kindCLS: 'Kotak Sambung CLS', kindTBX: 'Terminal TBX' },
       rangeText: '{from}-{to} daripada {count}', prev: 'Sebelum', next: 'Seterusnya', perPage: '/ halaman', jumpText: 'Lompat ke', pageUnit: 'halaman',
       prvLabel: 'PRV',
       cityLabel: 'Awalan bandar',

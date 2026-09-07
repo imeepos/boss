@@ -50,7 +50,7 @@ const PECE_STATUS_OPTIONS = ['PENDING_SIGN', 'SIGNED', 'STAMPED', 'NA']
 export default function PermitsPage() {
   const [rows, setRows] = useState<PermitRow[]>([])
   const [error, setError] = useState('')
-  const [showForm, setShowForm] = useState(false)
+  const [showCreate, setShowCreate] = useState(false)
   const [busy, setBusy] = useState(false)
   const [openId, setOpenId] = useState<number | null>(null)
   const [kind, setKind] = useState('')
@@ -77,7 +77,7 @@ export default function PermitsPage() {
       await apiFetch('/odn/permits', { method: 'POST', body: { ...form, projectId: 0 } })
       toast.success('许可单已创建')
       setForm({ kind: 'ROW', title: '', approvalNo: '', authority: '', validFrom: '', validUntil: '', facilityCode: '', note: '' })
-      setShowForm(false)
+      setShowCreate(false)
       await load()
     } catch (e) { setError(e instanceof Error ? e.message : '保存失败') } finally { setBusy(false) }
   }
@@ -92,8 +92,8 @@ export default function PermitsPage() {
       {statusOptions.length > 0 && <Dropdown value={status} ariaLabel='状态筛选' placeholder='全部状态' options={statusOptions.map((s) => ({ value: s, label: PERMIT_STATUS_TEXT[s] }))} onChange={setStatus} />}
       <label className={FIELD}><span className={LABEL}>项目 ID</span><Input className='w-28' value={projectId} onChange={(e) => setProjectId(e.target.value.replace(/[^0-9]/g, ''))} placeholder='按项目过滤' /></label>
     </div>
-    <div className='flex items-center gap-2'><ToolbarButton primary onClick={() => setShowForm(!showForm)}>{showForm ? '取消' : '新建许可单'}</ToolbarButton><ToolbarButton onClick={() => void load()}>刷新</ToolbarButton></div></div>
-    {showForm && <div className={CARD + ' mb-3 p-4'}><div className='grid grid-cols-2 gap-3 md:grid-cols-4'>
+    <div className='flex items-center gap-2'><ToolbarButton primary onClick={() => setShowCreate(!showCreate)}>{showCreate ? '取消' : '新建许可单'}</ToolbarButton><ToolbarButton onClick={() => void load()}>刷新</ToolbarButton></div></div>
+    {showCreate && <div className={CARD + ' mb-3 p-4'}><div className='grid grid-cols-2 gap-3 md:grid-cols-4'>
       <label className={FIELD}><span className={LABEL}>类型</span><Dropdown value={form.kind} ariaLabel='许可类型' options={[{ value: 'ROW', label: 'ROW 路权' }, { value: 'PECE', label: 'PECE 许可' }]} onChange={(v) => set('kind', v)} /></label>
       {field('title', '名称', '如 人民路架空段路权')}
       {field('approvalNo', '批复号', '批准前可留空')}

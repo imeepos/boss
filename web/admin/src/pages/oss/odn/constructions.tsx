@@ -38,7 +38,7 @@ export function fmtMoney(v: number | null | undefined): string {
 export default function ConstructionsPanel() {
   const [rows, setRows] = useState<Project[]>([])
   const [error, setError] = useState('')
-  const [showForm, setShowForm] = useState(false)
+  const [showCreate, setShowCreate] = useState(false)
   const [projNo, setProjNo] = useState('')
   const [name, setName] = useState('')
   const [busy, setBusy] = useState(false)
@@ -58,17 +58,17 @@ export default function ConstructionsPanel() {
     try {
       await apiFetch('/odn/constructions', { method: 'POST', body: { projNo: projNo.trim(), name: name.trim() } })
       toast.success('施工单已创建')
-      setProjNo(''); setName(''); setShowForm(false)
+      setProjNo(''); setName(''); setShowCreate(false)
       await load()
     } catch (e) { setError(e instanceof Error ? e.message : '保存失败') } finally { setBusy(false) }
   }
 
   return <div>
     <div className='mb-3 flex items-center justify-between'>
-      <ToolbarButton primary onClick={() => setShowForm(!showForm)}>{showForm ? '取消' : '新建施工单'}</ToolbarButton>
+      <ToolbarButton primary onClick={() => setShowCreate(!showCreate)}>{showCreate ? '取消' : '新建施工单'}</ToolbarButton>
       <ToolbarButton onClick={() => void load()}>刷新</ToolbarButton>
     </div>
-    {showForm && <div className={CARD + ' mb-3 p-4'}>
+    {showCreate && <div className={CARD + ' mb-3 p-4'}>
       <div className='grid grid-cols-2 gap-3 md:grid-cols-4'>
         <label className={FIELD}><span className={LABEL}>施工单号</span><Input value={projNo} onChange={(e) => setProjNo(e.target.value)} placeholder='C-20260907-001' /></label>
         <label className={FIELD}><span className={LABEL}>名称</span><Input value={name} onChange={(e) => setName(e.target.value)} /></label>

@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { ChevronRight, X } from 'lucide-react'
-import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { Badge } from '../../../components/ui/badge'
@@ -19,7 +18,8 @@ import ConstructionsPanel from './constructions'
 import { ResourceTree, type GroupKey, type LeafFocus, type ConstructionLite } from './ResourceTree'
 import { KpiCards } from './KpiCards'
 import { RelationChain, type ChainCoverage } from './RelationChain'
-import { CARD, LABEL, ODNForm, type Tab, type Grid, type Facility, type Site, type Device, type Region, type City } from './forms'
+import { CARD, LABEL, type Tab, type Grid, type Facility, type Site, type Device, type Region, type City } from './forms'
+import { ResourceDrawer, type DrawerTarget } from './ResourceDrawer'
 import type { ResourceRow } from '../types'
 
 // constructions tab (P-INFRA-1 W1): panel has own literals (i18n central files frozen for W1).
@@ -45,7 +45,6 @@ export default function ODNPage() {
   }
 
   const [error, setError] = useState('')
-  const [busy, setBusy] = useState(false)
   const [grids, setGrids] = useState<Grid[]>([])
   const [facilities, setFacilities] = useState<Facility[]>([])
   const [sites, setSites] = useState<Site[]>([])
@@ -55,7 +54,8 @@ export default function ODNPage() {
   const [olts, setOlts] = useState<ResourceRow[]>([])
   const [constructions, setConstructions] = useState<ConstructionLite[]>([])
   const [coverages, setCoverages] = useState<ChainCoverage[]>([])
-  const [showForm, setShowForm] = useState(false)
+  // 新增/编辑一律经抽屉(spec §0.1):null=关;tab+editing 定位目标。
+  const [drawer, setDrawer] = useState<DrawerTarget | null>(null)
   const [focus, setFocus] = useState<LeafFocus>(null)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
@@ -134,21 +134,11 @@ export default function ODNPage() {
 
   const load = useCallback(async () => { await loadCity() }, [loadCity])
 
-  const submit = async (body: Record<string, unknown>, path: string) => {
-    setBusy(true); setError('')
-    try {
-      await apiFetch(path, { method: 'POST', query: { prvCode: prv, cityPrefix: city }, body })
-      setShowForm(false)
-      toast.success(g.saveOk)
-      await load()
-    } catch (e) { setError(e instanceof Error ? e.message : g.saveFail) } finally { setBusy(false) }
-  }
-
   const retire = async (path: string) => {
     if (!(await confirmDialog(g.retireConfirm, { danger: true }))) return
-    setBusy(true); setError('')
+    setError('')
     try { await apiFetch(path, { method: 'DELETE', query: { prvCode: prv, cityPrefix: city } }); await load() }
-    catch (e) { setError(e instanceof Error ? e.message : g.saveFail) } finally { setBusy(false) }
+    catch (e) { setError(e instanceof Error ? e.message : g.saveFail) }
   }
 
   const region = regions.find((r) => r.prvCode === prv)
@@ -159,12 +149,12 @@ export default function ODNPage() {
   const onOlt = (o: ResourceRow) => { void navigate('/oss/device?resourceId=' + o.id) }
   const cityOlt = olts.find((o) => o.code.split('-').includes(city)) ?? null
   const paged = tab === 'grids'
-    ? <GridTable rows={slice(visGrids)} onRetire={(n) => retire('/odn/grids/' + n)} g={g} />
+    ? <GridTable rows={slice(visGrids)} onRetire={(n) => retire('/odn/grids/' + n)} onEdit={(r) => setDrawer({ tab: 'grids', editing: r })} g={g} />
     : tab === 'facilities'
-      ? <FacilityTable rows={slice(visFacilities)} onRetire={(code) => retire('/odn/facilities/' + encodeURIComponent(code))} g={g} olt={cityOlt} onOlt={onOlt} />
+      ? <FacilityTable rows={slice(visFacilities)} onRetire={(code) => retire('/odn/facilities/' + encodeURIComponent(code))} onEdit={(r) => setDrawer({ tab: 'facilities', editing: r })} g={g} olt={cityOlt} onOlt={onOlt} />
       : tab === 'sites'
-        ? <SiteTable rows={slice(visSites)} onRetire={(n) => retire('/odn/sites/' + n)} g={g} olt={cityOlt} onOlt={onOlt} />
-        : <DeviceTable rows={slice(devices)} onRetire={(id) => retire('/odn/devices/' + id)} g={g} olt={cityOlt} onOlt={onOlt} />
+        ? <SiteTable rows={slice(visSites)} onRetire={(n) => retire('/odn/sites/' + n)} onEdit={(r) => setDrawer({ tab: 'sites', editing: r })} g={g} olt={cityOlt} onOlt={onOlt} />
+        : <DeviceTable rows={slice(devices)} onRetire={(id) => retire('/odn/devices/' + id)} onEdit={(r) => setDrawer({ tab: 'devices', editing: r })} g={g} olt={cityOlt} onOlt={onOlt} />
 
   return <div className="flex items-start gap-4">
     <aside className="w-[280px] shrink-0">
@@ -180,18 +170,17 @@ export default function ODNPage() {
       <div className="mb-4 flex items-center justify-between">
         <div><h2 className="m-0 text-xl font-bold text-[var(--shell-heading)]">{g.title}</h2><p className="mt-1 text-xs text-[var(--shell-crumb-text)]">{g.subtitle}</p></div>
         <div className="flex items-center gap-2">{TAB_KIND[tab] && <BatchImportEntry kind={TAB_KIND[tab]} onImported={load} />}
-          {tab !== 'coverage' && tab !== 'constructions' && tab !== 'assets' && <ToolbarButton primary onClick={() => setShowForm(!showForm)}>{showForm ? g.cancel : g.add}</ToolbarButton>}</div>
+          {TAB_KIND[tab] && <ToolbarButton primary onClick={() => setDrawer({ tab, editing: null })}>{g.add}</ToolbarButton>}</div>
       </div>
       <div className="mb-4">
         <KpiCards grids={grids.length} facilities={facilities.length} sites={sites.length} olts={olts.length} capacityPct={capacityPct} g={g.kpi} />
       </div>
       <div className="mb-4 flex gap-6 border-b border-[var(--shell-side-border)]">
-        {TABS.map((key) => <button key={key} className={'cursor-pointer border-b-2 px-1 py-3 text-sm ' + (tab === key ? 'border-[var(--color-brand-gold-500)] font-semibold text-[var(--shell-heading)]' : 'border-transparent text-[var(--shell-content-text)]')} onClick={() => { patch({ tab: key }); setShowForm(false); setPage(1) }}>{g.tabs[key]}</button>)}
+        {TABS.map((key) => <button key={key} className={'cursor-pointer border-b-2 px-1 py-3 text-sm ' + (tab === key ? 'border-[var(--color-brand-gold-500)] font-semibold text-[var(--shell-heading)]' : 'border-transparent text-[var(--shell-content-text)]')} onClick={() => { patch({ tab: key }); setPage(1) }}>{g.tabs[key]}</button>)}
       </div>
       <DependencyHint show={tab === 'facilities' && grids.length === 0} message={g.hintNeedGrid} action={g.hintGotoGrids} onAction={() => patch({ tab: 'grids' })} />
       <DependencyHint show={tab === 'devices' && sites.length === 0} variant="info" message={g.hintNeedSite} action={g.tabs.sites} onAction={() => patch({ tab: 'sites' })} />
       {error && <ErrorBanner message={error} className="mt-3" />}
-      {showForm && tab !== 'coverage' && tab !== 'constructions' && tab !== 'assets' && <ODNForm tab={tab} busy={busy} prv={prv} city={city} submit={submit} g={g} grids={grids} sites={sites} devices={devices} />}
       {tab === 'devices' && <div className="mt-4"><RelationChain olts={olts} sites={sites} devices={devices} facilities={facilities} coverages={coverages} city={city} g={g.chain} /></div>}
       <section className={CARD + ' mt-4 overflow-hidden'}>
         {tab === 'grids' && paged}
@@ -205,6 +194,7 @@ export default function ODNPage() {
       {countOf > 0 && tab !== 'coverage' && tab !== 'constructions' && tab !== 'assets' && (
         <Pagination page={page} pageSize={pageSize} total={countOf} onPage={setPage} onSize={(n) => { setPageSize(n); setPage(1) }} {...pagerTexts(g)} />
       )}
+      {drawer && <ResourceDrawer target={drawer} prv={prv} city={city} regions={regions} grids={grids} sites={sites} devices={devices} g={g} onClose={() => setDrawer(null)} onSaved={load} />}
     </main>
   </div>
 }
@@ -218,13 +208,13 @@ function DependencyHint({ show, message, action, onAction, variant = 'warning' }
   </div>
 }
 
-function GridTable({ rows, onRetire, g }: { rows: Grid[]; onRetire: (n: number) => void; g: any }) { return <DataTable headers={[g.gridCode, g.name, g.coverage, g.usage, g.status, g.actions]} rows={rows} empty={g.empty} render={(r) => <TableRow key={r.gridCode}><TableCell>{String(r.gridCode).padStart(2, '0')}</TableCell><TableCell>{r.name}</TableCell><TableCell>{r.coverage}</TableCell><TableCell>{r.facilities}/999 {r.warn && <Badge variant="warning">{g.warn}</Badge>}</TableCell><TableCell>{r.status}</TableCell><TableCell><button className="text-[var(--color-text-link)]" onClick={() => onRetire(r.gridCode)}>{g.retire}</button></TableCell></TableRow>} /> }
+function GridTable({ rows, onRetire, onEdit, g }: { rows: Grid[]; onRetire: (n: number) => void; onEdit: (r: Grid) => void; g: any }) { return <DataTable headers={[g.gridCode, g.name, g.coverage, g.usage, g.status, g.actions]} rows={rows} empty={g.empty} render={(r) => <TableRow key={r.gridCode}><TableCell>{String(r.gridCode).padStart(2, '0')}</TableCell><TableCell>{r.name}</TableCell><TableCell>{r.coverage}</TableCell><TableCell>{r.facilities}/999 {r.warn && <Badge variant="warning">{g.warn}</Badge>}</TableCell><TableCell>{r.status}</TableCell><TableCell><button className="mr-2 text-[var(--color-text-link)]" onClick={() => onEdit(r)}>{g.drawer.edit}</button><button className="text-[var(--color-text-link)]" onClick={() => onRetire(r.gridCode)}>{g.retire}</button></TableCell></TableRow>} /> }
 // OltChip 关联 OLT:蓝 tinted 底(14% alpha)+ mono 12px,非状态色(spec §6);点击跳设备页过滤。
 function OltChip({ olt, onOlt, label }: { olt: ResourceRow; onOlt: (o: ResourceRow) => void; label: string }) {
   return <button type="button" aria-label={label + ' ' + olt.code} onClick={() => onOlt(olt)} className="cursor-pointer rounded-full px-2 py-0.5 font-mono text-[12px] leading-5 text-[var(--color-info)]" style={{ background: 'color-mix(in srgb, var(--color-info) 14%, transparent)' }}>{olt.code}</button>
 }
-function FacilityTable({ rows, onRetire, g, olt, onOlt }: { rows: Facility[]; onRetire: (c: string) => void; g: any; olt: ResourceRow | null; onOlt: (o: ResourceRow) => void }) { return <DataTable headers={[g.code, g.kind, g.relGrid, g.name, g.status, g.kpi.linkedOlt, g.actions]} rows={rows} empty={g.empty} render={(r) => <TableRow key={r.code}><TableCell className="font-mono">{r.code}</TableCell><TableCell>{r.kind}</TableCell><TableCell>{r.gridCode ? String(r.gridCode).padStart(2, '0') : '-'}</TableCell><TableCell>{r.name}</TableCell><TableCell>{r.status}</TableCell><TableCell>{olt && <OltChip olt={olt} onOlt={onOlt} label={g.kpi.linkedOlt} />}</TableCell><TableCell><button className="text-[var(--color-text-link)]" onClick={() => onRetire(r.code)}>{g.retire}</button></TableCell></TableRow>} /> }
-function SiteTable({ rows, onRetire, g, olt, onOlt }: { rows: Site[]; onRetire: (n: number) => void; g: any; olt: ResourceRow | null; onOlt: (o: ResourceRow) => void }) { return <DataTable headers={[g.nodeCode, g.name, g.status, g.kpi.linkedOlt, g.actions]} rows={rows} empty={g.empty} render={(r) => <TableRow key={r.siteNo}><TableCell className="font-mono">{r.cityPrefix}{String(r.siteNo).padStart(3, '0')}</TableCell><TableCell>{r.name}</TableCell><TableCell>{r.status}</TableCell><TableCell>{olt && <OltChip olt={olt} onOlt={onOlt} label={g.kpi.linkedOlt} />}</TableCell><TableCell><button className="text-[var(--color-text-link)]" onClick={() => onRetire(r.siteNo)}>{g.retire}</button></TableCell></TableRow>} /> }
-function DeviceTable({ rows, onRetire, g, olt, onOlt }: { rows: Device[]; onRetire: (id: number) => void; g: any; olt: ResourceRow | null; onOlt: (o: ResourceRow) => void }) {
-  return <DataTable headers={[g.code, g.kind, g.relSite, g.name, g.status, g.kpi.linkedOlt, g.actions]} rows={rows} empty={g.empty} render={(r) => <TableRow key={r.id}><TableCell className="font-mono">{r.code}</TableCell><TableCell>{r.kind}</TableCell><TableCell className="font-mono">{r.siteNo ? r.cityPrefix + String(r.siteNo).padStart(3, '0') : '-'}</TableCell><TableCell>{r.name}</TableCell><TableCell>{r.status}</TableCell><TableCell>{olt && <OltChip olt={olt} onOlt={onOlt} label={g.kpi.linkedOlt} />}</TableCell><TableCell><button className="text-[var(--color-text-link)]" onClick={() => onRetire(r.id)}>{g.retire}</button></TableCell></TableRow>} /> }
+function FacilityTable({ rows, onRetire, onEdit, g, olt, onOlt }: { rows: Facility[]; onRetire: (c: string) => void; onEdit: (r: Facility) => void; g: any; olt: ResourceRow | null; onOlt: (o: ResourceRow) => void }) { return <DataTable headers={[g.code, g.kind, g.relGrid, g.name, g.status, g.kpi.linkedOlt, g.actions]} rows={rows} empty={g.empty} render={(r) => <TableRow key={r.code}><TableCell className="font-mono">{r.code}</TableCell><TableCell>{r.kind}</TableCell><TableCell>{r.gridCode ? String(r.gridCode).padStart(2, '0') : '-'}</TableCell><TableCell>{r.name}</TableCell><TableCell>{r.status}</TableCell><TableCell>{olt && <OltChip olt={olt} onOlt={onOlt} label={g.kpi.linkedOlt} />}</TableCell><TableCell><button className="mr-2 text-[var(--color-text-link)]" onClick={() => onEdit(r)}>{g.drawer.edit}</button><button className="text-[var(--color-text-link)]" onClick={() => onRetire(r.code)}>{g.retire}</button></TableCell></TableRow>} /> }
+function SiteTable({ rows, onRetire, onEdit, g, olt, onOlt }: { rows: Site[]; onRetire: (n: number) => void; onEdit: (r: Site) => void; g: any; olt: ResourceRow | null; onOlt: (o: ResourceRow) => void }) { return <DataTable headers={[g.nodeCode, g.name, g.status, g.kpi.linkedOlt, g.actions]} rows={rows} empty={g.empty} render={(r) => <TableRow key={r.siteNo}><TableCell className="font-mono">{r.cityPrefix}{String(r.siteNo).padStart(3, '0')}</TableCell><TableCell>{r.name}</TableCell><TableCell>{r.status}</TableCell><TableCell>{olt && <OltChip olt={olt} onOlt={onOlt} label={g.kpi.linkedOlt} />}</TableCell><TableCell><button className="mr-2 text-[var(--color-text-link)]" onClick={() => onEdit(r)}>{g.drawer.edit}</button><button className="text-[var(--color-text-link)]" onClick={() => onRetire(r.siteNo)}>{g.retire}</button></TableCell></TableRow>} /> }
+function DeviceTable({ rows, onRetire, onEdit, g, olt, onOlt }: { rows: Device[]; onRetire: (id: number) => void; onEdit: (r: Device) => void; g: any; olt: ResourceRow | null; onOlt: (o: ResourceRow) => void }) {
+  return <DataTable headers={[g.code, g.kind, g.relSite, g.name, g.status, g.kpi.linkedOlt, g.actions]} rows={rows} empty={g.empty} render={(r) => <TableRow key={r.id}><TableCell className="font-mono">{r.code}</TableCell><TableCell>{r.kind}</TableCell><TableCell className="font-mono">{r.siteNo ? r.cityPrefix + String(r.siteNo).padStart(3, '0') : '-'}</TableCell><TableCell>{r.name}</TableCell><TableCell>{r.status}</TableCell><TableCell>{olt && <OltChip olt={olt} onOlt={onOlt} label={g.kpi.linkedOlt} />}</TableCell><TableCell><button className="mr-2 text-[var(--color-text-link)]" onClick={() => onEdit(r)}>{g.drawer.edit}</button><button className="text-[var(--color-text-link)]" onClick={() => onRetire(r.id)}>{g.retire}</button></TableCell></TableRow>} /> }
 function DataTable<T>({ headers, rows, empty, render }: { headers: string[]; rows: T[]; empty: string; render: (row: T) => React.ReactNode }) { return rows.length === 0 ? <EmptyState text={empty} /> : <div className="overflow-x-auto"><Table><TableHeader><TableRow>{headers.map((h) => <TableHead key={h}>{h}</TableHead>)}</TableRow></TableHeader><TableBody>{rows.map(render)}</TableBody></Table></div> }

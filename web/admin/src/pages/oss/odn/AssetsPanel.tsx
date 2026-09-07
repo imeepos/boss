@@ -35,7 +35,7 @@ export function AssetsPanel() {
   const [status, setStatus] = useState('ACTIVE')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
-  const [showForm, setShowForm] = useState(false)
+  const [showCreate, setShowCreate] = useState(false)
   const [entityKind, setEntityKind] = useState('FACILITY')
   const [facilityCode, setFacilityCode] = useState('')
   const [deviceId, setDeviceId] = useState('')
@@ -67,7 +67,7 @@ export function AssetsPanel() {
     try {
       await apiFetch('/odn/assets/registrations', { method: 'POST', body })
       toast.success('已登记资产化凭证,资产转为 DEPLOYED')
-      setShowForm(false); setFacilityCode(''); setDeviceId(''); setAssetId(''); setProjectId(''); setValueAmount(''); setRemark('')
+      setShowCreate(false); setFacilityCode(''); setDeviceId(''); setAssetId(''); setProjectId(''); setValueAmount(''); setRemark('')
       await load()
     } catch (e) { setError(e instanceof Error ? e.message : '登记失败') } finally { setBusy(false) }
   }
@@ -92,10 +92,10 @@ export function AssetsPanel() {
       <span className='text-xs opacity-60'>施工建成设施/设备(含导入域箱体)凭证据此获得资产身份;价值与采购/项目溯源随凭证登记</span>
       <div className='ml-auto flex items-end gap-2'>
         <Dropdown value={status} ariaLabel='凭证状态' options={[{ value: 'ACTIVE', label: '有效' }, { value: 'REVERSED', label: '已冲销' }, { value: '', label: '全部' }]} onChange={setStatus} />
-        <ToolbarButton primary onClick={() => setShowForm(!showForm)}>{showForm ? '收起' : '资产化登记'}</ToolbarButton>
+        <ToolbarButton primary onClick={() => setShowCreate(!showCreate)}>{showCreate ? '收起' : '资产化登记'}</ToolbarButton>
       </div>
     </div>
-    {showForm && <div className='mb-4 grid grid-cols-2 gap-3 border-b border-[var(--shell-side-border)] pb-4 md:grid-cols-4'>
+    {showCreate && <div className='mb-4 grid grid-cols-2 gap-3 border-b border-[var(--shell-side-border)] pb-4 md:grid-cols-4'>
       <label className={FIELD}><span className={LABEL}>对象类型</span>
         <Dropdown value={entityKind} ariaLabel='对象类型' options={[{ value: 'FACILITY', label: '设施' }, { value: 'DEVICE', label: '设备' }]} onChange={(v) => { setEntityKind(v); setFacilityCode(''); setDeviceId('') }} /></label>
       {entityKind === 'FACILITY'
