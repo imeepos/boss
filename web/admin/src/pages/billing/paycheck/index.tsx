@@ -5,6 +5,7 @@ import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { PageHead, pagerTexts } from '../../org/shared'
 import { StatusTag } from '../../../components/StatusTag'
+import { Drawer } from '../../../components/Drawer'
 import { Pagination } from '../../../components/Pagination'
 import { pageSlice, type ReconRow, type LedgerReconRow, type LedgerReconSummary } from '../types'
 import { fmtFee, fmtTime } from '../../../lib/format'
@@ -29,6 +30,8 @@ export default function PayCheckPage() {
   const [chPage, setChPage] = useState(1)
   const [chSize, setChSize] = useState(10)
   const [busy, setBusy] = useState(false)
+  // 渠道流水录入(P1-E:POST /reconciliations/:batchNo/statement,单行录入)。
+  const [stmt, setStmt] = useState<{ batchNo: string; ref: string; amount: string } | null>(null)
 
   // 账实核对状态(服务端分页)
   const [period, setPeriod] = useState(currentPeriod())
@@ -90,6 +93,41 @@ export default function PayCheckPage() {
     }
   }
 
+  // 自动对账:按当日建批并从已配置源拉流水比对(manual 渠道只建批)。
+  const runAuto = async () => {
+    if (busy) return
+    setBusy(true); setError('')
+    try {
+      const d = await apiFetch<{ date: string }>('/reconciliations/auto', { method: 'POST' })
+      toast.success(p.autoOk.replace('{date}', d?.date ?? ''))
+      loadChannel()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : p.actionFail)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const saveStatement = async () => {
+    if (!stmt || busy) return
+    const amount = Number(stmt.amount)
+    if (!stmt.ref.trim() || !Number.isFinite(amount) || amount === 0) return
+    setBusy(true); setError('')
+    try {
+      await apiFetch(`/reconciliations/${encodeURIComponent(stmt.batchNo)}/statement`, {
+        method: 'POST',
+        body: { rows: [{ channelRef: stmt.ref.trim(), amount }] },
+      })
+      toast.success(p.statementOk)
+      setStmt(null)
+      loadChannel()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : p.actionFail)
+    } finally {
+      setBusy(false)
+    }
+  }
+
   const slice = pageSlice(rows, chPage, chSize)
   const diffCount = summary
     ? Object.entries(summary.byKind ?? {}).reduce((n, [k, v]) => (k === 'MATCH' ? n : n + v), 0)
@@ -118,6 +156,7 @@ export default function PayCheckPage() {
           <span className="spacer" />
           <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy}
             onClick={() => (tab === 'channel' ? loadChannel() : loadLedger())}>{t.pages.audit.refresh}</button>
+          {tab === 'channel' && <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" disabled={busy} onClick={runAuto}>{p.autoBtn}</button>}
         </div>
         {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div>
           : tab === 'channel' ? (
@@ -136,6 +175,8 @@ export default function PayCheckPage() {
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">
                       {r.status === 'DIFF_PENDING' ? (
                         <span className="inline-flex items-center">
+                          <button disabled={busy} onClick={() => setStmt({ batchNo: r.batchNo, ref: '', amount: '' })}>{p.statementBtn}</button>
+                          <span className="mx-1 text-[var(--shell-side-border)]">|</span>
                           <button disabled={busy} onClick={() => settle(r.batchNo)}>{p.settle}</button>
                         </span>
                       ) : fmtTime(r.settledAt ?? '')}
@@ -191,6 +232,26 @@ export default function PayCheckPage() {
           )}
         </div>
       </div>
+      {stmt && (
+        <Drawer title={p.statementTitle + ' · ' + stmt.batchNo} onClose={() => setStmt(null)}
+          footer={
+            <>
+              <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={() => setStmt(null)}>{t.pages.company.cancel}</button>
+              <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" disabled={busy || !stmt.ref.trim() || !(Number(stmt.amount) > 0)} onClick={saveStatement}>{busy ? t.pages.account.submitting : t.pages.company.save}</button>
+            </>
+          }>
+          <div className="flex flex-col gap-3.5">
+            <label className="flex flex-col gap-1.5 text-[13px]">
+              <span>{p.statementRef}</span>
+              <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none focus:border-[var(--color-border-focus)]" value={stmt.ref} onChange={(e) => setStmt({ ...stmt, ref: e.target.value })} />
+            </label>
+            <label className="flex flex-col gap-1.5 text-[13px]">
+              <span>{p.statementAmount}</span>
+              <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none focus:border-[var(--color-border-focus)]" inputMode="decimal" value={stmt.amount} onChange={(e) => setStmt({ ...stmt, amount: e.target.value })} />
+            </label>
+          </div>
+        </Drawer>
+      )}
     </div>
   )
 }
