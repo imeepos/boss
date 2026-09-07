@@ -1,5 +1,6 @@
 // 派单管理页:工单池指派 / 我的工单 / 改派台账(order.yaml /dispatch 段)。
 import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { useQueryState } from '../../../lib/useQueryState'
 import { useT } from '../../../i18n'
@@ -67,6 +68,7 @@ export default function DispatchPage() {
           method: 'POST', body: { toMasterId: Number(masterId), reason: reason.trim() },
         })
       }
+      toast.success((act.mode === 'assign' ? d.toastAssignOk : d.toastTransferOk).replace('{no}', act.ticket.ticketNo))
       setAct(null)
       setMasterId('')
       setReason('')
@@ -117,7 +119,8 @@ export default function DispatchPage() {
           <span className="spacer" />
           <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={() => load(tab)}>{t.pages.audit.refresh}</button>
         </div>
-        {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : tab !== 'transfers' ? (
+        {error && <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div>}
+        {tab !== 'transfers' ? (
           <div className="overflow-x-auto px-4 pb-4">
             <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
               <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{d.ticketColumns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
