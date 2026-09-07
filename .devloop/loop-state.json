@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-07T19:45:23.473Z",
+  "updatedAt": "2026-09-07T20:46:18.064Z",
   "project": "boss",
-  "phase": "oss-odn v2 页面重构已收口(main=6273541d,O1-O5 全 done+采用率回绿,证据在库,会话已归档)",
+  "phase": "PP2 收官轮:T14 rider(GIS 反查弹窗+下单可装性徽标)进行中,专属会话执行",
   "tasks": [
     {
       "id": "U0",
@@ -44,14 +44,6 @@
       "status": "done",
       "acceptanceCommand": "bash scripts/accept/pp2-gate.sh web/admin/src/pages/base && test -f docs/plan/pp2-audit-base-aux.md && test -f docs/acceptance/2026-09-07-pp2-w4-base-aux.md",
       "failCount": 1
-    },
-    {
-      "id": "U5",
-      "title": "T14 ODN 前端强化 rider(GIS 点位点击反查弹窗+下单页可装性徽标)",
-      "goal": "W3 裁定不做(Phase B 主项优先);留待后续,后端数据链已备",
-      "priority": "P2",
-      "status": "debt",
-      "acceptanceCommand": "bash scripts/accept/pp2-gate.sh web/admin/src/pages/intel web/admin/src/pages/oss && test -f docs/acceptance/2026-09-07-pp2-t14-odn.md"
     },
     {
       "id": "U6",
@@ -101,6 +93,30 @@
       "priority": "P1",
       "status": "done",
       "acceptanceCommand": "cd web/admin && pnpm typecheck && pnpm test && pnpm build && ! grep -rn \"<[s]elect\" src/pages/oss/odn && test -f ../../docs/acceptance/2026-09-08-oss-odn-v2-accept.md && test -f ../../docs/acceptance/assets/oss-odn-v2-light.png && test -f ../../docs/acceptance/assets/oss-odn-v2-dark.png"
+    },
+    {
+      "id": "T14-1",
+      "title": "T14-1 GIS 点位点击反查弹窗(intel/gis:ODN 图层点位点击→绑定关系+可装性反查抽屉)",
+      "goal": "专属会话交付;负责人机械验收+走查证据文档",
+      "priority": "P2",
+      "status": "todo",
+      "acceptanceCommand": "bash scripts/accept/pp2-gate.sh web/admin/src/pages/intel && test -f docs/acceptance/2026-09-08-t14-1-gis-reverse.md"
+    },
+    {
+      "id": "T14-2",
+      "title": "T14-2 代客下单可装性实时徽标(boss/order:选地址自动判定,零额外操作)",
+      "goal": "专属会话交付;负责人机械验收+走查证据文档",
+      "priority": "P2",
+      "status": "todo",
+      "acceptanceCommand": "bash scripts/accept/pp2-gate.sh web/admin/src/pages/boss && test -f docs/acceptance/2026-09-08-t14-2-order-badge.md"
+    },
+    {
+      "id": "T14-3",
+      "title": "T14-3 收尾:主树合并+102 部署冒烟+专属会话归档",
+      "goal": "负责人执行;双门禁+走查+归档",
+      "priority": "P2",
+      "status": "todo",
+      "acceptanceCommand": "make web-admin-check && test -f docs/acceptance/2026-09-08-t14-3-closeout.md"
     }
   ]
 }
