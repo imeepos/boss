@@ -138,7 +138,8 @@ func (s *PGStore) SettleSettlement(ctx context.Context, id, accountID int64) (*P
 	}
 	defer tx.Rollback(ctx)
 	var status string
-	var total, projID int64
+	var total float64
+	var projID int64
 	var projNo, contractorName, settleNo string
 	var contractorID int64
 	err = tx.QueryRow(ctx, `SELECT status, total_amount, project_id, project_no,
@@ -190,7 +191,7 @@ func (s *PGStore) SettleSettlement(ctx context.Context, id, accountID int64) (*P
 	}
 	return &Payable{ID: apID, PayableNo: no, SettlementID: id, SettlementNo: settleNo,
 		ProjectID: projID, ProjectNo: projNo, ContractorID: contractorID,
-		ContractorName: contractorName, PayableAmount: float64(total),
+		ContractorName: contractorName, PayableAmount: total,
 		Balance: float64(total), Status: APOpen, CreatedAt: createdAt, UpdatedAt: updatedAt}, nil
 }
 
