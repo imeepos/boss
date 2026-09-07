@@ -140,6 +140,7 @@ export default function GisPage() {
           ariaLabel={g.title}
         />
         <SimplePicker
+          key={level}
           value={parentId ? String(parentId) : ''}
           search={searchParentNodes}
           onChange={changeParent}
