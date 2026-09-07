@@ -118,7 +118,7 @@ assert_eq P4 "ACCEPTED" "$ST" "项目状态"
 # P5 负例先行:ACCEPTED 后改定额被拒(明细锁定)。
 IID=$(sqlval "SELECT id FROM construction_items WHERE project_id=$PID ORDER BY id LIMIT 1;")
 req PUT "/odn/constructions/$PID/items/$IID" "{\"quantity\":9,\"unitPrice\":9}"
-assert_eq P5 "409" "$HTTP_CODE" "ACCEPTED 后改定额拒(锁定)"
+assert_eq P5 "40900" "$(jf "$BODY" "d['code']")" "ACCEPTED 后改定额拒(锁定,40900)"
 
 # P6 发起结算:应付=820,状态 PENDING。
 req POST "/odn/constructions/$PID/settlements"
@@ -131,7 +131,7 @@ SNO=$(jf "$BODY" "d['data']['settlementNo']")
 SID=$(jf "$BODY" "d['data']['id']")
 # 重复发起被拒(同项目单有效)。
 req POST "/odn/constructions/$PID/settlements"
-assert_eq P6 "409" "$HTTP_CODE" "重复发起拒"
+assert_eq P6 "40900" "$(jf "$BODY" "d['code']")" "重复发起拒(同项目单有效,40900)"
 
 # P7 确认结算 SETTLED → 作废 VOIDED → 重开新单。
 req POST "/odn/settlements/$SID/settle"
@@ -147,7 +147,7 @@ assert_eq P7 "820" "$TOTAL2" "新单应付金额不变"
 # 作废缺原因被拒。
 SID2=$(sqlval "SELECT id FROM construction_settlements WHERE project_id=$PID AND status='PENDING' ORDER BY id DESC LIMIT 1;")
 req POST "/odn/settlements/$SID2/void" "{}"
-assert_eq P7 "422" "$HTTP_CODE" "作废缺原因拒"
+assert_eq P7 "42200" "$(jf "$BODY" "d['code']")" "作废缺原因拒(42200)"
 
 # P8 未指定承包商的 ACCEPTED 项目拒结算(存量兼容口径)。
 PROJ2="${TAG}-P2-$(date +%H%M%S)"
@@ -156,7 +156,7 @@ PID2=$(sqlval "SELECT id FROM construction_projects WHERE proj_no='$PROJ2';")
 req POST "/odn/constructions/$PID2/start"
 req POST "/odn/constructions/$PID2/accept" "{\"note\":\"\"}"
 req POST "/odn/constructions/$PID2/settlements"
-assert_eq P8 "409" "$HTTP_CODE" "未挂承包商拒结算"
+assert_eq P8 "40900" "$(jf "$BODY" "d['code']")" "未挂承包商拒结算(40900)"
 
 cleanup_data
 sqlval "DELETE FROM odn_facility WHERE code IN ('$FAC','${TAG}F2') AND name LIKE '$TAG%';" >/dev/null
