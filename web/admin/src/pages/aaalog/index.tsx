@@ -5,6 +5,7 @@ import { useT } from '../../i18n'
 import { PageHead, pagerTexts } from '../org/shared'
 import { Pagination } from '../../components/Pagination'
 import { fmtTime } from '../../lib/format'
+import { useDebouncedValue } from '../../lib/useDebouncedValue'
 import { type AuthLogRow, type CdrRow } from '../quad/types'
 import { failReasonText } from './failReason'
 import { TableStateRow, TabBar } from '../../components/business'
@@ -18,6 +19,7 @@ export default function AaaLogPage() {
   const [total, setTotal] = useState(0)
   const [error, setError] = useState('')
   const [loid, setLoid] = useState('')
+  const debouncedLoid = useDebouncedValue(loid)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
   const [busy, setBusy] = useState(false)
@@ -26,8 +28,8 @@ export default function AaaLogPage() {
     setError('')
     setBusy(true)
     const req = key === 'cdr'
-      ? apiFetch<{ items: CdrRow[]; total: number }>('/cdrs', { query: { loid: loid || undefined, page, pageSize } })
-      : apiFetch<{ items: AuthLogRow[]; total: number }>('/auth-logs', { query: { loid: loid || undefined, page, pageSize } })
+      ? apiFetch<{ items: CdrRow[]; total: number }>('/cdrs', { query: { loid: debouncedLoid || undefined, page, pageSize } })
+      : apiFetch<{ items: AuthLogRow[]; total: number }>('/auth-logs', { query: { loid: debouncedLoid || undefined, page, pageSize } })
     req.then((x) => {
       const items = x?.items ?? []
       setTotal(x?.total ?? 0)
@@ -37,7 +39,8 @@ export default function AaaLogPage() {
       .catch((e) => setError(e instanceof Error ? e.message : a.loadFail))
       .finally(() => setBusy(false))
   }
-  useEffect(() => { load(tab) }, [tab, page, pageSize])
+  // loid 过滤防抖:输入停顿 300ms 才触发检索(修复 loid 不在依赖导致过滤不生效)。
+  useEffect(() => { load(tab) }, [tab, page, pageSize, debouncedLoid])
 
   const slice = tab === 'cdr' ? cdrs : auths
   const fmtOct = (n: number) => (n >= 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)}MB` : `${(n / 1024).toFixed(1)}KB`)

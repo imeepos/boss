@@ -9,6 +9,7 @@ import { Pagination } from '../../../components/Pagination'
 import { type LoAccountRow } from '../types'
 import { TableStateRow } from '../../../components/business'
 import { useConfirm } from '../../../components/ConfirmDialog'
+import { useDebouncedValue } from '../../../lib/useDebouncedValue'
 import { ResetPasswordDialog } from './ResetPasswordDialog'
 
 export default function LoAccountPage() {
@@ -18,6 +19,7 @@ export default function LoAccountPage() {
   const [total, setTotal] = useState(0)
   const [error, setError] = useState('')
   const [keyword, setKeyword] = useState('')
+  const debouncedKeyword = useDebouncedValue(keyword)
   const [status, setStatus] = useState('')
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
@@ -30,13 +32,14 @@ export default function LoAccountPage() {
     setError('')
     setBusy(true)
     apiFetch<{ items: LoAccountRow[]; total: number }>('/lo-accounts', {
-      query: { keyword: keyword.trim() || undefined, status: status || undefined, page, pageSize },
+      query: { keyword: debouncedKeyword.trim() || undefined, status: status || undefined, page, pageSize },
     })
       .then((d) => { setRows(d?.items ?? []); setTotal(d?.total ?? 0) })
       .catch((e) => setError(e instanceof Error ? e.message : l.loadFail))
       .finally(() => setBusy(false))
   }
-  useEffect(load, [page, pageSize, keyword, status])
+  // keyword 防抖:每击键即请求改 300ms 停顿触发。
+  useEffect(load, [page, pageSize, debouncedKeyword, status])
 
   // 重置接入密码:二次确认 → POST reset-password → 弹层一次性展示随机密码(明文仅本次返回)。
   const handleReset = async (loid: string) => {
