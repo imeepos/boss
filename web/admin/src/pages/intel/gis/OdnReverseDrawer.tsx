@@ -137,8 +137,9 @@ export function OdnReverseDrawer({ point, onClose }: { point: GisPoint | null; o
               <div className="flex flex-col gap-1.5">
                 <div className="flex items-center gap-2">
                   <ServeBadge g={g} status={phase.d.coverage.status} />
-                  {phase.d.coverage.distanceM != null ? (
-                    <span className="text-[13px] text-[var(--shell-content-text)]">{t.pages.odn.distance}: {Math.round(phase.d.coverage.distanceM)}m</span>
+                  {/* resolve 契约 distanceM omitempty:点位即最近设施时距离 0 被省略,按 0m 呈现 */}
+                  {phase.d.coverage.facilityCode ? (
+                    <span className="text-[13px] text-[var(--shell-content-text)]">{t.pages.odn.distance}: {Math.round(phase.d.coverage.distanceM ?? 0)}m</span>
                   ) : null}
                 </div>
                 {phase.d.coverage.facilityCode ? (
