@@ -57,20 +57,20 @@ export default function ODNPage() {
       if (tab === 'facilities') setFacilities(await apiFetch<Facility[]>('/odn/facilities', { query: { prvCode: prv, cityPrefix: city } }) ?? [])
       if (tab === 'sites') setSites(await apiFetch<Site[]>('/odn/sites', { query: { prvCode: prv, cityPrefix: city } }) ?? [])
       if (tab === 'devices') setDevices(await apiFetch<Device[]>('/odn/devices', { query: { prvCode: prv, cityPrefix: city } }) ?? [])
-    } catch { setError(g.loadFail) }
+    } catch (e) { setError(e instanceof Error ? e.message : g.loadFail) }
   }, [city, g.loadFail, prv, tab])
 
   useEffect(() => { void load() }, [load])
 
   const submit = async (body: Record<string, unknown>, path: string) => {
     setBusy(true); setError('')
-    try { await apiFetch(path, { method: 'POST', query: { prvCode: prv, cityPrefix: city }, body }); setShowForm(false); await load() } catch { setError(g.saveFail) } finally { setBusy(false) }
+    try { await apiFetch(path, { method: 'POST', query: { prvCode: prv, cityPrefix: city }, body }); setShowForm(false); await load() } catch (e) { setError(e instanceof Error ? e.message : g.saveFail) } finally { setBusy(false) }
   }
 
   const retire = async (path: string) => {
     if (!(await confirmDialog(g.retireConfirm, { danger: true }))) return
     setBusy(true); setError('')
-    try { await apiFetch(path, { method: 'DELETE', query: { prvCode: prv, cityPrefix: city } }); await load() } catch { setError(g.saveFail) } finally { setBusy(false) }
+    try { await apiFetch(path, { method: 'DELETE', query: { prvCode: prv, cityPrefix: city } }); await load() } catch (e) { setError(e instanceof Error ? e.message : g.saveFail) } finally { setBusy(false) }
   }
 
   return <div>

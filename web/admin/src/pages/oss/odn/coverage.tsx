@@ -32,7 +32,7 @@ export function CoveragePanel({ g }: { g: any }) {
 
   const load = useCallback(async () => {
     setError('')
-    try { setRows(await apiFetch<Cov[]>('/odn/coverage/list', { query: { limit: 200 } }) ?? []) } catch { setError(g.loadFail) }
+    try { setRows(await apiFetch<Cov[]>('/odn/coverage/list', { query: { limit: 200 } }) ?? []) } catch (e) { setError(e instanceof Error ? e.message : g.loadFail) }
   }, [g.loadFail])
   useEffect(() => { void load() }, [load])
 
@@ -45,12 +45,12 @@ export function CoveragePanel({ g }: { g: any }) {
         deviceId: form.deviceId ? Number(form.deviceId) : undefined,
         status: form.status, note: form.note } })
       await load()
-    } catch { setError(g.saveFail) } finally { setBusy(false) }
+    } catch (e) { setError(e instanceof Error ? e.message : g.saveFail) } finally { setBusy(false) }
   }
 
   const resolve = async () => {
     setError(''); setResolved(null)
-    try { setResolved(await apiFetch<Resolved>('/odn/coverage/resolve', { query: { lat: ll.lat, lng: ll.lng } })) } catch { setError(g.loadFail) }
+    try { setResolved(await apiFetch<Resolved>('/odn/coverage/resolve', { query: { lat: ll.lat, lng: ll.lng } })) } catch (e) { setError(e instanceof Error ? e.message : g.loadFail) }
   }
 
   const statusOptions = [
