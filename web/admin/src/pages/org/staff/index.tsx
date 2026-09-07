@@ -1,6 +1,7 @@
 // 组织架构与人员页:左树(企业→部门→岗位,成员计数) + 右成员列表;
 // 部门/岗位增删改(DELETE 占用拒 40900),成员添加/编辑(复用账号表单级联赋岗)/启停。
 import { useEffect, useMemo, useState } from 'react'
+import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { useConfirm } from '../../../components/ConfirmDialog'
@@ -68,12 +69,13 @@ export default function StaffOrgPage() {
     return posts.find((x) => x.id === selection.id)?.name ?? ''
   }, [selection, entities, depts, posts])
 
-  const guard = async (fn: () => Promise<void>) => {
+  const guard = async (fn: () => Promise<void>, okMsg?: string) => {
     if (busy) return
     setBusy(true)
     setFormError('')
-    try { await fn(); load() } catch (e) {
+    try { await fn(); if (okMsg) toast.success(okMsg); load() } catch (e) {
       setFormError(e instanceof Error ? e.message : t.pages.staff.saveFail)
+      toast.error(e instanceof Error ? e.message : t.pages.staff.saveFail)
     } finally { setBusy(false) }
   }
 
@@ -83,7 +85,7 @@ export default function StaffOrgPage() {
     if (deptForm.id) await apiFetch(`/departments/${deptForm.id}`, { method: 'PUT', body })
     else await apiFetch('/departments', { method: 'POST', body })
     setDeptForm(null)
-  })
+  }, t.pages.staff.saved)
 
   const submitPost = () => guard(async () => {
     if (!postForm) return
@@ -91,7 +93,7 @@ export default function StaffOrgPage() {
     if (postForm.id) await apiFetch(`/posts/${postForm.id}`, { method: 'PUT', body })
     else await apiFetch('/posts', { method: 'POST', body })
     setPostForm(null)
-  })
+  }, t.pages.staff.saved)
 
   const submitMember = () => guard(async () => {
     if (!memberForm) return
@@ -100,24 +102,30 @@ export default function StaffOrgPage() {
     if (memberForm.id) await apiFetch(`/accounts/${memberForm.id}`, { method: 'PUT', body })
     else await apiFetch('/accounts', { method: 'POST', body })
     setMemberForm(null)
-  })
+  }, t.pages.staff.saved)
 
-  const toggleMember = (r: AccountRow) => guard(async () => {
-    const f = rowToForm(r)
-    await apiFetch(`/accounts/${r.id}`, {
-      method: 'PUT',
-      body: { ...buildAccountPayload(f, true), status: r.status === 1 ? 0 : 1 },
-    })
-  })
+  const toggleMember = async (r: AccountRow) => {
+    const msg = r.status === 1
+      ? t.pages.company.staff.disableConfirm.replace('{name}', r.username)
+      : t.pages.company.staff.enableConfirm.replace('{name}', r.username)
+    if (!(await confirmDialog(msg, { danger: r.status === 1 }))) return
+    await guard(async () => {
+      const f = rowToForm(r)
+      await apiFetch(`/accounts/${r.id}`, {
+        method: 'PUT',
+        body: { ...buildAccountPayload(f, true), status: r.status === 1 ? 0 : 1 },
+      })
+    }, t.pages.staff.statusOk)
+  }
 
   const delDept = async (d: DeptNode) => {
     if (!(await confirmDialog(t.pages.staff.delDeptConfirm.replace('{name}', d.name), { danger: true }))) return
-    await guard(async () => { await apiFetch(`/departments/${d.id}`, { method: 'DELETE' }) })
+    await guard(async () => { await apiFetch(`/departments/${d.id}`, { method: 'DELETE' }) }, t.pages.staff.delOk)
   }
 
   const delPost = async (p: PostNode) => {
     if (!(await confirmDialog(t.pages.staff.delPostConfirm.replace('{name}', p.name), { danger: true }))) return
-    await guard(async () => { await apiFetch(`/posts/${p.id}`, { method: 'DELETE' }) })
+    await guard(async () => { await apiFetch(`/posts/${p.id}`, { method: 'DELETE' }) }, t.pages.staff.delOk)
   }
 
   const addMember = () => {

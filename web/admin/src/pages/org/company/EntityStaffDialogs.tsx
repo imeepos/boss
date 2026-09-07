@@ -1,6 +1,7 @@
 // 企业员工后台录入对话框集(000173):录入员工(工号/登录名/密码/角色)/重置密码。
 // 表单密度与交互复用师傅录入(WorkerDialogs)的模式;角色用 Dropdown 不用原生 select。
 import { useState } from 'react'
+import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { Dropdown } from '../../../components/Dropdown'
@@ -39,6 +40,7 @@ function StaffForm({ entityId, onClose, onDone }: { entityId: number; onClose: (
           realName: realName.trim(), phone: phone.trim(), roleCode,
         },
       })
+      toast.success(t.saved)
       onClose(); onDone()
     } catch (e) {
       setErr(e instanceof Error ? e.message : t.actionFail)
@@ -58,7 +60,7 @@ function StaffForm({ entityId, onClose, onDone }: { entityId: number; onClose: (
       <label className={label}><span className="mr-0.5 text-[var(--color-danger)]">*</span>{t.realName}</label>
       <div className="mb-3"><Input value={realName} onChange={(e) => setRealName(e.target.value)} /></div>
       <label className={label}>{t.phone}</label>
-      <div className="mb-3"><Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="13800000000" /></div>
+      <div className="mb-3"><Input value={phone} onChange={(e) => setPhone(e.target.value)} /></div>
       <label className={label}><span className="mr-0.5 text-[var(--color-danger)]">*</span>{t.role}</label>
       <div className="mb-4">
         <Dropdown
@@ -93,6 +95,7 @@ function ResetPwdForm({ entityId, accountId, name, onClose }: { entityId: number
     setBusy(true); setErr('')
     try {
       await apiFetch(`/legal-entities/${entityId}/staff/${accountId}/password`, { method: 'PUT', body: { password } })
+      toast.success(t.resetPwdOk)
       onClose()
     } catch (e) {
       setErr(e instanceof Error ? e.message : t.actionFail)

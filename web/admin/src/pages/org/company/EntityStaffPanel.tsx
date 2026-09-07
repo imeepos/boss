@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { Drawer } from '../../../components/Drawer'
+import { toast } from 'sonner'
 import { useConfirm } from '../../../components/ConfirmDialog'
 import { Button } from '../../../components/ui/button'
 import { EntityStaffDialogs, type EntityStaffDialogMode } from './EntityStaffDialogs'
@@ -40,6 +41,7 @@ export function EntityStaffPanel({ entityId, entityName, onClose }: { entityId: 
     if (!(await confirmDialog(next === 0 ? t.disableConfirm.replace('{name}', r.realName) : t.enableConfirm.replace('{name}', r.realName), { danger: next === 0 }))) return
     try {
       await apiFetch(`/legal-entities/${entityId}/staff/${r.id}/status`, { method: 'PUT', body: { status: next } })
+      toast.success(t.statusOk)
       load()
     } catch (e) {
       setError(e instanceof Error ? e.message : t.actionFail)

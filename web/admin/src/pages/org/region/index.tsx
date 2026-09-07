@@ -2,9 +2,12 @@
 // 契约: GET /regions(org.yaml;parentPath 前缀过滤=下钻)。下级数由全量列表派生。
 // 覆盖主体列:PUT /regions/:id/coverage 划分子公司经营区域(0=摘除,兜底总公司)。
 import { useEffect, useMemo, useState } from 'react'
+import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { Dropdown } from '../../../components/Dropdown'
+import { useConfirm } from '../../../components/ConfirmDialog'
+import { ErrorBanner } from '../../../components/business/page-head'
 import { PageHead, pagerTexts } from '../shared'
 import { buildRegionView, filterRegions, pageSlice, type RegionRow } from './tree'
 import { Pagination } from '../../../components/Pagination'
@@ -22,26 +25,40 @@ export default function RegionPage() {
   const [drillPath, setDrillPath] = useState('')
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
+  const [busy, setBusy] = useState(false)
+  const confirmDialog = useConfirm()
 
   const load = () => {
     setError('')
+    setBusy(true)
     apiFetch<RegionRow[]>('/regions')
       .then((d) => setRows(d ?? []))
       .catch((e) => setError(e instanceof Error ? e.message : t.pages.region.loadFail))
+      .finally(() => setBusy(false))
   }
   useEffect(load, []) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     apiFetch<EntityOption[]>('/legal-entities').then((d) => setEntities(d ?? [])).catch(() => {})
   }, [])
 
-  // assignCoverage 划分/摘除覆盖主体后整表刷新。
-  const assignCoverage = (regionId: number, legalEntityId: number) => {
-    apiFetch('/regions/' + regionId + '/coverage', {
-      method: 'PUT',
-      body: { legalEntityId },
-    })
-      .then(load)
-      .catch(() => setError(t.pages.region.assignFail))
+  // assignCoverage 划分/摘除覆盖主体:先确认(资产/客户归属随动),成功 toast,失败可复制。
+  const assignCoverage = async (regionId: number, legalEntityId: number) => {
+    if (!(await confirmDialog(t.pages.region.assignConfirm))) return
+    setBusy(true)
+    try {
+      await apiFetch('/regions/' + regionId + '/coverage', {
+        method: 'PUT',
+        body: { legalEntityId },
+      })
+      toast.success(t.pages.staff.statusOk)
+      load()
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : t.pages.region.assignFail
+      setError(msg)
+      toast.error(msg)
+    } finally {
+      setBusy(false)
+    }
   }
 
   const coverageOptions = useMemo(
@@ -80,10 +97,10 @@ export default function RegionPage() {
             </button>
           )}
           <span className="spacer" />
-          <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={load}>{t.pages.audit.refresh}</button>
+          <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)] disabled:cursor-not-allowed disabled:opacity-50" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
         </div>
-        {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : (
-          <div className="overflow-x-auto px-4 pb-4">
+        {error && <ErrorBanner message={error} />}
+        <div className="overflow-x-auto px-4 pb-4">
             <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
               <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{t.pages.region.columns.map((c) => <th key={c} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{c}</th>)}</tr></thead>
               <tbody>
@@ -111,11 +128,10 @@ export default function RegionPage() {
                     </td>
                   </tr>
                 ))}
-                {!slice.length && <TableStateRow colSpan={7} text={t.pages.region.empty} />}
+                {!slice.length && <TableStateRow colSpan={7} loading={busy} text={t.pages.region.empty} />}
               </tbody>
             </table>
           </div>
-        )}
         <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
           <Pagination total={view.length} page={page} pageSize={pageSize}
             onPage={setPage} onSize={setPageSize} {...pagerTexts(t.pages.region)} />

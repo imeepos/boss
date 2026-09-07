@@ -8,7 +8,9 @@ import { Pagination } from '../../../components/Pagination'
 import { PageHead, pagerTexts } from '../shared'
 import { filterLegalEntities, pageSlice, type LegalEntityRow } from './filter'
 import { BatchImportEntry } from '../../base/importer/BatchImportEntry'
+import { toast } from 'sonner'
 import { SimplePicker } from '../../../components/pickers/SimplePicker'
+import { ErrorBanner } from '../../../components/business/page-head'
 import { EntityStaffPanel } from './EntityStaffPanel'
 import { TableStateRow } from '../../../components/business'
 
@@ -50,6 +52,7 @@ export default function CompanyPage() {
       }
       if (form.id) await apiFetch(`/legal-entities/${form.id}`, { method: 'PUT', body })
       else await apiFetch('/legal-entities', { method: 'POST', body })
+      toast.success(t.pages.company.saved)
       setForm(null)
       load()
     } catch (e) {
@@ -72,8 +75,8 @@ export default function CompanyPage() {
             onClick={() => setForm({ id: 0, code: '', name: '', taxJurisdiction: '', taxChannel: 'manual' })}>{t.pages.company.add}</button>
           <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={load}>{t.pages.audit.refresh}</button>
         </div>
-        {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : (
-          <div className="overflow-x-auto px-4 pb-4">
+        {error && <ErrorBanner message={error} />}
+        <div className="overflow-x-auto px-4 pb-4">
             <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
               <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{t.pages.company.columns.map((c) => <th key={c} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{c}</th>)}</tr></thead>
               <tbody>
@@ -98,7 +101,6 @@ export default function CompanyPage() {
               </tbody>
             </table>
           </div>
-        )}
         <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
           <Pagination total={filtered.length} page={page} pageSize={pageSize}
             onPage={setPage} onSize={setPageSize} {...pagerTexts(t.pages.company)} />

@@ -8,6 +8,7 @@ import { DetailDrawer, PageHead, pagerTexts } from '../shared'
 import { filterMatrixRows, pageSlice, type MenuPermData, type MenuPermViewRow } from './matrix'
 import { Pagination } from '../../../components/Pagination'
 import { EmptyState } from '../../../components/business'
+import { ErrorBanner } from '../../../components/business/page-head'
 import { RoleManagerCard } from './RoleManagerCard'
 
 export default function MenuPermPage() {
@@ -46,6 +47,7 @@ export default function MenuPermPage() {
       <RoleManagerCard onChanged={load} />
       <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
         <div className="px-4 pt-3.5 text-[15px] font-semibold text-[var(--shell-heading)]">{t.pages.menuperm.modelTitle}</div>
+        {error && <div className="px-4 pb-2"><ErrorBanner message={error} className="!mx-0 !mb-0" /></div>}
         <div className="overflow-x-auto px-4 pb-4">
           <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
             <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr><th className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{t.pages.menuperm.modelLayerLabel}</th></tr></thead>
@@ -54,7 +56,6 @@ export default function MenuPermPage() {
                 <tr key={l}><td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{i + 1}. {l}</td></tr>
               ))}
               {!(data.layers ?? []).length && <tr><td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><EmptyState text={t.pages.menuperm.empty} /></td></tr>}
-              {error && <tr><td className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</td></tr>}
             </tbody>
           </table>
         </div>

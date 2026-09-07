@@ -1,6 +1,7 @@
 // 入驻申请审核页(sysadmin,menu:partner):状态页签 + 审核(通过开通/驳回记意见)。
 // 契约:GET/POST /partner/applications*(fields.md 8B);状态口径 PENDING/APPROVED/REJECTED。
 import { useCallback, useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import {
   listPartnerApplications, approvePartnerApplication, rejectPartnerApplication,
   type PartnerApplication, type PartnerApproveResult,
@@ -12,6 +13,7 @@ import { Card } from '../../../components/ui/card'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/table'
 import { PageHead, ErrorBanner, EmptyState, ToolbarButton } from '../../../components/business/page-head'
 import { Drawer } from '../../../components/Drawer'
+import { Pagination } from '../../../components/Pagination'
 import { PartnerReviewActions } from './ReviewActions'
 
 const TABS = ['', 'PENDING', 'APPROVED', 'REJECTED'] as const
@@ -37,6 +39,9 @@ export default function PartnerReviewPage() {
   const [error, setError] = useState('')
   const [detail, setDetail] = useState<PartnerApplication | null>(null)
   const [approveResult, setApproveResult] = useState<PartnerApproveResult | null>(null)
+  const [keyword, setKeyword] = useState('')
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
 
   const load = useCallback(() => {
     setError('')
@@ -47,6 +52,13 @@ export default function PartnerReviewPage() {
 
   useEffect(load, [load])
 
+  // 检索+客户端分页(全量拉取页,数据量小;服务端分页登记为后续契约项)。
+  const kw = keyword.trim().toLowerCase()
+  const shown = items.filter((r) => !kw
+    || r.companyName.toLowerCase().includes(kw) || r.creditCode.toLowerCase().includes(kw)
+    || r.contactName.toLowerCase().includes(kw))
+  const slice = shown.slice((page - 1) * pageSize, page * pageSize)
+
   const tabLabel = (v: string) =>
     v === '' ? t.pages.partnerReview.tabAll
       : v === 'PENDING' ? t.pages.partnerReview.statusPending
@@ -54,14 +66,24 @@ export default function PartnerReviewPage() {
           : t.pages.partnerReview.statusRejected
 
   const onApprove = async (id: number) => {
-    const res = await approvePartnerApplication(id)
-    if (res) setApproveResult(res)
+    try {
+      const res = await approvePartnerApplication(id)
+      if (!res) throw new Error(t.pages.partnerReview.loadFail)
+      setApproveResult(res)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : t.pages.partnerReview.loadFail)
+    }
     load()
     setDetail(null)
   }
 
   const onReject = async (id: number, note: string) => {
-    await rejectPartnerApplication(id, note)
+    try {
+      await rejectPartnerApplication(id, note)
+      toast.success(t.pages.partnerReview.rejectOk)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : t.pages.partnerReview.loadFail)
+    }
     load()
     setDetail(null)
   }
@@ -86,6 +108,12 @@ export default function PartnerReviewPage() {
           </button>
         ))}
         <div className="flex-1" />
+        <input
+          className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]"
+          placeholder={t.pages.partnerReview.colCompany}
+          value={keyword}
+          onChange={(e) => { setKeyword(e.target.value); setPage(1) }}
+        />
         <ToolbarButton onClick={load}>{t.pages.partnerReview.refresh}</ToolbarButton>
       </nav>
       <Card className="p-4">
@@ -102,7 +130,7 @@ export default function PartnerReviewPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {items.map((r) => (
+              {slice.map((r) => (
                 <TableRow key={r.id} className="cursor-pointer" onClick={() => setDetail(r)}>
                   <TableCell className="font-medium">{r.companyName}</TableCell>
                   <TableCell>{r.creditCode}</TableCell>
@@ -114,12 +142,22 @@ export default function PartnerReviewPage() {
                   </TableCell>
                 </TableRow>
               ))}
-              {!items.length && (
+              {!shown.length && (
                 <TableRow><TableCell colSpan={6}><EmptyState text={t.pages.partnerReview.empty} /></TableCell></TableRow>
               )}
             </TableBody>
           </Table>
         )}
+        <div className="mt-2 flex items-center justify-between text-xs text-[var(--shell-group-title)]">
+          <span>{shown.length}</span>
+          <Pagination
+            total={shown.length} page={page} pageSize={pageSize}
+            onPage={setPage} onSize={(s) => { setPageSize(s); setPage(1) }}
+            rangeText={t.pages.company.rangeText} prevText={t.pages.company.prev}
+            nextText={t.pages.company.next} perPageText={t.pages.company.perPage}
+            jumpText={t.pages.company.jumpText} pageUnitText={t.pages.company.pageUnit}
+          />
+        </div>
       </Card>
 
       {detail && (

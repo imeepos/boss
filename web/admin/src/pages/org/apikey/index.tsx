@@ -1,6 +1,7 @@
 // API key 管理页(组织与权限组,sysadmin):免登录密钥签发/吊销。
 // 契约: GET /api-keys → {items:[apikey.APIKey]};POST → {plainKey} 仅返回一次;DELETE /:id 吊销。
 import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { PageHead } from '../shared'
@@ -9,6 +10,7 @@ import { buildCreatePayload } from './payload'
 import { formatTime } from '../../base/audit/logic'
 import { useConfirm } from '../../../components/ConfirmDialog'
 import { EmptyState, CopyButton } from '../../../components/business'
+import { Pagination } from '../../../components/Pagination'
 
 export interface ApiKeyRow {
   id: number
@@ -48,12 +50,17 @@ export default function ApiKeyPage() {
   const [formError, setFormError] = useState('')
   const [plainKey, setPlainKey] = useState('')
   const [busy, setBusy] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
 
   const load = () => {
     setError('')
+    setLoading(true)
     apiFetch<{ items: ApiKeyRow[] }>('/api-keys')
       .then((d) => setRows(d?.items ?? []))
       .catch((e) => setError(e instanceof Error ? e.message : t.pages.apikey.loadFail))
+      .finally(() => setLoading(false))
   }
   useEffect(load, []) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -66,6 +73,7 @@ export default function ApiKeyPage() {
         method: 'POST',
         body: buildCreatePayload(form.accountId, form.name),
       })
+      toast.success(t.pages.apikey.createOk)
       setForm(null)
       setPlainKey(res?.plainKey ?? '')
       load()
@@ -82,6 +90,7 @@ export default function ApiKeyPage() {
     setBusy(true)
     try {
       await apiFetch(`/api-keys/${id}`, { method: 'DELETE' })
+      toast.success(t.pages.apikey.revokeOk)
       load()
     } catch (e) {
       setError(e instanceof Error ? e.message : t.pages.apikey.loadFail)
@@ -93,6 +102,7 @@ export default function ApiKeyPage() {
   const kw = keyword.trim()
   const shown = rows.filter((r) => !kw
     || r.name.includes(kw) || r.subjectName.includes(kw) || r.keyPrefix.includes(kw))
+  const slice = shown.slice((page - 1) * pageSize, page * pageSize)
   const cols = t.pages.apikey.columns
 
   return (
@@ -100,9 +110,9 @@ export default function ApiKeyPage() {
       <PageHead title={t.pages.apikey.title} desc={t.pages.apikey.desc} />
       <div className="flex flex-wrap items-center gap-2 p-4">
         <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" value={keyword}
-          placeholder={t.pages.apikey.searchPlaceholder} onChange={(e) => setKeyword(e.target.value)} />
+          placeholder={t.pages.apikey.searchPlaceholder} onChange={(e) => { setKeyword(e.target.value); setPage(1) }} />
         <span className="spacer" />
-        <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={load}>{t.pages.audit.refresh}</button>
+        <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)] disabled:cursor-not-allowed disabled:opacity-50" disabled={loading} onClick={load}>{t.pages.audit.refresh}</button>
         <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" onClick={() => { setPlainKey(''); setForm({ accountId: 0, name: '' }) }}>
           {t.pages.apikey.create}
         </button>
@@ -111,7 +121,7 @@ export default function ApiKeyPage() {
         <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
           <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{cols.map((c) => <th key={c} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{c}</th>)}</tr></thead>
           <tbody>
-            {shown.map((r) => (
+            {slice.map((r) => (
               <tr key={r.id}>
                 <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.name}</td>
                 <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{subjectCell(r)}</td>
@@ -132,6 +142,15 @@ export default function ApiKeyPage() {
         </table>
         {shown.length === 0 && !error && <EmptyState text={t.pages.company.empty} />}
         {error && <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div>}
+        <div className="flex justify-end px-4 pb-4 text-xs text-[var(--shell-group-title)]">
+          <Pagination
+            total={shown.length} page={page} pageSize={pageSize}
+            onPage={setPage} onSize={(s) => { setPageSize(s); setPage(1) }}
+            rangeText={t.pages.company.rangeText} prevText={t.pages.company.prev}
+            nextText={t.pages.company.next} perPageText={t.pages.company.perPage}
+            jumpText={t.pages.company.jumpText} pageUnitText={t.pages.company.pageUnit}
+          />
+        </div>
       </div>
 
       <ApiKeyFormDrawer
