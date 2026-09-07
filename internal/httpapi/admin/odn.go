@@ -66,12 +66,9 @@ func registerODNRoutes(g *gin.RouterGroup, a *app.Application) {
 	registerODNPortRoutes(g, a, perm)
 	registerODNBindingRoutes(g, a, perm)
 	registerODNInvestmentRoutes(g, a)
-<<<<<<< HEAD
-	registerODNAssetRoutes(g, a, perm)
-=======
 	registerODNDictRoutes(g, a, perm)
 	registerODNNextCodeRoutes(g, a, perm)
->>>>>>> main
+	registerODNAssetRoutes(g, a, perm)
 }
 
 // odnPathParamInt 路径参数转 int16,失败已回 400。
