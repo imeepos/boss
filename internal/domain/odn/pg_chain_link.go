@@ -59,7 +59,7 @@ func expandChainAnchor(ctx context.Context, tx pgx.Tx, rec *ChainRecord) error {
 		`SELECT code FROM odn_facility
 		 WHERE prv_code=$1 AND city_prefix=$2 AND grid_code=$3 AND kind='MH'
 		   AND name=$4 AND status <> 'RETIRED'
-		 ORDER BY id LIMIT 1`, rec.PrvCode, rec.CityPrefix, rec.GridCode, name).Scan(&code)
+		 ORDER BY code LIMIT 1`, rec.PrvCode, rec.CityPrefix, rec.GridCode, name).Scan(&code)
 	if err == nil {
 		return nil
 	}
@@ -83,7 +83,7 @@ func expandChainAnchor(ctx context.Context, tx pgx.Tx, rec *ChainRecord) error {
 	var got string
 	if err := tx.QueryRow(ctx,
 		`SELECT code FROM odn_facility WHERE prv_code=$1 AND city_prefix=$2 AND grid_code=$3
-		   AND kind='MH' AND name=$4 AND status <> 'RETIRED' ORDER BY id LIMIT 1`,
+		   AND kind='MH' AND name=$4 AND status <> 'RETIRED' ORDER BY code LIMIT 1`,
 		rec.PrvCode, rec.CityPrefix, rec.GridCode, name).Scan(&got); err != nil {
 		return fmt.Errorf("odn: reload chain anchor: %w", err)
 	}

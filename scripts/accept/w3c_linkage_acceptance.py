@@ -240,7 +240,8 @@ def main():
         else:
             bad("网格行覆盖计数", "api=" + str(gr2 and gr2.get("coverageServed")) + " sql=" + sql_cov)
         covlist = http("GET", "/odn/coverage/list?limit=50")[1]
-        covrows = [x for x in ((data_of(covlist) or {}).get("items") or []) if x.get("facilityCode") == anchor]
+        covdata = data_of(covlist)
+        covrows = [x for x in (covdata.get("items") if isinstance(covdata, dict) else (covdata or [])) if x.get("facilityCode") == anchor]
         if covrows and covrows[0].get("status") == "SERVED":
             ok("覆盖页可见: /odn/coverage/list 含锚点设施行 SERVED")
         else:
