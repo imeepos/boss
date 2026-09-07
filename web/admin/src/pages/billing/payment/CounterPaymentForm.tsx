@@ -35,29 +35,34 @@ export function CounterPaymentForm({ onDone, onClose }: Props) {
   const [counter, setCounter] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  // 主数据拉取失败:网点/账单任一失败即提示并阻断提交(防止资金错通道入账)。
+  const [loadFail, setLoadFail] = useState('')
+  const [billTick, setBillTick] = useState(0)
+  const [siteTick, setSiteTick] = useState(0)
 
   // 网点主数据:进入表单即拉清单(biz_params counter.sites)。
   useEffect(() => {
     apiFetch<{ items: string[] }>('/daily-closings/sites')
-      .then((d) => setSiteOptions((d?.items ?? []).map((s) => ({ value: s, label: s }))))
-      .catch(() => setSiteOptions([]))
-  }, [])
+      .then((d) => { setSiteOptions((d?.items ?? []).map((s) => ({ value: s, label: s }))); setLoadFail((cur) => (cur === f.siteLoadFail ? '' : cur)) })
+      .catch(() => { setSiteOptions([]); setLoadFail(f.siteLoadFail) })
+  }, [siteTick]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // 账单联动:选客户后带出未结账单;value='0' 表示充值/预存(无账单)。
   useEffect(() => {
     setBill('')
     if (customer === '') { setBillOptions([]); return }
     apiFetch<{ items: BillOption[] }>('/bills', { query: { customerId: Number(customer) } })
-      .then((d) => setBillOptions([
+      .then((d) => { setBillOptions([
         { value: '0', label: f.noBill },
         ...(d?.items ?? []).filter((b) => b.status !== 'PAID').map((b) => ({
           value: String(b.billId), label: b.billNo + ' ' + b.period + ' ' + fmtFee(b.amount) + ' ' + b.status,
         })),
-      ]))
-      .catch(() => setBillOptions([]))
-  }, [customer]) // eslint-disable-line react-hooks/exhaustive-deps
+      ]); setLoadFail((cur) => (cur === f.billLoadFail ? '' : cur)) })
+      .catch(() => { setBillOptions([]); setLoadFail(f.billLoadFail) })
+  }, [customer, billTick]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const submit = async () => {
+    if (loadFail) { setError(loadFail); return }
     if (customer === '') { setError(f.customerOrBill); return }
     const amt = Number(amount)
     if (!Number.isFinite(amt) || amt <= 0) { setError(f.amount); return }
@@ -85,6 +90,15 @@ export function CounterPaymentForm({ onDone, onClose }: Props) {
       <div className="w-[440px] rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] p-5 shadow-[var(--shell-card-shadow)]" onClick={(e) => e.stopPropagation()}>
         <div className="mb-4 text-center text-[15px] font-medium text-[var(--shell-heading)]">{f.formTitle}</div>
         {error && <div className="mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div>}
+        {loadFail && (
+          <div className="mb-3 flex items-center justify-between gap-2 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">
+            <span className="break-all">{loadFail}</span>
+            <button
+              className="shrink-0 cursor-pointer border-none bg-none text-[12px] text-[var(--color-text-link)] underline"
+              onClick={() => { if (loadFail === f.siteLoadFail) setSiteTick((n) => n + 1); else setBillTick((n) => n + 1) }}
+            >{t.pages.pickers.common.retry}</button>
+          </div>
+        )}
         <div className="grid grid-cols-2 gap-x-4 gap-y-3">
           <div className="col-span-2">
             <FormField label={f.customer}>
