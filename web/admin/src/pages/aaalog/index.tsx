@@ -53,8 +53,8 @@ export default function AaaLogPage() {
             onChange={(key) => { setTab(key); setPage(1) }}
           />
         </div>
-        <div style={{ display: 'flex', gap: 4, marginBottom: 12, alignItems: 'center' }}>
-          <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" style={{ width: 180 }} placeholder={a.filterLoid}
+        <div className="flex items-center gap-1 mb-3">
+          <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)] w-[180px]" placeholder={a.filterLoid}
             value={loid} onChange={(e) => { setLoid(e.target.value); setPage(1) }} />
           <span className="spacer" />
           <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={() => load(tab)}>{t.pages.audit.refresh}</button>

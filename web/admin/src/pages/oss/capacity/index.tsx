@@ -84,7 +84,7 @@ export default function CapacityPage() {
               <thead><tr>{[r.colObject, r.colType, r.colTotal, r.colUsed, r.colUsage].map((x) => <th key={x} className={th}>{x}</th>)}</tr></thead>
               <tbody>
                 {slice.map((row) => (
-                  <tr key={row.resourceId} style={row.usageRate >= ALERT_THRESHOLD_PCT ? { background: "color-mix(in srgb, var(--color-warning) 12%, transparent)" } : undefined}>
+                  <tr key={row.resourceId} className={row.usageRate >= ALERT_THRESHOLD_PCT ? "bg-[color-mix(in_srgb,var(--color-warning)_12%,transparent)]" : undefined}>
                     <td className={td}>{row.name} ({row.code})</td>
                     <td className={td}>{dimLabel(row.type)}</td>
                     <td className={td}>{row.totalPorts}</td>
@@ -93,7 +93,7 @@ export default function CapacityPage() {
                       <span className="inline-flex items-center gap-2">
                         <span>{row.usageRate.toFixed(2)}%</span>
                         {row.usageRate >= ALERT_THRESHOLD_PCT && (
-                          <span title={r.alertHint} className="rounded-sm px-1.5 py-0.5 text-[11px] font-medium" style={{ background: "color-mix(in srgb, var(--color-warning) 16%, transparent)", color: "var(--color-warning)" }}>{r.alertMark}</span>
+                          <span title={r.alertHint} className="rounded-sm bg-[color-mix(in_srgb,var(--color-warning)_16%,transparent)] px-1.5 py-0.5 text-[11px] font-medium text-[var(--color-warning)]">{r.alertMark}</span>
                         )}
                       </span>
                     </td>

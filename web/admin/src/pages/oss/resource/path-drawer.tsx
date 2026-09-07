@@ -41,7 +41,7 @@ export function PathDrawer({ port, onClose }: { port: PortRow; onClose: () => vo
     if (h.missing) {
       return (
         <span className="inline-flex items-center gap-1">
-          <span className="inline-block rounded px-2 text-xs leading-[22px] text-[var(--color-danger)]" style={{ border: '1px solid color-mix(in srgb, var(--color-danger) 55%, transparent)', background: 'color-mix(in srgb, var(--color-danger) 10%, transparent)' }}>
+          <span className="inline-block rounded border border-[color-mix(in_srgb,var(--color-danger)_55%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_10%,transparent)] px-2 text-xs leading-[22px] text-[var(--color-danger)]">
             {r.breakTag}
           </span>
           <span className="text-xs text-[var(--color-danger)]">{breakText(h.reason ?? '')}</span>
@@ -54,7 +54,7 @@ export function PathDrawer({ port, onClose }: { port: PortRow; onClose: () => vo
   }
 
   const completeBadge = (complete: boolean) => (
-    <span className="text-xs font-medium" style={{ color: complete ? 'var(--color-success, #52c41a)' : 'var(--color-danger)' }}>
+    <span className={"text-xs font-medium " + (complete ? "text-[var(--color-success)]" : "text-[var(--color-danger)]")}>
       {complete ? r.linkComplete : r.linkIncomplete}
     </span>
   )

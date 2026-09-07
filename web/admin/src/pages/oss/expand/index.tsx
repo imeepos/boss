@@ -8,7 +8,7 @@ import { Pagination } from '../../../components/Pagination'
 import { Drawer } from '../../../components/Drawer'
 import { Dropdown } from '../../../components/Dropdown'
 import { pageSlice, type ExpansionRow, type LegalEntityRow, type RegionRefRow } from '../types'
-import { TableStateRow } from '../../../components/business'
+import { TableStateRow, ErrorBanner } from '../../../components/business'
 
 export default function ExpandPage() {
   const t = useT()
@@ -144,7 +144,7 @@ export default function ExpandPage() {
                 onChange={(ev) => setExpectedPorts(ev.target.value)} />
               {!portsOk && expectedPorts !== '' && <span className="text-[11px] text-[var(--color-danger)]">{e.ePorts}</span>}
             </div>
-            {formError && <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]" style={{ margin: 0 }}>{formError}</div>}
+            {formError && <ErrorBanner message={formError} className="mx-0" />}
           </div>
         </Drawer>
       )}

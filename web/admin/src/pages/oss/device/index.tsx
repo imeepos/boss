@@ -8,7 +8,7 @@ import { Pagination } from '../../../components/Pagination'
 import { Dropdown } from '../../../components/Dropdown'
 import { fmtTime } from '../../../lib/format'
 import { pageSlice, type DeviceMetricRow, type MaintenanceRow, type ResourceRow } from '../types'
-import { TableStateRow } from '../../../components/business'
+import { TableStateRow, TabBar, ErrorBanner } from '../../../components/business'
 
 export default function DevicePage() {
   const t = useT()
@@ -58,40 +58,38 @@ export default function DevicePage() {
     <div>
       <PageHead title={d.title} desc={d.desc} />
       <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
-        <div style={{ display: 'flex', gap: 4, marginBottom: 12, borderBottom: '1px solid #f0f0f0' }}>
-          {(['metrics', 'maint'] as const).map((key) => (
-            <button key={key} onClick={() => { setTab(key); setPage(1) }}
-              style={{
-                padding: '8px 16px', fontSize: 14, cursor: 'pointer', background: 'none', border: 'none',
-                borderBottom: tab === key ? '2px solid #1677ff' : '2px solid transparent',
-                color: tab === key ? '#1677ff' : '#666', fontWeight: tab === key ? 600 : 400,
-              }}>
-              {key === 'metrics' ? d.tabMetrics : d.tabMaint}
-            </button>
-          ))}
-          <span className="spacer" />
+        <div className="px-4 pt-3">
+          <TabBar<'metrics' | 'maint'>
+            tabs={[{ key: 'metrics' as const, label: d.tabMetrics }, { key: 'maint' as const, label: d.tabMaint }]}
+            value={tab}
+            onChange={(key) => { setTab(key); setPage(1) }}
+          />
+        </div>
+        <div className="flex flex-wrap items-center gap-2 px-4 pb-3">
+          <span className="flex-1" />
           {tab === 'metrics' && (
-            <Dropdown
-              value={resourceId ? String(resourceId) : ''}
-              options={[{ value: '', label: d.allDevice }, ...devices.map((x) => ({ value: String(x.id), label: `${x.name} (${x.code})` }))]}
-              onChange={(v) => { const n = Number(v) || 0; setResourceId(n); setPage(1); loadMetrics(n) }}
-              ariaLabel={d.allDevice}
-              triggerStyle={{ minWidth: 200 }}
-            />
+            <div className="w-52">
+              <Dropdown
+                value={resourceId ? String(resourceId) : ''}
+                options={[{ value: '', label: d.allDevice }, ...devices.map((x) => ({ value: String(x.id), label: `${x.name} (${x.code})` }))]}
+                onChange={(v) => { const n = Number(v) || 0; setResourceId(n); setPage(1); loadMetrics(n) }}
+                ariaLabel={d.allDevice}
+              />
+            </div>
           )}
           <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy}
             onClick={() => (tab === 'metrics' ? loadMetrics(resourceId) : loadMaints())}>
             {t.pages.audit.refresh}
           </button>
         </div>
-        {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : tab === 'metrics' ? (
+        {error ? <ErrorBanner message={error} /> : tab === 'metrics' ? (
           <div className="overflow-x-auto px-4 pb-4">
             <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
               <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{d.metricColumns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
               <tbody>
                 {(slice as DeviceMetricRow[]).map((m) => (
                   <tr key={m.id}>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">#{m.id}</td>
+                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{devices.find((x) => x.id === m.resourceId)?.code ?? `#${m.resourceId}`}</td>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{deviceName(m.resourceId)}</td>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><StatusTag domain="resource" value={m.status} /></td>
                     <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{fmtNum(m.opticalPower)}</td>

@@ -10,7 +10,7 @@ import { Dropdown } from '../../../components/Dropdown'
 import { ResourcePicker } from '../../../components/ResourcePicker'
 import { pageSlice, type RegionRefRow, type ResourceRow, type TransferRow } from '../types'
 import { useConfirm } from '../../../components/ConfirmDialog'
-import { TableStateRow } from '../../../components/business'
+import { TableStateRow, ErrorBanner } from '../../../components/business'
 
 export default function TransferPage() {
   const t = useT()
@@ -169,7 +169,7 @@ export default function TransferPage() {
               />
               {!regionOk && (fromRegionId !== 0 || toRegionId !== 0) && <span className="text-[11px] text-[var(--color-danger)]">{r.eRegion}</span>}
             </div>
-            {formError && <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]" style={{ margin: 0 }}>{formError}</div>}
+            {formError && <ErrorBanner message={formError} className="mx-0" />}
           </div>
         </Drawer>
       )}

@@ -106,10 +106,10 @@ export default function PayCheckPage() {
             onChange={(key) => { setTab(key); setError('') }}
           />
         </div>
-        <div style={{ display: 'flex', gap: 4, marginBottom: 12, alignItems: 'center' }}>
+        <div className="flex items-center gap-1 mb-3">
           {tab === 'ledger' && (
             <>
-              <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" style={{ width: 160 }} placeholder={p.ledgerPeriod}
+              <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)] w-40" placeholder={p.ledgerPeriod}
                 value={periodInput} onChange={(e) => setPeriodInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') { setLgPage(1); loadLedger() } }} />
               <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={() => { setLgPage(1); loadLedger() }}>{p.ledgerQuery}</button>
