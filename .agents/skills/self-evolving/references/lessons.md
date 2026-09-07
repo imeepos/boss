@@ -2,6 +2,9 @@
 
 <!-- 一条经验一行。格式：当 X 发生时，修复是 Y。skill 没提前警告我。 -->
 
+- 当要做大规模数据库测试造数清理时，修复是标准动线：scripts/ops/backup-102.sh 备份 → count(*) 全量盘点(禁信 pg_stat_user_tables 估算) → 从 pg_constraint 拉 FK 子父图生成拓扑序删除 SQL → 本地写 SQL 文件 + ssh stdin 管道单事务 ON_ERROR_STOP 执行 → count 复核 + db-patrol-gate 机械验收。skill 没提前警告我。
+- 当 ssh+psql 需要执行多语句 SQL 时，修复是本地写 .sql 文件后 `ssh host "docker exec -i 容器 psql ..." < file.sql`，彻底放弃内联 -c 与引号转义(2026-09-07 清理轮 3 连炸实证)。skill 没提前警告我。
+
 - 当两个控件共用同一个 aria-label(如趋势周期与列表筛选都叫「周期筛选」),querySelector 与可达性同时受损:屏幕阅读器分不清控件,自动化定位拿到错误元素——断言失败先怀疑「标签不唯一」,修正文案键本身(trendPeriodLabel 拆分),而不是绕道换选择器。2026-09-07 报告中心轮。
 
 - 当需要给"需登录的 Web 页面"截图且没有 Playwright 时，修复是系统 Chrome `--headless=new --remote-debugging-port` + Node>=22 全局 WebSocket 裸 CDP（脚本见 scripts/cdp-capture.mjs）。skill 没提前警告我。
