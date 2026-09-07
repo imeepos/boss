@@ -1,5 +1,12 @@
 # Notes
 
+## 2026-09-07 PP2-W0 选择器基座(U0,feat/pp2-w0-pickers)
+
+- 最耗时坑:CDP 断言用 document.querySelector('aside') 当抽屉锚点,但页面有导航 aside + 抽屉 aside 两个,查错子树导致「错误行不存在/面板没打开」的假象,连烧 4 轮才用全文档 [role=alert] 计数定性;同段 discovered Esc 冒泡被 Radix Drawer dismiss 层接走、整只抽屉被关——一个真 UX bug 藏在假象后面。
+- skill 有没有预警:红线 22(反斜杠转义引号)预警了 printf 方案会炸,改 write 工具落提交信息文件一次过;红线 11(三引号/裸反引号)在 pickerCore 追加时仍手滑写了一次 python 三引号,parse error 立刻定位但白耗一轮——起草含代码体字符串时,先扫一遍内容里有没有反引号/${/三引号再发车。
+- 重来一次:走查断言脚本第一版就「role+aria-label 唯一锚定」,绝不用裸标签;fetch 拦截造障要在目标请求发生之前装好(先造障再开面板);vitest 全量挂在资源上时,先隔离复跑 + main 基线对照再定性,不急着改代码。
+- 额外收获:走查不只是验收——Esc 冒泡缺陷就是走查断言「expandedAfterEsc 应为 false」揪出来的,断言脚本写成契约的机械翻译最值钱。
+
 ## 2026-09-07 报告中心(intel/report)打磨轮
 
 - 最耗时坑:vite dev/preview 在新 worktree cwd 静默挂起(零输出不绑端口),烧了约 15 分钟才绕道主树 cwd 起静态服务器;skill 无预警,已记 known-issues。
