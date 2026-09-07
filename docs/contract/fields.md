@@ -638,6 +638,7 @@ App 本地留痕后启动补传；服务端入库即视为成功，App 端成功
 > lo_accounts 同名列 `billing_mode`（000102）：订购关系上的付费模式权威态；PREPAID 客户不进月度出账（GenerateBills 过滤），预付费在环节 4 合同收费当场收款落缴费流水。
 > LO 生效套餐对齐（adopted 2026-09-01-provision-correctness-followup）：`lo_accounts.offer_id`/`billing_mode` 是"当前生效套餐"权威态，环节 6 幂等复用已有 LO 时若与订单套餐不一致，自动对齐到订单套餐（TMF change order 语义）并打 `[order] LO OFFER REALIGN` 留痕——保证环节 7 按新套餐下发模板、RADIUS 按新档限速。
 > LOID 接入凭据（000194，A1）：`lo_accounts.password_credential` 落库密文（`v1$gcm$…` AES-256-GCM、密钥外置；空=未设密，默认 Reject，`BOSS_AAA_ALLOW_NO_CRED` 为迁移缓冲开关默认关）；管理端 `POST /lo-accounts/{loid}/reset-password`（menu:loaccount）重置，明文一次性返回；防爆破锁定表 `lo_auth_lockouts`（fail_count/locked_until，默认 5 次锁 15 分钟，可配）。
+> 合同月数存档（000202，存量开户导入）：`lo_accounts.contract_months` SMALLINT 可空；存量"月数"入档权威列，`orders.buy_months` 只服务订单态、存量不建历史订单（2026-09-07 裁定 notes/adopted/2026-09-07-legacy-vlan-on-ports）。
 
 > 快照列（TS 实体）：`customer_name`（客户姓名）、`offer_name`（产品名），下单时冻结，改名/调价不影响历史订单（与 `price_snapshot` 同规则）。
 
@@ -834,8 +835,19 @@ App 本地留痕后启动补传；服务端入库即视为成功，App 端成功
 | PON 槽号 | `PONSlot` | pon_slot | SMALLINT 可空；NULL=未分配（000178） |
 | PON 口号 | `PONPort` | pon_port | SMALLINT 可空；NULL=未分配（000178） |
 | ONUNO | `ONUNO` | onu_no | SMALLINT 可空；NULL=未分配（000178） |
+| 外层 VLAN | `Svlan` | svlan | SMALLINT 可空；NULL=未配置（000202 存量开户导入） |
+| 内层 VLAN | `Cvlan` | cvlan | SMALLINT 可空；NULL=未配置（000202） |
+| Internet 内层 VLAN | `InternetCvlan` | internet_cvlan | SMALLINT 可空；NULL=未配置（000202） |
+| TR069 内层 VLAN | `TR069Cvlan` | tr069_cvlan | SMALLINT 可空；NULL=未配置（000202） |
+| 存量光缆层级 | `LegacyPath` | legacy_path | TEXT 可空；OCC06/ODB040/OBD01/P05 单列无损承接（000202） |
 
 > 状态变更历史（TS 实体）：`port_change_history`，端口每次状态/占用变化一行（变更后 status + order_id 快照 + changed_at），历史不随当前状态漂移。
+>
+> 扩容单写侧（P5 补齐，`POST /expansions/{expansionNo}/execute|reject`，permCode menu:transfer）：
+> execute=`PENDING→DONE` 单请求内完成——按 `expectedPorts` 在目标设备（resourceId 必填，须归属扩容单同一法人）批量建端口，
+> 端口码 `P-<设备码去横杠>-<序号>` 续号（跳过已占码），`quad_code` 初始=端口码（四码关联建立时细化），状态 IDLE 入池，
+> 法人/区域名按扩容单 ID 现查落快照；已建满则直接完成（created=0）；单口失败整单留 PENDING（已建端口保留，重试续建）。
+> reject=`PENDING→DONE` 终态。台账页只读不变：端口的预占/占用仍由订单状态机管理，扩容执行只产 IDLE 端口。
 
 ### 4.2.0 PON 端到端链路反查视图（P5-W2，派生只读，无新表新列）
 

@@ -374,6 +374,8 @@ var AdminRoutePerms = map[string][]string{
 	"POST /api/admin/v1/etl-jobs/{jobKey}/disable":                                {"menu:report"},
 	"POST /api/admin/v1/etl-jobs/{jobKey}/runs":                                   {"menu:report"},
 	"POST /api/admin/v1/expansions":                                               {"menu:transfer"},
+	"POST /api/admin/v1/expansions/{expansionNo}/execute":                         {"menu:transfer"},
+	"POST /api/admin/v1/expansions/{expansionNo}/reject":                          {"menu:transfer"},
 	"POST /api/admin/v1/faqs":                                                     {"menu:userdata"},
 	"POST /api/admin/v1/geo/countries":                                            {"menu:geo"},
 	"POST /api/admin/v1/geo/countries/{code}/names":                               {"menu:geo"},

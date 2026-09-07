@@ -11,11 +11,15 @@ import { Dropdown } from '../../../components/Dropdown'
 import { fmtTime } from '../../../lib/format'
 import { pageSlice, type PortHistoryRow, type PortRow, type ResourceRow } from '../types'
 import { PathDrawer } from './path-drawer'
-import { TableStateRow, EmptyState } from '../../../components/business'
+import { TableStateRow, EmptyState, ErrorBanner } from '../../../components/business'
+import { useProfile } from '../../../layouts/profile'
 
 export default function ResourcePage() {
   const t = useT()
   const r = t.pages.resourcePage
+  const profile = useProfile()
+  // 置备端口入口:POST /provision/ports 属 menu:provision 域,无权限置灰(与批量导入同规)。
+  const canProvision = (profile.permissionCodes ?? []).includes('menu:provision')
   const [devices, setDevices] = useState<ResourceRow[]>([])
   const [rows, setRows] = useState<PortRow[]>([])
   const [error, setError] = useState('')
@@ -26,6 +30,10 @@ export default function ResourcePage() {
   const [history, setHistory] = useState<PortRow | null>(null)
   const [pathPort, setPathPort] = useState<PortRow | null>(null)
   const [historyRows, setHistoryRows] = useState<PortHistoryRow[] | null>(null)
+  const [provOpen, setProvOpen] = useState(false)
+  const [provDevice, setProvDevice] = useState(0)
+  const [provPort, setProvPort] = useState('')
+  const [provError, setProvError] = useState('')
 
   const loadPorts = (rid: number) => {
     setError('')
@@ -51,7 +59,37 @@ export default function ResourcePage() {
       .catch(() => setHistoryRows([]))
   }
 
+  // provisionPort 置备端口:调 POST /provision/ports(权威置备端点,menu:provision 域),
+  // 成功后刷新当前端口列表;portCode 唯一冲突/字段缺失由后端校验回显。
+  const provisionPort = async () => {
+    if (busy || !provDevice || !provPort.trim()) return
+    setBusy(true)
+    setProvError('')
+    try {
+      const dev = devices.find((d) => d.id === provDevice)
+      await apiFetch('/provision/ports', {
+        method: 'POST',
+        body: {
+          portCode: provPort.trim(),
+          quadCode: provPort.trim(),
+          resourceId: provDevice,
+          addressId: dev?.addressId ?? 0,
+          legalEntityId: dev?.legalEntityId ?? 0,
+        },
+      })
+      setProvOpen(false)
+      setProvDevice(0)
+      setProvPort('')
+      loadPorts(resourceId)
+    } catch (e) {
+      setProvError(e instanceof Error ? e.message : r.provSaveFail)
+    } finally {
+      setBusy(false)
+    }
+  }
+
   const slice = pageSlice(rows, page, pageSize)
+  const provDeviceRow = devices.find((d) => d.id === provDevice)
 
   return (
     <div>
@@ -66,6 +104,11 @@ export default function ResourcePage() {
             triggerStyle={{ minWidth: 200 }}
           />
           <span className="spacer" />
+          <span title={canProvision ? undefined : r.provNoPerm}>
+            <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)] disabled:cursor-not-allowed" disabled={busy || !canProvision} onClick={() => { setProvOpen(true); setProvError('') }}>
+              {r.provision}
+            </button>
+          </span>
           <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={() => loadPorts(resourceId)}>
             {t.pages.audit.refresh}
           </button>
@@ -102,6 +145,43 @@ export default function ResourcePage() {
         </div>
       </div>
       {pathPort && <PathDrawer port={pathPort} onClose={() => setPathPort(null)} />}
+      {provOpen && (
+        <Drawer title={r.provTitle} onClose={() => setProvOpen(false)}
+          footer={
+            <>
+              <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={() => setProvOpen(false)}>{t.pages.company.cancel}</button>
+              <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]"
+                disabled={busy || !provDevice || !provPort.trim()} onClick={provisionPort}>
+                {busy ? t.pages.account.submitting : t.pages.company.save}
+              </button>
+            </>
+          }>
+          <div className="flex flex-col gap-3.5">
+            <div className="flex flex-col gap-1.5">
+              <label><span className="mr-0.5 text-[var(--color-danger)]">*</span>{r.provDevice}</label>
+              <Dropdown
+                value={provDevice ? String(provDevice) : ''}
+                options={[{ value: '', label: r.allDevice }, ...devices.map((d) => ({ value: String(d.id), label: d.name + ' (' + d.code + ')' }))]}
+                onChange={(v) => setProvDevice(Number(v) || 0)}
+                ariaLabel={r.provDevice}
+                triggerStyle={{ minWidth: 200 }}
+              />
+            </div>
+            {provDeviceRow && (
+              <div className="flex flex-col gap-1.5">
+                <label>{r.provAddress}</label>
+                <div className="text-[13px] text-[var(--shell-content-text)]"><IdRef value={provDeviceRow.addressId} /></div>
+              </div>
+            )}
+            <div className="flex flex-col gap-1.5">
+              <label><span className="mr-0.5 text-[var(--color-danger)]">*</span>{r.fPortCode}</label>
+              <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" value={provPort} placeholder={r.pPortCode}
+                onChange={(ev) => setProvPort(ev.target.value)} />
+            </div>
+            {provError && <ErrorBanner message={provError} className="mx-0" />}
+          </div>
+        </Drawer>
+      )}
       {history && (
         <Drawer title={`${r.historyTitle} · ${history.portCode}`} onClose={() => setHistory(null)}
           footer={<button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" onClick={() => setHistory(null)}>

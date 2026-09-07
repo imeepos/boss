@@ -17,8 +17,9 @@ type LoAccount struct {
 	RegionPath      string `json:"regionPath"` // 区域 ltree 路径快照,空=未挂区域(承接区域调价覆盖)
 	OfferID         int64  `json:"offerId"`
 	QosTemplateID   int64  `json:"qosTemplateId"`
-	Status          string `json:"status"`      // ACTIVE/SUSPENDED/CLOSED
-	BillingMode     string `json:"billingMode"` // PREPAID/POSTPAID(000102);空回退 POSTPAID
+	Status          string `json:"status"`                   // ACTIVE/SUSPENDED/CLOSED
+	BillingMode     string `json:"billingMode"`              // PREPAID/POSTPAID(000102);空回退 POSTPAID
+	ContractMonths  *int16 `json:"contractMonths,omitempty"` // 合同月数存档(000202);NULL=未登记
 }
 
 // 付费模式枚举(terms.md §4):订购关系权威态,预付费不进月度出账。
