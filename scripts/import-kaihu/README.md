@@ -48,7 +48,7 @@ lo_accounts.region_id/region_name 同取缺省;ports.address_id 由占位节点�
 1. VLAN 四元组缺失硬指标按外层 svlan 缺失计(=35;全四空 34 行,另 1 行 OWTAC33398 缺 internet/TR069 入 vlan_partial)。
 2. 30M×1 按 50M 归档,原始值 30 存报告 bandwidth_adjustments;缺带宽 4 行 offer 落默认 50M 档并列 needsReview。
 3. 产品月费为导入假设值: 20M 默认 49.00、50M 默认 69.00(--fee-20m/--fee-50m 可调),T4 前负责人可复核;100M/200M 用既有档。
-4. customers phone=PENDING 哨兵(name=账号可追溯,账号-客户映射以 lo_accounts.loid 为准);regionId=1 为「不限」代理。
+4. customers.phone 为确定性伪登录号段 0999000xxxx(plan 行序 1 起四位零填充,唯一由构造保证,满足 uq_customers_app_login_phone);档案占位,真实号注册撞号走 409 人工处理;SQL 段对历史 PENDING 哨兵行幂等收敛,对账含 customers_phone 计数(=347);账号-客户映射以 lo_accounts.loid 为准;regionId=1 为「不限」代理。
 5. 离群 VLAN 按 (OLT, PON板卡前两段) 分组众数偏离,入报告不阻断。
 6. 端口仅为 OLT/PON/ONU 三要素齐备行建(数据实测 313);quad_links 同口径;与设计预估 ~331/+346 的差异源于
    ONU 缺 34/OLT 缺 11 行无法构成 port_code,实测数以 dry-run 报告为准,T4 复核基线按实测数对账。

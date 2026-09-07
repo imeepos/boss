@@ -150,4 +150,10 @@ def _build_one(raw):
 
 
 def build_records(rows):
-    return [_build_one(raw) for raw in rows]
+    # phone 为确定性伪登录号段 0999000xxxx(行序 1 起四位零填充):customers.phone 是
+    # App 登录名(uq_customers_app_login_phone 唯一),PENDING 哨兵第二行即撞 23505;
+    # 唯一由构造保证,跨重跑确定(行序=xlsx 行序)。
+    records = [_build_one(raw) for raw in rows]
+    for idx, rec in enumerate(records):
+        rec['phone'] = '0999000%04d' % (idx + 1)
+    return records

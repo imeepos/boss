@@ -8,7 +8,7 @@ import subprocess
 from normalize import DEFAULTS
 
 SQL_NAME = 'apply.sql'
-RECON_ITEMS = ('resources_olt', 'ports', 'lo_accounts', 'lo_closed', 'quad_links', 'customers')
+RECON_ITEMS = ('resources_olt', 'ports', 'lo_accounts', 'lo_closed', 'quad_links', 'customers', 'customers_phone')
 
 
 def _q(text):
@@ -67,6 +67,15 @@ def _sql_ports(records):
     return out
 
 
+def _sql_phone_fix(records):
+    # 收敛已落库的 PENDING 哨兵行(apply 实跑撞 uq_customers_app_login_phone 前落库的 id=443);
+    # 伪号与 plan 行序一致,幂等:仅当仍为 PENDING 才改,第二遍 0 行受影响。
+    out = ['-- customers.phone 收敛(伪登录号段 0999000xxxx;历史 PENDING 哨兵行修正)']
+    for rec in records:
+        out.append('UPDATE customers SET phone = %s WHERE name = %s AND phone = %s;' % (_q(rec['phone']), _q(rec['account']), _q('PENDING')))
+    return out
+
+
 def _sql_lo_accounts(records):
     out = ['-- LO 账号(自然键 loid upsert;customer 按 name=账号+法人解析;月数入 contract_months;拆机 CLOSED)']
     for rec in records:
@@ -110,6 +119,7 @@ def _sql_verify(records):
     out.append("SELECT 'lo_closed' AS item, count(*) AS n FROM lo_accounts WHERE status = 'CLOSED' AND loid IN (%s);" % _in_list(loids))
     out.append("SELECT 'quad_links' AS item, count(*) AS n FROM quad_links WHERE status = 'LINKED' AND port_id IN (SELECT id FROM ports WHERE port_code IN (%s));" % _in_list(pcs))
     out.append("SELECT 'customers' AS item, count(*) AS n FROM customers WHERE name IN (%s);" % _in_list(loids))
+    out.append("SELECT 'customers_phone' AS item, count(*) AS n FROM customers WHERE phone LIKE '0999000%%' AND name IN (%s);" % _in_list(loids))
     return out
 
 
@@ -119,6 +129,7 @@ def build_sql(records):
     lines.extend(_sql_address())
     lines.extend(_sql_resources(sorted(set(r['olt'] for r in records if r['olt']))))
     lines.extend(_sql_ports(records))
+    lines.extend(_sql_phone_fix(records))
     lines.extend(_sql_lo_accounts(records))
     lines.extend(_sql_quad_links(records))
     lines.extend(_sql_verify(records))
@@ -135,6 +146,7 @@ def _expected(records):
         'lo_closed': sum(1 for r in records if r['closed_date']),
         'quad_links': len(pcs),
         'customers': len(records),
+        'customers_phone': len(records),
     }
 
 
