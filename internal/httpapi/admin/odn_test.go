@@ -22,8 +22,8 @@ import (
 // fakeODN 桩 odn.ODNService:内嵌接口,仅实现被测方法。
 type fakeODN struct {
 	odn.ODNService
-	createErr error
-	created   *odn.Facility
+	createErr   error
+	created     *odn.Facility
 	segment     *odn.Segment
 	dictErr     error
 	nextCodeErr error
