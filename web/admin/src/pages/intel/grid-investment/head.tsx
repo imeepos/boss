@@ -7,7 +7,7 @@ import type { GridInvestmentRow } from '../types'
 export type SortKey =
   | 'facilitiesPlanned' | 'facilitiesInBuild' | 'facilitiesInService' | 'facilitiesRetired'
   | 'coverageServed' | 'coveragePending' | 'coverageUnserved'
-  | 'settledCost' | 'costPerServed'
+  | 'settledCost' | 'plannedCost' | 'materialCost' | 'costPerServed'
 
 export interface SortState { key: SortKey; dir: 1 | -1 }
 
@@ -42,7 +42,7 @@ function SortHead({ label, sortKey, sort, onSort, span }: {
   )
 }
 
-/** 表头两行:网格 | 设施数(生命周期) | 覆盖地址数 | 两列成本;全部数值列可排序。 */
+/** 表头两行:网格 | 设施数(生命周期) | 覆盖地址数 | 投资成本(四列,W5 扩规划/材料);数值列可排序。 */
 export function InvestTableHead({ sort, onSort }: { sort: SortState | null; onSort: (k: SortKey) => void }) {
   const a = useT().pages.gridInvestmentPage
   return (
@@ -51,8 +51,7 @@ export function InvestTableHead({ sort, onSort }: { sort: SortState | null; onSo
         <th rowSpan={2} className={TH_CLS}>{a.colGrid}</th>
         <SortHead label={a.groupFacilities} sortKey="facilitiesPlanned" sort={sort} onSort={onSort} span={4} />
         <SortHead label={a.groupCoverage} sortKey="coverageServed" sort={sort} onSort={onSort} span={3} />
-        <SortHead label={a.colSettledCost} sortKey="settledCost" sort={sort} onSort={onSort} />
-        <SortHead label={a.colCostPerServed} sortKey="costPerServed" sort={sort} onSort={onSort} />
+        <SortHead label={a.groupCost} sortKey="settledCost" sort={sort} onSort={onSort} span={4} />
       </tr>
       <tr>
         <SortHead label={a.colPlanned} sortKey="facilitiesPlanned" sort={sort} onSort={onSort} />
@@ -62,6 +61,10 @@ export function InvestTableHead({ sort, onSort }: { sort: SortState | null; onSo
         <SortHead label={a.colServed} sortKey="coverageServed" sort={sort} onSort={onSort} />
         <SortHead label={a.colPending} sortKey="coveragePending" sort={sort} onSort={onSort} />
         <SortHead label={a.colUnserved} sortKey="coverageUnserved" sort={sort} onSort={onSort} />
+        <SortHead label={a.colSettledCost} sortKey="settledCost" sort={sort} onSort={onSort} />
+        <SortHead label={a.colPlannedCost} sortKey="plannedCost" sort={sort} onSort={onSort} />
+        <SortHead label={a.colMaterialCost} sortKey="materialCost" sort={sort} onSort={onSort} />
+        <SortHead label={a.colCostPerServed} sortKey="costPerServed" sort={sort} onSort={onSort} />
       </tr>
     </thead>
   )

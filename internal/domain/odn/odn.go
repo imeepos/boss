@@ -214,6 +214,12 @@ type ODNService interface {
 	ListResourceChains(ctx context.Context, batch string, limit int) ([]ResourceChainView, error)
 	PatrolResourceChains(ctx context.Context) (*ChainPatrol, error)
 
+	// 分光容量建模与投资深化(P-INFRA-1 W5,迁移 000221;F1:分光比回写+规划/材料成本+城市卷积)。
+	// BackfillSplitCapacity 幂等全量重建容量模型;CityInvestment/SplitCapacity 纯只读。
+	CityInvestment(ctx context.Context) ([]CityInvestmentRow, error)
+	SplitCapacity(ctx context.Context) (*SplitCapacityReport, error)
+	BackfillSplitCapacity(ctx context.Context) (*SplitBackfillResult, error)
+
 	// 影响面分析(P7,只读聚合;运维侧影响谁)。
 	ImpactByFacility(ctx context.Context, facilityCode string) (*ImpactReport, error)
 

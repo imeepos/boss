@@ -108,5 +108,51 @@ export interface GridInvestmentRow {
   coveragePending: number
   coverageUnserved: number
   settledCost: number | null // null=未登记(W1 结算源缺失或该网格无数据),禁止显示 0
+  plannedCost: number | null // null=未登记(W5:项目预算按明细金额占比分摊)
+  materialCost: number | null // null=未登记(W5:CONFIRMED 出库采购价同比例分摊;与人工成本分列)
   costPerServed: number | null // null=未登记(分母 0 或成本未登记)
+}
+
+/** 城市卷积行:GET /odn/city-investment(items);网格行按 prv+city 卷积+容量户级列(W5)。 */
+export interface CityInvestmentRow {
+  prvCode: string
+  cityPrefix: string
+  gridCount: number
+  facilitiesPlanned: number
+  facilitiesInBuild: number
+  facilitiesInService: number
+  facilitiesRetired: number
+  coverageServed: number
+  coveragePending: number
+  coverageUnserved: number
+  settledCost: number | null
+  plannedCost: number | null
+  materialCost: number | null
+  costPerServed: number | null
+  potentialHomes: number | null // 潜在户数(home-passed);null=城市无容量建模
+  connectedHomes: number | null
+  expandableHomes: number | null
+  costPerPotential: number | null // 全口径成本÷潜在户数(分母不是覆盖户数)
+}
+
+/** 设备分光容量行:GET /odn/split-capacity(items);W5 回写建模,fields.md 1.5.15。 */
+export interface SplitCapacityRow {
+  deviceId: number
+  code: string
+  kind: string
+  splitLevel: number // 1=一级(OBD) 2=二级(SBD)
+  ratio: number
+  chainRows: number
+  usedPorts: number
+  expandable: number
+  prvCode: string | null // null=导入域设备(无城市)
+  cityPrefix: string | null
+  lifecycleStatus: string
+  hasSecondary: boolean
+}
+
+/** 分光容量报告:items+全网汇总。 */
+export interface SplitCapacityReport {
+  items: SplitCapacityRow[]
+  summary: { devices: number; potentialHomes: number; connectedHomes: number; expandableHomes: number }
 }

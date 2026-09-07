@@ -75,6 +75,27 @@ paths:
       operationId: listOdnGridInvestment
       responses: { '200': { $ref: '#/components/responses/Data' } }
 
+  /odn/city-investment:
+    get:
+      tags: [ODN]
+      summary: 城市投资卷积(W5,只读;网格行按 prv+city 卷积+分光容量户级列;门禁 menu:grid-investment)
+      operationId: listOdnCityInvestment
+      responses: { '200': { $ref: '#/components/responses/Data' } }
+
+  /odn/split-capacity:
+    get:
+      tags: [ODN]
+      summary: 设备分光容量清单+全网汇总(W5,只读;potentialHomes=潜在户数,expandable=还能接几户;门禁 menu:grid-investment)
+      operationId: listOdnSplitCapacity
+      responses: { '200': { $ref: '#/components/responses/Data' } }
+
+  /odn/resource-chains/backfill-split:
+    post:
+      tags: [ODN]
+      summary: 分光比回写建模(W5,幂等全量重建 odn_device_split_capacity;门禁 menu:odn,审计 odn.resource-chain.backfill-split)
+      operationId: backfillOdnSplitCapacity
+      responses: { '200': { $ref: '#/components/responses/Data' } }
+
   /odn/grids/{gridCode}:
     put:
       tags: [ODN]

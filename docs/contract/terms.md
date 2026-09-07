@@ -123,6 +123,7 @@
 | 工程里程碑 construction_milestones.status | PENDING / DONE | 未完成 / 已完成(000218,W6)。编辑口径:里程碑清单(增删/改名/计划日)与项目预算金额仅项目 PENDING(BUILDING 前)可改;里程碑状态可标记至项目 ACCEPTED 前(PENDING/BUILDING);ACCEPTED 后全部锁定只读。预算执行进度=已结算金额(SETTLED 结算单合计,只读派生)/预算金额,NULL 预算=未登记;fields.md 1.5.8d |
 | 工程应付 construction_payables.status | OPEN / PARTIAL / PAID / VOIDED | 未付 / 部分付款 / 已付清 / 已冲销(000219,W6,审查 F8)。应付由 SETTLED 结算单**同事务自动生成**(金额=结算应付快照,settlement_id 唯一来源引用,一结算单一应付);状态按付款与核减流水派生维护:OPEN(未付)→PARTIAL(0<已付<净应付)→PAID(已付≥净应付)。净应付=应付金额-核减合计,未付余额=净应付-已付,均只读派生不落列。**结算单 VOIDED 同事务冲销应付**(status=VOIDED,原因与结算单作废原因同源);冲销后付款流水保留为历史,余额按净应付-已付可为负(超付如实展示),不做退款单复杂化;作废后重开结算单以新单表达,对应生成新应付。fields.md 1.5.8e |
 | 应付付款方式 construction_payable_payments.method | TRANSFER / CASH / CHEQUE / OTHER | 银行转账 / 现金 / 支票 / 其他(000219,W6;应付域自有登记枚举,与 billing 缴费 method 枚举互不混用)。部分付款与分期=多次登记付款流水至未付余额耗尽;单笔不超余额(40900),超登记拒绝 |
+| 分光容量 odn_device_split_capacity | split_level 1=一级分光器(OBD) / 2=二级分光器(SBD);ratio 2~128=分光比分母(端口容量);used_ports=链行端口标签去重占用;has_secondary=一级器下挂二级链 | 设备分光容量模型(000221,W5):odn_resource_chain 暂存分光比经 POST /odn/resource-chains/backfill-split 幂等回写(唯一写路径,导入不自动回写);户级口径:一条二级分光端口=一户,潜在户数=Σ二级容量+Σ无二级链的一级容量,已接=Σ占用,可扩=潜在−已接;total_split 暂存不参与汇总(两级相加重复计数);容量住设备维度只进城市/全网视图,不按比例分摊到网格;裁定 adopted 2026-09-07-split-capacity-investment-depth;fields.md 1.5.15 |
 
 ## 5. 关键术语
 
