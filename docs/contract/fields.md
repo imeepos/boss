@@ -303,6 +303,32 @@
 | 竣工备注 | `AsbuiltNote` | asbuilt_note | as-built 记录 |
 | 竣工人/时间 | `AcceptedBy`/`AcceptedAt` | accepted_by/accepted_at | → accounts；验收时落 |
 | 明细数 | `ItemCount` | —（聚合） | construction_items 计数 |
+| 承包商 | `ContractorID`/`ContractorName` | contractor_id/contractor_name | 软引用 → procurement_suppliers(id)（跨域不加 FK，adopted 2026-09-07）+ 名称快照；0/空=未指定（存量兼容）；有有效结算单后锁定（000206） |
+| 清单金额 | `ItemsAmount` | —（聚合） | SUM(construction_items.amount)，页面展示列，结算应付同口径（000206） |
+
+#### construction_items 增列（工程量清单，迁移 000206）
+
+| 字段名 | DB 列 | 枚举/说明 |
+|:-------|:------|:----------|
+| `Quantity` | quantity | NUMERIC(14,2) ≥0 默认 0=未定额；可带 |
+| `UnitPrice` | unit_price | NUMERIC(14,2) ≥0 默认 0；可带 |
+| `Amount` | amount | NUMERIC(14,2) GENERATED ALWAYS AS (round(quantity*unit_price,2)) STORED——金额一律后端计算，DB 层禁止直写；前端仅展示 |
+
+### 1.5.8a construction_settlements（工程结算单，迁移 000206，internal/domain/odn）
+
+> W1 结算模型（adopted 2026-09-07-contractor-settlement-model）：项目 ACCEPTED 且已指定施工类承包商方可发起；结算单汇总清单金额形成应付；状态机 PENDING→SETTLED；PENDING/SETTLED→VOIDED（原因必填）；VOIDED 终态，作废后重开以新结算单表达（原单保留历史）。同项目同时最多一张有效结算单（部分唯一索引 uq_construction_settlements_project_active）。管理面 `menu:odn` 施工页签内，REST `/odn/constructions/{id}/settlements*`、`/odn/settlements/{id}/settle|void`（契约 admin/odn.yaml）。
+
+| 页面列名 | 字段名 | DB 列 | 枚举/说明 |
+|:---------|:-------|:------|:----------|
+| 结算单号 | `SettlementNo` | settlement_no | VARCHAR(32) 唯一（ST-YYYYMMDD-NNNNN，后端生成兜底） |
+| 施工项目 | `ProjectID`/`ProjectNo` | project_id/project_no | FK → construction_projects + 单号快照 |
+| 承包商 | `ContractorID`/`ContractorName` | contractor_id/contractor_name | 发起时自项目快照（软引用，同上） |
+| 应付金额 | `TotalAmount` | total_amount | NUMERIC(14,2) = 发起时 SUM(items.amount)；ACCEPTED 后明细锁定不漂移 |
+| 明细数 | `ItemCount` | item_count | INTEGER |
+| 状态 | `Status` | status | PENDING / SETTLED / VOIDED（terms.md §4） |
+| 作废原因 | `VoidReason` | void_reason | 作废必填 ≤255 字 |
+| 发起/结算/作废人 | `CreatedBy`/`SettledBy`/`VoidedBy` | created_by/settled_by/voided_by | → accounts |
+| 时间 | `CreatedAt`/`SettledAt`/`VoidedAt` | 同 | TIMESTAMPTZ |
 
 
 ### 1.5.9 odn_port（物理端口占用态，迁移 000200，internal/domain/odn）
@@ -1618,6 +1644,8 @@ API：admin `/client-releases`（GET 列表 / POST multipart 上传创建 / PATC
 | 所属公司 | `LegalEntityID` | legal_entity_id | BIGINT → legal_entities（企业锚点 §8.1） |
 | 状态 | `Status` | status | ENABLED / DISABLED（terms.md §4） |
 | 备注 | `Remark` | remark | VARCHAR(255) |
+| 承建类型 | `ContractorType` | contractor_type | MATERIAL 材料类 / CONSTRUCTION 施工类（terms.md §4；000205；存量默认 MATERIAL 语义不变；暂无 admin 页面列，经供应商 API 入参/回包承载，ODN 施工页承包商下拉按 CONSTRUCTION 过滤） |
+| 资质信息 | `Qualification` | qualification | VARCHAR(255) 可空，施工类专有（等级/编号/有效期自由文本；000205） |
 
 ### 9.2 procurement_orders（采购单头，迁移 000163）
 

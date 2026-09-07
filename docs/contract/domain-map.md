@@ -52,8 +52,8 @@
 | 消息通知 | NOT | XG-04(组装) | `worker`(师傅侧消息/公告)、`notify`(admin 侧提醒/待办,迁移 000090) | 阶段2 | boss | message(后台提醒=第三页签);推送通道配置 push.*(pkg/push,迁移 000094,页面 /base/pushconfig) |
 | AI 能力网关 | AI | （横切，平台级，非 21 域） | `ai` | 增量 | 无专用页（复用 base/settings 参数页） | ai.openai.* 配置经 /params 或 /ai/openai/config 热更 |
 | 营销促销 | PROMO | （横切营销；LOY 积分待建，积分换券未来经契约） | `promotion` | 增量(000102) | bss（券仓入用户详情聚合;模板/赠送规则经 admin API,无专用页面） | 券模板/发放/兑换码/转赠/缴费抵扣/赠送时长规则;设计见 docs/design/promotion-coupon.md |
-| ODN 无源物理层 | ODN | （横切,与 OSS/AMS 同源;规范见 docs/pdfs《Suniway ODN 地理空间编码规范》） | `odn` | 阶段7/8(增量) | oss（`menu:odn`,sysadmin+resource_admin） | 局点/核心链路设备/光缆段落纤芯/网格与设施(规范第 2-5 章);`/odn/sites\|devices\|grids\|facilities\|segments`;网格投资测算读模型 `/odn/grid-investment`(W2,页面挂 intel,见 §2.1) |
-| 采购-库存 | PUR | （横切,增量挂靠,不开阶段 10;adopted 2026-08-28） | `procurement` | 增量(000163) | ams（`menu:purchase`、`menu:inventory`,sysadmin） | 供应商/采购单/库存查询（与 asset 域共用 asset_batches/资产台账但域边界独立;GIS 库存分布图层读 asset_batches.warehouse_lat/lng） |
+| ODN 无源物理层 | ODN | （横切,与 OSS/AMS 同源;规范见 docs/pdfs《Suniway ODN 地理空间编码规范》） | `odn` | 阶段7/8(增量) | oss（`menu:odn`,sysadmin+resource_admin） | 局点/核心链路设备/光缆段落纤芯/网格与设施(规范第 2-5 章);`/odn/sites\|devices\|grids\|facilities\|segments`;施工项目与工程结算(000206,`/odn/constructions*`+`/odn/settlements*`,挂 ODN 管理页施工页签;承包商经 httpapi 层组合采购域供应商档案,两域零 import);网格投资测算读模型 `/odn/grid-investment`(W2,页面挂 intel,见 §2.1) |
+| 采购-库存 | PUR | （横切,增量挂靠,不开阶段 10;adopted 2026-08-28） | `procurement` | 增量(000163) | ams（`menu:purchase`、`menu:inventory`,sysadmin） | 供应商(含承建类型 MATERIAL/CONSTRUCTION,000205)/采购单/库存查询（与 asset 域共用 asset_batches/资产台账但域边界独立;GIS 库存分布图层读 asset_batches.warehouse_lat/lng） |
 | 官网内容发布 | CMS | （平台级,非 21 域） | `cms`(000134) | 增量 | boss(官网内容) | `/boss/site` 文章管理(动态/新闻/文章)；公开读 `/api/admin/v1/site/posts` 免鉴权供官网首页 |
 | 开放平台 | OPEN | （横切,平台级,非 21 域） | `openplat`(000122) | 增量(Q4) | org（开发者门户,`/openplat`） | AppId+Secret HMAC 鉴权、Webhook 订阅与投递、配额与限流、回放工具;契约 `/api/open/v1` |
 | 客户端版本发布 | APPREL | （横切,平台级,非 21 域） | `apprelease`(000137) | 增量 | boss(版本发布) | `/boss/release` 双端 APK 上传/灰度(比例+白名单)/发布/回滚;客户端匿名查 `/api/{worker,user}/v1/client/latest`;官网下载入口读 admin 匿名 latest |

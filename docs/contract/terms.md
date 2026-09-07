@@ -110,6 +110,8 @@
 | 授权 status（release-platform 侧） | issued / activated / consumed / expired / revoked | 已签发 / 已激活 / 已兑码 / 已过期 / 已吊销；boss 仅核验 `revoked`/`expired` 拒绝（verify.go checkStatus），其余透传展示 |
 | ODN 设施生命周期 odn_facility.lifecycle_status | PLANNED / IN_BUILD / IN_SERVICE / RETIRED | 规划 / 施工中 / 在网 / 退役（site/device 同规，迁移 000198；RETIRED 终态与 status 双列同步） |
 | 地址覆盖 address_coverage.status | SERVED / PENDING / UNSERVED | 可装 / 规划在建 / 未覆盖（迁移 000197；SERVED/PENDING 须挂服务设施或核心设备） |
+| 供应商承建类型 procurement_suppliers.contractor_type | MATERIAL / CONSTRUCTION | 材料类（存量默认，既有语义不变）/ 施工类（含资质信息 qualification；联系人复用既有 contact 字段）。迁移 000205（原预分配 000203 让号，见 adopted 2026-09-07-contractor-settlement-model） |
+| 工程结算 construction_settlements.status | PENDING / SETTLED / VOIDED | 待结算 / 已结算 / 已作废。发起前置：项目 ACCEPTED 且已指定施工类承包商；应付=发起时 SUM(construction_items.amount)（生成列，后端计算）。PENDING→SETTLED（确认）；PENDING/SETTLED→VOIDED（作废，原因必填）；VOIDED 终态。同项目同时最多一张有效结算单（部分唯一）；作废后重开以新结算单表达，原单保留历史。迁移 000206（原预分配 000204 让号顺延） |
 
 ## 5. 关键术语
 
