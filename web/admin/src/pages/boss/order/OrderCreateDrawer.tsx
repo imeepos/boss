@@ -11,6 +11,7 @@ import { CustomerPicker } from '../../../components/pickers/CustomerPicker'
 import { FormField } from '../../../components/business/form-field'
 import { useT } from '../../../i18n'
 import { AddressChainDrawer, type ChainPickResult } from './AddressChainDrawer'
+import { OrderServabilityBadge } from './OrderServabilityBadge'
 
 interface CatalogProduct { id: number; name: string; monthlyFee: number; bandwidth: string }
 interface CatalogChannel { id: number; code: string; name: string; status: string }
@@ -123,22 +124,26 @@ export function OrderCreateDrawer({
             onChange={(v) => setOfferId(Number(v) || 0)} />
         </FormField>
         <FormField label={o.fAddress} required hint={customerAddr > 0 ? o.fAddressHint.replace('{id}', String(customerAddr)) : undefined}>
-          <div className="flex items-center gap-2">
-            <ResourcePicker<AddressOption>
-              value={addressId ? String(addressId) : ''}
-              onChange={(v) => setAddressId(Number(v) || 0)}
-              search={searchAddresses}
-              toOption={(a) => ({ value: String(a.id), label: a.fullPath })}
-              ariaLabel={o.fAddress}
-              emptyLabel={o.addrPick}
-              pinnedOptions={pinnedOptions}
-              searchPlaceholder={o.addrSearchPh}
-              errorText={o.addrSearchFail}
-            />
-            <button type="button" aria-label={o.chainEntry} title={customerId ? undefined : o.chainNeedCustomer}
-              disabled={!customerId}
-              className="h-8 shrink-0 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[12px] text-[var(--shell-content-text)] whitespace-nowrap disabled:cursor-not-allowed disabled:opacity-50 hover:border-[var(--color-border-focus)] enabled:cursor-pointer"
-              onClick={() => setChainOpen(true)}>{o.chainEntry}</button>
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-2">
+              <ResourcePicker<AddressOption>
+                value={addressId ? String(addressId) : ''}
+                onChange={(v) => setAddressId(Number(v) || 0)}
+                search={searchAddresses}
+                toOption={(a) => ({ value: String(a.id), label: a.fullPath })}
+                ariaLabel={o.fAddress}
+                emptyLabel={o.addrPick}
+                pinnedOptions={pinnedOptions}
+                searchPlaceholder={o.addrSearchPh}
+                errorText={o.addrSearchFail}
+              />
+              <button type="button" aria-label={o.chainEntry} title={customerId ? undefined : o.chainNeedCustomer}
+                disabled={!customerId}
+                className="h-8 shrink-0 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[12px] text-[var(--shell-content-text)] whitespace-nowrap disabled:cursor-not-allowed disabled:opacity-50 hover:border-[var(--color-border-focus)] enabled:cursor-pointer"
+                onClick={() => setChainOpen(true)}>{o.chainEntry}</button>
+            </div>
+            {/* T14-2:地址选定即自动判定可装性,失败不阻断下单 */}
+            <OrderServabilityBadge addressId={addressId} />
           </div>
         </FormField>
         <div className="grid grid-cols-2 gap-3">
