@@ -294,6 +294,9 @@ export interface Translations {
       title: string
       subtitle: string
       tabs: { grids: string; facilities: string; sites: string; devices: string; coverage: string }
+      prvLabel: string
+      cityLabel: string
+      saveOk: string
       addressId: string
       addressName: string
       covFacility: string
@@ -750,8 +753,8 @@ export interface Translations {
       pageUnit: string
     }
     billPage: {
-    run: { btn: string; title: string; periodPh: string; result: string; fail: string }
-    invoice: { title: string; desc: string; loadFail: string; actFail: string; filterCustomer: string; empty: string; columns: string[]; voidBtn: string; reissueBtn: string; backfillBtn: string; voidConfirm: string; reissueConfirm: string; backfillTip: string; voidReasonPh: string; taxNoPh: string; confirm: string; voidOk: string; reissueOk: string; backfillOk: string }
+    run: { btn: string; title: string; periodPh: string; periodInvalid: string; result: string; fail: string }
+    invoice: { title: string; desc: string; loadFail: string; actFail: string; filterCustomer: string; empty: string; columns: string[]; voidBtn: string; reissueBtn: string; backfillBtn: string; voidConfirm: string; reissueConfirm: string; backfillTip: string; voidReasonPh: string; taxNoPh: string; confirm: string; voidOk: string; reissueOk: string; backfillOk: string; taxSubmitBtn: string; taxRetryBtn: string; taxReplayBtn: string; eventsBtn: string; taxSubmitOk: string; taxRetryOk: string; taxReplayOk: string; taxEventsTitle: string; taxEventsEmpty: string }
       title: string
       desc: string
       filterCustomer: string
@@ -800,6 +803,9 @@ export interface Translations {
       searchFail: string
       siteLoadFail: string
       billLoadFail: string
+      refundBtn: string
+      refundConfirm: string
+      refundOk: string
       confirmText: string
     }
     /** 柜台日结(纪要 2026-08-28:T+0 只读汇总+实点回填)。 */
@@ -894,6 +900,13 @@ export interface Translations {
       settle: string
       settleConfirm: string
       settleOk: string
+      autoBtn: string
+      autoOk: string
+      statementBtn: string
+      statementTitle: string
+      statementRef: string
+      statementAmount: string
+      statementOk: string
       actionFail: string
       ledgerPeriod: string
       ledgerQuery: string
@@ -2021,6 +2034,14 @@ export interface Translations {
       title: string
       desc: string
       columns: string[]
+      createBtn: string
+      createTitle: string
+      save: string
+      createOk: string
+      legalEntityLabel: string
+      reverseLabel: string
+      reverseEmpty: string
+      reverseIdPh: string
       total: string
       empty: string
       loadFail: string
@@ -2131,6 +2152,8 @@ export interface Translations {
       allStatus: string
       statusOnline: string
       statusPendingOffline: string
+      statusOffline: string
+      statusOfflineFailed: string
       columns: string[]
       forceOffline: string
       disconnectConfirm: string
@@ -2174,9 +2197,11 @@ export interface Translations {
       edit: string
       delete: string
       deleteConfirm: string
+      statusConfirm: string
       saveOk: string
       deleteOk: string
       statusOk: string
+      jsonInvalid: string
       allStatus: string
       saveFail: string,
       requiredHint: string
