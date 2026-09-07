@@ -1,11 +1,18 @@
-// 师傅注册审核页:待审核列表(后端 GET /worker-registrations?status=PENDING) + 通过/驳回动作。
+// 师傅注册审核页:GET /worker-registrations?status=(空=全部) + 通过/驳回动作。
+// B7:状态页签(待审核/已通过/已驳回/全部)+ 分页;审批对话框班组/区域走选择器。
 import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
-import { PageHead } from '../../org/shared'
+import { PageHead, pagerTexts } from '../../org/shared'
+import { Pagination } from '../../../components/Pagination'
 import { ResourcePicker } from '../../../components/ResourcePicker'
+import { TabBar } from '../../../components/business/tab-bar'
 import { fmtTime } from '../../../lib/format'
+import { pageSlice } from '../types'
 import { EmptyState } from '../../../components/business'
+
+type RegStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
 
 interface WorkerRegistrationRow {
   id: number
@@ -20,12 +27,17 @@ interface WorkerRegistrationRow {
   reviewedAt: string
 }
 
+type TabKey = 'ALL' | RegStatus
+
 export default function WorkerRegistrationPage() {
   const t = useT()
   const w = t.pages.workerRegPage
   const [rows, setRows] = useState<WorkerRegistrationRow[]>([])
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  const [tab, setTab] = useState<TabKey>('PENDING')
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
   const [actId, setActId] = useState<number | null>(null)
   const [actMode, setActMode] = useState<'approve' | 'reject' | null>(null)
   const [groupId, setGroupId] = useState('')
@@ -36,12 +48,23 @@ export default function WorkerRegistrationPage() {
   const load = () => {
     setError('')
     setBusy(true)
-    apiFetch<{ items: WorkerRegistrationRow[] }>('/worker-registrations', { query: { status: 'PENDING' } })
+    apiFetch<{ items: WorkerRegistrationRow[] }>('/worker-registrations', {
+      query: { status: tab === 'ALL' ? undefined : tab },
+    })
       .then((d) => setRows(d?.items ?? []))
       .catch((e) => setError(e instanceof Error ? e.message : w.loadFail))
       .finally(() => setBusy(false))
   }
-  useEffect(() => { load() }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { load() }, [tab]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const closeDialog = () => {
+    setActId(null)
+    setActMode(null)
+    setGroupId('')
+    setRegionId('')
+    setRejectNote('')
+    setFormError('')
+  }
 
   const handleApprove = async () => {
     if (actId == null || busy) return
@@ -50,9 +73,10 @@ export default function WorkerRegistrationPage() {
     setBusy(true)
     setFormError('')
     try {
-      await apiFetch(`/worker-registrations/${actId}/approve`, {
+      await apiFetch('/worker-registrations/' + actId + '/approve', {
         method: 'POST', body: { groupId: Number(groupId), regionId: Number(regionId) },
       })
+      toast.success(w.toastApproveOk)
       closeDialog()
       load()
     } catch (e) {
@@ -68,9 +92,10 @@ export default function WorkerRegistrationPage() {
     setBusy(true)
     setFormError('')
     try {
-      await apiFetch(`/worker-registrations/${actId}/reject`, {
+      await apiFetch('/worker-registrations/' + actId + '/reject', {
         method: 'POST', body: { note: rejectNote.trim() },
       })
+      toast.success(w.toastRejectOk)
       closeDialog()
       load()
     } catch (e) {
@@ -80,60 +105,66 @@ export default function WorkerRegistrationPage() {
     }
   }
 
-  const closeDialog = () => {
-    setActId(null)
-    setActMode(null)
-    setGroupId('')
-    setRegionId('')
-    setRejectNote('')
-    setFormError('')
-  }
+  const tabs: Array<{ key: TabKey; label: string }> = [
+    { key: 'PENDING', label: w.tabPending },
+    { key: 'APPROVED', label: w.tabApproved },
+    { key: 'REJECTED', label: w.tabRejected },
+    { key: 'ALL', label: w.tabAll },
+  ]
+  const slice = pageSlice(rows, page, pageSize)
 
   return (
     <div>
       <PageHead title={w.title} desc={w.desc} />
       <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
+        <div className="p-4 pb-0">
+          <TabBar tabs={tabs} value={tab} onChange={(k) => { setTab(k as TabKey); setPage(1) }} />
+        </div>
         <div className="flex items-center gap-2 p-4">
           <span className="text-sm text-[var(--shell-group-title)]">{w.total.replace('{count}', String(rows.length))}</span>
           <span className="spacer" />
           <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={load}>{w.refresh}</button>
         </div>
-        {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : (
-          <div className="overflow-x-auto px-4 pb-4">
-            <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
-              <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">
-                <tr>
-                  {w.columns.map((x: string) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((r) => (
-                  <tr key={r.id}>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.id}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.name}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.phone}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.idCardNo}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{fmtTime(r.submittedAt)}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">
+        {error && <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div>}
+        <div className="overflow-x-auto px-4 pb-4">
+          <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
+            <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">
+              <tr>
+                {w.columns.map((x: string) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}
+              </tr>
+            </thead>
+            <tbody>
+              {slice.map((r) => (
+                <tr key={r.id}>
+                  <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]" title={'registrationId=' + r.id}>#{r.id}</td>
+                  <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.name}</td>
+                  <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.phone}</td>
+                  <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.idCardNo}</td>
+                  <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{fmtTime(r.submittedAt)}</td>
+                  <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">
+                    {r.status === 'PENDING' ? (
                       <div className="flex gap-2">
                         <button className="h-7 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-3 text-[12px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" onClick={() => { setActId(r.id); setActMode('approve') }}>{w.approve}</button>
                         <button className="h-7 cursor-pointer rounded-sm border border-[var(--color-danger)] bg-transparent px-3 text-[12px] text-[var(--color-danger)] hover:bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)]" onClick={() => { setActId(r.id); setActMode('reject') }}>{w.reject}</button>
                       </div>
-                    </td>
-                  </tr>
-                ))}
-                {!rows.length && (
-                  <tr><td colSpan={6} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">
-                    <EmptyState text={w.empty} />
-                  </td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
+                    ) : '—'}
+                  </td>
+                </tr>
+              ))}
+              {!rows.length && (
+                <tr><td colSpan={6} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">
+                  <EmptyState text={w.empty} />
+                </td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+        <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
+          <Pagination total={rows.length} page={page} pageSize={pageSize}
+            onPage={setPage} onSize={setPageSize} {...pagerTexts(t.pages.company)} />
+        </div>
       </div>
 
-      {/* 审批对话框 */}
       {actId != null && actMode && (
         <div className="fixed inset-0 z-page-modal flex items-center justify-center bg-black/40" onClick={closeDialog}>
           <div className="w-96 rounded-lg border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] p-6 shadow-[var(--shell-card-shadow)]" onClick={(e) => e.stopPropagation()}>
@@ -174,7 +205,7 @@ export default function WorkerRegistrationPage() {
             {formError && <div className="mb-3 rounded border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-sm text-[var(--color-danger)]">{formError}</div>}
             <div className="flex justify-end gap-2">
               <button className="rounded px-4 py-2 text-sm text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]" onClick={closeDialog}>{w.cancel}</button>
-              <button className={`rounded px-4 py-2 text-sm ${actMode === 'approve' ? 'bg-[var(--shell-fab-bg)] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]' : 'bg-[var(--color-danger)] text-white hover:opacity-80'}`} disabled={busy} onClick={actMode === 'approve' ? handleApprove : handleReject}>{actMode === 'approve' ? w.confirmApprove : w.confirmReject}</button>
+              <button className={'rounded px-4 py-2 text-sm ' + (actMode === 'approve' ? 'bg-[var(--shell-fab-bg)] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]' : 'bg-[var(--color-danger)] text-white hover:opacity-80')} disabled={busy} onClick={actMode === 'approve' ? handleApprove : handleReject}>{actMode === 'approve' ? w.confirmApprove : w.confirmReject}</button>
             </div>
           </div>
         </div>
