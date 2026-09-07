@@ -173,16 +173,8 @@ func (s *PGStore) ListPorts(ctx context.Context, resourceID int64) ([]Port, erro
 }
 
 // CreatePort 新建端口,返回自增 id。
-// 校验 resource_id/address_id 存在性防孤儿端口;quad_code 无 DB 唯一索引,
-// 预查给 40900 语义(port_code 由 DB UNIQUE 索引兜底并发窗口)。
+// 校验 resource_id 和 address_id 存在性,防止孤儿端口。
 func (s *PGStore) CreatePort(ctx context.Context, p Port) (int64, error) {
-	var quadTaken bool
-	if err := s.db.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM ports WHERE quad_code = $1)", p.QuadCode).Scan(&quadTaken); err != nil {
-		return 0, fmt.Errorf("resource: check quad_code: %w", err)
-	}
-	if quadTaken {
-		return 0, fmt.Errorf("resource: quad_code %s: %w", p.QuadCode, ErrDuplicate)
-	}
 	// 关联完整性校验
 	if p.ResourceID > 0 {
 		ok, err := s.exists(ctx, "resources", p.ResourceID)
@@ -211,6 +203,9 @@ func (s *PGStore) CreatePort(ctx context.Context, p Port) (int64, error) {
 		p.PortCode, p.QuadCode, p.ResourceID, p.LegalEntityID, p.LegalEntityName,
 		p.AddressID, p.RegionID, p.RegionName, idOrNil(p.OrderID), p.Status).Scan(&id)
 	if err != nil {
+		if isUniqueViolation(err) {
+			return 0, fmt.Errorf("resource: port_code %s: %w", p.PortCode, ErrDuplicate)
+		}
 		if isUniqueViolation(err) {
 			return 0, fmt.Errorf("resource: port_code %s: %w", p.PortCode, ErrDuplicate)
 		}

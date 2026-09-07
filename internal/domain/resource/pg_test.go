@@ -151,10 +151,6 @@ func TestPGStore_CreatePort(t *testing.T) {
 	}
 	defer mock.Close()
 
-	// quad_code 唯一预查(T2 增:无 DB 索引,预查给 40900 语义)
-	mock.ExpectQuery(`SELECT EXISTS\(SELECT 1 FROM ports WHERE quad_code = \$1\)`).
-		WithArgs("P-SPL01-02").
-		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(false))
 	// FK validation: resource exists
 	mock.ExpectQuery(`SELECT EXISTS`).
 		WithArgs(int64(2)).

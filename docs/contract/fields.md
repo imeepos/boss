@@ -978,14 +978,13 @@ stocktake_items（盘点差异明细，建单冻结快照 + 扫码回填 + 逐�
 
 > PONID 组装：`PONID="NA-<pon_frame>-<pon_slot>-<pon_port>"`（设计 §4）；`ports` 的 PON 四列与 `onu_no`（NULL=未分配）承载装维定位（§4.2 已增列）。
 
-### 4.5 OSS 建号写接口（POST /resources、POST /ports，T2 存量导入配套）
+### 4.5 OSS 建号写接口（POST /resources，T2 存量导入配套）
 
 | 端点 | 必填 | 缺省 | 错误语义 |
 |:-----|:-----|:-----|:---------|
 | POST /resources | code/type/addressId/legalEntityId | status=ONLINE（白名单 ONLINE/OFFLINE/FAULT） | type 白名单外/必填缺失 42200；code 撞 resources.code UNIQUE → 40900（resource.ErrDuplicate）；parentId/addressId 不存在 42200（ErrForeignKeyViolation） |
-| POST /ports | portCode/quadCode/resourceId/addressId/regionId/regionName | status=IDLE（新建仅收 IDLE/DISABLED，RESERVED/USED 走业务流转）；legalEntityId 缺省取归属资源企业快照 | port_code 撞 DB UNIQUE / quad_code 预查命中 → 40900；resourceId/addressId/parentId 不存在 42200 |
 
-> 两端点均挂 `menu:resource`；type 仅收 OLT/SPLITTER。T1 迁移（000202）的 VLAN/PON 扩展列本期不接收，payload struct 留扩展位（加字段透传即可）。审计：RecordAudit target=resource/port。
+> 挂 `menu:resource`；type 仅收 OLT/SPLITTER。端口批量建口由权威 POST /provision/ports 承载（扩容会话 b806d645），POST /ports 不再单设。T1 迁移（000202）的 VLAN/PON 扩展列本期不接收，payload struct 留扩展位（加字段透传即可）。审计：RecordAudit target=resource。
 
 ## 5. 阶段6 · 四码合一（internal/domain/quadlink）
 

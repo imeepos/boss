@@ -51,12 +51,6 @@ paths:
         - { name: resourceId, in: query, required: false, schema: { type: integer, format: int64 } }
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/List' }
-    post:
-      tags: [Oss]
-      summary: '新建端口行(T2 存量导入配套;portCode 全局唯一/quadCode 唯一语义均 40900,resourceId/addressId/regionId/regionName 必填,法人快照缺省取归属资源,status 缺省 IDLE 仅收 IDLE/DISABLED;permCode menu:resource)'
-      operationId: createPort
-      responses:
-        '200': { $ref: './schemas.yaml#/components/responses/Ok' }
 
   /ports/{portId}/change-history:
     get:

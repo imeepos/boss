@@ -443,7 +443,6 @@ var AdminRoutePerms = map[string][]string{
 	"POST /api/admin/v1/payments":                                                 {"menu:payment:cash"},
 	"POST /api/admin/v1/payments/{id}/refund":                                     {"menu:payment"},
 	"POST /api/admin/v1/points/{customerId}/adjust":                               {"menu:userdata"},
-	"POST /api/admin/v1/ports":                                                    {"menu:resource"},
 	"POST /api/admin/v1/posts":                                                    {"menu:post"},
 	"POST /api/admin/v1/procurement/orders":                                       {"menu:purchase"},
 	"POST /api/admin/v1/procurement/orders/{id}/cancel":                           {"menu:purchase"},

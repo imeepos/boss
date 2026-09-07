@@ -23,10 +23,8 @@ import (
 // fakeResourceCore 桩 resource.ResourceService:内嵌接口,仅实现被测方法。
 type fakeResourceCore struct {
 	resource.ResourceService
-	resErr      error
-	portErr     error
-	createdRes  resource.Resource
-	createdPort resource.Port
+	resErr     error
+	createdRes resource.Resource
 }
 
 func (f *fakeResourceCore) CreateResource(_ context.Context, r resource.Resource) (int64, error) {
@@ -35,14 +33,6 @@ func (f *fakeResourceCore) CreateResource(_ context.Context, r resource.Resource
 		return 0, f.resErr
 	}
 	return 501, nil
-}
-
-func (f *fakeResourceCore) CreatePort(_ context.Context, p resource.Port) (int64, error) {
-	f.createdPort = p
-	if f.portErr != nil {
-		return 0, f.portErr
-	}
-	return 601, nil
 }
 
 func (f *fakeResourceCore) GetResource(_ context.Context, id int64) (*resource.Resource, error) {
@@ -121,44 +111,6 @@ func TestPostResources(t *testing.T) {
 		_, code := ossCode(t, w)
 		if code != int(apitypes.CodeConflict) {
 			t.Fatalf("code=%d body=%s", code, w.Body.String())
-		}
-	})
-}
-
-func TestPostPorts(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-
-	t.Run("建档成功:法人快照取归属资源,缺省 IDLE", func(t *testing.T) {
-		fr := &fakeResourceCore{}
-		r := newOssRouter(fr)
-		w := doOss(r, http.MethodPost, "/api/admin/v1/ports",
-			`{"portCode":"P-NEW-01","quadCode":"P-NEW-01","resourceId":501,"addressId":3,"regionId":13,"regionName":"马尼拉"}`)
-		hc, code := ossCode(t, w)
-		if hc != http.StatusOK || code != int(apitypes.CodeOK) {
-			t.Fatalf("http=%d code=%d body=%s", hc, code, w.Body.String())
-		}
-		if fr.createdPort.LegalEntityID != 9 || fr.createdPort.Status != "IDLE" {
-			t.Fatalf("created=%+v", fr.createdPort)
-		}
-	})
-
-	t.Run("缺 regionName → 42200", func(t *testing.T) {
-		r := newOssRouter(&fakeResourceCore{})
-		w := doOss(r, http.MethodPost, "/api/admin/v1/ports",
-			`{"portCode":"P-2","quadCode":"P-2","resourceId":501,"addressId":3,"regionId":13}`)
-		_, code := ossCode(t, w)
-		if code != int(apitypes.CodeInvalidParam) {
-			t.Fatalf("code=%d", code)
-		}
-	})
-
-	t.Run("port_code 撞库 → 40900", func(t *testing.T) {
-		r := newOssRouter(&fakeResourceCore{portErr: resource.ErrDuplicate})
-		w := doOss(r, http.MethodPost, "/api/admin/v1/ports",
-			`{"portCode":"P-SPL01-01","quadCode":"P-9","resourceId":501,"addressId":3,"regionId":13,"regionName":"马尼拉"}`)
-		_, code := ossCode(t, w)
-		if code != int(apitypes.CodeConflict) {
-			t.Fatalf("code=%d", code)
 		}
 	})
 }

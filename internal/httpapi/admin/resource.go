@@ -24,7 +24,6 @@ func registerResourceRoutes(g *gin.RouterGroup, a *app.Application) {
 	res.GET("/resources/capacity", capacityHandler(a))
 	res.POST("/resources/capacity/alert-scan", capacityAlertScanHandler(a))
 	res.GET("/ports", listPortsHandler(a))
-	res.POST("/ports", portCreateHandler(a)) // T2 建档(port_code/quad_code 唯一)
 	res.GET("/ports/:portId/change-history", listPortHistoryHandler(a))
 	res.GET("/ports/:portId/path", portPathHandler(a))
 	res.POST("/reserves/:reserveId/release", releaseReserveHandler(a))

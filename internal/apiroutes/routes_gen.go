@@ -363,7 +363,6 @@ var Portals = []Portal{
 		{"GET", "/resources/capacity", "端口容量聚合(OLT/分光器维度;usageRate=USED/(USED+IDLE) 百分比两位小数,DISABLED/RESERVED 不入分母;对齐 Go 实现 GET /resources/capacity,permCode menu:resource)"},
 		{"POST", "/resources/capacity/alert-scan", "容量阈值预警扫描(使用率>=80% 产生 WARNING 容量告警入告警体系;同一对象阈值状态变化才重复告警,周期重跑幂等;对齐 Go 实现 POST /resources/capacity/alert-scan,permCode menu:resource)"},
 		{"GET", "/ports", "端口台账(status: IDLE/RESERVED/USED/DISABLED;对齐 Go 实现 GET /ports,按 resourceId 过滤)"},
-		{"POST", "/ports", "新建端口行(T2 存量导入配套;portCode 全局唯一/quadCode 唯一语义均 40900,resourceId/addressId/regionId/regionName 必填,法人快照缺省取归属资源,status 缺省 IDLE 仅收 IDLE/DISABLED;permCode menu:resource)"},
 		{"GET", "/ports/{portId}/change-history", "端口变更历史(变更前后/触发来源;对齐 Go 实现 :portId)"},
 		{"GET", "/ports/{portId}/path", "PON 端到端链路反查(端口→分光器→PON口→OLT 逐跳;portId 支持端口 ID 或端口编码;断链返回 missing 跳不报错;对齐 Go 实现 GET /ports/:portId/path)"},
 		{"GET", "/reserves", "端口预占记录(预占中/已超时/已释放)"},
