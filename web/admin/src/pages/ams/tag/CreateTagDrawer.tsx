@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
+import { ErrorBanner } from '../../../components/business/page-head'
 import { Drawer } from '../../../components/Drawer'
 import { buildTagPayload, emptyTagForm, tagFormErr, type TagFormState } from './logic'
 import { TagFormFields } from './TagFormFields'
@@ -48,7 +49,7 @@ export function CreateTagDrawer({ onClose, onSaved }: { onClose: () => void; onS
         onTagNo={(tagNo) => setForm({ ...form, tagNo })}
         onEpc={(epcCode) => setForm({ ...form, epcCode })}
         onBand={(band) => setForm({ ...form, band })} />
-      {apiError && <div className="mt-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{apiError}</div>}
+      {apiError && <ErrorBanner message={apiError} />}
     </Drawer>
   )
 }
