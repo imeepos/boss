@@ -3,13 +3,16 @@ import { describe, expect, it } from 'vitest'
 import {
   buildPickerQuery,
   canClearValue,
+  initialPickerSearchState,
   mergeOptions,
   moveActive,
+  pickerSearchReducer,
   pickSingleKey,
   toSelectionChips,
   togglePickKey,
   withPinnedValue,
 } from './pickerCore'
+import type { PickerSearchAction, PickerSearchState } from './pickerCore'
 
 const opt = (value: string, label?: string) => ({ value, label: label ?? value })
 
@@ -162,5 +165,47 @@ describe('canClearValue 清空按钮可见性口径', () => {
     expect(canClearValue(undefined, false, 'a')).toBe(false)
     expect(canClearValue(true, true, 'a')).toBe(false)
     expect(canClearValue(true, false, '')).toBe(false)
+  })
+})
+
+describe('pickerSearchReducer 服务端检索状态机', () => {
+  const req = (seq: number): PickerSearchAction<string> => ({ type: 'request', seq })
+
+  it('request 置 loading 清 error', () => {
+    expect(pickerSearchReducer(initialPickerSearchState<string>(), req(1))).toEqual({
+      items: [], loading: true, error: false, reqSeq: 1,
+    })
+  })
+
+  it('ok 采最新 seq 结果并解除 loading', () => {
+    let s: PickerSearchState<string> = pickerSearchReducer(initialPickerSearchState<string>(), req(1))
+    s = pickerSearchReducer(s, { type: 'ok', seq: 1, items: ['a'] })
+    expect(s).toEqual({ items: ['a'], loading: false, error: false, reqSeq: 1 })
+  })
+
+  it('过期响应(seq 落后)原样忽略', () => {
+    let s: PickerSearchState<string> = pickerSearchReducer(initialPickerSearchState<string>(), req(2))
+    s = pickerSearchReducer(s, { type: 'ok', seq: 1, items: ['stale'] })
+    expect(s.items).toEqual([])
+    expect(s.loading).toBe(true)
+  })
+
+  it('fail 清空结果置错误态,重试请求恢复', () => {
+    let s: PickerSearchState<string> = pickerSearchReducer(initialPickerSearchState<string>(), req(1))
+    s = pickerSearchReducer(s, { type: 'fail', seq: 1 })
+    expect(s.error).toBe(true)
+    expect(s.items).toEqual([])
+    s = pickerSearchReducer(s, req(2))
+    expect(s.error).toBe(false)
+    expect(s.loading).toBe(true)
+    s = pickerSearchReducer(s, { type: 'ok', seq: 2, items: ['b'] })
+    expect(s.items).toEqual(['b'])
+  })
+
+  it('新请求使在途旧响应失效', () => {
+    let s: PickerSearchState<string> = pickerSearchReducer(initialPickerSearchState<string>(), req(1))
+    s = pickerSearchReducer(s, req(2))
+    s = pickerSearchReducer(s, { type: 'ok', seq: 1, items: ['old'] })
+    expect(s.items).toEqual([])
   })
 })

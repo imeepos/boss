@@ -102,3 +102,36 @@ export function withPinnedValue(options: DropdownOption[], value: string): Dropd
 export function canClearValue(clearable: boolean | undefined, disabled: boolean | undefined, value: string): boolean {
   return !!clearable && !disabled && value !== ''
 }
+
+/** 服务端检索状态机状态:结果集 + loading/error + 已发出的最新请求序号(防竞态)。 */
+export interface PickerSearchState<T> {
+  items: T[]
+  loading: boolean
+  error: boolean
+  reqSeq: number
+}
+
+export function initialPickerSearchState<T>(): PickerSearchState<T> {
+  return { items: [], loading: false, error: false, reqSeq: 0 }
+}
+
+export type PickerSearchAction<T> =
+  | { type: 'request'; seq: number }
+  | { type: 'ok'; seq: number; items: T[] }
+  | { type: 'fail'; seq: number }
+
+/** 纯状态机:仅接受最新 seq 的响应,过期响应原样忽略;fail 清空结果并置错误态(可重试)。 */
+export function pickerSearchReducer<T>(state: PickerSearchState<T>, action: PickerSearchAction<T>): PickerSearchState<T> {
+  switch (action.type) {
+    case 'request':
+      return { ...state, loading: true, error: false, reqSeq: action.seq }
+    case 'ok':
+      if (action.seq !== state.reqSeq) return state
+      return { ...state, items: action.items, loading: false, error: false }
+    case 'fail':
+      if (action.seq !== state.reqSeq) return state
+      return { ...state, items: [], loading: false, error: true }
+    default:
+      return state
+  }
+}
