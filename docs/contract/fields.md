@@ -346,6 +346,22 @@
 | 幂等键 | `ClientMsgID` | client_msg_id | VARCHAR(64)，8-64 字符，弱网重传同键不重复计量 |
 | 上报人/时间 | `ReportedBy`/`ReportedAt` | reported_by/reported_at | → accounts / TIMESTAMPTZ |
 
+#### 1.5.8c construction_tests / construction_defects（质量测试与整改，迁移 000214，internal/domain/odn）
+
+> P0-C 质量闭环（odn-construction-management-plan）：测试记录 append-only（OTDR/光功率/连通性逐段逐设施留证）；整改 OPEN→RECTIFYING→VERIFIED（OPEN 可直达 VERIFIED 即改即验，VERIFIED 终态）；**验收前置：同项目无未 VERIFIED 整改项**（AcceptProject 事务内校验，40900 + openDefects 计数）。管理面 `menu:odn`，REST `/odn/constructions/{id}/tests|defects`、`/odn/defects/{id}/rectify|verify`（契约 admin/odn.yaml）。
+
+| 页面列名 | 字段名 | DB 列 | 枚举/说明 |
+|:---------|:-------|:------|:----------|
+| 资源类型 | `ResourceType` | resource_type | FACILITY / SEGMENT / FIBER / PORT |
+| 资源引用 | `ResourceRef` | resource_ref | VARCHAR(64) 软引用；FACILITY 类型须在项目明细范围内 |
+| 测试类型 | `TestKind` | test_kind | OTDR / OPTICAL_POWER / CONNECTIVITY |
+| 结果 | `Result` | result | PASS / FAIL |
+| 衰减/光功率 | `AttenuationDB`/`PowerDBM` | attenuation_db/power_dbm | NUMERIC 可空，0 视为未录 |
+| 严重度 | `Severity` | severity | MINOR / MAJOR / CRITICAL |
+| 整改状态 | `Status` | status | OPEN / RECTIFYING / VERIFIED（terms.md §4） |
+| 描述 | `Description` | description | VARCHAR(255) 必填 |
+| 复验人/时间 | `VerifiedBy`/`VerifiedAt` | verified_by/verified_at | → accounts / TIMESTAMPTZ |
+
 ### 1.5.9 odn_port（物理端口占用态，迁移 000200，internal/domain/odn）
 
 > P2 端口占用（路线图 T11）：分光器/终端盒端口级资源，订单预占的物理落地。`order_id` 为订单软引用（E10/E11 独立命名空间，不加 FK）。管理面 `menu:odn`，REST `/odn/devices/{id}/ports`、`/odn/ports/allocate-for-address`（覆盖关联兑现）等。

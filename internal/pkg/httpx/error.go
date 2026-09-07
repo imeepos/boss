@@ -202,7 +202,7 @@ func RespondErr(c *gin.Context, err error) {
 		// 下单覆盖门控拒单(T12):40900 + 透传地址/状态,运营可见为什么拒。
 		Respond(c, apitypes.CodeConflict, gin.H{"reason": err.Error()})
 	case errors.Is(err, odn.ErrNoContractor), errors.Is(err, odn.ErrSettlementState),
-		errors.Is(err, odn.ErrFacilityNotInScope):
+		errors.Is(err, odn.ErrFacilityNotInScope), errors.Is(err, odn.ErrOpenDefects), errors.Is(err, odn.ErrDefectState):
 		// 结算发起前置缺失/状态冲突(000204):40900 + 原因,管理员可见为什么拒。
 		Respond(c, apitypes.CodeConflict, gin.H{"reason": err.Error()})
 	case errors.Is(err, odn.ErrPermitRequired),
