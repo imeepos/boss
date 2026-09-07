@@ -48,7 +48,7 @@ export function WorkerMessagesTab({ t }: { t: Ns }) {
     setHint('')
     apiFetch<{ items: WorkerMessageEntry[] }>('/worker-messages', { query: { workerId: toId(workerId) || undefined } })
       .then((d) => setRows(d?.items ?? []))
-      .catch(() => setError(t.loadFail))
+      .catch((e) => setError(e instanceof Error ? e.message : t.loadFail))
   }
 
   useEffect(load, []) // eslint-disable-line react-hooks/exhaustive-deps
@@ -88,7 +88,7 @@ export function WorkerMessagesTab({ t }: { t: Ns }) {
         toast.success(t.sent)
         load()
       })
-      .catch(() => { setSending(false); setHint(t.sendFail) })
+      .catch((e) => { setSending(false); setHint(e instanceof Error ? e.message : t.sendFail) })
   }
 
   return (
