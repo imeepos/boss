@@ -2151,3 +2151,10 @@
 - skill 有没有提前预警? 红线 10(写前核对真实路径)在顶上,但当时并行发多个 edit 锚错了对象;漏 genrouteperms 是新知识(lessons 477 行只提了 CI 侧,没提本地 make check 链会红)。
 - 重来一次会怎么做? edit 调用前默念 file_path 是否 worktree 前缀;新增 openapi 路由的收尾动作固化为两连发:gen-bossctl-routes + genrouteperms 都跑完再 make check。新页面三件套(menu.def/App/i18n)之外还要 public/icons/items/<key>.svg + 只用 theme/tokens.css 里已定义的 CSS 变量(build 审计会拦)。
 - 正向沉淀: SETTLED 同事务生成应付/VOIDED 同事务冲销一次设计过验收;NUMERIC 列扫 int64 是 50000 常见根因(pg_settlement 1000.00 strconv),102 日志 [odn-settlement] SETTLE READ FAILED 一发定位——失败路径留痕红线直接变现;验收脚本全双引号 Python 字符串+行数组写入,零转义事故。
+
+## 2026-09-07 资源端口+GIS+附件选择器改造(会话派发,worktree feat/picker-oss-intel-attachment,已 ff 回 main@2899f127)
+
+- 最耗时坑三件: ①SimplePicker 检索 hook 只在关键字提交/重试时发请求,search prop 动态变化(附件类型切换、GIS 层级切换)不重触发首拉,浮层恒空——key=维度 重挂载修两处;②cdp 冒烟对 Dropdown 选项 JS .click() 无效(onClick 被 preventDefault,选定在 onMouseDown),techniques.md 既有该技巧,写 eval 前没按组件名 grep 白耗两轮;③门禁首轮漏带 TZ=Asia/Shanghai(docs/boss-admin-web.md 门禁节明文),又犯「门禁运行中 amend 工作区」并发红线,该轮绿结果作废重跑。
+- skill 有没有预警? 红线 14(键名默念)仍两犯(new_string 与 description 键名各多一次引号),recidivism #22 升 5 次;techniques 的 Dropdown mousedown 条目若在写 eval 前检索可省两轮冒烟。
+- 重来一次会怎么做? 写 cdp eval 前先 grep techniques/known-issues 里目标组件的事件绑定;任何带 search/数据源 prop 的基座组件先读内部 hook 的 effect 依赖再设计联动方式;门禁命令从 docs/boss-admin-web.md 门禁节整段复制(TZ 在内),门禁期间冻结 worktree 写操作。
+- 正向沉淀: pickers 基座八项契约全继承,三处改造只写数据源映射+联动逻辑,单提交单文件净增 ≤41 行;B1 全链路 DOM 断言(选设备→选端口→保存解禁→清空回禁)一次过;102 实证 workers=0 属服务端空态而非代码缺陷,用 customers=347 验证同构分支;eval 断言脚本落 /tmp 文件经 $(cat) 注入,零引号转义事故。
