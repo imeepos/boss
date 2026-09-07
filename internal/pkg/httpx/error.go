@@ -201,9 +201,14 @@ func RespondErr(c *gin.Context, err error) {
 		// 下单覆盖门控拒单(T12):40900 + 透传地址/状态,运营可见为什么拒。
 		Respond(c, apitypes.CodeConflict, gin.H{"reason": err.Error()})
 	case errors.Is(err, odn.ErrNoContractor), errors.Is(err, odn.ErrSettlementState),
+<<<<<<< HEAD
 		errors.Is(err, odn.ErrFacilityNotInScope), errors.Is(err, odn.ErrRegConflict),
 		errors.Is(err, odn.ErrRegState), errors.Is(err, odn.ErrIssueState), errors.Is(err, odn.ErrIssueAsset):
 		// 结算/资产化凭证/出库单前置缺失或状态冲突(000204/000215):40900 + 原因,管理员可见为什么拒。
+=======
+		errors.Is(err, odn.ErrFacilityNotInScope), errors.Is(err, odn.ErrOpenDefects), errors.Is(err, odn.ErrDefectState):
+		// 结算发起前置缺失/状态冲突(000204):40900 + 原因,管理员可见为什么拒。
+>>>>>>> main
 		Respond(c, apitypes.CodeConflict, gin.H{"reason": err.Error()})
 	case errors.Is(err, odn.ErrPermitRequired),
 		errors.Is(err, odn.ErrPermitState),

@@ -32,6 +32,42 @@ paths:
                 status: { type: string, enum: [ACTIVE, RESERVED] }
       responses: { '200': { $ref: '#/components/responses/Data' } }
 
+  /odn/regions:
+    get:
+      tags: [ODN]
+      summary: 省级编码字典(000075 种子只读;级联下拉数据源)
+      operationId: listOdnRegions
+      responses: { '200': { $ref: '#/components/responses/Array' } }
+
+  /odn/cities:
+    get:
+      tags: [ODN]
+      summary: 省内城市前缀字典(000075 种子只读;级联下拉数据源)
+      operationId: listOdnCities
+      parameters:
+        - { name: prvCode, in: query, required: true, schema: { type: string, examples: [PHL001] } }
+      responses: { '200': { $ref: '#/components/responses/Array' } }
+
+  /odn/facility-next-code:
+    get:
+      tags: [ODN]
+      summary: 下一可用设施编码(退役占号不复用;P/MH 必带 gridCode)
+      operationId: nextOdnFacilityCode
+      parameters:
+        - { name: kind, in: query, required: true, schema: { type: string, enum: [P, MH, TW, CLS, TBX] } }
+        - { name: gridCode, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 99 } }
+      responses: { '200': { $ref: '#/components/responses/Data' } }
+
+  /odn/site-next-no:
+    get:
+      tags: [ODN]
+      summary: 下一可用局点序号(退役占号不复用;满 999 报错)
+      operationId: nextOdnSiteNo
+      parameters:
+        - { name: prvCode, in: query, required: true, schema: { type: string, examples: [PHL001] } }
+        - { name: cityPrefix, in: query, required: true, schema: { type: string, examples: [MNL] } }
+      responses: { '200': { $ref: '#/components/responses/Data' } }
+
   /odn/grid-investment:
     get:
       tags: [ODN]
@@ -234,7 +270,8 @@ paths:
                 prvCode: { type: string, examples: [PHL001] }
                 cityPrefix: { type: string, examples: [MNL] }
                 siteNo: { type: integer, description: 归属局点序号,0=市域设备 }
-                parentId: { type: integer, description: ODB/SDB/PRT/TBP 必填,上级类型见规范 2.1 }
+                parentId: { type: integer, description: 上级设备 id(表单通道),与 parentCode 二选一 }
+                parentCode: { type: string, examples: [OCC001], description: 上级设备编码(导入通道,同城市在用设备按编码反查 id) }
                 name: { type: string }
       responses: { '200': { $ref: '#/components/responses/Data' } }
 
@@ -490,6 +527,82 @@ paths:
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer } }
         - { name: limit, in: query, schema: { type: integer } }
+      responses: { '200': { $ref: '#/components/responses/Data' } }
+
+  /odn/constructions/{id}/tests:
+    post:
+      tags: [ODN]
+      summary: 追加资源级测试记录(P0-C:OTDR/光功率/连通性;append-only)
+      operationId: recordOdnConstructionTest
+      parameters: [ { name: id, in: path, required: true, schema: { type: integer } } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [resourceType, resourceRef, testKind, result]
+              properties:
+                resourceType: { type: string, description: FACILITY/SEGMENT/FIBER/PORT }
+                resourceRef: { type: string, description: 资源编码或 ID 串 }
+                testKind: { type: string, description: OTDR/OPTICAL_POWER/CONNECTIVITY }
+                result: { type: string, description: PASS/FAIL }
+                attenuationDb: { type: number, description: 衰减 dB 可带 }
+                powerDbm: { type: number, description: 光功率 dBm 可带 }
+                note: { type: string }
+      responses: { '200': { $ref: '#/components/responses/Data' } }
+    get:
+      tags: [ODN]
+      summary: 测试记录列表(近单优先)
+      operationId: listOdnConstructionTests
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: limit, in: query, schema: { type: integer } }
+      responses: { '200': { $ref: '#/components/responses/Data' } }
+
+  /odn/constructions/{id}/defects:
+    post:
+      tags: [ODN]
+      summary: 开整改单(P0-C:设施须在项目范围内;验收前置=无未 VERIFIED 整改)
+      operationId: openOdnConstructionDefect
+      parameters: [ { name: id, in: path, required: true, schema: { type: integer } } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [facilityCode, severity, description]
+              properties:
+                facilityCode: { type: string }
+                severity: { type: string, description: MINOR/MAJOR/CRITICAL }
+                description: { type: string, description: 问题描述必填 }
+                note: { type: string }
+      responses: { '200': { $ref: '#/components/responses/Data' } }
+    get:
+      tags: [ODN]
+      summary: 整改单列表(可按 status 过滤)
+      operationId: listOdnConstructionDefects
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: status, in: query, schema: { type: string } }
+        - { name: limit, in: query, schema: { type: integer } }
+      responses: { '200': { $ref: '#/components/responses/Data' } }
+
+  /odn/defects/{defectId}/rectify:
+    post:
+      tags: [ODN]
+      summary: 整改上报(OPEN/RECTIFYING→RECTIFYING,记整改时间)
+      operationId: rectifyOdnDefect
+      parameters: [ { name: defectId, in: path, required: true, schema: { type: integer } } ]
+      responses: { '200': { $ref: '#/components/responses/Data' } }
+
+  /odn/defects/{defectId}/verify:
+    post:
+      tags: [ODN]
+      summary: 复验关闭(OPEN/RECTIFYING→VERIFIED,记复验人/时间;终态再动拒绝)
+      operationId: verifyOdnDefect
+      parameters: [ { name: defectId, in: path, required: true, schema: { type: integer } } ]
       responses: { '200': { $ref: '#/components/responses/Data' } }
 
   /odn/constructions/{id}/settlements:

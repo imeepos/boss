@@ -116,6 +116,19 @@ func (s *PGStore) insertChildDevice(ctx context.Context, d Device, wantKind stri
 	return nil
 }
 
+// DeviceIDByCode 城市内在用设备按编码查 id(导入模板 parentCode 字符串匹配;
+// 上级编码不存在回 ErrNotFound)。
+func (s *PGStore) DeviceIDByCode(ctx context.Context, prvCode, cityPrefix, code string) (int64, error) {
+	var id int64
+	err := s.db.QueryRow(ctx, `SELECT id FROM odn_device
+		WHERE prv_code=$1 AND city_prefix=$2 AND code=$3 AND status='IN_USE'`,
+		prvCode, cityPrefix, code).Scan(&id)
+	if err != nil {
+		return 0, fmt.Errorf("odn: device by code %s/%s %s: %w", prvCode, cityPrefix, code, ErrNotFound)
+	}
+	return id, nil
+}
+
 // ListDevices 设备列表(kind 可空;城市可空=全网)。
 func (s *PGStore) ListDevices(ctx context.Context, kind, prvCode, cityPrefix string) ([]Device, error) {
 	rows, err := s.db.Query(ctx, `SELECT d.id, d.code, d.kind, COALESCE(d.prv_code,''), COALESCE(d.city_prefix,''),

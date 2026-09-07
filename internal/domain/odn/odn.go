@@ -21,7 +21,9 @@ var (
 	// ErrRetired 编码已报废,永久锁定禁止复用(资产编码规范红线 2)。
 	ErrRetired = errors.New("odn: code retired")
 	// ErrSiteMissing 局点未备案或已退役(E16:site_no 无 FK,域层守护归属链)。
+	// ErrSiteFull 城市局点序号已用尽 999(规范 3.2;退役号占号不复用)。
 	ErrSiteMissing = errors.New("odn: site not registered")
+	ErrSiteFull    = errors.New("odn: site no full")
 )
 
 // Kind 基础设施类型(规范 4.2)。
@@ -121,6 +123,8 @@ type ODNService interface {
 	CreateSite(ctx context.Context, st Site) error
 	RetireSite(ctx context.Context, prvCode, cityPrefix string, siteNo int16) error
 	CreateDevice(ctx context.Context, d Device) error
+	// DeviceIDByCode 城市内在用设备按编码查 id(导入 parentCode 字符串匹配)。
+	DeviceIDByCode(ctx context.Context, prvCode, cityPrefix, code string) (int64, error)
 	ListDevices(ctx context.Context, kind, prvCode, cityPrefix string) ([]Device, error)
 	RetireDevice(ctx context.Context, id int64) error
 
@@ -145,6 +149,7 @@ type ODNService interface {
 	RecordProgress(ctx context.Context, p ProgressEntry) (int64, bool, error)
 	ListProgress(ctx context.Context, projectID int64, limit int) ([]ProgressEntry, error)
 	ItemProgressSummary(ctx context.Context, projectID int64) ([]ItemProgress, error)
+<<<<<<< HEAD
 	// 资产化转固(P-INFRA-1 W8,迁移 000215;桥表软引用,adopted 2026-09-07-odn-asset-capitalization)。
 	CreateRegistration(ctx context.Context, entityKind, facilityCode string, deviceID, assetID int64,
 		sourceKind string, projectID int64, value float64, remark string, accountID int64) (*AssetRegistration, error)
@@ -159,6 +164,14 @@ type ODNService interface {
 	ConfirmIssue(ctx context.Context, id, accountID int64) error
 	CancelIssue(ctx context.Context, id, accountID int64) error
 
+=======
+	// 质量测试与整改闭环(P0-C,迁移 000214):测试 append-only,整改 OPEN→RECTIFYING→VERIFIED。
+	RecordTest(ctx context.Context, t QualityTest) (int64, error)
+	ListTests(ctx context.Context, projectID int64, limit int) ([]QualityTest, error)
+	OpenDefect(ctx context.Context, d QualityDefect, openedBy int64) (int64, error)
+	ListDefects(ctx context.Context, projectID int64, status string, limit int) ([]QualityDefect, error)
+	TransitionDefect(ctx context.Context, defectID int64, to string, accountID int64) error
+>>>>>>> main
 	CreateSettlement(ctx context.Context, projectID, createdBy int64) (*Settlement, error)
 	ListSettlements(ctx context.Context, projectID int64) ([]Settlement, error)
 	GetSettlement(ctx context.Context, id int64) (*Settlement, error)
@@ -204,6 +217,14 @@ type ODNService interface {
 	UnlinkPermitProject(ctx context.Context, id int64) error
 	ListProjectPermits(ctx context.Context, projectID int64) ([]Permit, error)
 	CheckProjectPermits(ctx context.Context, projectID int64) (*PermitGateReport, error)
+
+	// 省市编码字典(P-INFRA-1 UX;000075 种子只读,前端级联下拉数据源)。
+	ListRegions(ctx context.Context) ([]RegionOption, error)
+	ListCities(ctx context.Context, prvCode string) ([]CityOption, error)
+
+	// 下一可用编码(P-INFRA-1 UX;退役占号不复用,前端新增表单自动顺延预览)。
+	NextFacilityCode(ctx context.Context, kind string, gridCode int16) (string, error)
+	NextSiteNo(ctx context.Context, prvCode, cityPrefix string) (int16, error)
 }
 
 // GridRef 网格定位(城市 + 网格码)。

@@ -99,6 +99,15 @@ func odnCreateDeviceHandler(a *app.Application) gin.HandlerFunc {
 		d := odn.Device{Code: req.Code, Kind: req.Kind, PrvCode: prv,
 			CityPrefix: city, SiteNo: req.SiteNo, ParentID: req.ParentID,
 			Name: req.Name, Lat: req.Lat, Lng: req.Lng}
+		// parentCode 字符串匹配(导入通道):按编码反查同城市在用设备 id。
+		if req.ParentCode != "" && d.ParentID == 0 {
+			id, err := a.ODN.DeviceIDByCode(c.Request.Context(), prv, city, req.ParentCode)
+			if err != nil {
+				respondErr(c, err)
+				return
+			}
+			d.ParentID = id
+		}
 		if err := a.ODN.CreateDevice(c.Request.Context(), d); err != nil {
 			respondErr(c, err)
 			return

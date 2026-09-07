@@ -544,3 +544,8 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 当任务书与设计文档字段清单不一致时，修复是按两者并集实现并在回报中单列差异提示交负责人裁决——单方取舍都会在下游验收爆雷（2026-09-07 T3 轮 assets 段）。skill 没提前警告我。
 - 当 SQL 模板同时含 LIKE 通配符与 python %-format 时，修复是通配符 % 写成 %%——只有生成路径真被调用才炸 ValueError，SQL 构建函数必须进验收覆盖（2026-09-07 T3 修复轮 apply_sql build_sql）。skill 没提前警告我。
 - 当 edit 用于『在函数前插入新函数』时，修复是 old/new 都带完整上下文行且禁止只写签名行——只写签名行会把原函数改名断链；改完必须 grep 函数名核对定义与调用点闭环（2026-09-07 T3 修复轮 _sql_lo_accounts 被误改名）。skill 没提前警告我。
+
+- 当 PG 报 invalid input syntax for type integer 且值带小数点:INSERT 里 NULLIF($n,0) 的字面量 0 把参数类型钉死成 integer;写 0.0 或显式 ::numeric(2026-09-07 construction_tests attenuation 实证)。
+- 当 glob 报空但怀疑文件存在:用 git ls-tree -r --name-only <ref> -- <dir> 兜底;glob 可能漏报已跟踪旧文件(2026-09-07 construction_test.go 实证)。
+- ODN 设施 POST /odn/facilities 默认 lifecycle IN_SERVICE;施工夹具需 PLANNED,且 API 无 IN_SERVICE→PLANNED 转移,psql 直设(W1/W4 同款,2026-09-07 P0 验收复用)。
+- gin 路径参数为空时(如 /odn/constructions//progress)不会 404 而是落到带默认值的查询,验收断言要先解析真实 id 再拼 URL(2026-09-07 P0 验收实证)。

@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ODN 基础数据与资源链登记</title>
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<header>
+  <h1>ODN 基础数据与资源链登记</h1>
+  <p class="sub">用途：登记 OLT 至 ODN 端口/分光器的资源关系。基础数据先行，链路在「资源链组装」里逐级带出；未知字段留空，不猜填。</p>
+</header>
+<main>
+  <details open>
+    <summary>填表说明（导入校验六规则）</summary>
+    <table class="rules">
+      <tr><th>层级顺序</th><td>OCC → ODB → OBD → 一级分光比 → 一级分光端口 → SDB → SBD → 二级分光比 → 二级分光端口。</td></tr>
+      <tr><th>示例说明</th><td>基础数据与链路均须为实际资源；示例不计入，正式记录按现场情况填写。</td></tr>
+      <tr><th>填写原则</th><td>一行一条实际资源；未知字段留空，不猜填；留空即不入库该字段。</td></tr>
+      <tr><th>状态原则</th><td>资源状态留空/规划态一律按 PLANNED 导入，绝不当作已安装、已测试或在用资源。</td></tr>
+      <tr><th>分光原则</th><td>总分光比由一级分光比和二级分光比自动计算；填报不一致拒绝该行并报行号。</td></tr>
+      <tr><th>校验原则</th><td>层级断链拒绝；枚举未知值拒绝、禁止默认值推断；全列指纹重复去重并报告。</td></tr>
+    </table>
+  </details>
+  <nav id="tabs"></nav>
+  <section id="panel"></section>
+</main>
+<footer>纯静态页：数据仅保存在本机浏览器（localStorage），无网络请求。层级与枚举对齐 docs/contract/fields.md 1.5.12 odn_resource_chain（迁移 000210）与 docs/books/ODN网络资源表模板.xlsx。</footer>
+<script src="master.js"></script>
+<script src="chain.js"></script>
+</body>
+</html>
