@@ -14,6 +14,8 @@ import { pageSlice, type GisNode, type GisPointRow, type GisResourceDetail } fro
 import { TableStateRow, IdRef } from '../../../components/business'
 import { CardShell, StatCard } from '../../../components/business/charts'
 import { PgisMap, type GisPoint, type Theme } from '../../../components/business/maps'
+import { OdnReverseDrawer } from './OdnReverseDrawer'
+import { odnEntityOf } from './odnReverse'
 
 const LEVELS = [1, 2, 3, 4, 5, 6, 7, 8] as const
 
@@ -35,6 +37,8 @@ export default function GisPage() {
   // ODN 图层(odn-points):'off'|'facility'|'site'|'device'。
   const [odnLayer, setOdnLayer] = useState<'off' | 'facility' | 'site' | 'device'>('off')
   const [odnPoints, setOdnPoints] = useState<GisPoint[]>([])
+  // ODN 点位反查抽屉(T14-1):与 drill 点位详情抽屉互不干扰。
+  const [odnTarget, setOdnTarget] = useState<GisPoint | null>(null)
 
   const load = (lv: number, pid: number) => {
     setError('')
@@ -188,7 +192,7 @@ export default function GisPage() {
           <div className="mx-2 mb-2 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{pointsError}</div>
         ) : null}
         <div className="relative h-[480px]">
-          <PgisMap points={mapPoints} onSelect={(p) => p.level >= 6 && p.level <= 8 && openDetail(p.id)} theme={theme} onViewportChange={onViewportChange} />
+          <PgisMap points={mapPoints} onSelect={(p) => { if (odnEntityOf(p.level)) setOdnTarget(p); else if (p.level >= 6 && p.level <= 8) openDetail(p.id) }} theme={theme} onViewportChange={onViewportChange} />
           {!mapPoints.length && !pointsError ? (
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center text-[13px] text-[var(--shell-group-title)]">
               {g.mapEmpty}
@@ -222,6 +226,7 @@ export default function GisPage() {
         </div>
       </CardShell>
 
+      <OdnReverseDrawer point={odnTarget} onClose={() => setOdnTarget(null)} />
       {(detail || detailError) && (
         <DetailDrawer
           title={g.detailTitle}

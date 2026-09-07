@@ -156,3 +156,83 @@ export interface SplitCapacityReport {
   items: SplitCapacityRow[]
   summary: { devices: number; potentialHomes: number; connectedHomes: number; expandableHomes: number }
 }
+/** ODN 反查:设施(GET /odn/facilities/:code)。 */
+export interface OdnFacilityRow {
+  code: string
+  kind: string
+  prvCode: string
+  cityPrefix: string
+  gridCode: number
+  name: string
+  lat: number
+  lng: number
+  status: string
+  lifecycleStatus: string
+}
+
+/** ODN 反查:局点(GET /odn/sites?prvCode&cityPrefix 行)。 */
+export interface OdnSiteRow {
+  prvCode: string
+  cityPrefix: string
+  siteNo: number
+  name: string
+  lat: number
+  lng: number
+  status: string
+  lifecycleStatus: string
+}
+
+/** ODN 反查:核心设备(GET /odn/devices 行)。 */
+export interface OdnDeviceRow {
+  id: number
+  code: string
+  kind: string
+  prvCode: string
+  cityPrefix: string
+  siteNo: number
+  parentId: number
+  name: string
+  lat: number | null
+  lng: number | null
+  status: string
+  lifecycleStatus: string
+}
+
+/** ODN 反查:物理端口(GET /odn/devices/:id/ports 行)。 */
+export interface OdnPortRow {
+  id: number
+  deviceId: number
+  portNo: number
+  status: string
+  orderId: number
+  updatedAt: string
+}
+
+/** ODN 反查:逻辑-物理绑定(GET /odn/bindings?portId= 行)。 */
+export interface OdnBindingRow {
+  id: number
+  portId: number
+  orderId: number
+  resourcePortId: number
+  note: string
+  boundAt: string
+}
+
+/** ODN 反查:就近可装性判定(GET /odn/coverage/resolve,fields.md 1.5.7)。 */
+export interface OdnCoverageResolved {
+  status: string
+  facilityCode?: string
+  facilityName?: string
+  lat?: number
+  lng?: number
+  distanceM?: number
+}
+
+/** ODN 反查:网格(GET /odn/grids 行,名称联查用)。 */
+export interface OdnGridRow {
+  prvCode: string
+  cityPrefix: string
+  gridCode: number
+  name: string
+  status: string
+}
