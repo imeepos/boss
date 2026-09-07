@@ -120,3 +120,55 @@ func TestValidateDeviceCodeBoxKinds(t *testing.T) {
 		t.Errorf("箱内部件归属链错误")
 	}
 }
+
+func TestValidateChainAttribution(t *testing.T) {
+	// W3 收口 F2:prv/city/grid 三列一体;任一非空即三者必须齐全;grid 1~99。
+	row := chainRowFull()
+	row.PrvCode, row.CityPrefix, row.GridCode = "PHL001", "MNL", "5"
+	rec, reason := ValidateChainRow(row, 6)
+	if reason != "" {
+		t.Fatalf("完整归属应通过: %s", reason)
+	}
+	if rec.PrvCode != "PHL001" || rec.CityPrefix != "MNL" || rec.GridCode != 5 {
+		t.Errorf("归属解析错误: %s/%s/%d", rec.PrvCode, rec.CityPrefix, rec.GridCode)
+	}
+
+	cases := []struct{ name, prv, city, grid, want string }{
+		{name: "只填网格", prv: "", city: "", grid: "5", want: "网格归属不完整"},
+		{name: "缺城市", prv: "PHL001", city: "", grid: "5", want: "网格归属不完整"},
+		{name: "网格码0", prv: "PHL001", city: "MNL", grid: "0", want: "网格码非法"},
+		{name: "网格码100", prv: "PHL001", city: "MNL", grid: "100", want: "网格码非法"},
+		{name: "网格码非数字", prv: "PHL001", city: "MNL", grid: "ab", want: "网格码非法"},
+	}
+	for _, c := range cases {
+		rw := chainRowFull()
+		rw.PrvCode, rw.CityPrefix, rw.GridCode = c.prv, c.city, c.grid
+		_, reason := ValidateChainRow(rw, 6)
+		if reason == "" || !strings.Contains(reason, c.want) {
+			t.Errorf("%s: 期望拒绝(%s),实际 %q", c.name, c.want, reason)
+		}
+	}
+}
+
+func TestChainFingerprintAttribution(t *testing.T) {
+	// 归属并入指纹:同链同归属=同指纹;同链无归属/异归属=异指纹(归属是资源关系一部分)。
+	aRow := chainRowFull()
+	aRow.PrvCode, aRow.CityPrefix, aRow.GridCode = "PHL001", "MNL", "5"
+	a, _ := ValidateChainRow(aRow, 6)
+	bRow := chainRowFull()
+	bRow.PrvCode, bRow.CityPrefix, bRow.GridCode = "PHL001", "MNL", "5"
+	b, _ := ValidateChainRow(bRow, 7)
+	if a.Fingerprint != b.Fingerprint {
+		t.Errorf("同链同归属指纹应一致")
+	}
+	cRow := chainRowFull()
+	cRow.PrvCode, cRow.CityPrefix, cRow.GridCode = "PHL001", "MNL", "6"
+	c, _ := ValidateChainRow(cRow, 8)
+	if a.Fingerprint == c.Fingerprint {
+		t.Errorf("异归属指纹不应一致")
+	}
+	d, _ := ValidateChainRow(chainRowFull(), 9)
+	if a.Fingerprint == d.Fingerprint {
+		t.Errorf("带归属与不带归属指纹不应一致")
+	}
+}

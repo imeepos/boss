@@ -74,16 +74,30 @@ func (s *PGStore) importValidatedChainRow(ctx context.Context, batchNo string, r
 		log.Printf("[odn-import] ROW %d BEGIN FAILED batch=%s reason=%v", lineNo, batchNo, err)
 		return ChainRowResult{RowNo: lineNo, Status: ChainRowFailed, Reason: "事务启动失败"}
 	}
-	if err := expandChainRow(ctx, tx, rec); err != nil {
+	// 网格归属联动(W3 收口 F2):先备案网格(链行 FK 前置),落链行,再展开设备与锚点。
+	if err := ensureChainGrid(ctx, tx, rec); err != nil {
 		_ = tx.Rollback(ctx)
-		log.Printf("[odn-import] ROW %d EXPAND FAILED batch=%s reason=%v", lineNo, batchNo, err)
-		return ChainRowResult{RowNo: lineNo, Status: ChainRowFailed, Reason: "展开失败: " + err.Error()}
+		log.Printf("[odn-import] ROW %d GRID FAILED batch=%s reason=%v", lineNo, batchNo, err)
+		return ChainRowResult{RowNo: lineNo, Status: ChainRowFailed, Reason: "网格归属失败: " + err.Error()}
 	}
 	inserted, err := insertChainLine(ctx, tx, batchNo, rec)
 	if err != nil {
 		_ = tx.Rollback(ctx)
 		log.Printf("[odn-import] ROW %d INSERT FAILED batch=%s reason=%v", lineNo, batchNo, err)
 		return ChainRowResult{RowNo: lineNo, Status: ChainRowFailed, Reason: "入库失败: " + err.Error()}
+	}
+	// 仅非重复行展开(重复行=既有资源关系,设备与锚点已存在)。
+	if inserted {
+		if err := expandChainRow(ctx, tx, rec); err != nil {
+			_ = tx.Rollback(ctx)
+			log.Printf("[odn-import] ROW %d EXPAND FAILED batch=%s reason=%v", lineNo, batchNo, err)
+			return ChainRowResult{RowNo: lineNo, Status: ChainRowFailed, Reason: "展开失败: " + err.Error()}
+		}
+		if err := expandChainAnchor(ctx, tx, rec); err != nil {
+			_ = tx.Rollback(ctx)
+			log.Printf("[odn-import] ROW %d ANCHOR FAILED batch=%s reason=%v", lineNo, batchNo, err)
+			return ChainRowResult{RowNo: lineNo, Status: ChainRowFailed, Reason: "锚点失败: " + err.Error()}
+		}
 	}
 	if err := tx.Commit(ctx); err != nil {
 		log.Printf("[odn-import] ROW %d COMMIT FAILED batch=%s reason=%v", lineNo, batchNo, err)
@@ -152,9 +166,11 @@ func upsertChainDevice(ctx context.Context, tx pgx.Tx, code, kind, lifecycle str
 }
 
 // insertChainLine 链行入库(⑥指纹唯一,冲突即重复行);③留空字段一律 NULL,无默认值推断。
+// W3 收口(F2):网格归属三列一并落库(快照,校验见 validateChainAttribution)。
 func insertChainLine(ctx context.Context, tx pgx.Tx, batchNo string, rec *ChainRecord) (bool, error) {
-	tag, err := tx.Exec(ctx, "INSERT INTO odn_resource_chain (batch_no, line_no, lifecycle_status, site_code, site_name, olt_code, odf_code, odf_port, occ_code, odb_code, obd_code, split1_ratio, split1_port, sdb_code, sbd_code, split2_ratio, split2_port, total_split, fiber_code, fr_to, port_status, laying_method, row_status, pece_status, remark, fingerprint) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26) ON CONFLICT (fingerprint) DO NOTHING",
-		batchNo, rec.LineNo, rec.Lifecycle, rec.SiteCode, rec.SiteName, rec.OltCode,
+	tag, err := tx.Exec(ctx, "INSERT INTO odn_resource_chain (batch_no, line_no, lifecycle_status, prv_code, city_prefix, grid_code, site_code, site_name, olt_code, odf_code, odf_port, occ_code, odb_code, obd_code, split1_ratio, split1_port, sdb_code, sbd_code, split2_ratio, split2_port, total_split, fiber_code, fr_to, port_status, laying_method, row_status, pece_status, remark, fingerprint) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29) ON CONFLICT (fingerprint) DO NOTHING",
+		batchNo, rec.LineNo, rec.Lifecycle, nullIfEmpty(rec.PrvCode), nullIfEmpty(rec.CityPrefix), nullInt(rec.GridCode),
+		rec.SiteCode, rec.SiteName, rec.OltCode,
 		nullIfEmpty(rec.OdfCode), nullIfEmpty(rec.OdfPort), nullIfEmpty(rec.OccCode),
 		nullIfEmpty(rec.OdbCode), nullIfEmpty(rec.ObdCode), nullInt(rec.Split1), nullIfEmpty(rec.Split1Port),
 		nullIfEmpty(rec.SdbCode), nullIfEmpty(rec.SbdCode), nullInt(rec.Split2), nullIfEmpty(rec.Split2Port),

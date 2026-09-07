@@ -89,6 +89,9 @@ type ResourceChainView struct {
 	BatchNo      string `json:"batchNo"`
 	LineNo       int    `json:"lineNo"`
 	Lifecycle    string `json:"lifecycleStatus"`
+	PrvCode      string `json:"prvCode"`
+	CityPrefix   string `json:"cityPrefix"`
+	GridCode     int    `json:"gridCode"`
 	SiteCode     string `json:"siteCode"`
 	SiteName     string `json:"siteName"`
 	OltCode      string `json:"oltCode"`
@@ -119,7 +122,7 @@ func (s *PGStore) ListResourceChains(ctx context.Context, batch string, limit in
 	if limit <= 0 || limit > 1000 {
 		limit = 200
 	}
-	sql := "SELECT id, batch_no, line_no, lifecycle_status, site_code, site_name, olt_code, COALESCE(odf_code,''), COALESCE(odf_port,'')"
+	sql := "SELECT id, batch_no, line_no, lifecycle_status, COALESCE(prv_code,''), COALESCE(city_prefix,''), COALESCE(grid_code,0), site_code, site_name, olt_code, COALESCE(odf_code,''), COALESCE(odf_port,'')"
 	sql += ", COALESCE(occ_code,''), COALESCE(odb_code,''), COALESCE(obd_code,''), COALESCE(split1_ratio,0), COALESCE(split1_port,''), COALESCE(sdb_code,''), COALESCE(sbd_code,'')"
 	sql += ", COALESCE(split2_ratio,0), COALESCE(split2_port,''), COALESCE(total_split,0), COALESCE(fiber_code,''), COALESCE(fr_to,''), COALESCE(port_status,''), COALESCE(laying_method,'')"
 	sql += ", COALESCE(row_status,''), COALESCE(pece_status,''), COALESCE(remark,''), created_at"
@@ -133,7 +136,8 @@ func (s *PGStore) ListResourceChains(ctx context.Context, batch string, limit in
 	for rows.Next() {
 		var v ResourceChainView
 		var ts pgtype.Timestamptz
-		if err := rows.Scan(&v.ID, &v.BatchNo, &v.LineNo, &v.Lifecycle, &v.SiteCode, &v.SiteName,
+		if err := rows.Scan(&v.ID, &v.BatchNo, &v.LineNo, &v.Lifecycle, &v.PrvCode, &v.CityPrefix,
+			&v.GridCode, &v.SiteCode, &v.SiteName,
 			&v.OltCode, &v.OdfCode, &v.OdfPort, &v.OccCode, &v.OdbCode, &v.ObdCode,
 			&v.Split1, &v.Split1Port, &v.SdbCode, &v.SbdCode, &v.Split2, &v.Split2Port,
 			&v.TotalSplit, &v.FiberCode, &v.FrTo, &v.PortStatus, &v.LayingMethod, &v.RowStatus,

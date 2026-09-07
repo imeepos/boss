@@ -29,9 +29,14 @@ type ChainImportInput struct {
 }
 
 // ResourceChainRow 模板 ODN资源 sheet 一行(23 列;枚举列=模板中文标签原文)。
+// W3 收口(F2)增补可选归属列:prvCode/cityPrefix/gridCode 三列一体,
+// 带归属的链行导入时联动备案网格与网格锚点设施(接通测算/覆盖数据面)。
 type ResourceChainRow struct {
 	RowNo          int    `json:"rowNo"`
 	ResourceStatus string `json:"resourceStatus"`
+	PrvCode        string `json:"prvCode"`
+	CityPrefix     string `json:"cityPrefix"`
+	GridCode       string `json:"gridCode"`
 	SiteCode       string `json:"siteCode"`
 	SiteName       string `json:"siteName"`
 	OltCode        string `json:"oltCode"`
@@ -60,6 +65,9 @@ type ResourceChainRow struct {
 type ChainRecord struct {
 	LineNo       int
 	Lifecycle    string
+	PrvCode      string
+	CityPrefix   string
+	GridCode     int
 	SiteCode     string
 	SiteName     string
 	OltCode      string
@@ -122,6 +130,9 @@ func ValidateChainRow(in ResourceChainRow, lineNo int) (*ChainRecord, string) {
 		return nil, reason
 	}
 	if reason := validateChainCodes(&r, rec); reason != "" {
+		return nil, reason
+	}
+	if reason := validateChainAttribution(&r, rec); reason != "" {
 		return nil, reason
 	}
 	if reason := checkChainHierarchy(rec); reason != "" {

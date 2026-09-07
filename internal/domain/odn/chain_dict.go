@@ -100,7 +100,30 @@ func parseChainRatio(v, label string) (int, string) {
 	return n, ""
 }
 
+// validateChainAttribution 网格归属校验(W3 收口 F2):prv/city/grid 三列一体,
+// 任一非空即三者必须齐全(缺一拒绝,不猜填);grid 1~99;城市存在性由展开层
+// 按 odn_city_code 字典校验(不携带归属=纯导入域链行,存量行为不变)。
+func validateChainAttribution(r *ResourceChainRow, rec *ChainRecord) string {
+	if r.PrvCode == "" && r.CityPrefix == "" && r.GridCode == "" {
+		return ""
+	}
+	if r.PrvCode == "" || r.CityPrefix == "" || r.GridCode == "" {
+		return "网格归属不完整: 省份码/城市码/网格码须同时填写"
+	}
+	grid, err := strconv.Atoi(r.GridCode)
+	if err != nil || grid < 1 || grid > 99 {
+		return "网格码非法: " + r.GridCode
+	}
+	if len(r.PrvCode) > 6 || len(r.CityPrefix) > 5 {
+		return "网格归属非法: 省份码最多6位/城市码最多5位"
+	}
+	rec.PrvCode, rec.CityPrefix, rec.GridCode = r.PrvCode, r.CityPrefix, grid
+	return ""
+}
+
 // chainFingerprint 规则⑥:23 列归一化指纹(全等行=同一资源关系)。
+// W3 收口(F2):带网格归属的链行把归属并入指纹(归属=资源关系一部分);
+// 不携带归属的行指纹与 000210 完全一致(存量去重语义零变化)。
 func chainFingerprint(r *ChainRecord) string {
 	parts := []string{
 		r.Lifecycle, r.SiteCode, r.SiteName, r.OltCode,
@@ -110,6 +133,9 @@ func chainFingerprint(r *ChainRecord) string {
 		r.FiberCode, r.FrTo, r.PortStatus, r.LayingMethod, r.RowStatus,
 		r.PeceStatus, r.Remark,
 	}
+	if r.PrvCode != "" {
+		parts = append(parts, r.PrvCode, r.CityPrefix, strconv.Itoa(r.GridCode))
+	}
 	sum := sha256.Sum256([]byte(strings.Join(parts, string(rune(31)))))
 	return hex.EncodeToString(sum[:])
 }
@@ -117,6 +143,9 @@ func chainFingerprint(r *ChainRecord) string {
 // trimRow 去除全部字段空白(手填模板常见尾随空格,防指纹误判重复)。
 func trimRow(r *ResourceChainRow) {
 	r.ResourceStatus = strings.TrimSpace(r.ResourceStatus)
+	r.PrvCode = strings.TrimSpace(r.PrvCode)
+	r.CityPrefix = strings.TrimSpace(r.CityPrefix)
+	r.GridCode = strings.TrimSpace(r.GridCode)
 	r.SiteCode = strings.TrimSpace(r.SiteCode)
 	r.SiteName = strings.TrimSpace(r.SiteName)
 	r.OltCode = strings.TrimSpace(r.OltCode)
