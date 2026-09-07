@@ -2029,6 +2029,12 @@ export interface Translations {
       empty: string
       toastUploadOk: string,
       toastPatchOk: string,
+      wlPickBtn: string
+      wlPickerTitle: string
+      wlSelectedCount: string
+      colAccount: string
+      colName: string
+      colPhone: string
     },
     licensePage: {
       title: string
