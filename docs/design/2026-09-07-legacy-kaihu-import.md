@@ -40,7 +40,7 @@ VLAN 挂端口侧（ports 加 svlan/cvlan/internet_cvlan/tr069_cvlan）；OCC/OD
 
 ### T4 合并执行（负责人）
 合并顺序：T1 → T2（各自 rebase 后 ff-only）→ 102 CI 部署 → 迁移生效复核（psql \d）→ T3 apply 分四段执行（资产段/资源段/账号段/绑定段）→ SQL+API 双重复核（行数、抽样、四码）。
-复核基线：lo_accounts 存量新增 347（1 CLOSED）；ports 存量新增 ~331 且 svlan 非空 312；assets.sn 非空 +330；product_offers 增 20M/50M；customers +347（realName PENDING）；quad_links +346；import-tasks 有登记。
+复核基线（2026-09-07 负责人裁定按实测修正）：lo_accounts 存量新增 347（1 CLOSED）；ports/quad_links 存量新增 **313**（OLT+PON+ONU 三要素齐备行才建端口，缺段 34 行不建口不绑四码——禁止编造红线优先于预估 ~331/+346）；assets.sn 非空 +330；product_offers 增 20M/50M（假设月费 49/69 留痕可调）；customers +347（realName PENDING）；import-tasks 有登记。
 
 ### T5 收尾（负责人）
 worktree remove + branch -d + push --delete（ff 失败禁止清理链）；会话归档；反思入库 self-evolving。
