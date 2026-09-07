@@ -2376,6 +2376,31 @@ export interface Translations {
       odnLayerSite: string
       odnLayerDevice: string
     }
+    gridInvestmentPage: {
+      title: string
+      desc: string
+      groupFacilities: string
+      groupCoverage: string
+      colGrid: string
+      colPlanned: string
+      colInBuild: string
+      colInService: string
+      colRetired: string
+      colServed: string
+      colPending: string
+      colUnserved: string
+      colSettledCost: string
+      colCostPerServed: string
+      unregistered: string
+      empty: string
+      loadFail: string
+      prev: string
+      next: string
+      perPage: string
+      rangeText: string
+      jumpText: string
+      pageUnit: string
+    }
     analyticsPage: {
       title: string
       desc: string
