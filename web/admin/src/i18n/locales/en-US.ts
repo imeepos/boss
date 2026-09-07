@@ -1132,6 +1132,7 @@ const enUS: Translations = {
       desc: 'Full lifecycle of ONT/ONU field devices · status trail and assignment history never drift',
       searchPlaceholder: 'Search asset code',
       filterAll: 'All statuses',
+      filterAllType: 'All types',
       columns: ['Asset Code', 'Tag No', 'EPC Code', 'Type', 'Batch', 'Location', 'Lifecycle', 'Actions'],
       lifecycle: 'Status Trail',
       lifecycleTitle: 'Asset Status Trail',

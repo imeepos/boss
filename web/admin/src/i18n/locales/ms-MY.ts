@@ -1132,6 +1132,7 @@ const msMY: Translations = {
       desc: 'Kitaran hayat penuh peranti ONT/ONU · jejak status & sejarah pegangan tidak berubah',
       searchPlaceholder: 'Cari kod aset',
       filterAll: 'Semua status',
+      filterAllType: 'Semua jenis',
       columns: ['Kod Aset', 'No. Tag', 'Kod EPC', 'Jenis', 'Batch', 'Lokasi', 'Kitaran Hayat', 'Tindakan'],
       lifecycle: 'Jejak Status',
       lifecycleTitle: 'Jejak Status Aset',

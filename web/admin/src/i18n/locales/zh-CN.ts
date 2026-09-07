@@ -1132,6 +1132,7 @@ const zhCN: Translations = {
       desc: '光猫/ONU 等装维物资全生命周期 · 状态轨迹与持有台账历史不随当前状态漂移',
       searchPlaceholder: '搜索资产编码',
       filterAll: '全部状态',
+      filterAllType: '全部类型',
       columns: ['资产编码', '标签编号', 'EPC 码', '类型', '入库批次', '位置', '生命周期', '操作'],
       lifecycle: '状态轨迹',
       lifecycleTitle: '资产状态轨迹',

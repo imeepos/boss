@@ -911,6 +911,7 @@ export interface Translations {
       desc: string
       searchPlaceholder: string
       filterAll: string
+      filterAllType: string
       columns: string[]
       lifecycle: string
       lifecycleTitle: string
