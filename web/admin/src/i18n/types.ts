@@ -2410,6 +2410,38 @@ export interface Translations {
       rangeText: string
       jumpText: string
       pageUnit: string
+      tabGrid: string
+      tabCity: string
+      tabCapacity: string
+      groupCost: string
+      colPlannedCost: string
+      colMaterialCost: string
+      colCity: string
+      colGridCount: string
+      colPotentialHomes: string
+      colConnectedHomes: string
+      colExpandableHomes: string
+      colCostPerPotential: string
+      colDevice: string
+      colKind: string
+      colLevel: string
+      colRatio: string
+      colChainRows: string
+      colUsedPorts: string
+      colExpandable: string
+      colSecondary: string
+      colScope: string
+      colLifecycle: string
+      level1: string
+      level2: string
+      scopeImport: string
+      yes: string
+      no: string
+      summaryDevices: string
+      summaryPotentialHomes: string
+      summaryConnectedHomes: string
+      summaryExpandableHomes: string
+      emptyCapacity: string
     }
     analyticsPage: {
       title: string
