@@ -295,6 +295,10 @@ export interface Translations {
       subtitle: string
       tabs: { grids: string; facilities: string; sites: string; devices: string; coverage: string; constructions: string; assets: string }
       tree: { title: string; search: string; groupOlts: string; groupGrids: string; groupSites: string; groupConstructions: string; clearFilter: string }
+      kpi: { grids: string; facilities: string; sites: string; linkedOlt: string; capacity: string }
+      chain: { title: string; olt: string; site: string; splitter: string; closure: string; terminal: string; coverage: string; servedCount: string; empty: string }
+      relGrid: string
+      relSite: string
       rangeText: string
       prev: string
       next: string

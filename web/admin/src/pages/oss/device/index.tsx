@@ -1,5 +1,6 @@
 // OLT 设备页:契约 GET /device/metrics?resourceId + GET /device/maintenances(双页签)。
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { PageHead, pagerTexts } from '../../org/shared'
@@ -19,6 +20,9 @@ export default function DevicePage() {
   const [maints, setMaints] = useState<MaintenanceRow[]>([])
   const [error, setError] = useState('')
   const [resourceId, setResourceId] = useState(0)
+  // 跨页联动:ODN 页关联 OLT chip 经 ?resourceId= 预过滤(spec oss-odn-v2 §3)。
+  const [sp] = useSearchParams()
+  const ridParam = Number(sp.get('resourceId') ?? 0) || 0
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
   const [busy, setBusy] = useState(false)
@@ -43,7 +47,8 @@ export default function DevicePage() {
     apiFetch<{ items: ResourceRow[] }>('/resources')
       .then((x) => setDevices(x?.items ?? []))
       .catch(() => setDevices([]))
-    loadMetrics(0)
+    if (ridParam) setResourceId(ridParam)
+    loadMetrics(ridParam)
     loadMaints()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
