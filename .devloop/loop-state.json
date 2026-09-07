@@ -23,17 +23,17 @@
     {
       "id": "U2",
       "title": "PP2-W2 ams+org 域逐页体验打磨(16 路由组:资产/库存/采购/换新/组织/权限等)",
-      "goal": "Phase B 进行中:含 ams 采纳率 41%→≥80% 转绿交付条件+死代码处置",
+      "goal": "已交付并合并 main=430bc50d:16 路由组修复+ams 采纳率 41%→86% 转绿(below=0)+死代码删除(DangerOps/EventDrawer)+UnbindDialog 接线;负责人后台实跑 make web-admin-check RC=0",
       "priority": "P1",
-      "status": "doing",
+      "status": "done",
       "acceptanceCommand": "bash scripts/accept/pp2-gate.sh --adoption web/admin/src/pages/ams web/admin/src/pages/org && test -f docs/acceptance/2026-09-07-pp2-w2-ams-org.md"
     },
     {
       "id": "U3",
       "title": "PP2-W3 计费+运维域逐页体验打磨(billing/oss 全域+provision/quad/alarm+intel 残留+aaa 双页)",
-      "goal": "Phase B 进行中:P0 三项+PP1-C 遗债清偿(quad/alarm 内联 style 归零)+能力入口按裁定",
+      "goal": "已交付并合并 main=e907bcaf:P0 三项+PP1-C 遗债清零(quad/alarm 内联 style)+能力入口按裁定(quadlink 建链抽屉等);billing 两页 DOM 复验受限已登记,由 U6 102 冒烟补验;负责人后台实跑 make web-admin-check RC=0",
       "priority": "P1",
-      "status": "doing",
+      "status": "done",
       "acceptanceCommand": "bash scripts/accept/pp2-gate.sh --no-inline web/admin/src/pages/quad --no-inline web/admin/src/pages/alarm web/admin/src/pages/billing web/admin/src/pages/oss web/admin/src/pages/provision && test -f docs/acceptance/2026-09-07-pp2-w3-ops.md"
     },
     {
@@ -48,17 +48,17 @@
     {
       "id": "U5",
       "title": "T14 ODN 前端强化 rider(GIS 点位点击反查弹窗+下单页可装性徽标)",
-      "goal": "归 W3 会话余力执行,不做不罚,做则单独提交+独立验收文档",
+      "goal": "W3 裁定不做(Phase B 主项优先),已在验收文档第六节登记;T14 GIS 弹窗+可装性徽标留待后续任务,后端数据链已备",
       "priority": "P2",
-      "status": "todo",
+      "status": "debt",
       "acceptanceCommand": "bash scripts/accept/pp2-gate.sh web/admin/src/pages/intel web/admin/src/pages/oss && test -f docs/acceptance/2026-09-07-pp2-t14-odn.md"
     },
     {
       "id": "U6",
       "title": "PP2 收尾整合:主树全量门禁(含 ams 采纳率转绿)+102 部署冒烟+专属会话归档",
-      "goal": "全部波次合并进 main 后由负责人执行",
+      "goal": "全量门禁已过(make check+web-admin-check 双 RC=0,ams 转绿);待跨域真实业务流走查(102 部署冒烟)后收口归档",
       "priority": "P1",
-      "status": "todo",
+      "status": "doing",
       "acceptanceCommand": "make check && make web-admin-check"
     }
   ]
