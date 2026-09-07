@@ -122,6 +122,8 @@ type ODNService interface {
 	CreateSite(ctx context.Context, st Site) error
 	RetireSite(ctx context.Context, prvCode, cityPrefix string, siteNo int16) error
 	CreateDevice(ctx context.Context, d Device) error
+	// DeviceIDByCode 城市内在用设备按编码查 id(导入 parentCode 字符串匹配)。
+	DeviceIDByCode(ctx context.Context, prvCode, cityPrefix, code string) (int64, error)
 	ListDevices(ctx context.Context, kind, prvCode, cityPrefix string) ([]Device, error)
 	RetireDevice(ctx context.Context, id int64) error
 

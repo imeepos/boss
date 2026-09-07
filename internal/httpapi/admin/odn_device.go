@@ -24,7 +24,8 @@ type odnDeviceReq struct {
 	PrvCode    string   `json:"prvCode"`
 	CityPrefix string   `json:"cityPrefix"`
 	SiteNo     int16    `json:"siteNo" binding:"min=0,max=999"`
-	ParentID   int64    `json:"parentId"`
+	ParentID   int64    `json:"parentId"` // 二选一:内部 id(表单)或 parentCode 编码(导入)
+	ParentCode string   `json:"parentCode"`
 	Name       string   `json:"name"`
 	Lat        *float64 `json:"lat"` // 可空(000143);无坐标设备不上地图点位
 	Lng        *float64 `json:"lng"`

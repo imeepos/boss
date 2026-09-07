@@ -27,6 +27,7 @@ type fakeODN struct {
 	segment     *odn.Segment
 	dictErr     error
 	nextCodeErr error
+	createdDev  *odn.Device
 }
 
 func (f *fakeODN) ListRegions(_ context.Context) ([]odn.RegionOption, error) {
@@ -55,6 +56,14 @@ func (f *fakeODN) NextSiteNo(_ context.Context, _, _ string) (int16, error) {
 	return 89, nil
 }
 
+// DeviceIDByCode 编码反查桩:仅 OCC001 命中 id=7,其余 ErrNotFound。
+func (f *fakeODN) DeviceIDByCode(_ context.Context, _, _, code string) (int64, error) {
+	if code == "OCC001" {
+		return 7, nil
+	}
+	return 0, odn.ErrNotFound
+}
+
 func (f *fakeODN) CreateFacility(_ context.Context, fac odn.Facility) error {
 	f.created = &fac
 	return f.createErr
@@ -65,6 +74,9 @@ func (f *fakeODN) CreateSite(_ context.Context, st odn.Site) error {
 }
 
 func (f *fakeODN) CreateDevice(_ context.Context, d odn.Device) error {
+	if f.createErr == nil {
+		f.createdDev = &d
+	}
 	return f.createErr
 }
 
@@ -255,6 +267,41 @@ func TestODNNextCodeHandlers(t *testing.T) {
 			"/api/admin/v1/odn/site-next-no?prvCode=PHL001&cityPrefix=MNL", "")
 		if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), "89") {
 			t.Fatalf("HTTP=%d body=%s", w.Code, w.Body.String())
+		}
+	})
+}
+
+func TestODNDeviceParentCode(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	t.Run("parentCode 解析为上级 id", func(t *testing.T) {
+		f := &fakeODN{}
+		w := doJSON(odnRouter(f), http.MethodPost, "/api/admin/v1/odn/devices",
+			`{"code":"ODB001","kind":"ODB","prvCode":"PHL001","cityPrefix":"MNL","parentCode":"OCC001"}`)
+		if w.Code != http.StatusOK {
+			t.Fatalf("HTTP=%d body=%s", w.Code, w.Body.String())
+		}
+		if f.createdDev == nil || f.createdDev.ParentID != 7 {
+			t.Fatalf("createdDev=%+v", f.createdDev)
+		}
+	})
+	t.Run("parentCode 未命中映射 40400", func(t *testing.T) {
+		w := doJSON(odnRouter(&fakeODN{}), http.MethodPost, "/api/admin/v1/odn/devices",
+			`{"code":"SDB001","kind":"SDB","prvCode":"PHL001","cityPrefix":"MNL","parentCode":"NOPE001"}`)
+		var body struct {
+			Code int `json:"code"`
+		}
+		json.Unmarshal(w.Body.Bytes(), &body)
+		if body.Code != 40400 {
+			t.Fatalf("期望 40400,body=%s", w.Body.String())
+		}
+	})
+	t.Run("parentId 显式优先于 parentCode", func(t *testing.T) {
+		f := &fakeODN{}
+		w := doJSON(odnRouter(f), http.MethodPost, "/api/admin/v1/odn/devices",
+			`{"code":"ODB001","kind":"ODB","prvCode":"PHL001","cityPrefix":"MNL","parentId":3,"parentCode":"OCC001"}`)
+		if w.Code != http.StatusOK || f.createdDev == nil || f.createdDev.ParentID != 3 {
+			t.Fatalf("HTTP=%d body=%s createdDev=%+v", w.Code, w.Body.String(), f.createdDev)
 		}
 	})
 }

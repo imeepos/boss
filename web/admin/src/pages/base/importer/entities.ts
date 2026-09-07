@@ -183,7 +183,8 @@ export const IMPORT_ENTITIES: EntityDef[] = [
       { key: 'prvCode', required: true, type: 'string' },
       { key: 'cityPrefix', required: true, type: 'string' },
       { key: 'siteNo', required: false, type: 'number' },
-      { key: 'parentId', required: false, type: 'number' },
+      // 上级按编码字符串匹配(用户手里只有编码,无数据库 id;后端按同城在用设备反查)。
+      { key: 'parentCode', required: false, type: 'string' },
       { key: 'name', required: false, type: 'string' },
     ],
     samples: [
