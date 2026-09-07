@@ -112,6 +112,8 @@
 | 地址覆盖 address_coverage.status | SERVED / PENDING / UNSERVED | 可装 / 规划在建 / 未覆盖（迁移 000197；SERVED/PENDING 须挂服务设施或核心设备） |
 | 供应商承建类型 procurement_suppliers.contractor_type | MATERIAL / CONSTRUCTION | 材料类（存量默认，既有语义不变）/ 施工类（含资质信息 qualification；联系人复用既有 contact 字段）。迁移 000205（原预分配 000203 让号，见 adopted 2026-09-07-contractor-settlement-model） |
 | 工程结算 construction_settlements.status | PENDING / SETTLED / VOIDED | 待结算 / 已结算 / 已作废。发起前置：项目 ACCEPTED 且已指定施工类承包商；应付=发起时 SUM(construction_items.amount)（生成列，后端计算）。PENDING→SETTLED（确认）；PENDING/SETTLED→VOIDED（作废，原因必填）；VOIDED 终态。同项目同时最多一张有效结算单（部分唯一）；作废后重开以新结算单表达，原单保留历史。迁移 000206（原预分配 000204 让号顺延） |
+| ODN 核心链路设备类型 odn_device.kind | SNW / OLT / ODF / OCC / ODB / OBD / SDB / SBD / PRT / TBP | 资源编码规范 2.2;OBD(一级分光器,归 ODB)/SBD(二级分光器,归 SDB)为箱内部件扩展(2.4 口径,迁移 000209,adopted 2026-09-07-odn-box-types-import-chain);导入域箱体设备可无城市(uq_odn_device_box 分域),SNW/OLT/PRT/TBP 仍强制城市 |
+| ODN 资源链状态 odn_resource_chain | lifecycle_status 同设施四态;port_status IDLE/RESERVED/USED/DISABLED;laying_method AERIAL/UNDERGROUND/SUBMARINE/MICROTRENCH/INDOOR;row_status NOT_STARTED/PENDING/APPROVED/EXPIRED/NA;pece_status PENDING_SIGN/SIGNED/STAMPED/NA;分光比 1:2/1:4/1:8/1:16/1:32/1:64/1:128 | 迁移 000210(W3);模板中文标签映射:资源状态 规划→PLANNED/已安装·已测试→IN_BUILD/在用→IN_SERVICE/已报废→RETIRED/留空→PLANNED(绝不当作已安装/在网);总分光比=一级×二级;fields.md 1.5.12 |
 
 ## 5. 关键术语
 

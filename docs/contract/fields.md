@@ -378,6 +378,32 @@
 | 可装 / 规划在建 / 未覆盖 | `coverageServed` / `coveragePending` / `coverageUnserved` | address_coverage.status 计数 | 口径 2；枚举见 1.5.7（000197） |
 | 已结算工程成本 | `settledCost` | W1 结算数据 | null=未登记（禁止显示 0） |
 | 每可装地址成本 | `costPerServed` | settledCost ÷ coverageServed | null=未登记（分母 0 同） |
+### 1.5.12 odn_resource_chain（ODN 资源链批量导入，迁移 000210，internal/domain/odn）
+
+> P-INFRA-1 W3:需求源 docs/ODN网络资源表模板.xlsx(说明/ODN资源/枚举 三 sheet),一行=一条完整资源链(23 列),导入展开为系统关系数据:链上箱体编码(OCC/ODB/OBD/SDB/SBD;ODF 须规范格式)逐级取/建 odn_device 导入域设备(无城市,uq_odn_device_box,迁移 000209)。管理面 `menu:odn`,REST `/odn/resource-chains/import|patrol`、`GET /odn/resource-chains`(契约 admin/odn.yaml);导入中心历史 kind=odn-resource-chain;设备类型字典扩展见 1.5.5(000209)。
+> 说明页六规则即导入校验:①层级断链拒绝(OCC→ODB→OBD→一级分光→SDB→SBD→二级分光);②说明页约定前 N 数据行为示例行,过滤不导入;③留空=不入库该字段(NULL),枚举未知值拒绝,禁止默认值推断;④资源状态留空/规划态一律 PLANNED,绝不当作已安装/在网;⑤总分光比=一级×二级自动计算,填报不一致拒绝该行并报行号;⑥指纹(23 列归一化 SHA-256)唯一去重并报告。
+> 可观测:逐行 imported/failed/skipped_example/duplicate+原因,失败留 `[odn-import] ROW n FAILED` 可 grep 日志;完成后 `GET /odn/resource-chains/patrol` 孤儿/半链巡检(orphan_box_code 箱体孤儿/broken_ancestor 断祖/split_port_gap 分光半链/info_ref_missing 引用缺失,各采样行号 ≤5),链上箱体引用必须存在。
+> 机房/OLT/ODF 模板编码为站点前缀引用(如 SITE001/SITE001_OLT001/SITE001_ODF001_A),非规范设备格式,按文本引用承载不展开(不猜填);纤芯编号同理(规范 5.1 "--" 仅设计图纸不入库)。裁定 adopted 2026-09-07-odn-box-types-import-chain。
+
+| 模板列 | DB 列 | 枚举/映射(枚举 sheet 为校验字典) |
+|:-------|:------|:--------------------------------|
+| 资源状态 | lifecycle_status | 规划→PLANNED/已安装·已测试→IN_BUILD/在用→IN_SERVICE/已报废→RETIRED/留空→PLANNED |
+| 机房编码/机房名称 | site_code/site_name | 文本引用(如 SITE001),不猜填 |
+| OLT设备编号 | olt_code | 文本引用(如 SITE001_OLT001) |
+| ODF编号/ODF端口 | odf_code/odf_port | odf_code 规范格式(ODF+3 位)则展开设备,否则文本引用 |
+| OCC编号/ODB编号/OBD编号 | occ_code/odb_code/obd_code | 展开导入域设备;层级 ODB←OCC、OBD←ODB |
+| 一级分光比/一级分光端口 | split1_ratio/split1_port | 枚举 1:2~1:128(存分母 SMALLINT);前置 OBD |
+| SDB编号/SBD编号 | sdb_code/sbd_code | 展开导入域设备;层级 SDB←ODB(经一级分光端口)、SBD←SDB |
+| 二级分光比/二级分光端口 | split2_ratio/split2_port | 枚举同上;前置 SBD |
+| 总分光比 | total_split | =一级×二级自动计算;填报不一致拒绝该行 |
+| 光缆/纤芯编号 | fiber_code | 文本引用(规范 5.1 不入库段落实体) |
+| FR/TO标签 | fr_to | 文本(跳纤两端标签,规范 4.4) |
+| 端口状态 | port_status | 可用→IDLE/已使用→USED/已预留→RESERVED/已封锁→DISABLED |
+| 敷设方式 | laying_method | 架空→AERIAL/地下→UNDERGROUND/海缆→SUBMARINE/微沟槽→MICROTRENCH/室内→INDOOR |
+| ROW状态 | row_status | 未开始→NOT_STARTED/待处理→PENDING/已批准→APPROVED/已过期→EXPIRED/不适用→NA |
+| PECE状态 | pece_status | 待签署→PENDING_SIGN/已签署→SIGNED/已盖章→STAMPED/不适用→NA |
+| 备注 | remark | 文本 |
+| (批次/行号/指纹) | batch_no/line_no/fingerprint | 指纹=23 列归一化 SHA-256,唯一去重 |
 ### 1.6 audit_logs（审计日志）· biz_params（业务参数）
 
 | 页面列名 | 字段名 | DB 列 | 枚举/说明 |

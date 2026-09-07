@@ -100,6 +100,7 @@
 | 2026-09-07 | 存量开户导入字段归属:VLAN 四元组挂 ports(svlan/cvlan/internet_cvlan/tr069_cvlan,000202)、OCC/ODB 层级 legacy_path 单列无损承接、lo_accounts.contract_months 存月数、不建历史订单;VLAN 挂账号/ODN 强编码/直插 DONE 订单被否决 | adopted/2026-09-07-legacy-vlan-on-ports.md |
 | 2026-09-07 | payments.method='card' 双语义(柜面 POS/Stripe 线上)对账口径:柜面三要素非空即剔除渠道对账;拆枚举/加 source 列被否决留契约后续 | adopted/2026-09-07-payment-method-card-dual-semantics.md |
 | 2026-09-07 | 承包商与工程结算模型:承包商=软引用+名称快照(httpapi 层组合两域零 import);金额=STORED 生成列 DB 兜底;结算 PENDING/SETTLED/VOIDED,作废需原因,重开以新单表达,同项目部分唯一;迁移让号 000203→000205/000204→000206(W2 预留 000205 被占需顺延);跨域 FK/改单/应用层算金额/部分结算被否决 | adopted/2026-09-07-contractor-settlement-model.md |
+| 2026-09-07 | ODN 六类箱体设备字典扩展与资源链导入:六类箱体落 odn_device 核心链路字典(规范 2.2,000081 既定),OBD 归 ODB/SBD 归 SDB 按 2.4 箱内部件同构裁定;导入域箱体设备可无城市(uq_odn_device_box 分域,不猜填);链 23 列单表+指纹去重,箱体编码逐级展开为设备行;资源状态留空/规划一律 PLANNED | adopted/2026-09-07-odn-box-types-import-chain.md |
 | 2026-09-04 | 四码同客户同地址重装→scan-bind 刷新复用既有活跃 quad_link 行(更新端口/资产/状态并留审计),跨客户→40920 拒绝;旧行置 UNLINKED 双行并存/先删后插/DB 触发器被否决 | adopted/2026-09-04-quadlink-reinstall-reuse.md |
 | 2026-09-01 | customers.address_id 放开可空(000176):新建客户轻量建档(仅主体+区域/主体),地址走档案页"地址"动作内联建址回填,"开户"直达工作台;占位地址/放开实体区域可空/新端点被否决 | adopted/2026-09-01-customer-address-nullable.md |
 | 2026-09-01 | 位置/地址统一落地:坐标为唯一空间锚点(geom 写入+KNN 逆地理)、工单坐标派单时刻快照(000174)、区域匹配升级子树语义、radiusKm 半径闸门启用;H3 索引/外部 geocoding/派单打分被否决 | adopted/2026-09-01-location-unify-rollout.md |
