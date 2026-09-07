@@ -18,14 +18,16 @@ export function pagerTexts(ns: {
   }
 }
 
-// EmptyState 统一由 feedback.tsx 提供(图标+文案),此处 re-export 兼容既有 import 路径。
-export { EmptyState } from './feedback'
+// EmptyState/CopyButton 统一由 feedback.tsx 提供(图标+文案/一键复制),此处 re-export 兼容既有 import 路径。
+export { CopyButton, EmptyState } from './feedback'
+import { CopyButton } from './feedback'
 
-/** ErrorBanner: error message block, replaces .mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)] */
+/** ErrorBanner: error message block + 一键复制原因(路线图规则 2:失败原因可复制)。 */
 export function ErrorBanner({ message, className = '' }: { message: string; className?: string }) {
   return (
-    <div className={`mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-xs text-[var(--color-danger)] ${className}`}>
-      {message}
+    <div className={`mx-4 mb-3 flex items-start justify-between gap-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-xs text-[var(--color-danger)] ${className}`}>
+      <span className="break-all">{message}</span>
+      <CopyButton text={message} className="h-6 shrink-0 border-none bg-none px-1 text-[11px] text-[var(--color-danger)] hover:text-[var(--color-danger)] hover:underline" />
     </div>
   )
 }
