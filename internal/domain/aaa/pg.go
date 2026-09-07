@@ -14,6 +14,12 @@ import (
 // ErrForeignKeyViolation 关联实体不存在(孤儿数据防护:lo_accounts 无外键约束)。
 var ErrForeignKeyViolation = errors.New("aaa: referenced entity not found")
 
+// isUniqueViolation 判定 PG 唯一约束冲突(23505)。
+func isUniqueViolation(err error) bool {
+	var pgErr *pgconn.PgError
+	return errors.As(err, &pgErr) && pgErr.Code == "23505"
+}
+
 // dbtx 是 PGStore 依赖的最小数据库接口;*pgxpool.Pool 天然满足,单测用 pgxmock 注入。
 type dbtx interface {
 	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
@@ -106,6 +112,9 @@ func (s *PGStore) CreateLoAccount(ctx context.Context, a LoAccount) (int64, erro
 		VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING id`,
 		a.Loid, a.CustomerID, a.LegalEntityID, a.LegalEntityName, a.RegionID, a.RegionName, nilIfEmpty(a.RegionPath), a.OfferID, a.QosTemplateID, a.Status, a.BillingMode).Scan(&id)
 	if err != nil {
+		if isUniqueViolation(err) {
+			return 0, fmt.Errorf("aaa: loid %s: %w", a.Loid, ErrDuplicate)
+		}
 		return 0, fmt.Errorf("aaa: create lo_account: %w", err)
 	}
 	return id, nil
