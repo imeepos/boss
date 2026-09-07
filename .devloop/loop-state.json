@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-07T17:22:11.946Z",
+  "updatedAt": "2026-09-07T19:23:44.023Z",
   "project": "boss",
-  "phase": "oss-odn v2 页面重构(设计稿 3d398e6a 落地,O1-O5 串行,专属会话执行,负责人机械验收)",
+  "phase": "oss-odn v2 页面重构已收口(main=c2b9ee9d,O1-O5 全 done,证据在库,会话归档中)",
   "tasks": [
     {
       "id": "U0",
@@ -15,7 +15,7 @@
     {
       "id": "U1",
       "title": "PP2-W1 boss 域逐页体验打磨(32 页:订单/派单/装机看板/师傅/消息/拆机等)",
-      "goal": "已交付并合并 main=54880dcb:16 页逐页修复+值契约违例清零(运行时告警 0)+三项裁定落地(complaint 受理/轨迹、worker-reg 四页签、release 状态机设防);机械验收=负责人后台实跑 pp2-gate.sh(boss) RC=0+证据文档在",
+      "goal": "已交付并合并 main=54880dcb:16 页逐页修复+值契约违例清零(运行时告警 0)+三项裁定落地;机械验收=负责人后台实跑 pp2-gate.sh(boss) RC=0+证据文档在",
       "priority": "P1",
       "status": "done",
       "acceptanceCommand": "bash scripts/accept/pp2-gate.sh web/admin/src/pages/boss && test -f docs/acceptance/2026-09-07-pp2-w1-boss.md"
@@ -23,7 +23,7 @@
     {
       "id": "U2",
       "title": "PP2-W2 ams+org 域逐页体验打磨(16 路由组:资产/库存/采购/换新/组织/权限等)",
-      "goal": "已交付并合并 main=430bc50d:16 路由组修复+ams 采纳率 41%→86% 转绿(below=0)+死代码删除(DangerOps/EventDrawer)+UnbindDialog 接线;负责人后台实跑 make web-admin-check RC=0",
+      "goal": "已交付并合并 main=430bc50d:16 路由组修复+ams 采纳率 41%→86% 转绿+死代码删除+UnbindDialog 接线;负责人后台实跑 make web-admin-check RC=0",
       "priority": "P1",
       "status": "done",
       "acceptanceCommand": "bash scripts/accept/pp2-gate.sh --adoption web/admin/src/pages/ams web/admin/src/pages/org && test -f docs/acceptance/2026-09-07-pp2-w2-ams-org.md"
@@ -31,7 +31,7 @@
     {
       "id": "U3",
       "title": "PP2-W3 计费+运维域逐页体验打磨(billing/oss 全域+provision/quad/alarm+intel 残留+aaa 双页)",
-      "goal": "已交付并合并 main=e907bcaf:P0 三项+PP1-C 遗债清零(quad/alarm 内联 style)+能力入口按裁定(quadlink 建链抽屉等);billing 两页 DOM 复验受限已登记,由 U6 102 冒烟补验;负责人后台实跑 make web-admin-check RC=0",
+      "goal": "已交付并合并 main=e907bcaf:P0 三项+PP1-C 遗债清零+能力入口按裁定;billing 两页 DOM 复验受限已登记由 U6 补验;负责人后台实跑 make web-admin-check RC=0",
       "priority": "P1",
       "status": "done",
       "acceptanceCommand": "bash scripts/accept/pp2-gate.sh --no-inline web/admin/src/pages/quad --no-inline web/admin/src/pages/alarm web/admin/src/pages/billing web/admin/src/pages/oss web/admin/src/pages/provision && test -f docs/acceptance/2026-09-07-pp2-w3-ops.md"
@@ -39,7 +39,7 @@
     {
       "id": "U4",
       "title": "PP2-W4 base+辅助页逐页打磨(base 全域 16 组+profile/backup/dashboard 等 21 组 22 路由)",
-      "goal": "已交付并合并 main=f2a82c27:P1 params allSettled 部分失败口径+P2 五项(2 项审计误报诚实撤销)+P3 自判留痕;机械验收=负责人后台实跑 pp2-gate.sh(base) RC=0+证据文档在",
+      "goal": "已交付并合并 main=f2a82c27:P1 params allSettled 部分失败口径+P2 五项+P3 自判留痕;负责人后台实跑 pp2-gate.sh(base) RC=0+证据文档在",
       "priority": "P2",
       "status": "done",
       "acceptanceCommand": "bash scripts/accept/pp2-gate.sh web/admin/src/pages/base && test -f docs/plan/pp2-audit-base-aux.md && test -f docs/acceptance/2026-09-07-pp2-w4-base-aux.md",
@@ -48,7 +48,7 @@
     {
       "id": "U5",
       "title": "T14 ODN 前端强化 rider(GIS 点位点击反查弹窗+下单页可装性徽标)",
-      "goal": "W3 裁定不做(Phase B 主项优先),已在验收文档第六节登记;T14 GIS 弹窗+可装性徽标留待后续任务,后端数据链已备",
+      "goal": "W3 裁定不做(Phase B 主项优先);T14 GIS 弹窗+可装性徽标留待后续任务,后端数据链已备",
       "priority": "P2",
       "status": "debt",
       "acceptanceCommand": "bash scripts/accept/pp2-gate.sh web/admin/src/pages/intel web/admin/src/pages/oss && test -f docs/acceptance/2026-09-07-pp2-t14-odn.md"
@@ -56,7 +56,7 @@
     {
       "id": "U6",
       "title": "PP2 收尾整合:主树全量门禁(含 ams 采纳率转绿)+102 部署冒烟+专属会话归档",
-      "goal": "已收口:make check+web-admin-check 双 RC=0(ams 转绿 below=0);U6 跨域四流程 14 路由 102 部署版冒烟全过(部署新鲜度特征串证实,console/网络 20 采集全零,三条事实登记);证据 docs/acceptance/2026-09-07-pp2-u6-smoke.md 已合并 main=c426a583;四会话产物三清,归档完成",
+      "goal": "已收口:make check+web-admin-check 双 RC=0;102 部署版冒烟全过;证据 docs/acceptance/2026-09-07-pp2-u6-smoke.md 已合并 main=c426a583;归档完成",
       "priority": "P1",
       "status": "done",
       "acceptanceCommand": "make check && make web-admin-check"
@@ -64,42 +64,43 @@
     {
       "id": "O1",
       "title": "oss-odn O1 左树右表布局+四级资源树(ResourceTree)",
-      "goal": "需求:内容区改左右两栏(左树卡片 280px 固定+右主区自适应,间距 16px);资源树省→市→分组→节点四级,L3 分组行=折叠开关+图标+名称+计数 badge,L4 叶子=类型图标+编码/名称+状态点(绿 ACTIVE/IN_USE,琥珀 容量>=80% 或 RESERVED,灰 RETIRED);树状态 useState+路由 ?prv=&city=&tab= 同步刷新可还原;点 L2 市节点主区显该市汇总,点 L4 主区过滤联动;计数缺接口显示已加载行数不阻塞;数据源复用 /odn/regions /odn/cities 及现有 tab 数据源(odn 列表为裸数组信封),禁止新增后端;树抽 ResourceTree.tsx 单文件<=300 行",
+      "goal": "已交付并入 main=c2b9ee9d;commit a5592bad 快照验收通过(验收器超时误记 fail 1 次,快照复验 RC=0):280px 双栏+省→市→分组→节点四级树+计数 badge+状态点+useSearchParams 路由同步均实查属实",
       "priority": "P0",
-      "status": "todo",
-      "acceptanceCommand": "cd web/admin && pnpm typecheck && test -f src/pages/oss/odn/ResourceTree.tsx && ! grep -rn [<]select src/pages/oss/odn"
+      "status": "done",
+      "acceptanceCommand": "cd web/admin && pnpm typecheck && test -f src/pages/oss/odn/ResourceTree.tsx && ! grep -rn \"<[s]elect\" src/pages/oss/odn",
+      "failCount": 1
     },
     {
       "id": "O2",
       "title": "oss-odn O2 KPI 关联统计卡+表格关联列+关联链拓扑",
-      "goal": "需求:右侧主区四张统计卡(网格总数/设施总数/局点总数/关联 OLT,第四卡蓝色 tinted 图标);网格/设施/局点/设备四 Tab 增关联列(所属网格/所属局点/关联 OLT,关联 OLT 为蓝色圆角 chip 点击跳 /oss/device 过滤该 OLT);关联链视图 OLT→局点→分光器→接头盒/终端盒→覆盖 横向拓扑,节点卡=tinted 图标+编码+两行说明可点击切换,挂设备 Tab 或详情抽屉关联区;OLT 数据用 /resources 信封为 {items} 需 unwrap;所有实体行/详情展示所属省份/城市;命名按 docs/contract/fields.md;i18n 新键挂 t.pages.odn 下三份 locale+types.ts 同步,键名锚点 linkedOlt 必须存在",
+      "goal": "已交付并入 main=c2b9ee9d;commit e97aa934 快照验收 RC=0:linkedOlt 四锚点(三语+types)+531 tests 全绿+KpiCards 四卡/RelationChain 挂设备 Tab 实查+/oss/device?resourceId 过滤承接已接",
       "priority": "P1",
-      "status": "todo",
-      "acceptanceCommand": "cd web/admin && pnpm typecheck && grep -q linkedOlt src/i18n/locales/zh-CN.ts && grep -q linkedOlt src/i18n/locales/en-US.ts && grep -q linkedOlt src/i18n/locales/ms-MY.ts && grep -q linkedOlt src/i18n/types.ts && ! grep -rn [<]select src/pages/oss/odn"
+      "status": "done",
+      "acceptanceCommand": "cd web/admin && pnpm typecheck && grep -q linkedOlt src/i18n/locales/zh-CN.ts && grep -q linkedOlt src/i18n/locales/en-US.ts && grep -q linkedOlt src/i18n/locales/ms-MY.ts && grep -q linkedOlt src/i18n/types.ts && ! grep -rn \"<[s]elect\" src/pages/oss/odn"
     },
     {
       "id": "O3",
       "title": "oss-odn O3 新增/编辑抽屉(全选择器+编码自动顺延)",
-      "goal": "需求:新增/编辑一律右侧 Drawer 440px 遮罩关闭,头部标题+X,底部取消(outline)+保存(primary);字段链 省份→城市(随省联动)→类型→所属网格(P/MH 必填随市过滤)→所属局点(设备必填)→编码(自动顺延只读灰底可覆盖,类型变化即时调 next-code 预取,复用 /odn/facility-next-code /odn/site-next-no)→名称→经纬度两栏;归属链只列合法上级(复用 nextcode.ts legalParentKind);全部下拉走 components/Dropdown.tsx 禁原生 select 禁自由文本填编码;内联表单痕迹清零(ODNForm 与 showForm 不得再出现在 odn 目录);批量导入按钮保留页头不进抽屉",
+      "goal": "已交付并入 main=c2b9ee9d;commit 457b9b6a 快照验收 RC=0:ODNForm/showForm 痕迹清零+ResourceDrawer 440px+Dropdown×5 全选择器+facility-next-code/site-next-no 即时预取+取消/保存按钮实查",
       "priority": "P1",
-      "status": "todo",
+      "status": "done",
       "acceptanceCommand": "cd web/admin && pnpm typecheck && pnpm test && test -f src/pages/oss/odn/ResourceDrawer.tsx && ! grep -rn ODNForm src/pages/oss/odn && ! grep -rn showForm src/pages/oss/odn"
     },
     {
       "id": "O4",
       "title": "oss-odn O4 详情抽屉(四分区+关联链+操作)",
-      "goal": "需求:详情一律专门抽屉禁止行内展开,右侧 Drawer 480px;头部=编码 tag(mono)+名称+状态 Badge+X;分区细分割线:基本信息(两列 key-value 省/市/网格/名称/经纬度/生命周期)→关联关系(纵向链行卡 OLT→局点→设施/设备,每行 tinted 图标+编码+名称+chevron,点击换详情对象)→资产信息(有 assetReg 显凭证号/登记号 badge,无则未登记灰字)→操作记录(时间线:巡检/状态变更/备案);底部操作 退役(红字文本钮 danger confirm)/编辑(打开编辑抽屉)/保存(编辑态);表格行详情点击开抽屉",
+      "goal": "已交付并入 main=c2b9ee9d;commit 0cfd912e 快照验收 RC=0:DetailDrawer 480px 四分区+assetReg 凭证 badge/未登记灰字+退役 danger confirm+操作记录接 /audit-logs 真数据",
       "priority": "P1",
-      "status": "todo",
-      "acceptanceCommand": "cd web/admin && pnpm typecheck && pnpm test && test -f src/pages/oss/odn/DetailDrawer.tsx && ! grep -rn [<]select src/pages/oss/odn"
+      "status": "done",
+      "acceptanceCommand": "cd web/admin && pnpm typecheck && pnpm test && test -f src/pages/oss/odn/DetailDrawer.tsx && ! grep -rn \"<[s]elect\" src/pages/oss/odn"
     },
     {
       "id": "O5",
       "title": "oss-odn O5 收尾:i18n 三语对齐+token 复查+spec §8 全量验收+双主题截图证据",
-      "goal": "需求:keys.test.ts 三语键对齐保持绿;全页颜色经主题变量/color-mix 禁硬编码(金色仅限 Tab 激活/树选中/容量预警,状态色面积<=5%,关联 OLT chip 蓝色 tinted 14% alpha);spec §8 六条逐项自查留痕;用 cdp-admin-capture.mjs 对 102 后端出双主题截图存 docs/acceptance/assets/oss-odn-v2-light.png 与 oss-odn-v2-dark.png;证据文档 docs/acceptance/2026-09-08-oss-odn-v2-accept.md 逐条记六项核对结果+截图路径+console/网络采集结论;完成后停下等负责人机械验收,不自行合并不自行清理",
+      "goal": "已交付并入 main=c2b9ee9d;commit 39c15439:证据文档 docs/acceptance/2026-09-08-oss-odn-v2-accept.md §8 六项逐条核销+6 条实现期偏离诚实申报;双主题截图负责人 read_image 亲验达标;修正账本命令路径 bug(../→../../)后全链 RC=0;merge commit b0167e36 过全量门禁后 ff-only 并入",
       "priority": "P1",
-      "status": "todo",
-      "acceptanceCommand": "cd web/admin && pnpm typecheck && pnpm test && pnpm build && ! grep -rn [<]select src/pages/oss/odn && test -f ../docs/acceptance/2026-09-08-oss-odn-v2-accept.md && test -f ../docs/acceptance/assets/oss-odn-v2-light.png && test -f ../docs/acceptance/assets/oss-odn-v2-dark.png"
+      "status": "done",
+      "acceptanceCommand": "cd web/admin && pnpm typecheck && pnpm test && pnpm build && ! grep -rn \"<[s]elect\" src/pages/oss/odn && test -f ../../docs/acceptance/2026-09-08-oss-odn-v2-accept.md && test -f ../../docs/acceptance/assets/oss-odn-v2-light.png && test -f ../../docs/acceptance/assets/oss-odn-v2-dark.png"
     }
   ]
 }
