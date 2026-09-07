@@ -47,6 +47,14 @@ func (s *PGStore) GridInvestment(ctx context.Context) ([]GridInvestmentRow, erro
 	if err != nil {
 		return nil, err
 	}
+	planned, hasPlanned, err := s.plannedCosts(ctx)
+	if err != nil {
+		return nil, err
+	}
+	material, hasMaterial, err := s.materialCosts(ctx)
+	if err != nil {
+		return nil, err
+	}
 	out := []GridInvestmentRow{}
 	for rows.Next() {
 		var r GridInvestmentRow
@@ -55,10 +63,21 @@ func (s *PGStore) GridInvestment(ctx context.Context) ([]GridInvestmentRow, erro
 			&r.CoverageServed, &r.CoveragePending, &r.CoverageUnserved); err != nil {
 			return nil, fmt.Errorf("odn: grid investment scan: %w", err)
 		}
+		k := gridKey{r.PrvCode, r.CityPrefix, r.GridCode}
 		if hasCost {
-			if amount, ok := costs[gridKey{r.PrvCode, r.CityPrefix, r.GridCode}]; ok {
+			if amount, ok := costs[k]; ok {
 				r.SettledCost = &amount
 				r.CostPerServed = costPerServed(&amount, r.CoverageServed)
+			}
+		}
+		if hasPlanned {
+			if amount, ok := planned[k]; ok {
+				r.PlannedCost = &amount
+			}
+		}
+		if hasMaterial {
+			if amount, ok := material[k]; ok {
+				r.MaterialCost = &amount
 			}
 		}
 		out = append(out, r)

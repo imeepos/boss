@@ -7,7 +7,8 @@ import { useT } from '../../../i18n'
 import { PageHead, pagerTexts } from '../../org/shared'
 import { StatusTag } from '../../../components/StatusTag'
 import { Pagination } from '../../../components/Pagination'
-import { pageSlice, type PaymentRow } from '../types'
+import { pageSlice, type BillRow, type PaymentRow } from '../types'
+import { SimplePicker } from '../../../components/pickers/SimplePicker'
 import { fmtFee } from '../../../lib/format'
 import { TableStateRow, ErrorBanner, IdRef } from '../../../components/business'
 import { useConfirm } from '../../../components/ConfirmDialog'
@@ -25,6 +26,8 @@ export default function PaymentPage() {
   const [notice, setNotice] = useState('')
   const [formOpen, setFormOpen] = useState(false)
   const [billId, setBillId] = useState('')
+  const [bills, setBills] = useState<BillRow[]>([])
+  const [billsErr, setBillsErr] = useState(false)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
   const [busy, setBusy] = useState(false)
@@ -40,6 +43,19 @@ export default function PaymentPage() {
       .finally(() => setBusy(false))
   }
   useEffect(load, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // 账单过滤选项数据源:GET /bills(items 信封,无 keyword/分页参数;全量拉先例 billing/billing)。
+  const loadBills = () => {
+    setBillsErr(false)
+    apiFetch<{ items: BillRow[] }>('/bills', {})
+      .then((d) => setBills(d?.items ?? []))
+      .catch(() => setBillsErr(true))
+  }
+  useEffect(loadBills, []) // eslint-disable-line react-hooks/exhaustive-deps
+  const billOptions = bills.map((b) => ({
+    value: String(b.billId),
+    label: b.billNo + ' · ' + b.customerName + ' · ' + b.period,
+  }))
 
   // 全额退款(000112):SUCCESS 流水行内入口;REFUNDED 留痕终态不可再退。
   const refund = async (id: number) => {
@@ -64,8 +80,19 @@ export default function PaymentPage() {
       {notice && <div className="mb-4 rounded-md border border-[color-mix(in_srgb,var(--color-success)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-success)_8%,transparent)] px-4 py-2 text-[13px] text-[var(--color-success)]">{notice}</div>}
       <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
         <div className="flex flex-wrap items-center gap-2 p-4">
-          <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" type="number" placeholder={p.filterBill}
-            value={billId} onChange={(e) => { setBillId(e.target.value); setPage(1) }} />
+          <SimplePicker
+            value={billId}
+            onChange={(v) => { setBillId(v); setPage(1) }}
+            options={billOptions}
+            ariaLabel={p.filterBill}
+            clearable
+            clearLabel={t.pages.pickers.common.clear}
+            emptyLabel={t.pages.pickers.common.all}
+            error={billsErr}
+            onRetry={loadBills}
+            errorText={p.billLoadFail}
+            minWidth={260}
+          />
           <span className="spacer" />
           {canCollect && (
             <button className="h-8 cursor-pointer rounded-sm bg-[var(--color-brand-bg)] px-4 text-[13px] text-white hover:opacity-90" onClick={() => { setNotice(''); setFormOpen(true) }}>{p.addBtn}</button>

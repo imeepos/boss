@@ -52,6 +52,7 @@ const CollectionTasksPage = lazy(() => import('./pages/billing/collection-tasks'
 const StopSrvPage = lazy(() => import('./pages/billing/stopsrv'))
 const PayCheckPage = lazy(() => import('./pages/billing/paycheck'))
 const DailyClosePage = lazy(() => import('./pages/billing/daily-close'))
+const PayablesPage = lazy(() => import('./pages/billing/payables'))
 const AssetPage = lazy(() => import('./pages/ams/asset'))
 const TagPage = lazy(() => import('./pages/ams/tag'))
 const StockPage = lazy(() => import('./pages/ams/stock'))
@@ -180,6 +181,7 @@ function MenuPage({ pageKey }: { pageKey: string }) {
   if (pageKey === 'stopsrv') return <StopSrvPage />
   if (pageKey === 'paycheck') return <PayCheckPage />
   if (pageKey === 'daily-close') return <DailyClosePage />
+  if (pageKey === 'payables') return <PayablesPage />
   if (pageKey === 'asset') return <AssetPage />
   if (pageKey === 'tag') return <TagPage />
   if (pageKey === 'stock') return <StockPage />

@@ -22,6 +22,8 @@ export interface Project {
   contractorId: number
   contractorName: string
   itemsAmount: number
+  budgetAmount?: number | null
+  settledAmount?: number
   asbuiltNote: string
   acceptedAt?: string
   updatedAt: string
@@ -33,6 +35,13 @@ const STATUS_VARIANT: Record<string, 'default' | 'success' | 'warning'> = { PEND
 // fmtMoney 金额展示(两位小数,千分位;金额一律后端计算,前端只展示)。
 export function fmtMoney(v: number | null | undefined): string {
   return (v ?? 0).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+
+// fmtBudgetProgress 预算执行进度展示(已结算/预算,只读派生;未登记禁止显示 0,W6 口径)。
+export function fmtBudgetProgress(p: Project): string {
+  if (p.budgetAmount == null) return '-'
+  const pct = p.budgetAmount > 0 ? Math.round(((p.settledAmount ?? 0) / p.budgetAmount) * 100) : 0
+  return fmtMoney(p.settledAmount ?? 0) + ' / ' + fmtMoney(p.budgetAmount) + '（' + pct + '%）'
 }
 
 export default function ConstructionsPanel() {
@@ -78,7 +87,7 @@ export default function ConstructionsPanel() {
     {error && <ErrorBanner message={error} className='mb-3' />}
     <section className={CARD + ' overflow-hidden'}>
       {rows.length === 0 ? <EmptyState text='暂无施工单' /> : <div className='overflow-x-auto'><Table>
-        <TableHeader><TableRow><TableHead>施工单号</TableHead><TableHead>名称</TableHead><TableHead>状态</TableHead><TableHead>承包商</TableHead><TableHead>明细数</TableHead><TableHead>清单金额</TableHead><TableHead>操作</TableHead></TableRow></TableHeader>
+        <TableHeader><TableRow><TableHead>施工单号</TableHead><TableHead>名称</TableHead><TableHead>状态</TableHead><TableHead>承包商</TableHead><TableHead>明细数</TableHead><TableHead>清单金额</TableHead><TableHead>预算执行(已结算/预算)</TableHead><TableHead>操作</TableHead></TableRow></TableHeader>
         <TableBody>
           {rows.map((r) => <TableRow key={r.id}>
             <TableCell className='font-mono'>{r.projNo}</TableCell>
@@ -87,6 +96,7 @@ export default function ConstructionsPanel() {
             <TableCell>{r.contractorName || <span className='text-xs opacity-60'>未指定</span>}</TableCell>
             <TableCell>{r.itemCount}</TableCell>
             <TableCell>{fmtMoney(r.itemsAmount)}</TableCell>
+            <TableCell className='whitespace-nowrap'>{fmtBudgetProgress(r)}</TableCell>
             <TableCell><button className='text-[var(--color-text-link)]' onClick={() => setOpenId(openId === r.id ? null : r.id)}>{openId === r.id ? '收起' : '详情'}</button></TableCell>
           </TableRow>)}
         </TableBody>

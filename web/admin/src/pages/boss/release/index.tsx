@@ -1,13 +1,14 @@
 // 客户端版本管理:client_releases 列表 + 抽屉式上传/灰度白名单状态编辑。
 // 菜单 key=release,权限 menu:release;契约见 docs/contract/fields.md 8F。
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { useT } from '../../../i18n'
 import { PageHead } from '../../org/shared'
 import { TableStateRow, ToolbarButton } from '../../../components/business'
 import { Dropdown } from '../../../components/Dropdown'
 import { Drawer } from '../../../components/Drawer'
-import { apiBaseUrl } from '../../../api/client'
+import { apiBaseUrl, apiFetch } from '../../../api/client'
+import { DialogPicker } from '../../../components/pickers/DialogPicker'
 import { fmtTime } from '../../../lib/format'
 import {
   listReleases, patchRelease, uploadRelease,
@@ -15,6 +16,9 @@ import {
 } from './logic'
 
 type Status = ClientReleaseDTO['status']
+
+// 灰度白名单账号(sys.yaml AccountRow 子集;GET /accounts 裸数组信封)。
+type AccountRow = { id: number; username: string; realName: string; phone: string }
 
 const EMPTY_FORM = { app: 'user', version: '', versionCode: '', minSupportedCode: '', notes: '', file: undefined as File | undefined }
 
@@ -38,6 +42,9 @@ export default function ClientReleasePage() {
   const [uploading, setUploading] = useState(false)
   const [formError, setFormError] = useState('')
   const [form, setForm] = useState(EMPTY_FORM)
+  const [wlOpen, setWlOpen] = useState(false)
+  const accRef = useRef<AccountRow[]>([])
+  const accLoaded = useRef(false)
 
   const load = () => {
     setBusy(true); setError('')
@@ -47,6 +54,36 @@ export default function ClientReleasePage() {
       .finally(() => setBusy(false))
   }
   useEffect(load, [appFilter])
+
+  const loadAccounts = async () => {
+    try {
+      const list = await apiFetch<AccountRow[]>('/accounts', {})
+      accRef.current = list ?? []
+      accLoaded.current = true
+    } catch { accRef.current = []; accLoaded.current = false }
+  }
+  // 已选回显 label 的映射缓存:抽屉打开时预拉(无 menu:account 权限失败则回退 #id 显示)。
+  useEffect(() => { if (editing) loadAccounts() }, [editing]) // eslint-disable-line react-hooks/exhaustive-deps
+  const openWlPicker = () => { accLoaded.current = false; accRef.current = []; setWlOpen(true) }
+  // DialogPicker query 包装:账号接口无 keyword/分页参数,前端过滤+切片(items/total 信封)。
+  const accountQuery = async (q: { keyword: string; filters: Record<string, string>; page: number; pageSize: number }) => {
+    if (!accLoaded.current) await loadAccounts()
+    const kw = q.keyword.trim().toLowerCase()
+    const hit = kw
+      ? accRef.current.filter((a) => [a.username, a.realName, a.phone].some((x) => (x || '').toLowerCase().includes(kw)))
+      : accRef.current
+    return { items: hit.slice((q.page - 1) * q.pageSize, q.page * q.pageSize), total: hit.length }
+  }
+  const wlCurrent = patch.whitelistIds ?? editing?.whitelistIds ?? []
+  const wlLabels = (ids: number[]) => {
+    const byId = new Map(accRef.current.map((a) => [String(a.id), a.realName + '(' + a.username + ')']))
+    return ids.map((id) => byId.get(String(id)) ?? '#' + id)
+  }
+  const wlColumns = [
+    { key: 'username', title: s.colAccount },
+    { key: 'realName', title: s.colName },
+    { key: 'phone', title: s.colPhone },
+  ]
 
   const closeUpload = () => {
     setUploadOpen(false)
@@ -160,7 +197,13 @@ export default function ClientReleasePage() {
             ].map((o) => ({ ...o, disabled: !ALLOWED_NEXT[editing.status].includes(o.value as Status) }))} /></div>
         </label>
         <label className="text-xs">{s.fRollout}<input className={inputCls + ' mt-1'} inputMode="numeric" placeholder={String(editing.rolloutPercent)} onChange={(e) => setPatch({ ...patch, rolloutPercent: Number(e.target.value) })} /></label>
-        <label className="text-xs">{s.fWhitelist}<input className={inputCls + ' mt-1'} placeholder={editing.whitelistIds.join(',')} onChange={(e) => setPatch({ ...patch, whitelistIds: e.target.value.split(',').map((x) => Number(x.trim())).filter((n) => n > 0) })} /></label>
+        <label className="text-xs">{s.fWhitelist}
+          <div className="mt-1 flex flex-wrap items-center gap-1.5">
+            <button type="button" className={btnPlain + ' h-7 px-3 text-xs'} onClick={openWlPicker}>{s.wlPickBtn}</button>
+            <span className="text-[11px] text-[var(--shell-group-title)]">{s.wlSelectedCount.replace('{n}', String(wlCurrent.length))}</span>
+            {wlCurrent.length > 0 && <span className="text-[11px] text-[var(--shell-content-text)]">{wlLabels(wlCurrent).join('; ')}</span>}
+          </div>
+        </label>
         <label className="text-xs">{s.fMinSupported}<input className={inputCls + ' mt-1'} inputMode="numeric" placeholder={String(editing.minSupportedCode)} onChange={(e) => setPatch({ ...patch, minSupportedCode: Number(e.target.value) })} /></label>
         <label className="text-xs">{s.fNotes}<input className={inputCls + ' mt-1'} placeholder={editing.notes} onChange={(e) => setPatch({ ...patch, notes: e.target.value })} /></label>
         <label className="mt-1 flex items-center gap-2 text-xs">
@@ -170,5 +213,16 @@ export default function ClientReleasePage() {
       </div>
       <p className="mt-2 text-xs text-[var(--shell-group-title)]">{s.grayHint}</p>
     </Drawer>}
+
+    {wlOpen && editing && <DialogPicker<AccountRow>
+      open={wlOpen} mode="multiple" title={s.wlPickerTitle}
+      onClose={() => setWlOpen(false)}
+      onPick={(picked) => { setPatch({ ...patch, whitelistIds: picked.map((a) => a.id) }); setWlOpen(false) }}
+      columns={wlColumns}
+      query={accountQuery}
+      rowKey={(a) => String(a.id)}
+      rowLabel={(a) => a.realName + '(' + a.username + ')'}
+      texts={t.pages.pickers.dialog}
+    />}
   </div>
 }

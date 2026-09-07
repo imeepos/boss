@@ -28,6 +28,7 @@ func registerODNResourceChainRoutes(g *gin.RouterGroup, a *app.Application, perm
 	g.POST("/odn/resource-chains/import", perm, odnImportResourceChainsHandler(a))
 	g.GET("/odn/resource-chains", perm, odnListResourceChainsHandler(a))
 	g.GET("/odn/resource-chains/patrol", perm, odnChainPatrolHandler(a))
+	g.POST("/odn/resource-chains/backfill-split", perm, odnBackfillSplitHandler(a))
 }
 
 // odnImportResourceChainsHandler 批量导入:说明页六规则校验 + 展开入库 + 逐行结果。
@@ -52,6 +53,22 @@ func odnImportResourceChainsHandler(a *app.Application) gin.HandlerFunc {
 			"odn-chain-"+strconv.FormatInt(time.Now().Unix(), 10),
 			"ODN 资源链导入: 成功 "+strconv.Itoa(res.Imported)+" / 失败 "+strconv.Itoa(res.Failed)+" / 示例跳过 "+strconv.Itoa(res.Skipped)+" / 重复 "+strconv.Itoa(res.Duplicate),
 			linkImporter, res.Failed > 0)
+		respond(c, apitypes.CodeOK, gin.H{"result": res})
+	}
+}
+
+// odnBackfillSplitHandler POST /odn/resource-chains/backfill-split:分光比回写建模(幂等全量重建)。
+// W5 容量写路径;写操作入审计;失败由域层留 [odn-split-backfill] 可 grep 日志。
+func odnBackfillSplitHandler(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		res, err := a.ODN.BackfillSplitCapacity(c.Request.Context())
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		httpx.RecordAudit(a, c, "odn.resource-chain.backfill-split", "odn_device_split_capacity", "rebuild",
+			map[string]any{"devicesModeled": res.DevicesModeled, "level1": res.Level1,
+				"level2": res.Level2, "unresolvedCodes": res.UnresolvedCodes})
 		respond(c, apitypes.CodeOK, gin.H{"result": res})
 	}
 }

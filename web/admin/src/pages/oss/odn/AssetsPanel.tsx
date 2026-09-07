@@ -1,11 +1,13 @@
 // ODN 资产化转固面板(P-INFRA-1 W8):凭证列表/登记/冲销 + 出库台账入口。
-// 文案为字面量:沿用 W1 施工面板先例,不动 i18n 中央登记文件。
+// 关联实体一律 pickers 选择器(2026-09-07 域改造);新增文案走 pages.odn 三语词条。
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { Input } from '../../../components/ui/input'
 import { Badge } from '../../../components/ui/badge'
-import { Dropdown } from '../../../components/Dropdown'
+import { Dropdown, type DropdownOption } from '../../../components/Dropdown'
+import { SimplePicker } from '../../../components/pickers/SimplePicker'
+import { useT } from '../../../i18n'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../../components/ui/table'
 import { EmptyState, ErrorBanner, ToolbarButton } from '../../../components/business/page-head'
 import { useConfirm } from '../../../components/ConfirmDialog'
@@ -22,6 +24,11 @@ interface Registration {
 }
 
 const SOURCE_TEXT: Record<string, string> = { PROCUREMENT: '采购入库', CONSTRUCTION: '施工建成', DIRECT: '直购直转' }
+
+// 选择器数据源行类型(本域列表接口;字段以 internal/domain/odn 与 asset 为准)。
+interface DeviceLite { id: number; code: string; name: string; status: string }
+interface AssetLite { assetId: number; assetCode: string; status: string; type: string }
+interface ProjectLite { id: number; projNo: string; name: string; status: string }
 const STATUS_VARIANT: Record<string, 'info' | 'success' | 'danger'> = { ACTIVE: 'success', REVERSED: 'danger' }
 const STATUS_TEXT: Record<string, string> = { ACTIVE: '有效', REVERSED: '已冲销' }
 
@@ -31,6 +38,7 @@ function entityLabel(r: Registration): string {
 
 export function AssetsPanel() {
   const confirmDialog = useConfirm()
+  const o = useT().pages.odn
   const [rows, setRows] = useState<Registration[]>([])
   const [status, setStatus] = useState('ACTIVE')
   const [error, setError] = useState('')
@@ -46,6 +54,28 @@ export function AssetsPanel() {
   const [remark, setRemark] = useState('')
   const [reverseId, setReverseId] = useState('')
   const [reverseReason, setReverseReason] = useState('')
+  const [deviceOpts, setDeviceOpts] = useState<DropdownOption[]>([])
+  const [projectOpts, setProjectOpts] = useState<DropdownOption[]>([])
+
+  // 设备/施工项目静态源一次拉取(全网 ≤500/100 条,本地过滤;coverage 页签同口径)。
+  useEffect(() => {
+    void (async () => {
+      try {
+        const devs = (await apiFetch<DeviceLite[]>('/odn/devices')) ?? []
+        setDeviceOpts(devs.map((d) => ({ value: String(d.id), label: (d.name || d.code) + ' (' + d.code + ')' })))
+      } catch { setDeviceOpts([]) }
+      try {
+        const projs = (await apiFetch<ProjectLite[]>('/odn/constructions', { query: { limit: 100 } })) ?? []
+        setProjectOpts(projs.map((p) => ({ value: String(p.id), label: p.projNo + ' ' + (p.name || '') + ' [' + (o.projStatus[p.status as keyof typeof o.projStatus] ?? p.status) + ']' })))
+      } catch { setProjectOpts([]) }
+    })()
+  }, [])
+
+  // 资产服务端检索(/assets 分页接口 q 关键字;label 标注状态便于识别可登记状态)。
+  const searchAssets = async (kw: string): Promise<DropdownOption[] | null> => {
+    const d = await apiFetch<{ items: AssetLite[] }>('/assets', { query: { q: kw || undefined, limit: 50 } })
+    return (d?.items ?? []).map((a) => ({ value: String(a.assetId), label: a.assetCode + ' #' + a.assetId + ' [' + a.status + ']' }))
+  }
 
   const load = useCallback(async () => {
     setError('')
@@ -100,11 +130,11 @@ export function AssetsPanel() {
         <Dropdown value={entityKind} ariaLabel='对象类型' options={[{ value: 'FACILITY', label: '设施' }, { value: 'DEVICE', label: '设备' }]} onChange={(v) => { setEntityKind(v); setFacilityCode(''); setDeviceId('') }} /></label>
       {entityKind === 'FACILITY'
         ? <label className={FIELD}><span className={LABEL}>设施编码</span><Input value={facilityCode} onChange={(e) => setFacilityCode(e.target.value)} placeholder='P01001 / CLS00001' /></label>
-        : <label className={FIELD}><span className={LABEL}>设备 ID</span><Input value={deviceId} onChange={(e) => setDeviceId(e.target.value)} placeholder='设备列表 ID 列' inputMode='numeric' /></label>}
-      <label className={FIELD}><span className={LABEL}>资产 ID(须 IN_STOCK/IN_TRANSIT)</span><Input value={assetId} onChange={(e) => setAssetId(e.target.value)} placeholder='资产台账 ID' inputMode='numeric' /></label>
+        : <label className={FIELD}><span className={LABEL}>设备 ID</span><SimplePicker value={deviceId} onChange={setDeviceId} options={deviceOpts} ariaLabel={o.pickDevice} searchPlaceholder={o.pickDeviceSearch} minWidth={200} /></label>}
+      <label className={FIELD}><span className={LABEL}>资产 ID(须 IN_STOCK/IN_TRANSIT)</span><SimplePicker value={assetId} onChange={setAssetId} search={searchAssets} ariaLabel={o.pickAsset} searchPlaceholder={o.pickAssetSearch} minWidth={220} /></label>
       <label className={FIELD}><span className={LABEL}>来源</span>
         <Dropdown value={sourceKind} ariaLabel='来源' options={[{ value: 'DIRECT', label: '直购直转' }, { value: 'PROCUREMENT', label: '采购入库' }, { value: 'CONSTRUCTION', label: '施工建成' }]} onChange={setSourceKind} /></label>
-      {sourceKind === 'CONSTRUCTION' && <label className={FIELD}><span className={LABEL}>施工项目 ID(须已竣工)</span><Input value={projectId} onChange={(e) => setProjectId(e.target.value)} inputMode='numeric' /></label>}
+      {sourceKind === 'CONSTRUCTION' && <label className={FIELD}><span className={LABEL}>施工项目 ID(须已竣工)</span><SimplePicker value={projectId} onChange={setProjectId} options={projectOpts} ariaLabel={o.pickProject} searchPlaceholder={o.pickProjectSearch} minWidth={240} /></label>}
       <label className={FIELD}><span className={LABEL}>转固价值</span><Input value={valueAmount} onChange={(e) => setValueAmount(e.target.value)} placeholder='0.00' inputMode='decimal' /></label>
       <label className={FIELD}><span className={LABEL}>备注</span><Input value={remark} onChange={(e) => setRemark(e.target.value)} placeholder='可空' /></label>
       <div className='flex items-end'><ToolbarButton primary disabled={busy || !formOk} onClick={() => void register()}>登记</ToolbarButton></div>

@@ -120,6 +120,10 @@
 | ODN 核心链路设备类型 odn_device.kind | SNW / OLT / ODF / OCC / ODB / OBD / SDB / SBD / PRT / TBP | 资源编码规范 2.2;OBD(一级分光器,归 ODB)/SBD(二级分光器,归 SDB)为箱内部件扩展(2.4 口径,迁移 000209,adopted 2026-09-07-odn-box-types-import-chain);导入域箱体设备可无城市(uq_odn_device_box 分域),SNW/OLT/PRT/TBP 仍强制城市 |
 | ODN 资源链状态 odn_resource_chain | lifecycle_status 同设施四态;port_status IDLE/RESERVED/USED/DISABLED;laying_method AERIAL/UNDERGROUND/SUBMARINE/MICROTRENCH/INDOOR;row_status NOT_STARTED/PENDING/APPROVED/EXPIRED/NA;pece_status PENDING_SIGN/SIGNED/STAMPED/NA;分光比 1:2/1:4/1:8/1:16/1:32/1:64/1:128 | 迁移 000210(W3);模板中文标签映射:资源状态 规划→PLANNED/已安装·已测试→IN_BUILD/在用→IN_SERVICE/已报废→RETIRED/留空→PLANNED(绝不当作已安装/在网);总分光比=一级×二级;fields.md 1.5.12 |
 | ODN 许可单 odn_permits.status | ROW: NOT_STARTED/PENDING/APPROVED/EXPIRED/NA;PECE: PENDING_SIGN/SIGNED/STAMPED/NA | ROW(路权)/PECE 许可状态机(000211,W4;字典与资源链 row_status/pece_status 对齐)。ROW 转移:未开始-待处理(提交)-已批准(批复号+有效期止必填)/未开始(驳回,原因必填);已批准-已过期(手动或开工门控自动回写);已过期-待处理(过期复验,重走批准);未开始与 NA 互转(标记/取消不适用)。PECE 转移:待签署-已签署-已盖章(开工门控满足态);已签署-待签署(退回补正,原因必填);待签署与 NA 互转(作废/恢复)。开工前置(F3):每类存在达标许可或 NA 方可开工(BOSS_ODN_PERMIT_GATE=on 灰度,默认关,与覆盖门控同模式);fields.md 1.5.13 |
+| 工程里程碑 construction_milestones.status | PENDING / DONE | 未完成 / 已完成(000218,W6)。编辑口径:里程碑清单(增删/改名/计划日)与项目预算金额仅项目 PENDING(BUILDING 前)可改;里程碑状态可标记至项目 ACCEPTED 前(PENDING/BUILDING);ACCEPTED 后全部锁定只读。预算执行进度=已结算金额(SETTLED 结算单合计,只读派生)/预算金额,NULL 预算=未登记;fields.md 1.5.8d |
+| 工程应付 construction_payables.status | OPEN / PARTIAL / PAID / VOIDED | 未付 / 部分付款 / 已付清 / 已冲销(000219,W6,审查 F8)。应付由 SETTLED 结算单**同事务自动生成**(金额=结算应付快照,settlement_id 唯一来源引用,一结算单一应付);状态按付款与核减流水派生维护:OPEN(未付)→PARTIAL(0<已付<净应付)→PAID(已付≥净应付)。净应付=应付金额-核减合计,未付余额=净应付-已付,均只读派生不落列。**结算单 VOIDED 同事务冲销应付**(status=VOIDED,原因与结算单作废原因同源);冲销后付款流水保留为历史,余额按净应付-已付可为负(超付如实展示),不做退款单复杂化;作废后重开结算单以新单表达,对应生成新应付。fields.md 1.5.8e |
+| 应付付款方式 construction_payable_payments.method | TRANSFER / CASH / CHEQUE / OTHER | 银行转账 / 现金 / 支票 / 其他(000219,W6;应付域自有登记枚举,与 billing 缴费 method 枚举互不混用)。部分付款与分期=多次登记付款流水至未付余额耗尽;单笔不超余额(40900),超登记拒绝 |
+| 分光容量 odn_device_split_capacity | split_level 1=一级分光器(OBD) / 2=二级分光器(SBD);ratio 2~128=分光比分母(端口容量);used_ports=链行端口标签去重占用;has_secondary=一级器下挂二级链 | 设备分光容量模型(000221,W5):odn_resource_chain 暂存分光比经 POST /odn/resource-chains/backfill-split 幂等回写(唯一写路径,导入不自动回写);户级口径:一条二级分光端口=一户,潜在户数=Σ二级容量+Σ无二级链的一级容量,已接=Σ占用,可扩=潜在−已接;total_split 暂存不参与汇总(两级相加重复计数);容量住设备维度只进城市/全网视图,不按比例分摊到网格;裁定 adopted 2026-09-07-split-capacity-investment-depth;fields.md 1.5.15 |
 
 ## 5. 关键术语
 
@@ -132,6 +136,7 @@
 | 未收费不派单 | 4 合同收费未成功，禁止进入 8 派单 | 硬约束，全案 REQ-CL-001 |
 | 预付费 | 客户订购时选 PREPAID，环节 4 合同收费当场收款（缴费流水落账） | 不进月度出账；与后付费正交于套餐（同套餐可双卖法，adopted note 2026-08-22） |
 | ARN | 对外单据（发票/收据）连续编号，发票 INV-、收据 OR- 各自成序列 | 占号行锁串行、回滚号回退；作废 VOID 保留编号不回收（TAX-004）。Amended 2026-08-18：降格为**内部流水号**，法定票号以税局回执（tax_no）为准（多属地网关，见 adopted note） |
+| 核减 | 工程结算复审后的减项：对应付登记核减明细（金额>0，原因必填，append-only 留痕）；净应付=应付金额-核减合计同步生效 | 核减合计不得超应付金额；核减后净应付不得低于已付合计（防超付，40900）；不做多轮审批/多单复杂化，单据链（结算单→应付→付款/核减/发票流水）经 settlement_id/payable_id 可回放（W6,000219，adopted 2026-09-07-engineering-payable-ledger） |
 
 ## 附录 A：需按 12 环节修正的历史文件位置（已全部销项 ✅）
 

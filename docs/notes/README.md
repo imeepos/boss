@@ -111,4 +111,6 @@
 | 2026-09-06 | AAA 凭据密钥经宿主机文件注入 102:/etc/boss-aaa/cred.key(0600,属主 1000:1000)+ bind mount + BOSS_AAA_CRED_KEY_FILE,值不进仓库/env/argv,文档只记指纹;compose 内联值/secret manager/放权 604 被否决 | adopted/2026-09-06-aaa-cred-key-file-injection.md |
 | 2026-09-07 | ROW 路权与 PECE 许可单工作流(000211):一表两域 kind CHECK 分域,状态机字典与资源链导入列对齐;开工前置门控 BOSS_ODN_PERMIT_GATE 灰度默认关,过期门控自动回写 EXPIRED+复验重走批准;NA=显式标记不适用;双表/审批流引擎/定时扫描过期被否决 | adopted/2026-09-07-odn-permit-workflow.md |
 | 2026-09-07 | 竣工验收联动覆盖新裁定(F6):ACCEPTED 与 address_coverage PENDING→SERVED 同事务翻转,联动数随竣工审计透出;BOSS_ODN_ACCEPT_COVERAGE_LINK 默认开 off 可关;事后异步任务/翻 UNSERVED/自动建覆盖行被否决 | adopted/2026-09-07-accept-coverage-linkage.md |
+| 2026-09-07 | 工程应付台账与预算里程碑(W6/F8/G2,000218-000220):应付域 AP 归 odn 结算域延伸与 billing 零衔接(billing 分组仅呈现);SETTLED 同事务生成应付 1:1 唯一来源引用,VOIDED 同事务冲销;净应付/余额只读派生,付款/核减 append-only,部分付款=多次流水至余额耗尽,核减防超付;预算执行进度只读派生;应付落 billing 包事件联动/退款单/核减审批流/付款计划表被否决 | adopted/2026-09-07-engineering-payable-ledger.md |
+| 2026-09-07 | 分光容量建模与投资口径维度归属(W5/F1,000221):容量按设备维度归属只进城市/全网视图不摊网格,项目级总额(预算/材料)按明细金额占比分摊零归属不硬摊;链行分光比经 backfill-split 幂等回写 odn_device_split_capacity;户级口径=二级端口,total_split 不参与汇总;容量物化进 odn_port/导入自动回写被否决 | adopted/2026-09-07-split-capacity-investment-depth.md |
 > 维护规则：新增 note 当天同步本表；同一日多条按文件名升序；Amended 项不移动原位（决策代谢可追溯）。

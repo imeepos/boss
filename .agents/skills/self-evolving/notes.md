@@ -1,5 +1,19 @@
 # Notes
 
+## 2026-09-07 OSS-ODN 域关联字段 picker 改造 7 处(feat/oss-odn-pickers,已 ff 回 main)
+
+- 最耗时坑(2 轮):cdp-admin-capture --no-proxy 放中间吞掉后一个参数,断言 eval 静默丢失而截图正常——像「页面没渲染」,实际是包装器 parseArgs 吞参;布尔旗标放最末一次过(已登 recidivism#17/techniques)。
+- 累犯:option onMouseDown(techniques.md 已有条目,开工前没 grep),与同日并行 pickers 会话同坑;附随发现同一组件族事件不一致——option=mousedown、触发器/清除钮=onClick,断言前读组件源码事件绑定,不外推。
+- 小坑:①curl 本地端口 000 是环境代理,no_proxy='*' 一次过;②断言 IIFE 漏尾部调用返回函数对象序列化成 {},像空数据;③vite dev 接 | head 管道 EPIPE 静默死,后台 job 裸跑。
+- 成功实践:ff-only 撞并行推进 128,按红线 9 回 worktree merge+复跑三门禁+重推重试零丢失;DialogPicker 首接入直接复用 pages.pickers.dialog 全套结构文案零新增;i18n/types.ts 是手写强类型,locale 加键必须同步 types(并行会话沉淀过,本轮提前规避一次 TS 报错)。
+
+## 2026-09-07 pickers 三处改造(C1 BLOCKED/C2 SimplePicker/C3 DialogPicker 首接入)
+
+- 最耗时坑:CDP 交互断言里 option 用 el.click() 三轮无效,最后读 Dropdown 源码发现选择绑在 onMouseDown——而 techniques.md **已有这条**(CDP 断言自研 Dropdown 条目),开工前没 grep 该文件,白烧三轮采集。教训:skill 第 6 节『开工前 grep 关键词』必须真的做,场景词=组件名+『断言/click』。
+- 次坑:bash 单引号包 --eval JS 参数,JS 内部单引号字符串把它截断,SyntaxError 不像代码错像工具坏;改双引号包参数(JS 内全用单引号字符串、避开 $/反引号/双引号)一次过。同红线 11 族。
+- 小坑:①read 并行 3 个大文件时返回 undefined lines,改串行恢复;②glob 在大目录(api 根)30s 超时两次,bash ls/find 秒回——目录枚举优先 bash。
+- C2 验证遇 102 bills 空表,学会先 curl API 证空再判『选择器坏』,避免误修;并用先例页(billing/billing,同一 Dropdown 基座+真实数据)佐证选中/回显链路。
+
 ## 2026-09-07 102 全量测试数据清理(主会话直做,无 worktree)
 
 - 最耗时坑:四件事叠一起。①ssh+psql 内联 -c 叠引号 3 连炸(红线9a已犯14次,换「本地写 SQL 文件 + ssh stdin 管道」一次过,该模式应默认化);②pg_stat_user_tables 估算全失真(assets 估219实566、bills 估0实4),差点按估算判「空表跳过」;③DELETE 脚本手工排 FK 序三连反序回滚(invoices→bills、coupon_redemptions→coupons、procurement_receipts→asset_batches),且 del_orders 临时表建了却漏写 orders 本体 DELETE,靠复核 count 抓出;④17:16 有并行终端用 admin@192.168.0.15 导入 346 个 OWPAL/OWTAC 客户壳+资产,落在我确认范围之后——停下来问用户,确认为造数后才纳入。
@@ -2144,3 +2158,23 @@
 - 哪个坑浪费了最多时间？run_code 日志行里写了未声明变量赋值（s2 = c.exitCode）抛 ReferenceError；git 命令其实已执行，先核实状态再决定重跑，没白跑。教训：日志/返回表达式里禁止内联赋值。
 - skill 有没有提前预警？红线 11/14 覆盖了参数与字符串坑，这次没踩；交互约束（抽屉/选择器）是用户中途补充的，前两张图已发车——应对：不重生成整页，补发两张交互态图（新增抽屉全选择器/详情抽屉关联链），四图拼成完整方案。
 - 重来一次会怎么做？开工 prompt 里就预置项目已固化的交互红线（抽屉+选择器），这些是 repeat 裁定，不该等用户点名。
+
+## 2026-09-07 W6 工程预算里程碑+应付台账(P-INFRA-1 Phase 2)
+
+- 哪个坑浪费了最多时间? 一处 terms.md 编辑把主树路径直接塞进 file_path(主树在 main 分支!)——发现后立即 git checkout -- 还原再改 worktree;以及 odn.yaml 加路由后只跑了 gen-bossctl-routes 漏了 genrouteperms,make check 二轮才补齐。
+- skill 有没有提前预警? 红线 10(写前核对真实路径)在顶上,但当时并行发多个 edit 锚错了对象;漏 genrouteperms 是新知识(lessons 477 行只提了 CI 侧,没提本地 make check 链会红)。
+- 重来一次会怎么做? edit 调用前默念 file_path 是否 worktree 前缀;新增 openapi 路由的收尾动作固化为两连发:gen-bossctl-routes + genrouteperms 都跑完再 make check。新页面三件套(menu.def/App/i18n)之外还要 public/icons/items/<key>.svg + 只用 theme/tokens.css 里已定义的 CSS 变量(build 审计会拦)。
+- 正向沉淀: SETTLED 同事务生成应付/VOIDED 同事务冲销一次设计过验收;NUMERIC 列扫 int64 是 50000 常见根因(pg_settlement 1000.00 strconv),102 日志 [odn-settlement] SETTLE READ FAILED 一发定位——失败路径留痕红线直接变现;验收脚本全双引号 Python 字符串+行数组写入,零转义事故。
+
+## 2026-09-07 资源端口+GIS+附件选择器改造(会话派发,worktree feat/picker-oss-intel-attachment,已 ff 回 main@2899f127)
+
+- 最耗时坑三件: ①SimplePicker 检索 hook 只在关键字提交/重试时发请求,search prop 动态变化(附件类型切换、GIS 层级切换)不重触发首拉,浮层恒空——key=维度 重挂载修两处;②cdp 冒烟对 Dropdown 选项 JS .click() 无效(onClick 被 preventDefault,选定在 onMouseDown),techniques.md 既有该技巧,写 eval 前没按组件名 grep 白耗两轮;③门禁首轮漏带 TZ=Asia/Shanghai(docs/boss-admin-web.md 门禁节明文),又犯「门禁运行中 amend 工作区」并发红线,该轮绿结果作废重跑。
+- skill 有没有预警? 红线 14(键名默念)仍两犯(new_string 与 description 键名各多一次引号),recidivism #22 升 5 次;techniques 的 Dropdown mousedown 条目若在写 eval 前检索可省两轮冒烟。
+- 重来一次会怎么做? 写 cdp eval 前先 grep techniques/known-issues 里目标组件的事件绑定;任何带 search/数据源 prop 的基座组件先读内部 hook 的 effect 依赖再设计联动方式;门禁命令从 docs/boss-admin-web.md 门禁节整段复制(TZ 在内),门禁期间冻结 worktree 写操作。
+- 正向沉淀: pickers 基座八项契约全继承,三处改造只写数据源映射+联动逻辑,单提交单文件净增 ≤41 行;B1 全链路 DOM 断言(选设备→选端口→保存解禁→清空回禁)一次过;102 实证 workers=0 属服务端空态而非代码缺陷,用 customers=347 验证同构分支;eval 断言脚本落 /tmp 文件经 $(cat) 注入,零引号转义事故。
+
+## 2026-09-07 W5 投资分析深化与分光比建模(执行会话)
+
+- 哪个坑浪费了最多时间? read 工具按字节截断(非行数),把 2143 行的 fields.md 当全量读到整文件回写,静默截掉尾部 143 行;本轮又对 notes.md/recidivism.md 重蹈(已在本条目修复),靠 wc -l 对账才发现。损失数轮+差点丢契约尾部。
+- 这个 skill 有没有提前警告我? 没有——skill 只警告了编辑前必须 read,没警告 read 的全量可能是被截断的全量。已喂回红线 26(本轮二犯即登)。
+- 重来一次我会怎么做? ①大文件一律 edit 锚点编辑或 shell 追加,绝不 read 回写;②造数脚本动笔前先逐字段核对 yaml 请求形状与枚举字典(grids prv/city 是 query 参数、facility gridCode 必填、label 必须小写、receipt confirm 必须带 items、链行枚举传中文标签——五坑五轮);③共享 main 上 ff-only 失败后严禁继续 && 链(本次 push 顺带推了别人未推的 commit,幸无损);④新增路由先跑 gen-bossctl-routes + genrouteperms 再进 make check。

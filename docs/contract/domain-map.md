@@ -52,7 +52,7 @@
 | 消息通知 | NOT | XG-04(组装) | `worker`(师傅侧消息/公告)、`notify`(admin 侧提醒/待办,迁移 000090) | 阶段2 | boss | message(后台提醒=第三页签);推送通道配置 push.*(pkg/push,迁移 000094,页面 /base/pushconfig) |
 | AI 能力网关 | AI | （横切，平台级，非 21 域） | `ai` | 增量 | 无专用页（复用 base/settings 参数页） | ai.openai.* 配置经 /params 或 /ai/openai/config 热更 |
 | 营销促销 | PROMO | （横切营销；LOY 积分待建，积分换券未来经契约） | `promotion` | 增量(000102) | bss（券仓入用户详情聚合;模板/赠送规则经 admin API,无专用页面） | 券模板/发放/兑换码/转赠/缴费抵扣/赠送时长规则;设计见 docs/design/promotion-coupon.md |
-| ODN 无源物理层 | ODN | （横切,与 OSS/AMS 同源;规范见 docs/pdfs《Suniway ODN 地理空间编码规范》） | `odn` | 阶段7/8(增量) | oss（`menu:odn`,sysadmin+resource_admin） | 局点/核心链路设备/光缆段落纤芯/网格与设施(规范第 2-5 章);`/odn/sites\|devices\|grids\|facilities\|segments`;施工项目与工程结算(000206,`/odn/constructions*`+`/odn/settlements*`,挂 ODN 管理页施工页签;承包商经 httpapi 层组合采购域供应商档案,两域零 import);网格投资测算读模型 `/odn/grid-investment`(W2,页面挂 intel,见 §2.1);资源链批量导入与巡检 /odn/resource-chains*(W3,menu:odn);ROW 路权与 PECE 许可工作流 /odn/permits*+施工开工许可前置(F3)+竣工覆盖联动(F6)(W4,000211,menu:odn,页面 /oss/permits);资产化转固凭证与材料出库 /odn/assets/registrations*+/odn/material-issues*(W8,000215/000216,menu:odn;odn×asset 桥表软引用,资产 status 增 IN_TRANSIT,见 fields.md §1.5.14/adopted 2026-09-07-odn-asset-capitalization) |
+| ODN 无源物理层 | ODN | （横切,与 OSS/AMS 同源;规范见 docs/pdfs《Suniway ODN 地理空间编码规范》） | `odn` | 阶段7/8(增量) | oss（`menu:odn`,sysadmin+resource_admin） | 局点/核心链路设备/光缆段落纤芯/网格与设施(规范第 2-5 章);`/odn/sites\|devices\|grids\|facilities\|segments`;施工项目与工程结算(000206,`/odn/constructions*`+`/odn/settlements*`,挂 ODN 管理页施工页签;承包商经 httpapi 层组合采购域供应商档案,两域零 import);网格投资测算读模型 `/odn/grid-investment`(W2,页面挂 intel,见 §2.1);资源链批量导入与巡检 /odn/resource-chains*(W3,menu:odn);ROW 路权与 PECE 许可工作流 /odn/permits*+施工开工许可前置(F3)+竣工覆盖联动(F6)(W4,000211,menu:odn,页面 /oss/permits);资产化转固凭证与材料出库 /odn/assets/registrations*+/odn/material-issues*(W8,000215/000216,menu:odn;odn×asset 桥表软引用,资产 status 增 IN_TRANSIT,见 fields.md §1.5.14/adopted 2026-09-07-odn-asset-capitalization);工程预算里程碑与应付台账 /odn/constructions/{id}/budget|milestones*+/odn/milestones*+/odn/payables*(W6,000218/000219;F8/G2;预算与里程碑挂 menu:odn 施工页签,应付台账挂 menu:payables 页面 /billing/payables 呈现 billing 分组;SETTLED 同事务生成应付/VOIDED 同事务冲销,应付域 AP 归 odn 结算域延伸与 billing 应收域零衔接,见 fields.md §1.5.8d/e 与 adopted 2026-09-07-engineering-payable-ledger);投资测算深化与分光容量(W5,000221:城市卷积 /odn/city-investment+设备分光容量 /odn/split-capacity 挂 menu:grid-investment 投资页三视图,分光比回写 /odn/resource-chains/backfill-split 挂 menu:odn;规划/材料成本与容量户级口径见 fields.md §1.5.11/1.5.15,adopted 2026-09-07-split-capacity-investment-depth) |
 | 采购-库存 | PUR | （横切,增量挂靠,不开阶段 10;adopted 2026-08-28） | `procurement` | 增量(000163) | ams（`menu:purchase`、`menu:inventory`,sysadmin） | 供应商(含承建类型 MATERIAL/CONSTRUCTION,000205)/采购单/库存查询（与 asset 域共用 asset_batches/资产台账但域边界独立;GIS 库存分布图层读 asset_batches.warehouse_lat/lng） |
 | 官网内容发布 | CMS | （平台级,非 21 域） | `cms`(000134) | 增量 | boss(官网内容) | `/boss/site` 文章管理(动态/新闻/文章)；公开读 `/api/admin/v1/site/posts` 免鉴权供官网首页 |
 | 开放平台 | OPEN | （横切,平台级,非 21 域） | `openplat`(000122) | 增量(Q4) | org（开发者门户,`/openplat`） | AppId+Secret HMAC 鉴权、Webhook 订阅与投递、配额与限流、回放工具;契约 `/api/open/v1` |
@@ -74,7 +74,8 @@ menu.js 共 13 分组 49 菜单页（另 `login.html` 为登录散页，不进�
 | base 基础配置 | SYS | `user`(+`backup`,迁移 000095) | 阶段1 | account/address/settings/audit/importer/backup |
 | org 组织与权限 | SYS + BRAND | `user` | 阶段1 | company/department/post/region/menuperm/datascope |
 | bss 客户与资费 | CRM + PROD | `customer` | 阶段2 | customer/product/user/userdata |
-| billing 计费与账务 | BIL + PAY + AR | `billing` | 阶段5 | billing/payment/arrears/stopsrv/paycheck |
+| billing 计费与账务 | BIL + PAY + AR | `billing` | 阶段5 | billing/payment/arrears/stopsrv/paycheck | 
+| billing 计费与账务 | AP(工程应付,投建侧) | `odn`(结算域延伸,W6) | 增量(000219) | payables（工程应付台账,呈现挂 billing;见 §2.1） |
 | ams 资产与标签 | AMS | `asset` | 阶段3 | asset/tag/stock/replace |
 | ams 资产与标签 | PUR | `procurement` | 增量(000163) | purchase/inventory |
 | oss 网络资源 | OSS + DEV + AAA(认证账号) | `resource`/`device`/`aaa` | 阶段4/7 | resource/reserve/transfer/device/loaccount/expand |
@@ -95,6 +96,7 @@ menu.js 共 13 分组 49 菜单页（另 `login.html` 为登录散页，不进�
 | callback.html | boss | ORD(订单) | 激活回调，订单第 11 环节 |
 | importer.html | base | 横切 | 数据导入中心，跨域公共能力 |
 | grid-investment | intel | ODN(+W1 结算成本) | 网格投资测算只读读模型（P-INFRA-1 W2）；数据源 odn_facility/address_coverage 与 W1 承包商结算，接口 `/odn/grid-investment`，口径 fields.md 1.5.11 |
+| payables（工程应付台账） | billing | ODN（应付域 AP，投建结算域延伸） | 工程应付（P-INFRA-1 W6,审查 F8）：属应付域 AP 而非 billing 应收域，internal 落 odn 包（与结算单同事务联动，避免跨域 import），admin 页面挂 billing 分组仅呈现代码 `menu:payables`；接口 `/odn/payables*`；口径 fields.md 1.5.8e、terms.md §4、adopted 2026-09-07-engineering-payable-ledger |
 
 ## 3. 阶段 vs 能力域 vs Agent 的落地顺序
 

@@ -21,22 +21,24 @@ var ErrItemLocked = errors.New("odn: construction item locked")
 // ErrEmptyScope 开工前置缺失:施工范围为空(单内无任何资源明细),禁止空转开工。
 var ErrEmptyScope = errors.New("odn: construction start blocked: empty resource scope")
 
-// Construction 施工项目(含 as-built 竣工信息与承包商;000203/000204 扩展)。
+// Construction 施工项目(含 as-built 竣工信息与承包商;000203/000204 扩展;W6 000218 预算执行)。
 type Construction struct {
-	ID             int64   `json:"id"`
-	ProjNo         string  `json:"projNo"`
-	Name           string  `json:"name"`
-	PrvCode        string  `json:"prvCode,omitempty"`
-	CityPrefix     string  `json:"cityPrefix,omitempty"`
-	Status         string  `json:"status"`
-	AsbuiltNote    string  `json:"asbuiltNote"`
-	AcceptedBy     int64   `json:"acceptedBy"`
-	AcceptedAt     string  `json:"acceptedAt,omitempty"`
-	ItemCount      int64   `json:"itemCount"`
-	UpdatedAt      string  `json:"updatedAt"`
-	ContractorID   int64   `json:"contractorId"`   // 软引用 procurement_suppliers,0=未指定(存量兼容)
-	ContractorName string  `json:"contractorName"` // 指定时名称快照
-	ItemsAmount    float64 `json:"itemsAmount"`    // 清单金额汇总 SUM(amount),结算应付口径
+	ID             int64    `json:"id"`
+	ProjNo         string   `json:"projNo"`
+	Name           string   `json:"name"`
+	PrvCode        string   `json:"prvCode,omitempty"`
+	CityPrefix     string   `json:"cityPrefix,omitempty"`
+	Status         string   `json:"status"`
+	AsbuiltNote    string   `json:"asbuiltNote"`
+	AcceptedBy     int64    `json:"acceptedBy"`
+	AcceptedAt     string   `json:"acceptedAt,omitempty"`
+	ItemCount      int64    `json:"itemCount"`
+	UpdatedAt      string   `json:"updatedAt"`
+	ContractorID   int64    `json:"contractorId"`   // 软引用 procurement_suppliers,0=未指定(存量兼容)
+	ContractorName string   `json:"contractorName"` // 指定时名称快照
+	ItemsAmount    float64  `json:"itemsAmount"`    // 清单金额汇总 SUM(amount),结算应付口径
+	BudgetAmount   *float64 `json:"budgetAmount"`   // 预算金额,NULL=未登记(000218)
+	SettledAmount  float64  `json:"settledAmount"`  // 已结算金额=SETTLED 结算单合计,只读派生(000218)
 }
 
 // ConstructionItem 单-设施明细(工程量清单行;amount 为生成列,后端计算)。

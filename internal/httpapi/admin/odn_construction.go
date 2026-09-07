@@ -60,6 +60,7 @@ func registerODNConstructionRoutes(g *gin.RouterGroup, a *app.Application, perm 
 	registerODNProgressRoutes(g, a, perm)
 	registerODNQualityRoutes(g, a, perm)
 	registerODNSettlementRoutes(g, a, perm)
+	registerODNBudgetRoutes(g, a, perm)
 }
 
 // odnUpdateProjectItemHandler PUT /odn/constructions/{id}/items/{itemId}:清单定额编辑(ACCEPTED 前可改)。

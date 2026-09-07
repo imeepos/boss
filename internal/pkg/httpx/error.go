@@ -203,7 +203,8 @@ func RespondErr(c *gin.Context, err error) {
 	case errors.Is(err, odn.ErrNoContractor), errors.Is(err, odn.ErrSettlementState),
 		errors.Is(err, odn.ErrFacilityNotInScope), errors.Is(err, odn.ErrOpenDefects), errors.Is(err, odn.ErrDefectState),
 		errors.Is(err, odn.ErrRegConflict), errors.Is(err, odn.ErrRegState),
-		errors.Is(err, odn.ErrIssueState), errors.Is(err, odn.ErrIssueAsset):
+		errors.Is(err, odn.ErrIssueState), errors.Is(err, odn.ErrIssueAsset),
+		errors.Is(err, odn.ErrBudgetLocked), errors.Is(err, odn.ErrMilestoneLocked), errors.Is(err, odn.ErrPayableState):
 		// 结算/整改/资产化凭证/出库单前置缺失或状态冲突(000204/000214/000215):40900 + 原因,管理员可见为什么拒。
 		Respond(c, apitypes.CodeConflict, gin.H{"reason": err.Error()})
 	case errors.Is(err, odn.ErrPermitRequired),
@@ -254,7 +255,8 @@ func RespondErr(c *gin.Context, err error) {
 		// 同地址活跃链路归属他客(重装复用守卫):40920 族 + 原因透传。
 		Respond(c, apitypes.CodeScanMismatch, gin.H{"reason": err.Error()})
 	case errors.Is(err, ai.ErrNotConfigured),
-		errors.Is(err, ai.ErrInvalidInput):
+		errors.Is(err, ai.ErrInvalidInput),
+		errors.Is(err, sms.ErrUnsupportedRegion):
 		Respond(c, apitypes.CodeInvalidParam, nil)
 	case errors.Is(err, ai.ErrDownstream):
 		Respond(c, apitypes.CodeDownstreamErr, nil)
@@ -264,8 +266,6 @@ func RespondErr(c *gin.Context, err error) {
 		errors.Is(err, order.ErrDirectPhoneCap),
 		errors.Is(err, order.ErrDirectAddressCap):
 		Respond(c, apitypes.CodeResourceBusy, nil)
-	case errors.Is(err, sms.ErrUnsupportedRegion):
-		Respond(c, apitypes.CodeInvalidParam, nil)
 	case errors.Is(err, userdata.ErrContractDrift):
 		// 列表契约漂移(主键列缺失/空):映射 500 并保留详细 message,
 		// 调用方看到错误提示而不是 undefined 行(postmortem 0002 纵深防御)。

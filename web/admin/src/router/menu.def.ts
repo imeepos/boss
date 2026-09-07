@@ -41,6 +41,7 @@ export const MENU_GROUPS: MenuGroup[] = [
     { key: 'stopsrv', label: '停复机执行', path: '/billing/stopsrv' },
     { key: 'paycheck', label: '渠道对账', path: '/billing/paycheck' },
     { key: 'daily-close', label: '柜台日结', path: '/billing/daily-close' },
+    { key: 'payables', label: '工程应付台账', path: '/billing/payables' },
   ]},
   { id: 'boss', label: '订单与履约', items: [
     { key: 'order', label: '订单管理', path: '/boss/order' },

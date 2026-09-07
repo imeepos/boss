@@ -351,6 +351,22 @@ export interface Translations {
       hintGotoGrids: string
       hintNeedSite: string
       nextNoFail: string
+      pickDevice: string
+      pickDeviceSearch: string
+      pickAsset: string
+      pickAssetSearch: string
+      pickProject: string
+      pickProjectSearch: string
+      pickFacility: string
+      pickFacilitySearch: string
+      projStatus: { PENDING: string; BUILDING: string; ACCEPTED: string }
+      issuePickBtn: string
+      issuePickTitle: string
+      issueNeedAsset: string
+      issueColCode: string
+      issueColType: string
+      issueColStatus: string
+      issueField: string
       siteNo: string
       parentId: string
       deviceCode: string
@@ -2042,6 +2058,12 @@ export interface Translations {
       empty: string
       toastUploadOk: string,
       toastPatchOk: string,
+      wlPickBtn: string
+      wlPickerTitle: string
+      wlSelectedCount: string
+      colAccount: string
+      colName: string
+      colPhone: string
     },
     licensePage: {
       title: string
@@ -2398,6 +2420,7 @@ export interface Translations {
       odnLayerFacility: string
       odnLayerSite: string
       odnLayerDevice: string
+      parentNode: string
     }
     gridInvestmentPage: {
       title: string
@@ -2423,6 +2446,38 @@ export interface Translations {
       rangeText: string
       jumpText: string
       pageUnit: string
+      tabGrid: string
+      tabCity: string
+      tabCapacity: string
+      groupCost: string
+      colPlannedCost: string
+      colMaterialCost: string
+      colCity: string
+      colGridCount: string
+      colPotentialHomes: string
+      colConnectedHomes: string
+      colExpandableHomes: string
+      colCostPerPotential: string
+      colDevice: string
+      colKind: string
+      colLevel: string
+      colRatio: string
+      colChainRows: string
+      colUsedPorts: string
+      colExpandable: string
+      colSecondary: string
+      colScope: string
+      colLifecycle: string
+      level1: string
+      level2: string
+      scopeImport: string
+      yes: string
+      no: string
+      summaryDevices: string
+      summaryPotentialHomes: string
+      summaryConnectedHomes: string
+      summaryExpandableHomes: string
+      emptyCapacity: string
     }
     analyticsPage: {
       title: string
