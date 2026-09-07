@@ -1778,6 +1778,7 @@ export interface Translations {
       fPort: string
       pickSearch: string
       pickEmpty: string
+      toastCreateOk: string
       total: string
       empty: string
       loadFail: string
@@ -1982,6 +1983,7 @@ export interface Translations {
       columns: string[]
       retry: string
       retryConfirm: string
+      toastRetryOk: string
       actionFail: string
       total: string
       empty: string
