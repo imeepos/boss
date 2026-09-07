@@ -15,9 +15,9 @@
     {
       "id": "U1",
       "title": "PP2-W1 boss 域逐页体验打磨(32 页:订单/派单/装机看板/师傅/消息/拆机等)",
-      "goal": "Phase B 进行中:值契约违例修正+反馈链统一+错误横幅不替表;证据落 docs/acceptance/2026-09-07-pp2-w1-boss.md",
+      "goal": "已交付并合并 main=54880dcb:16 页逐页修复+值契约违例清零(运行时告警 0)+三项裁定落地(complaint 受理/轨迹、worker-reg 四页签、release 状态机设防);机械验收=负责人后台实跑 pp2-gate.sh(boss) RC=0+证据文档在",
       "priority": "P1",
-      "status": "doing",
+      "status": "done",
       "acceptanceCommand": "bash scripts/accept/pp2-gate.sh web/admin/src/pages/boss && test -f docs/acceptance/2026-09-07-pp2-w1-boss.md"
     },
     {
