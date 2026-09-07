@@ -137,7 +137,8 @@ def create_facility(kind, grid_code, seq):
 
 
 def create_address(label):
-    st, body = http("POST", "/addresses", {"parentID": 0, "label": label, "name": label})
+    # label 契约限制:路径段=小写字母数字(name 无限制,仍用 TAG 前缀供清理定位)
+    st, body = http("POST", "/addresses", {"parentID": 0, "label": label.lower().replace("-", ""), "name": label})
     if st == 200 and code_of(body) == 0:
         aid = (data_of(body) or {}).get("id") or (data_of(body) or {}).get("addressId")
         if aid:
