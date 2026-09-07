@@ -175,3 +175,9 @@
 
 - **provision 模板删除守卫不足,可产生悬空引用**:DELETE /provision-templates/:templateId 为物理删,守卫仅查 provision_tasks 引用(internal/.../pg_template_custom.go:47-55);被套餐(provision binding)引用但尚无任务的模板可被删除,套餐侧 templateId 悬空。修法建议:守卫补套餐绑定检查,或删除前提示强制解绑。来源:docs/plan/pp2-audit-ops.md 第四节。
 - **AAA NAS 真删无前端管理入口(能力盲区非缺陷)**:DELETE /aaa/nas/:id 为真物理删(带审计,aaa_nas.go:136-154),但全前端零调用零 UI;若后续补管理入口必须 danger ConfirmDialog 且明示不可恢复。来源:docs/plan/pp2-audit-ops.md 第四节。
+
+## 后端·GIS 反查数据链(2026-09-08 T14 rider 轮发现)
+
+- **行为限制｜/gis/resources/{id}/detail 对演示资源 237 返回 50000 内部错误**:102 环境 GET /api/admin/v1/gis/resources/237/detail → `{code:50000,data:null,msg:内部错误}`(HTTP 200 信封错误)。该资源为既有演示 OLT(demo 数据),前端 intel/gis 既有 drill 详情抽屉按失败路径显示「详情加载失败」,与本次 T14 无关(T14 未改后端)。排查线索:internal/domain/gis ResourceDetail 的指标/四码 join 链对空指标/空四码资源的 NULL 处理。T14-1 验收文档已如实记录该存量行为。
+- **契约缺口｜/odn/bindings 对端订单只透出 orderId,无既有只读接口解析为 orderNo**:ListBindingsByPort/ListBindingsByOrder 返回 `orderId`(数值),而 GET /orders/{orderNo} 按订单号检索、GET /orders?keyword= 只模糊匹配 orderNo 字符串(orderNo=ORD-YYYYMMDD-SEQ 与 id 无派生关系)→ 前端「绑定关系显示对端名称」只能渲染「订单 #id」。T14-1 受「不改后端」约束以编号呈现并留档;后续若要名称化,建议 ListBindingsByPort 直接 join orders.order_no 透出 orderNo(单点改动,向后兼容)。
+- **契约注意｜CoverageResolved.distanceM omitempty 零值省略**:点位=最近设施自身时 haversine=0 字段被省略,前端需按 0m 兜底(已修 OdnReverseDrawer);同理 status 等空串字段亦会被省略,消费方勿假设字段恒在。

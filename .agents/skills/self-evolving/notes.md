@@ -2183,3 +2183,9 @@
 - 哪个坑浪费了最多时间? 验收命令两处静态缺陷(select 锚点 [<] 被重定向吞掉、O5 证据路径少一层 ../)直到收尾全量门禁才爆;以及键名引号五连 parse error。
 - skill 有没有提前警告? 部分有:红线 24 管道吞退出码让我保留了显式 RC,才定位到链里真假混杂;但「验收器跑在活 worktree 上与执行者并发」无预警,本轮已喂回 techniques。
 - 重来一次我会怎么做? ①派单前把验收命令逐条在真实仓库路径 dry-run 一遍(本可前移暴露两处锚点缺陷);②从第一轮就建立快照 worktree 验收模式,不试探活工作区;③长组合命令拆小步显式 RC,尤其在清理链附近。
+
+## 2026-09-08 T14 rider 轮(GIS 反查抽屉+下单可装性徽标,单会话双任务)
+- 哪个坑浪费了最多时间? ①OpenLayers 点位合成 MouseEvent/PointerEvent 两轮无响应,直到改 CDP Input.dispatchMouseEvent 可信点击才通(合成事件白耗两轮);②devloop_accept 对 5 分钟级 pp2-gate 超时 exit null 连环熔断,与真实门禁 RC=0 冲突,排查耗时;③一次 bash 重试调用漏传 workdir 落到主树(幸 no-op)。
+- skill 有没有提前警告? 有:红线 10(核对 worktree 真实路径)与红线 14(必填参数自检)让漏传 workdir 被输出方括号分支名习惯兜住;红线 26 提示过 SimplePicker 系 onMouseDown,但对「地图类组件必须 CDP 可信事件」无预警,本轮已喂回 techniques。
+- 重来一次我会怎么做? ①地图/画布类交互直接上 CDP Input,不再试合成事件;②devloop_accept 跑长门禁前先估时长,超 2 分钟的门禁改用显式后台跑+日志 RC 留档并在账本 goal 里引用;③所有 bash 调用把 workdir 当必填参数自检。
+

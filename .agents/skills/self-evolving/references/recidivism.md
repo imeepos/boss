@@ -191,3 +191,6 @@
 | 子代理跑重型实现超时零产出,白耗轮询 | 2 | 2026-09-07(ODN 施工轮 P0-A 两次委派无提交,主会话直做一次过) | 单会话可完成的编码任务不委派;委派仅用于独立调研/扫尾 |
 | read 工具按字节截断(输出里看不出截断),把"全量读到的"大文件用 write 整体回写=静默截尾 | 2 | 2026-09-07(W5 轮:fields.md 2143 行被截成 2000,尾部 143 行契约丢失靠 git checkout 恢复;同轮 notes.md 2167 行照截回写丢 1800+ 行,已恢复后改 shell 追加重做) | 大文件严禁 read 全量再 write 回写;改用 edit 锚点编辑或 shell(cat >>)追加;确需整文件重写必须分页读+wc -l 对账行数一致才落盘 | RC_EOF
 echo RC_APPENDED
+| run_code 里 bash 调用漏传 workdir 参数:重试/补发调用时默认落主树,commit/status 输出直接暴露 On branch main 才发现 | 1 | 2026-09-08(T14 轮:补提交命令漏 workdir,幸主树无对应改动为 no-op;未损代码) | workdir 与 command+description 同为三必填自检项;凡 git 写操作调用,输出必须看方括号分支名再继续 |
+| devloop_accept 运行器对超 2 分钟的 acceptanceCommand 超时杀进程(exit null 连环熔断 redo/halt),与真实门禁 RC=0 假冲突 | 1 | 2026-09-08(T14 轮:pp2-gate 全量约 5 分钟被两次 exit null;独立后台跑同命令 GATE_RC=0 三次留档) | 长门禁任务:账本 acceptanceCommand 拆出快速核心断言,或先用后台 bash 显式 RC 留档再调 accept;exit null 一律先怀疑运行器超时而非代码 |
+| OpenLayers/画布类组件合成 MouseEvent/PointerEvent 不触发交互(isTrusted/pointerId 语义缺位) | 1 | 2026-09-08(T14 轮:gis 点位点击两轮 NO_DRAWER) | 地图/画布交互一律 CDP Input.dispatchMouseEvent 可信点击,坐标由页面 eval 按视图换算(.agents/skills/self-evolving/scripts/cdp-input-click.mjs) |

@@ -564,3 +564,16 @@ ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !exp
 症状 → 裸解析计数与设计文档画像全面不符（SN 313≠330、账号唯一 342≠347、S 拆机列出现 9 个假值如 1084），且行级样本错位（T 列值挂到 S 列）。
 原因 → 形如 <c r="S194" s="46"/> 的自闭合空单元格被 <c r="([A-Z]+)\d+"([^>]*)>(.*?)</c> 匹配时，attrs 组吞掉 / 后 > 照常闭合，(.*?) 一路吃到下一个非空单元格的 </c>，下一列的值错挂到当前列。
 修法 → 永不用正则啃 XML：zipfile 解包 + xml.etree.ElementTree 遍历 row/c 节点（get r/t 属性 + find v 子元素），自闭合节点天然安全；解析后先对权威画像（行数/唯一数/缺失数）做断言再继续。
+
+## /odn/coverage/resolve 的 distanceM omitempty 零值省略(2026-09-08 T14)
+- 症状:点位即最近设施时(自指),响应缺 distanceM 字段,前端 `distanceM != null` 判断为假,距离行消失。
+- 原因:`CoverageResolved.DistanceM` 带 `json:"distanceM,omitempty"`,haversine 距离 0 被 Go JSON 省略。
+- 修法:前端有 facilityCode 即有最近设施,距离按 `distanceM ?? 0` 呈现(OdnReverseDrawer.tsx 已修)。
+
+## /gis/odn-points 的 facility/site 点位 id 是 row_number 假 id(2026-09-08 T14)
+- `pg_odn_points.go` 对 facility/site 用 `row_number() OVER ()` 造 id(仅 device 用真实 odn_device.id);不能拿点位 id 反查资源。
+- 反查正解:facility 点 name=编码 → GET /odn/facilities/:code;site 点 name=cityPrefix+3 位序号 → 设备列表旁证 prvCode 后按复合键查;device 按 id/编码在列表里找。
+
+## 102 环境 /gis/resources/{id}/detail 对演示 OLT 资源返回 50000(2026-09-08 T14)
+- 资源 237(演示OLT,details join 四码/指标链)detail 接口 code=50000 内部错误(HTTP 200 信封错误);既有 drill 详情抽屉按失败路径显示「详情加载失败」。
+- 属存量后端/数据问题,rider 任务约束禁改后端,已如实记录验收文档;后端排查线索:gis.ResourceDetail 的 join 链对空指标/空四码资源的行为。

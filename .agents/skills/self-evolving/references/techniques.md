@@ -699,3 +699,13 @@ chr(39)/String.fromCharCode(34) 运行时构造；③ 正则字符类 [0-9] 替�
 
 - 负责人验收执行者会话仍在写码:机械验收一律对提交做独立 detach 快照 worktree(git worktree add --detach)逐 commit 实跑,绝不碰执行会话的活 worktree(与其写码并发=红线「测试与工作区改写禁并发」);换验收对象=git checkout --detach <hash> 复用同一快照。
 - 账本/脚本 grep 锚点含 < 时方括号 [<] 不防重定向(shell 词法在 glob 之前,<[ ]x 仍被解析为重定向),必须整体加引号;写 ../ 相对路径前先 pwd 校验层级深度(web/admin 距仓库根两层,../docs 会指到 web/docs)。
+
+## OL/OpenLayers 点位可信点击(合成事件无效,2026-09-08 T14)
+- 场景:pgis-map 等 OL 地图,`.ol-viewport` 上 dispatchEvent(MouseEvent/PointerEvent)不触发 singleclick,forEachFeatureAtPixel 永不命中。
+- 修法:CDP `Input.dispatchMouseEvent`(mouseMoved→mousePressed→mouseReleased,120ms 间隔)= 可信事件链;坐标在页面 eval 内按 `DEFAULT_VIEW(center,zoom)` 墨卡托换算:`res=40075016.686/256/2^zoom; x=rect.left+rect.width/2+(px-cx)/res; y=rect.top+rect.height/2-(py-cy)/res`。
+- 现成脚本:`scripts/cdp-input-click.mjs`(admin 免登录注入 + `--click '<expr 返回 [x,y]>'` 槽位:返回数组才点击,返回字符串可当断言用;evals 先于 clicks 执行,注意顺序)。
+- 交互组件事件绑定差异仍守红线 26:Dropdown/SimplePicker 选项 onMouseDown、触发器 onClick,合成事件有效;仅地图/画布必须可信事件。
+
+## devloop_accept 超时甄别(2026-09-08 T14)
+- acceptanceCommand >2 分钟(pp2-gate 全量:typecheck+test+build)会被运行器超时杀掉,exit null、verdict=fail 连环 redo/halt,与代码无关。
+- 处置:后台 bash 显式跑同命令留 `GATE_RC=0` 日志 + 文档引用;exit null 一律先查运行器超时(gate 各阶段日志)再怀疑代码。
