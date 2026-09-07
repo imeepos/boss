@@ -293,7 +293,8 @@ def main():
         if not (st == 200 and code_of(body) == 0):
             raise RuntimeError("receipt: " + str((st, body))[:200])
         receipt_id = (data_of(body) or {}).get("id")
-        st, body = http("POST", "/procurement/receipts/" + str(receipt_id) + "/confirm", {})
+        st, body = http("POST", "/procurement/receipts/" + str(receipt_id) + "/confirm",
+            {"items": [{"materialCode": TAG + "-MAT", "quantity": 2}]})
         if not (st == 200 and code_of(body) == 0):
             raise RuntimeError("receipt confirm: " + str((st, body))[:200])
         batch_id = psql("SELECT batch_id FROM procurement_receipts WHERE id = " + str(receipt_id)).strip()
