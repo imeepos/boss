@@ -96,7 +96,8 @@ P2(一致性,余力则做)
 
 ## 六、Phase B 验收口径(对齐路线图 §三/§五与任务卡预告)
 
-- 机械门禁:make web-admin-check(TZ=Asia/Shanghai)全绿;boss 域 grep 无原生 select/裸 alert(Phase A 基线已绿,见 /tmp/pp2-w1/web-admin-check-baseline.log)。
+- 机械门禁:make web-admin-check(TZ=Asia/Shanghai)全绿;boss 域 grep 无原生 select/裸 alert(两项在 boss 域均零命中)。
+- Phase A 基线实测(worktree=main@011bacd8+本文档):单测 504/504 绿、web-ui-audit ok、boss 域组件采用率 97%(30/31,ok);门禁整体红,唯一 FAIL=ams 12/29 41%——属 W2 波次范围,与 boss 无关,Phase A 不越界处理,登记移交 W2/负责人(日志 /tmp/pp2-w1/web-admin-check-baseline.log)。
 - 逐页路线图 §三 六条规则复核;102 真实走查复验:实截+DOM 断言(每页至少 1 条交互断言)+console/网络零报错。
 - 证据落 docs/acceptance/2026-09-07-pp2-w1-boss.md;i18n 键 append-only 独立小提交;单文件 ≤300 行。
 
