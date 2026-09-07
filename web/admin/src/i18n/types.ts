@@ -1516,6 +1516,10 @@ export interface Translations {
       empty: string
       loadFail: string
       trackFail: string
+      toastReserveOk: string
+      toastChargeOk: string
+      toastCancelOk: string
+      toastCreateOk: string
       prev: string
       next: string
       perPage: string
