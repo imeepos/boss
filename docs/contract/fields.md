@@ -548,6 +548,17 @@ construction_payable_invoices（发票登记，纯登记不联动税局）：
 | PECE状态 | pece_status | 待签署→PENDING_SIGN/已签署→SIGNED/已盖章→STAMPED/不适用→NA |
 | 备注 | remark | 文本 |
 | (批次/行号/指纹) | batch_no/line_no/fingerprint | 指纹=23 列归一化 SHA-256,唯一去重 |
+| (网格归属,可选,W3 收口 F2) | prv_code/city_prefix/grid_code | 三列一体:省份码(≤6)/城市前缀(≤5)/网格码 1~99,任一非空即三者必须齐全;带归属的链行导入联动备案网格+网格锚点设施(见下注) |
+
+> 网格归属联动（W3 收口 F2，迁移 000222，审查 F2；裁定 adopted 2026-09-07-infra-w3c-import-linkage）：
+> 链行可选携带城市/网格归属。带归属的链行导入同事务：① 备案网格 `odn_grid`（(prv,city) 须在
+> odn_city_code 已登记，未登记拒绝该行不猜填；网格名=机房名称或「导入网格-<grid>」，既有网格不动）；
+> ② 建/复用网格锚点设施 `odn_facility` kind=MH（编码 MH+2 位网格码+3 位序号，规范 4.1 网格分区模式，
+> 名称=机房名称或「链锚-<首箱体码>」，lifecycle 随链行）——投资测算网格行设施计数（1.5.11 口径 1）非空，
+> 覆盖登记挂锚点设施码即进该网格行覆盖计数与覆盖页（/odn/coverage*）；③ 指纹并入归属
+> （归属=资源关系一部分；不携带归属的行指纹与 000210 完全一致，存量去重语义零变化）。
+> 既有五类地理空间设施与城市域设备零改动；W5「城市域优先、导入域兜底」容量规则不受影响
+> （容量住设备维度，锚点设施不参与容量模型）。机房/OLT/ODF 仍按文本引用承载（站点前缀引用不展开，不猜填）。
 ### 1.5.13 odn_permits（ROW 路权与 PECE 许可单，迁移 000211，internal/domain/odn）
 
 > P-INFRA-1 W4（审查 F3 提级）：ROW/PECE 从资源链导入列升为独立工作流实体，可关联施工项目/设施/资源链，
@@ -1049,6 +1060,13 @@ App 本地留痕后启动补传；服务端入库即视为成功，App 端成功
 > 页面 asset.html 的「标签编号/EPC 码」经 `tag_id → tags` 反查展示，「位置」= `address_id`，「生命周期」= `status`。
 > 状态轨迹（TS 实体）：`asset_lifecycles`，资产每次状态/位置变更一行，含事发时 `address_id` + `address_name` 快照 + `changed_at`，历史不随当前状态漂移。
 > 区域/企业锚点（TS 实体）：`region_id`/`region_name`（部署地址所在经营区域，未部署为空）、`legal_entity_id`/`legal_entity_name`（企业），按地区/企业统计资产。
+> 区域快照回补（W3 收口，2026-09-07）：存量开户导入 347 台资产快照为空（regionId=0）。
+> `POST /assets/region-backfill`（menu:asset，幂等可重跑，审计 asset.region-backfill）按「地址行级节点归属推导」
+> 回补：① 部署地址节点自身 `region_id`，为空沿地址链向上取最近非空祖先（000076/000077 建址继承同口径）；
+> ② 地址链全空归属时，存量开户导入批（asset_batches.name='存量开户导入'）回退该批既有缺省区域
+> root 集团（与该批 customers/lo_accounts 同域，见 adopted 2026-09-07-legacy-vlan-on-ports 决策 4）；
+> ③ 其余无归属不猜填（保持 0，计 skipped）。仅回补空快照行，重跑零更新；失败留
+> `[asset-region-backfill]` 可 grep 日志。
 > 数据质量闸门（000184，adopted 2026-09-06-asset-tag-quality-gate）：`status` 列 DB CHECK 枚举兜底
 > （assets 四态 / tags 三态，terms.md §4 为权威）；`assets.type` 000184 仅拦空串，P4-T2（000191+）
 > 起写入走应用层白名单 ONU/ROUTER/OLT（`internal/domain/asset/type_whitelist.go`，白名单外
