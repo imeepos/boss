@@ -2083,3 +2083,18 @@
   已 reset --soft + restore --staged 拆分重提为 86d8e4af;共享主树上 git commit 前
   必须 git status --short 检查第一列有无他人 staged 内容,只 add 自己的文件不够——
   别人可能已经 add 了。修正后逐一验证四轮反思提交均在 main 历史。
+
+## 2026-09-07 存量开户导入负责人轮(T1迁移/T2接口/T3工具/102 apply 终验)
+
+- 哪个坑最耗时?三撞真实约束:phone 是客户 App 登录名(uq_customers_app_login_phone,哨兵必撞);
+  quad_links 一址一活跃链路(uq_quad_links_address,000086);VLAN 列型 SMALLINT 装不下源数据 10 万级。
+  经验=dry-run 测不出写库约束,apply 前必对『目标表唯一索引清单』逐条核对哨兵值方案。
+- 占位值设计铁律:凡有唯一约束的列,占位值要么 NULL(唯一索引放行多 NULL),要么确定性派生
+  (伪号段+行序),禁止全员同值哨兵;上线后真实注册撞占位号走 409 人工,已在报告留痕。
+- ff-merge 的 | tail -1 会吞退出码(管道最后命令 rc=0),合并成败必须用 rev-parse 双指针 uniq 复核;
+  本次靠 rev-parse 复核才没把 merge 失败当成功。
+- 102 CI 部署会重置业务数据(run2 的 346 客户在 000203 部署后消失):导入终态必须在
+  最后一次部署之后落库并立即取证;数据消失先查 created_at 分布再猜工具 bug。
+- 会话并行期 main 每小时都在动:每个任务分支合并前都撞一次『分叉→worktree 反向同步→再 ff』,
+  协议本身够用,但负责人要预期 2-3 轮;分叉检查用 merge-base --is-ancestor。
+- 任务书验收命令写『--selfcheck 退出码』而非『报告数字一致』,机械可判,四轮修复零扯皮。
