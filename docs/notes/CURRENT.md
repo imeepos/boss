@@ -12,6 +12,7 @@
 - 附件删除一律软删(attachments.deleted_at),引用面不可穷举禁物理删(2026-08-25, attachment-soft-delete)
 - API 文档 = 契约运行时聚合 openapidoc + Swagger UI(/base/apidocs),契约 YAML 即权威(2026-09-06, api-docs-openapidoc)
 - ODN 物理层升级业务基础:地址覆盖关联→端口占用态→逻辑物理绑定三阶段推进;编码命名空间仍独立,桥接走关系表(2026-09-06, odn-business-linkage)
+- 存量开户数据:线路 VLAN 四元组挂 ports(不挂账号);非 ODN 规范编码的光缆层级以 ports.legacy_path 单列承接;存量月数挂 lo_accounts.contract_months;不伪造历史订单(2026-09-07, legacy-vlan-on-ports)
 
 ## 订单与状态机
 

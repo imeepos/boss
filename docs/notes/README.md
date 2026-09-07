@@ -97,6 +97,7 @@
 | 2026-09-06 | API 在线文档 = 契约运行时聚合(embed+openapidoc)+ Swagger UI 入驻 /base/apidocs(menu:apidocs);Try-it-out 带登录态真实调接口;附带修复契约 YAML 存量债 | adopted/2026-09-06-api-docs-openapidoc.md |
 | 2026-09-06 | MCP 接入 = 本地 stdio server(cmd/bossmcp):3 工具(目录/调用/身份)覆盖用户端+师傅端全部端点,路由目录 openapi 生成同门禁;admin 端/HTTP transport/每接口一 tool/复用 bossctl 代码均被否决 | adopted/2026-09-06-mcp-server-user-worker.md |
 | 2026-09-06 | ODN 无源网络升级业务基础:覆盖关联(P1)→物理端口占用(P2)→逻辑物理绑定(P3)三阶段桥接,编码命名空间独立不动;订单直绑/并入 resource 域/P1 即硬校验被否决 | adopted/2026-09-06-odn-business-linkage.md |
+| 2026-09-07 | 存量开户导入字段归属:VLAN 四元组挂 ports(svlan/cvlan/internet_cvlan/tr069_cvlan,000202)、OCC/ODB 层级 legacy_path 单列无损承接、lo_accounts.contract_months 存月数、不建历史订单;VLAN 挂账号/ODN 强编码/直插 DONE 订单被否决 | adopted/2026-09-07-legacy-vlan-on-ports.md |
 | 2026-09-07 | payments.method='card' 双语义(柜面 POS/Stripe 线上)对账口径:柜面三要素非空即剔除渠道对账;拆枚举/加 source 列被否决留契约后续 | adopted/2026-09-07-payment-method-card-dual-semantics.md |
 | 2026-09-04 | 四码同客户同地址重装→scan-bind 刷新复用既有活跃 quad_link 行(更新端口/资产/状态并留审计),跨客户→40920 拒绝;旧行置 UNLINKED 双行并存/先删后插/DB 触发器被否决 | adopted/2026-09-04-quadlink-reinstall-reuse.md |
 | 2026-09-01 | customers.address_id 放开可空(000176):新建客户轻量建档(仅主体+区域/主体),地址走档案页"地址"动作内联建址回填,"开户"直达工作台;占位地址/放开实体区域可空/新端点被否决 | adopted/2026-09-01-customer-address-nullable.md |
