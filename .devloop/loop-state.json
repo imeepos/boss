@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-08T06:50:00+08:00",
+  "updatedAt": "2026-09-07T20:46:18.064Z",
   "project": "boss",
-  "phase": "T14 rider 双任务交付完成,待主树 ff 合并与 T14-3 收口",
+  "phase": "PP2 收官轮:T14 rider(GIS 反查弹窗+下单可装性徽标)进行中,专属会话执行",
   "tasks": [
     {
       "id": "U0",
@@ -97,18 +97,17 @@
     {
       "id": "T14-1",
       "title": "T14-1 GIS 点位点击反查弹窗(intel/gis:ODN 图层点位点击→绑定关系+可装性反查抽屉)",
-      "goal": "已交付并合并 feat/t14-gis-order-rider;pp2-gate(intel) RC=0(t14-gate2.log);走查证据 docs/acceptance/2026-09-08-t14-1-gis-reverse.md;devloop_accept 运行器超时(exit null)为环境限制,门禁三次独立 RC=0 留档",
+      "goal": "专属会话交付;负责人机械验收+走查证据文档",
       "priority": "P2",
-      "status": "done",
-      "acceptanceCommand": "bash scripts/accept/pp2-gate.sh web/admin/src/pages/intel && test -f docs/acceptance/2026-09-08-t14-1-gis-reverse.md",
-      "failCount": 2
+      "status": "todo",
+      "acceptanceCommand": "bash scripts/accept/pp2-gate.sh web/admin/src/pages/intel && test -f docs/acceptance/2026-09-08-t14-1-gis-reverse.md"
     },
     {
       "id": "T14-2",
       "title": "T14-2 代客下单可装性实时徽标(boss/order:选地址自动判定,零额外操作)",
-      "goal": "已交付并合并 feat/t14-gis-order-rider;pp2-gate(boss) RC=0(t14-gate3.log);五态走查+真实提单 ORD-20260908-000948(已取消)证据 docs/acceptance/2026-09-08-t14-2-order-badge.md",
+      "goal": "专属会话交付;负责人机械验收+走查证据文档",
       "priority": "P2",
-      "status": "done",
+      "status": "todo",
       "acceptanceCommand": "bash scripts/accept/pp2-gate.sh web/admin/src/pages/boss && test -f docs/acceptance/2026-09-08-t14-2-order-badge.md"
     },
     {
