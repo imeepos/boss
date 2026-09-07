@@ -6,13 +6,15 @@ import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { useConfirm } from '../../../components/ConfirmDialog'
 import { Drawer } from '../../../components/Drawer'
+import { TableStateRow } from '../../../components/business'
+import { FormField } from '../../../components/business/form-field'
+import { ErrorBanner } from '../../../components/business/page-head'
 import type { AssetModelRow } from '../types'
 import { buildModelPayload, emptyModelForm, modelFormErr, type ModelFormState } from './dictLogic'
 
 const input = 'h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]'
 const smallBtn = 'h-7 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2 text-[12px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)] disabled:cursor-not-allowed disabled:opacity-50'
 const td = 'h-9 px-2 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)]'
-const errBanner = 'rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]'
 
 export function ModelDictDrawer({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
   const t = useT()
@@ -24,12 +26,13 @@ export function ModelDictDrawer({ onClose, onSaved }: { onClose: () => void; onS
   const [editing, setEditing] = useState<AssetModelRow | null>(null)
   const [form, setForm] = useState<ModelFormState>(emptyModelForm)
   const [formErr, setFormErr] = useState('')
+  const [loaded, setLoaded] = useState(false)
 
   const load = useCallback(() => {
     setError('')
     apiFetch<{ items: AssetModelRow[] }>('/asset-models')
-      .then((x) => setRows(x?.items ?? []))
-      .catch((e) => setError(e instanceof Error ? e.message : a.loadFail))
+      .then((x) => { setRows(x?.items ?? []); setLoaded(true) })
+      .catch((e) => { setError(e instanceof Error ? e.message : a.loadFail); setLoaded(true) })
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(load, [load])
 
@@ -90,21 +93,19 @@ export function ModelDictDrawer({ onClose, onSaved }: { onClose: () => void; onS
         <div className="rounded-sm border border-[var(--shell-side-border)] p-3">
           <div className="mb-2 text-[13px] font-medium text-[var(--shell-heading)]">{editing ? a.modelEdit : a.modelCreate}</div>
           <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
-            <input className={input} placeholder={a.modelVendor} value={form.vendor} onChange={(e) => setForm({ ...form, vendor: e.target.value })} />
-            <input className={input} placeholder={a.modelName} value={form.model} onChange={(e) => setForm({ ...form, model: e.target.value })} />
-            <input className={input} placeholder={a.modelCategory} value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} />
-            <input className={input} placeholder={a.modelPart} value={form.partNumber} onChange={(e) => setForm({ ...form, partNumber: e.target.value })} />
+            <FormField label={a.modelVendor}><input className={input} placeholder={a.modelVendor} value={form.vendor} onChange={(e) => setForm({ ...form, vendor: e.target.value })} /></FormField>
+            <FormField label={a.modelName}><input className={input} placeholder={a.modelName} value={form.model} onChange={(e) => setForm({ ...form, model: e.target.value })} /></FormField>
+            <FormField label={a.modelCategory}><input className={input} placeholder={a.modelCategory} value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} /></FormField>
+            <FormField label={a.modelPart}><input className={input} placeholder={a.modelPart} value={form.partNumber} onChange={(e) => setForm({ ...form, partNumber: e.target.value })} /></FormField>
           </div>
           <div className="mt-2 flex items-center gap-2">
             <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)] disabled:cursor-not-allowed disabled:opacity-50" disabled={busy} onClick={submit}>{editing ? t.pages.company.save : a.modelCreate}</button>
             {editing && <button className={smallBtn} onClick={resetForm}>{t.pages.company.cancel}</button>}
           </div>
-          {formErr && <div className="mt-2" ><div className={errBanner}>{a[formErr as 'eModelRequired']}</div></div>}
+          {formErr && <ErrorBanner message={a[formErr as 'eModelRequired']} />}
         </div>
-        {error ? (
-          <div className={errBanner}>{error}</div>
-        ) : (
-          <div className="overflow-x-auto">
+        {error && <ErrorBanner message={error} />}
+        <div className="overflow-x-auto">
             <table className="w-full border-collapse text-[13px]">
               <thead>
                 <tr>{cols.map((x) => <th key={x} className="h-9 px-2 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr>
@@ -130,11 +131,10 @@ export function ModelDictDrawer({ onClose, onSaved }: { onClose: () => void; onS
                     </td>
                   </tr>
                 ))}
-                {!rows.length && <tr><td className={td + ' text-center'} colSpan={cols.length}>{t.common.loading}</td></tr>}
+                {!rows.length && <TableStateRow colSpan={cols.length} loading={!loaded} text={a.empty} />}
               </tbody>
             </table>
           </div>
-        )}
       </div>
     </Drawer>
   )

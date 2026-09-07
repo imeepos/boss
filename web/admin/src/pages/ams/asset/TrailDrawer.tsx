@@ -7,7 +7,9 @@ import { Drawer } from '../../../components/Drawer'
 import { StatusTag } from '../../../components/StatusTag'
 import { TabBar } from '../../../components/business/tab-bar'
 import { useT } from '../../../i18n'
+import { ErrorBanner } from '../../../components/business/page-head'
 import { MainRecordSection } from './MainRecordSection'
+import { batchLabel } from './logic'
 import { fmtTime } from '../../../lib/format'
 import type { AssetModelRow, AssetRow, AssignmentRow, LifecycleRow, TagRow } from '../types'
 import { EmptyState } from '../../../components/business'
@@ -76,7 +78,7 @@ export function AssetTrailDrawer({
       <div className="mx-4 mt-4 mb-3 rounded-sm border border-[var(--shell-side-border)] p-3">
         <div className="mb-2 text-xs font-medium text-[var(--shell-group-title)]">{a.relTitle}</div>
         <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
-          <RelItem label={a.relBatch}>{batch ? `#${batch.id} ${batch.code} ${batch.name}` : `#${asset.batchId}`}</RelItem>
+          <RelItem label={a.relBatch}>{batchLabel(batch, asset.batchId)}</RelItem>
           <RelItem label={a.relReceipt}>{receipt ? receipt.receiptNo : '—'}</RelItem>
           <RelItem label={a.relOrder}>{receipt?.orderNo || '—'}</RelItem>
           <RelItem label={a.relTag}>{tag ? `${tag.tagNo} · ${tag.epcCode}` : asset.tagId ? `#${asset.tagId}` : '—'}</RelItem>
@@ -84,7 +86,8 @@ export function AssetTrailDrawer({
       </div>
       {showMain && <MainRecordSection main={main} tag={tag} model={model} batch={batch} />}
       <TabBar tabs={tabs} value={tab} onChange={setTab} />
-      {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : tab === 'lifecycle' ? (
+      {error && <ErrorBanner message={error} />}
+      {tab === 'lifecycle' ? (
         <div className="overflow-x-auto px-4 pb-4">
           <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
             <thead><tr>{a.lifecycleColumns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
@@ -95,11 +98,10 @@ export function AssetTrailDrawer({
                   <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><StatusTag domain="asset" value={r.status} /></td>
                   <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.addressName || (r.addressId ? '#' + r.addressId : '—')}</td>
                   <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.workerName || (r.workerId ? '#' + r.workerId : '—')}</td>
-                  <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.workerName || '—'}</td>
                 </tr>
               ))}
               {lifecycle !== null && !lifecycle.length && (
-                <tr><td colSpan={5} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><EmptyState text={a.empty} /></td></tr>
+                <tr><td colSpan={4} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><EmptyState text={a.empty} /></td></tr>
               )}
             </tbody>
           </table>

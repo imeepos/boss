@@ -1136,7 +1136,7 @@ const enUS: Translations = {
       columns: ['Asset Code', 'Tag No', 'EPC Code', 'Type', 'Batch', 'Location', 'Lifecycle', 'Actions'],
       lifecycle: 'Status Trail',
       lifecycleTitle: 'Asset Status Trail',
-      lifecycleColumns: ['Time', 'Event (Status)', 'Address', 'Worker', 'Operator'],
+      lifecycleColumns: ['Time', 'Event (Status)', 'Address', 'Worker'],
       assignment: 'Assignments',
       assignmentTitle: 'Asset Assignment Ledger',
       assignmentColumns: ['Worker', 'Address', 'Reason', 'From', 'To'],

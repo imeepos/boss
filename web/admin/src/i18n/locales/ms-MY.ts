@@ -1136,7 +1136,7 @@ const msMY: Translations = {
       columns: ['Kod Aset', 'No. Tag', 'Kod EPC', 'Jenis', 'Batch', 'Lokasi', 'Kitaran Hayat', 'Tindakan'],
       lifecycle: 'Jejak Status',
       lifecycleTitle: 'Jejak Status Aset',
-      lifecycleColumns: ['Masa', 'Peristiwa (Status)', 'Alamat', 'Pekerja', 'Operator'],
+      lifecycleColumns: ['Masa', 'Peristiwa (Status)', 'Alamat', 'Pekerja'],
       assignment: 'Pegangan',
       assignmentTitle: 'Lejar Pegangan Aset',
       assignmentColumns: ['Pekerja', 'Alamat', 'Sebab', 'Dari', 'Hingga'],

@@ -1136,7 +1136,7 @@ const zhCN: Translations = {
       columns: ['资产编码', '标签编号', 'EPC 码', '类型', '入库批次', '位置', '生命周期', '操作'],
       lifecycle: '状态轨迹',
       lifecycleTitle: '资产状态轨迹',
-      lifecycleColumns: ['时间', '事务(状态)', '地址', '操作师傅', '操作人'],
+      lifecycleColumns: ['时间', '事务(状态)', '地址', '操作师傅'],
       assignment: '持有台账',
       assignmentTitle: '资产持有台账',
       assignmentColumns: ['师傅', '地址', '事由', '生效起', '生效止'],
