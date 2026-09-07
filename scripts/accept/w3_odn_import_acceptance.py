@@ -154,7 +154,15 @@ def main():
         print("FAIL: admin 登录")
         sys.exit(1)
     ok("admin 登录")
+    # 自清理:上一轮残留(服务端生成批次号不可预测,按链上箱体码清理)
+    psql("DELETE FROM odn_resource_chain WHERE occ_code='OCC901'"
+         " OR odb_code IN ('ODB902','ODB903')")
+    psql("DELETE FROM odn_device WHERE prv_code IS NULL AND code IN (" +
+         ",".join("'" + c + "'" for c in CODES) + ")")
     pre = http("GET", "/odn/resource-chains/patrol", TOKEN)
+    if pre.get("code") != 0:
+        print("FAIL: patrol 接口异常(新二进制未就绪?): " + json.dumps(pre, ensure_ascii=False)[:200])
+        sys.exit(1)
     pre_chains = (pre.get("data") or {}).get("chains", 0)
     try:
         run(pre_chains)
