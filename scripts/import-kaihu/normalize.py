@@ -5,15 +5,19 @@ from datetime import date, timedelta
 
 EXCEL_EPOCH = date(1899, 12, 30)
 
+# 一线一地址节点(2026-09-07 裁定):单一父根 + 每行子节点,满足 uq_quad_links_address
+# 每地址至多一条非空活跃链路,347 行共用单节点必撞。
+ADDRESS_ROOT_PATH = 'legacy_import'
+ADDRESS_ROOT_NAME = '存量开户导入占位地址'
+
 DEFAULTS = {
     'legal_entity_id': 6,
     'legal_entity_name': '平台总公司',
     'region_id': 1,
     'region_name': '集团',
-    'customer_phone': 'PENDING',
     'customer_id_type': '无',
-    'address_path': 'legacy_import',
-    'address_name': '存量开户导入占位地址',
+    'address_root_path': ADDRESS_ROOT_PATH,
+    'address_root_name': ADDRESS_ROOT_NAME,
 }
 
 STANDARD_ACCOUNT_PREFIXES = ('OWPAL', 'OWTAC')
@@ -150,4 +154,15 @@ def _build_one(raw):
 
 
 def build_records(rows):
-    return [_build_one(raw) for raw in rows]
+    # phone 为确定性伪登录号段 0999000xxxx(行序 1 起四位零填充):customers.phone 是
+    # App 登录名(uq_customers_app_login_phone 唯一),PENDING 哨兵第二行即撞 23505;
+    # 唯一由构造保证,跨重跑确定(行序=xlsx 行序)。
+    records = [_build_one(raw) for raw in rows]
+    for idx, rec in enumerate(records):
+        rec['phone'] = '0999000%04d' % (idx + 1)
+        label = rec['account'].lower()
+        if not label or not all(c.isascii() and (c.isalnum() or c == '_') for c in label):
+            raise ValueError('account not ltree-label safe: %r' % rec['account'])
+        rec['address_path'] = ADDRESS_ROOT_PATH + '.' + label
+        rec['address_name'] = rec['account']
+    return records

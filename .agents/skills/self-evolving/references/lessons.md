@@ -2,6 +2,9 @@
 
 <!-- 一条经验一行。格式：当 X 发生时，修复是 Y。skill 没提前警告我。 -->
 
+- 当要做大规模数据库测试造数清理时，修复是标准动线：scripts/ops/backup-102.sh 备份 → count(*) 全量盘点(禁信 pg_stat_user_tables 估算) → 从 pg_constraint 拉 FK 子父图生成拓扑序删除 SQL → 本地写 SQL 文件 + ssh stdin 管道单事务 ON_ERROR_STOP 执行 → count 复核 + db-patrol-gate 机械验收。skill 没提前警告我。
+- 当 ssh+psql 需要执行多语句 SQL 时，修复是本地写 .sql 文件后 `ssh host "docker exec -i 容器 psql ..." < file.sql`，彻底放弃内联 -c 与引号转义(2026-09-07 清理轮 3 连炸实证)。skill 没提前警告我。
+
 - 当两个控件共用同一个 aria-label(如趋势周期与列表筛选都叫「周期筛选」),querySelector 与可达性同时受损:屏幕阅读器分不清控件,自动化定位拿到错误元素——断言失败先怀疑「标签不唯一」,修正文案键本身(trendPeriodLabel 拆分),而不是绕道换选择器。2026-09-07 报告中心轮。
 
 - 当需要给"需登录的 Web 页面"截图且没有 Playwright 时，修复是系统 Chrome `--headless=new --remote-debugging-port` + Node>=22 全局 WebSocket 裸 CDP（脚本见 scripts/cdp-capture.mjs）。skill 没提前警告我。
@@ -538,3 +541,5 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 当正则解析 xlsx/HTML 等结构化标记且计数与权威画像不符时，修复是换 xml.etree.ElementTree/正规解析器，不用正则啃 XML——自闭合空单元格 <c .../> 的 / 被属性组吞掉后会串列取值（2026-09-07 T3 轮：S 列假拆机 9 个、SN 313≠330，换 ET 一次全中）。skill 没提前警告我。
 - 当硬指标口径有歧义（如「VLAN 四元组同缺 35」）时，修复是拿另一条独立基线交叉反推（T4 的「svlan 非空 312」→ 347-312=35=外层缺失），直觉口径（全四空=34）会差 1 且 selfcheck 永远红（2026-09-07 T3 轮）。skill 没提前警告我。
 - 当任务书与设计文档字段清单不一致时，修复是按两者并集实现并在回报中单列差异提示交负责人裁决——单方取舍都会在下游验收爆雷（2026-09-07 T3 轮 assets 段）。skill 没提前警告我。
+- 当 SQL 模板同时含 LIKE 通配符与 python %-format 时，修复是通配符 % 写成 %%——只有生成路径真被调用才炸 ValueError，SQL 构建函数必须进验收覆盖（2026-09-07 T3 修复轮 apply_sql build_sql）。skill 没提前警告我。
+- 当 edit 用于『在函数前插入新函数』时，修复是 old/new 都带完整上下文行且禁止只写签名行——只写签名行会把原函数改名断链；改完必须 grep 函数名核对定义与调用点闭环（2026-09-07 T3 修复轮 _sql_lo_accounts 被误改名）。skill 没提前警告我。

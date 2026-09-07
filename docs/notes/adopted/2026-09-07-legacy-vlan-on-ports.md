@@ -11,3 +11,7 @@
 - why：VLAN 挂端口使"线路=端口=PON 定位=VLAN"同表可查，避免账号-端口二跳 join；legacy_path 以最小代价保住光纤层级可追溯性，不与 ODN 编码契约冲突；存量数据以"在服档案"口径入账（lo_accounts），不伪造订单状态机轨迹。
 - 放弃了什么（被否决项）：VLAN 挂 lo_accounts（换端口语义错）；OCC/ODB 拆成 4 列（污染 ports 主档）；借用 odn_facility 强行编码（违反 Suniway 编码规范）；全量直插历史 DONE 订单（污染订单列表与统计，且 Excel 无地址无法满足订单归属推导）。
 - 关联：docs/design/2026-09-07-legacy-kaihu-import.md；000178 PON 四维列；2026-09-06-odn-business-linkage；2026-08-21 business-timezone；2026-09-03-import-task-idempotency。
+
+> Amended 2026-09-07（apply 实跑两修正）：
+> 1. 决策 4 的「单一占位地址」被推翻——quad_links 受 uq_quad_links_address（000086：每地址至多一条非空活跃链路）约束，347 行共用一址第二行即撞。改为一线一地址节点：父节点 legacy_import（level 1）下每行挂独立节点 path=legacy_import.<小写账号>（level 2，needs_review=true），ports/quad_links 各指本行地址。
+> 2. 决策 1 的 VLAN 列型 SMALLINT 放宽 INTEGER（迁移 000203）：源 xlsx 68 行 internet_cvlan/tr069_cvlan 原值达 10 万级（如 104042，xlsx R216 起真实存在，非解析错），四列一并放宽防复发。

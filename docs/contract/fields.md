@@ -854,10 +854,10 @@ App 本地留痕后启动补传；服务端入库即视为成功，App 端成功
 | PON 槽号 | `PONSlot` | pon_slot | SMALLINT 可空；NULL=未分配（000178） |
 | PON 口号 | `PONPort` | pon_port | SMALLINT 可空；NULL=未分配（000178） |
 | ONUNO | `ONUNO` | onu_no | SMALLINT 可空；NULL=未分配（000178） |
-| 外层 VLAN | `Svlan` | svlan | SMALLINT 可空；NULL=未配置（000202 存量开户导入） |
-| 内层 VLAN | `Cvlan` | cvlan | SMALLINT 可空；NULL=未配置（000202） |
-| Internet 内层 VLAN | `InternetCvlan` | internet_cvlan | SMALLINT 可空；NULL=未配置（000202） |
-| TR069 内层 VLAN | `TR069Cvlan` | tr069_cvlan | SMALLINT 可空；NULL=未配置（000202） |
+| 外层 VLAN | `Svlan` | svlan | INTEGER 可空；NULL=未配置（000202 建列 SMALLINT，000203 放宽 INTEGER） |
+| 内层 VLAN | `Cvlan` | cvlan | INTEGER 可空；NULL=未配置（000202，000203 放宽） |
+| Internet 内层 VLAN | `InternetCvlan` | internet_cvlan | INTEGER 可空；NULL=未配置（000202，000203 放宽：存量源值达 10 万级） |
+| TR069 内层 VLAN | `TR069Cvlan` | tr069_cvlan | INTEGER 可空；NULL=未配置（000202，000203 放宽） |
 | 存量光缆层级 | `LegacyPath` | legacy_path | TEXT 可空；OCC06/ODB040/OBD01/P05 单列无损承接（000202） |
 
 > 状态变更历史（TS 实体）：`port_change_history`，端口每次状态/占用变化一行（变更后 status + order_id 快照 + changed_at），历史不随当前状态漂移。

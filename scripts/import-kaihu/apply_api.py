@@ -89,9 +89,12 @@ def ensure_customers(client, records):
         if _customer_exists(client, account):
             skipped += 1
             continue
+        phone = rec.get('phone', '')
+        if not phone:
+            raise ApiError('GET', '/customers', 'missing', 'plan row lacks phone: stale plan, re-run dry-run')
         payload = {
             'name': account,
-            'phone': DEFAULTS['customer_phone'],
+            'phone': phone,
             'legalEntityId': DEFAULTS['legal_entity_id'],
             'regionId': DEFAULTS['region_id'],
             'idType': DEFAULTS['customer_id_type'],

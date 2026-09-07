@@ -76,6 +76,8 @@ def build_report(records, skipped_empty, sheet_names, source_name):
         'ports_planned': sum(1 for r in records if r['port_code']),
         'assets_planned': len(records),
         'customers_planned': len(records),
+        'phone_placeholder_rows': len(records),
+        'row_addresses_planned': len(records),
         'lo_accounts_planned': len(records),
         'quad_links_planned': sum(1 for r in records if r['port_code']),
     }
@@ -122,6 +124,9 @@ def build_report(records, skipped_empty, sheet_names, source_name):
             '导入产品档挂法人 1(与家庭宽带100M/200M 同法人); 100M/200M 复用既有档按带宽取最小 id',
             'VLAN 四元组缺失口径=外层 svlan 缺失(=35); 全四空 34 行, vlan_partial 单列',
             '端口/四码绑定仅为 OLT+PON+ONU 三要素齐备行建(实测 313), 与预估 ~331/+346 的差异见 README §6',
+            'customers.phone 为伪登录号段 0999000xxxx(行序 1 起四位零填充, 唯一由构造保证, 对齐 uq_customers_app_login_phone); 档案占位, 真实号注册撞号时走 409 人工处理',
+            '地址=一线一节点: 父根 legacy_import(level 1) + 每行子节点 legacy_import.<小写账号>(level 2, needs_review=true); 满足 uq_quad_links_address 每地址至多一条非空活跃链路(000086)',
+            'assets API 载荷无 addressId 字段, 资产地址保持未部署态(NULL), 由部署流转赋值',
         ],
     }
 
