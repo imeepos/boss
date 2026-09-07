@@ -300,6 +300,7 @@ export interface Translations {
       relGrid: string
       relSite: string
       drawer: { createTitle: string; editTitle: string; hintOverride: string; lifecycle: string; edit: string; missingRequired: string; kindP: string; kindMH: string; kindTW: string; kindCLS: string; kindTBX: string }
+      detail: { title: string; basic: string; relations: string; asset: string; records: string; noAsset: string; noRecords: string; regNo: string }
       rangeText: string
       prev: string
       next: string
