@@ -203,10 +203,9 @@ func RespondErr(c *gin.Context, err error) {
 	case errors.Is(err, odn.ErrNoContractor), errors.Is(err, odn.ErrSettlementState),
 		errors.Is(err, odn.ErrFacilityNotInScope), errors.Is(err, odn.ErrOpenDefects), errors.Is(err, odn.ErrDefectState),
 		errors.Is(err, odn.ErrRegConflict), errors.Is(err, odn.ErrRegState),
-		errors.Is(err, odn.ErrIssueState), errors.Is(err, odn.ErrIssueAsset),
-		errors.Is(err, odn.ErrBudgetLocked), errors.Is(err, odn.ErrMilestoneLocked), errors.Is(err, odn.ErrPayableState),
-		errors.Is(err, odn.ErrSurveyState), errors.Is(err, odn.ErrSurveyNotAssignee):
-		// 结算/整改/资产化凭证/出库单前置缺失或状态冲突(000204/000214/000215):40900 + 原因,管理员可见为什么拒。
+		errors.Is(err, odn.ErrRegConflict), errors.Is(err, odn.ErrRegState), errors.Is(err, odn.ErrIssueState), errors.Is(err, odn.ErrIssueAsset),
+		errors.Is(err, odn.ErrBudgetLocked), errors.Is(err, odn.ErrMilestoneLocked), errors.Is(err, odn.ErrPayableState), errors.Is(err, odn.ErrSurveyState),
+		errors.Is(err, odn.ErrSurveyNotAssignee):
 		Respond(c, apitypes.CodeConflict, gin.H{"reason": err.Error()})
 	case errors.Is(err, odn.ErrPermitRequired),
 		errors.Is(err, odn.ErrPermitState),
