@@ -1624,6 +1624,12 @@ export interface Translations {
       disband: string
       disbandConfirmText: string
       confirmDisband: string
+      toastTeamSaved: string
+      toastWorkerSaved: string
+      toastPwdReset: string
+      toastRegionsSaved: string
+      toastTransferred: string
+      toastDisbanded: string
       perfBtn: string
       perfTitle: string
       periodLabel: string
