@@ -31,8 +31,8 @@ export default function LicensePage() {
       const st = await activateLicense(code.trim())
       setStatus(st)
       setCode('')
-    } catch {
-      setError(s.activateFail)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : s.activateFail)
     } finally {
       setActivating(false)
     }
