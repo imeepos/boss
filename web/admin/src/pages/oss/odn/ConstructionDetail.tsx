@@ -15,6 +15,7 @@ import { fmtMoney, type Project } from './constructions'
 import { BudgetMilestonePanel } from './BudgetMilestonePanel'
 import { PERMIT_KIND_TEXT, PERMIT_STATUS_TEXT, PERMIT_STATUS_VARIANT } from './permits'
 import { MaterialIssuesCard } from './MaterialIssuesCard'
+import { ProgressCard } from './ProgressCard'
 
 const CARD = 'rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]'
 const FIELD = 'flex flex-col gap-1'
@@ -130,6 +131,7 @@ export function ConstructionDetail({ projectId, onChanged }: { projectId: number
   return <div className='mt-4 space-y-3'>
     {error && <ErrorBanner message={error} />}
     <BudgetMilestonePanel project={project} onChanged={onChanged} />
+    <ProgressCard projectId={projectId} />
     <div className={CARD + ' p-4'}>
       <div className='mb-2 flex flex-wrap items-center gap-2'>
         <span className='text-sm font-semibold'>承包商</span>
