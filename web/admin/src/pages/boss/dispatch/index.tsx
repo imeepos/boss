@@ -14,6 +14,7 @@ import { WorkerPicker, type PickedWorker } from './WorkerPicker'
 import { ResourcePicker } from '../../../components/ResourcePicker'
 import { searchWorkers } from '../../../api/pickers'
 import { TableStateRow } from '../../../components/business'
+import { TabBar } from '../../../components/business/tab-bar'
 
 export default function DispatchPage() {
   const t = useT()
@@ -93,17 +94,12 @@ export default function DispatchPage() {
     <div>
       <PageHead title={d.title} desc={d.desc} />
       <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
-        <div style={{ display: 'flex', gap: 4, marginBottom: 12, borderBottom: '1px solid #f0f0f0', alignItems: 'center' }}>
-          {(['pool', 'mine', 'transfers'] as const).map((key) => (
-            <button key={key} onClick={() => { setTab(key); setPage(1) }}
-              style={{
-                padding: '8px 16px', fontSize: 14, cursor: 'pointer', background: 'none', border: 'none',
-                borderBottom: tab === key ? '2px solid #1677ff' : '2px solid transparent',
-                color: tab === key ? '#1677ff' : '#666', fontWeight: tab === key ? 600 : 400,
-              }}>
-              {key === 'pool' ? d.tabPool : key === 'mine' ? d.tabMine : d.tabTransfers}
-            </button>
-          ))}
+        <TabBar
+          tabs={[{ key: 'pool', label: d.tabPool }, { key: 'mine', label: d.tabMine }, { key: 'transfers', label: d.tabTransfers }]}
+          value={tab}
+          onChange={(k) => { setTab(k); setPage(1) }}
+          extra={
+            <div className="flex items-center gap-2 px-2">
           {tab === 'mine' && (
             <ResourcePicker
               value={workerFilter}
@@ -115,10 +111,11 @@ export default function DispatchPage() {
               searchPlaceholder={t.pages.pickers.common.placeholder}
               errorText={d.loadFail}
             />
-          )}
-          <span className="spacer" />
-          <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={() => load(tab)}>{t.pages.audit.refresh}</button>
-        </div>
+              )}
+              <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={() => load(tab)}>{t.pages.audit.refresh}</button>
+            </div>
+          }
+        />
         {error && <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div>}
         {tab !== 'transfers' ? (
           <div className="overflow-x-auto px-4 pb-4">
