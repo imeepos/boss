@@ -1,11 +1,14 @@
-// pickerCore 纯函数单测:双数据源合并、单/多选边界、分页选中、筛选参数组装。
+// pickerCore 纯函数单测:双数据源合并、单/多选边界、分页选中、筛选参数组装、键盘导航、钉选回显、清空口径。
 import { describe, expect, it } from 'vitest'
 import {
   buildPickerQuery,
+  canClearValue,
   mergeOptions,
+  moveActive,
   pickSingleKey,
   toSelectionChips,
   togglePickKey,
+  withPinnedValue,
 } from './pickerCore'
 
 const opt = (value: string, label?: string) => ({ value, label: label ?? value })
@@ -107,5 +110,57 @@ describe('buildPickerQuery 分页与筛选项组装', () => {
     expect(q.status).toBeUndefined()
     expect(q.region).toBeUndefined()
     expect(q.type).toBe('vip')
+  })
+})
+
+describe('moveActive 键盘上下移动', () => {
+  it('向下移动跳过禁用项', () => {
+    expect(moveActive(3, 0, 1, (i) => i === 1)).toBe(2)
+  })
+
+  it('向上从首项循环回绕到末项', () => {
+    expect(moveActive(3, 0, -1)).toBe(2)
+  })
+
+  it('向下从末项循环回绕到首项', () => {
+    expect(moveActive(3, 2, 1)).toBe(0)
+  })
+
+  it('未初始化(-1):向下落首项,向上落末项', () => {
+    expect(moveActive(3, -1, 1)).toBe(0)
+    expect(moveActive(3, -1, -1)).toBe(2)
+  })
+
+  it('空列表返回 -1', () => {
+    expect(moveActive(0, -1, 1)).toBe(-1)
+  })
+
+  it('全部禁用保持原位不动', () => {
+    expect(moveActive(2, 1, 1, () => true)).toBe(1)
+  })
+})
+
+describe('withPinnedValue 已选回显钉选', () => {
+  it('已选值缺失时末尾追加合成选项(value 兼作 label)', () => {
+    const out = withPinnedValue([opt('a')], 'x')
+    expect(out).toHaveLength(2)
+    expect(out[1]).toEqual({ value: 'x', label: 'x' })
+  })
+
+  it('已选值存在或值为空时不追加', () => {
+    expect(withPinnedValue([opt('a')], 'a')).toHaveLength(1)
+    expect(withPinnedValue([], '')).toHaveLength(0)
+  })
+})
+
+describe('canClearValue 清空按钮可见性口径', () => {
+  it('clearable 开启且未禁用且有值才可清', () => {
+    expect(canClearValue(true, false, 'a')).toBe(true)
+  })
+
+  it('未开启/禁用/空值均不可清', () => {
+    expect(canClearValue(undefined, false, 'a')).toBe(false)
+    expect(canClearValue(true, true, 'a')).toBe(false)
+    expect(canClearValue(true, false, '')).toBe(false)
   })
 })

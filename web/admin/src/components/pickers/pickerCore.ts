@@ -1,4 +1,4 @@
-// 选择器公共基座核心逻辑:双数据源合并、单/多选集合、已选回显、分页查询组装。
+// 选择器公共基座核心逻辑:双数据源合并、单/多选集合、已选回显、分页查询组装、键盘导航、钉选回显与清空口径。
 // 纯函数零依赖(仅类型),供 SimplePicker / DialogPicker / ResourcePicker 复用并配 vitest 单测。
 import type { DropdownOption } from '../Dropdown'
 
@@ -73,4 +73,32 @@ export function buildPickerQuery(q: PickerQueryInput): Record<string, string | n
     if (t) out[k] = t
   }
   return out
+}
+
+/** 统一防抖毫秒:SimplePicker 服务端检索与 DialogPicker 关键字检索共用,全体系同节奏。 */
+export const PICKER_DEBOUNCE_MS = 300
+
+/**
+ * 键盘上下移动活动项:跳过禁用项并循环回绕;未初始化(-1)向下落首项、向上落末项;
+ * 空列表返回 -1;全部禁用返回原值(保持不动)。
+ */
+export function moveActive(count: number, current: number, delta: 1 | -1, isDisabled?: (index: number) => boolean): number {
+  if (count <= 0) return -1
+  let idx = current
+  for (let n = 0; n < count; n += 1) {
+    idx = idx < 0 ? (delta === 1 ? 0 : count - 1) : (idx + delta + count) % count
+    if (!isDisabled?.(idx)) return idx
+  }
+  return current < 0 ? -1 : current
+}
+
+/** 已选值不在选项集时追加合成选项(value 兼作 label),保证触发器回显不丢失;空值不钉。 */
+export function withPinnedValue(options: DropdownOption[], value: string): DropdownOption[] {
+  if (value === '' || options.some((o) => o.value === value)) return options
+  return [...options, { value, label: value }]
+}
+
+/** 清空按钮可见性口径:显式开启 clearable 且未禁用且有值。 */
+export function canClearValue(clearable: boolean | undefined, disabled: boolean | undefined, value: string): boolean {
+  return !!clearable && !disabled && value !== ''
 }
