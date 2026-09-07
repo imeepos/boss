@@ -314,15 +314,16 @@ def cleanup_all(grid_code, occ, odb, obd, sdb, sbd, anchor, address_id):
         if address_id:
             psql("DELETE FROM address_coverage WHERE address_id = " + str(address_id))
             psql("DELETE FROM addresses WHERE id = " + str(address_id))
+        if codes:
+            allc = ",".join(q(c) for c in codes)
+            # 链行先删(链行归属 FK 指向网格),再删设备
+            psql("DELETE FROM odn_resource_chain WHERE occ_code IN (" + allc + ")")
+            psql("DELETE FROM odn_device WHERE prv_code IS NULL AND code IN (" + allc + ")")
         if anchor:
             psql("DELETE FROM address_coverage WHERE facility_code = " + q(anchor))
             psql("DELETE FROM odn_facility WHERE code = " + q(anchor))
         if grid_code:
             psql("DELETE FROM odn_grid WHERE prv_code=" + q("PHL001") + " AND city_prefix=" + q("MNL") + " AND grid_code=" + str(grid_code) + " AND name LIKE " + q(TAG + "%"))
-        if codes:
-            allc = ",".join(q(c) for c in codes)
-            psql("DELETE FROM odn_resource_chain WHERE occ_code IN (" + allc + ")")
-            psql("DELETE FROM odn_device WHERE prv_code IS NULL AND code IN (" + allc + ")")
         left = psql("SELECT count(*) FROM odn_resource_chain WHERE remark = " + q(TAG)).strip()
         if left != "0":
             print("[cleanup] WARN chain rows left: " + left)
