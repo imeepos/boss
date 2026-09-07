@@ -266,7 +266,7 @@ func (s *PGStore) LinkPermitProject(ctx context.Context, id, projectID int64) er
 }
 
 func (s *PGStore) UnlinkPermitProject(ctx context.Context, id int64) error {
-	tag, err := s.db.Exec(ctx, "UPDATE odn_permits SET project_id=NULL, project_no="+""+", updated_at=now() WHERE id=$1", id)
+	tag, err := s.db.Exec(ctx, "UPDATE odn_permits SET project_id=NULL, project_no='', updated_at=now() WHERE id=$1", id)
 	if err != nil {
 		log.Printf("[odn-permit] UNLINK FAILED id=%d: %v", id, err)
 		return fmt.Errorf("odn: permit unlink: %w", err)

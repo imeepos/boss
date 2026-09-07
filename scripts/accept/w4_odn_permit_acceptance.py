@@ -19,6 +19,7 @@ SSH_HOST = "imeepos@192.168.0.102"
 COMPOSE_PATH = "/home/imeepos/boss/deployments/docker-compose.102.app.yml"
 PROJ_PREFIX = "w4acc-"
 FAC_PREFIX = "W4ACC-"
+ADDR_PREFIX = "W4ACC-"
 PASS = 0
 FAIL = 0
 KEY = ""
@@ -149,14 +150,13 @@ def create_project(name_suffix):
 
 def create_facility(suffix):
     code = "CLS9" + str(random.randint(1000, 9999))
-    st, body = http("POST", "/odn/facilities", {"code": code, "kind": "CLS", "name": FAC_PREFIX + suffix})
+    st, body = http("POST", "/odn/facilities", {"code": code, "kind": "CLS", "name": FAC_PREFIX + suffix, "prvCode": "PHL001", "cityPrefix": "MNL"})
     if st != 200 or not body or body.get("code") != 0:
         bad("create_facility", str(body))
         return None
-    st2, body2 = http("PUT", "/odn/facilities/" + code + "/lifecycle", {"lifecycleStatus": "PLANNED"})
-    if st2 != 200 or not body2 or body2.get("code") != 0:
-        bad("set lifecycle PLANNED", str(body2))
-        return None
+    # PLANNED 无 API 入口(状态机只出不进,W1 同款):验收造数经 psql 直设;
+    # 开工/竣工的 IN_BUILD/IN_SERVICE 翻转仍走真实 API。
+    psql("UPDATE odn_facility SET lifecycle_status = " + chr(39) + "PLANNED" + chr(39) + " WHERE code = " + chr(39) + code + chr(39))
     return code
 
 
@@ -388,7 +388,7 @@ def main():
             ok("coverage SERVED after accept (F6 assertion)")
         else:
             bad("coverage after accept", str(cov2))
-        acc = psql("SELECT count(*) FROM audit_logs WHERE action = " + chr(39) + "odn.construction.accept" + chr(39) + " AND target_id = " + str(pg_id) + " AND detail::text LIKE " + chr(39) + "%coverageServed%" + chr(39))
+        acc = psql("SELECT count(*) FROM audit_logs WHERE action = " + chr(39) + "odn.construction.accept" + chr(39) + " AND target_id = " + chr(39) + str(pg_id) + chr(39) + " AND detail::text LIKE " + chr(39) + "%coverageServed%" + chr(39))
         if acc.strip() == "1":
             ok("audit odn.construction.accept carries coverageServed detail")
         else:
