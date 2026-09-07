@@ -10,6 +10,7 @@ import { pageSlice } from '../types'
 import type { DispatchTicketRow } from '../types'
 import type { MaintenanceRow } from '../../oss/types'
 import { TableStateRow } from '../../../components/business'
+import { TabBar } from '../../../components/business/tab-bar'
 
 export default function WorkerOpsPage() {
   const t = useT()
@@ -41,18 +42,11 @@ export default function WorkerOpsPage() {
   return (
     <div>
       <PageHead title={w.title} desc={w.desc} />
-      <div style={{ display: 'flex', gap: 4, marginBottom: 12, borderBottom: '1px solid #f0f0f0' }}>
-        {(['notice', 'maint', 'hall'] as const).map((key) => (
-          <button key={key} onClick={() => { setTab(key); setPage(1) }}
-            style={{
-              padding: '8px 16px', fontSize: 14, cursor: 'pointer', background: 'none', border: 'none',
-              borderBottom: tab === key ? '2px solid #1677ff' : '2px solid transparent',
-              color: tab === key ? '#1677ff' : '#666', fontWeight: tab === key ? 600 : 400,
-            }}>
-            {key === 'notice' ? w.tabNotice : key === 'maint' ? w.tabMaint : w.tabHall}
-          </button>
-        ))}
-      </div>
+      <TabBar
+        tabs={[{ key: 'notice', label: w.tabNotice }, { key: 'maint', label: w.tabMaint }, { key: 'hall', label: w.tabHall }]}
+        value={tab}
+        onChange={(k) => { setTab(k); setPage(1) }}
+      />
       {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : tab === 'notice' ? (
         <NoticesTab t={t.pages.message} />
       ) : tab === 'maint' ? (
