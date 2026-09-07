@@ -201,13 +201,18 @@ func RespondErr(c *gin.Context, err error) {
 	case errors.Is(err, odn.ErrNotServable):
 		// 下单覆盖门控拒单(T12):40900 + 透传地址/状态,运营可见为什么拒。
 		Respond(c, apitypes.CodeConflict, gin.H{"reason": err.Error()})
+	case errors.Is(err, odn.ErrNoContractor),
+		errors.Is(err, odn.ErrSettlementState):
+		// 结算发起前置缺失/状态冲突(000204):40900 + 原因,管理员可见为什么拒。
+		Respond(c, apitypes.CodeConflict, gin.H{"reason": err.Error()})
 	case errors.Is(err, odn.ErrInvalidCode),
 		errors.Is(err, odn.ErrGridMissing),
 		errors.Is(err, odn.ErrGridFull),
 		errors.Is(err, odn.ErrInvalidEndpoint),
 		errors.Is(err, odn.ErrSamePriority),
 		errors.Is(err, odn.ErrInvalidDeviceCode),
-		errors.Is(err, odn.ErrBadHierarchy):
+		errors.Is(err, odn.ErrBadHierarchy),
+		errors.Is(err, odn.ErrInvalidInput):
 		Respond(c, apitypes.CodeInvalidParam, nil)
 	case errors.Is(err, odn.ErrNotFound):
 		Respond(c, apitypes.CodeNotFound, nil)

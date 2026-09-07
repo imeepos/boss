@@ -37,7 +37,7 @@ func orderHeadRow(id int64, status string) *pgxmock.Rows {
 func TestUpdateSupplier_OK(t *testing.T) {
 	mock := newMock(t)
 	mock.ExpectExec("SET name = COALESCE").
-		WithArgs(int64(5), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).
+		WithArgs(int64(5), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).
 		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 	s := NewPGStore(mock)
 	err := s.UpdateSupplier(context.Background(), 5, SupplierUpdate{
@@ -65,7 +65,7 @@ func TestUpdateSupplier_EmptyNameRejected(t *testing.T) {
 func TestUpdateSupplier_NotFound(t *testing.T) {
 	mock := newMock(t)
 	mock.ExpectExec("SET name = COALESCE").
-		WithArgs(int64(404), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).
+		WithArgs(int64(404), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).
 		WillReturnResult(pgxmock.NewResult("UPDATE", 0))
 	s := NewPGStore(mock)
 	if err := s.UpdateSupplier(context.Background(), 404, SupplierUpdate{}); !errors.Is(err, ErrNotFound) {
@@ -73,11 +73,39 @@ func TestUpdateSupplier_NotFound(t *testing.T) {
 	}
 }
 
+// 承建类型(000203):非法值拒绝且零 SQL;合法值透传。
+func TestUpdateSupplier_InvalidContractorType(t *testing.T) {
+	mock := newMock(t)
+	s := NewPGStore(mock)
+	bad := "OTHER"
+	if err := s.UpdateSupplier(context.Background(), 5, SupplierUpdate{ContractorType: &bad}); !errors.Is(err, ErrInvalidInput) {
+		t.Fatalf("got %v want ErrInvalidInput", err)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("非法承建类型必须零 SQL: %v", err)
+	}
+}
+
+func TestUpdateSupplier_ContractorTypePassed(t *testing.T) {
+	mock := newMock(t)
+	ct := ContractorConstruction
+	mock.ExpectExec("SET name = COALESCE").
+		WithArgs(int64(5), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), &ct, pgxmock.AnyArg()).
+		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+	s := NewPGStore(mock)
+	if err := s.UpdateSupplier(context.Background(), 5, SupplierUpdate{ContractorType: &ct}); err != nil {
+		t.Fatalf("update supplier: %v", err)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet: %v", err)
+	}
+}
+
 // 编辑 SQL 不允许出现 status 过滤:禁用态同样可改资料(结构性保证)。
 func TestUpdateSupplier_SQLHasNoStatusFilter(t *testing.T) {
 	mock := newMock(t)
 	mock.ExpectExec("UPDATE procurement_suppliers[^']*WHERE id = [$]1").
-		WithArgs(int64(5), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).
+		WithArgs(int64(5), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).
 		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 	s := NewPGStore(mock)
 	if err := s.UpdateSupplier(context.Background(), 5, SupplierUpdate{Remark: strPtr("x")}); err != nil {

@@ -18,18 +18,27 @@ var (
 	ErrInvalidInput = errors.New("procurement: invalid input")
 )
 
+// 供应商承建类型(000203):材料类为存量默认,语义与既有档案一致。
+const (
+	ContractorMaterial     = "MATERIAL"     // 材料类
+	ContractorConstruction = "CONSTRUCTION" // 施工类(资质信息落 qualification)
+)
+
 // Supplier 供应商(L1.5 公司自定义基础数据)。
 type Supplier struct {
-	ID            int64     `json:"id"`
-	Code          string    `json:"code"`
-	Name          string    `json:"name"`
-	ContactName   string    `json:"contactName"`
-	ContactPhone  string    `json:"contactPhone"`
-	LegalEntityID int64     `json:"legalEntityId"`
-	Status        string    `json:"status"` // ENABLED/DISABLED
-	Remark        string    `json:"remark"`
-	CreatedAt     time.Time `json:"createdAt"`
-	UpdatedAt     time.Time `json:"updatedAt"`
+	ID           int64  `json:"id"`
+	Code         string `json:"code"`
+	Name         string `json:"name"`
+	ContactName  string `json:"contactName"`
+	ContactPhone string `json:"contactPhone"`
+	// 承建类型维度(000203):施工类含资质信息;联系人复用上方 contact 字段。
+	ContractorType string    `json:"contractorType"`
+	Qualification  string    `json:"qualification"`
+	LegalEntityID  int64     `json:"legalEntityId"`
+	Status         string    `json:"status"` // ENABLED/DISABLED
+	Remark         string    `json:"remark"`
+	CreatedAt      time.Time `json:"createdAt"`
+	UpdatedAt      time.Time `json:"updatedAt"`
 }
 
 // OrderItem 采购单明细。
@@ -114,6 +123,7 @@ type Service interface {
 	// 供应商
 	CreateSupplier(ctx context.Context, s Supplier) (int64, error)
 	ListSuppliers(ctx context.Context, legalEntityID int64) ([]Supplier, error)
+	GetSupplier(ctx context.Context, id int64) (*Supplier, error)
 	DisableSupplier(ctx context.Context, id int64) error
 
 	// 采购单
