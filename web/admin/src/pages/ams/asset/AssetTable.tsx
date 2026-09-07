@@ -3,6 +3,7 @@ import { StatusTag } from '../../../components/StatusTag'
 import { TableStateRow } from '../../../components/business'
 import { useT } from '../../../i18n'
 import type { AssetRow, TagRow } from '../types'
+import { batchLabel } from './logic'
 
 const td = 'h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]'
 const th = 'h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]'
@@ -10,6 +11,7 @@ const th = 'h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b b
 interface AssetTableProps {
   rows: AssetRow[]
   tagOf: (tagId: number) => TagRow | undefined
+  batchOf: (batchId: number) => { code: string; name: string } | undefined
   busy: boolean
   onTrail: (r: AssetRow) => void
   onDetail: (r: AssetRow) => void
@@ -32,7 +34,7 @@ export function AssetTable(p: AssetTableProps) {
               <td className={td}>{p.tagOf(r.tagId)?.tagNo ?? '—'}</td>
               <td className={td}>{p.tagOf(r.tagId)?.epcCode ?? '—'}</td>
               <td className={td}>{r.type || '—'}</td>
-              <td className={td}>#{r.batchId}</td>
+              <td className={td}>{batchLabel(p.batchOf(r.batchId), r.batchId)}</td>
               <td className={td}>{r.addressId ? '#' + String(r.addressId) : '—'}</td>
               <td className={td}><StatusTag domain="asset" value={r.status} /></td>
               <td className={td}>

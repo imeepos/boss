@@ -1,10 +1,11 @@
 // 建档抽屉:契约 POST /assets {batchId, modelId?, type?, tagId?}。
 // 数据源:GET /assets/batches、/asset-models(仅 isActive 项)、/tags(仅 UNBOUND)。
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { Drawer } from '../../../components/Drawer'
 import { useT } from '../../../i18n'
+import { ErrorBanner } from '../../../components/business/page-head'
 import type { AssetBatchRow, AssetModelRow, TagRow } from '../types'
 import { AssetFormFields } from './AssetFormFields'
 import { buildCreatePayload, emptyForm, formErrOf, modelLabel, typeValue, type AssetFormState, type FormErr } from './logic'
@@ -20,11 +21,14 @@ export function CreateDrawer({ onClose, onSaved }: { onClose: () => void; onSave
   const [apiError, setApiError] = useState('')
   const [busy, setBusy] = useState(false)
 
-  useEffect(() => {
-    apiFetch<{ items: AssetBatchRow[] }>('/assets/batches').then((d) => setBatches(d?.items ?? [])).catch(() => setBatches([]))
-    apiFetch<{ items: AssetModelRow[] }>('/asset-models').then((d) => setModels((d?.items ?? []).filter((m) => m.isActive))).catch(() => setModels([]))
-    apiFetch<{ items: TagRow[] }>('/tags').then((d) => setTags((d?.items ?? []).filter((x) => x.status === 'UNBOUND'))).catch(() => setTags([]))
+  const [srcErr, setSrcErr] = useState(false)
+  const loadSrc = useCallback(() => {
+    setSrcErr(false)
+    apiFetch<{ items: AssetBatchRow[] }>('/assets/batches').then((d) => setBatches(d?.items ?? [])).catch(() => setSrcErr(true))
+    apiFetch<{ items: AssetModelRow[] }>('/asset-models').then((d) => setModels((d?.items ?? []).filter((m) => m.isActive))).catch(() => setSrcErr(true))
+    apiFetch<{ items: TagRow[] }>('/tags').then((d) => setTags((d?.items ?? []).filter((x) => x.status === 'UNBOUND'))).catch(() => setSrcErr(true))
   }, [])
+  useEffect(loadSrc, [loadSrc])
 
   const modelOf = (id: number) => models.find((m) => m.id === id)
   const submit = async () => {
@@ -69,7 +73,13 @@ export function CreateDrawer({ onClose, onSaved }: { onClose: () => void; onSave
         onSn={(sn) => { setForm((f) => ({ ...f, sn })) }}
         onMac={(mac) => { setForm((f) => ({ ...f, mac })) }}
         onLoid={(loid) => { setForm((f) => ({ ...f, loid })) }} />
-      {apiError && <div className="mt-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{apiError}</div>}
+      {srcErr && (
+        <div className="flex items-center gap-2 text-[12px] text-[var(--color-danger)]">
+          <span>{a.loadFail}</span>
+          <button type="button" className="cursor-pointer border-none bg-none p-0 text-[11px] text-[var(--color-text-link)] hover:underline" onClick={loadSrc}>{t.pages.pickers.common.retry}</button>
+        </div>
+      )}
+      {apiError && <ErrorBanner message={apiError} />}
     </Drawer>
   )
 }

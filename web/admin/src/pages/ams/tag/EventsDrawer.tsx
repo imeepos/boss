@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { Drawer } from '../../../components/Drawer'
+import { EmptyState } from '../../../components/business'
 import type { TagEventRow } from '../types'
 
 const dotOf: Record<string, string> = {
@@ -38,7 +39,7 @@ export function TagEventsDrawer({ tag, onClose }: { tag: { tagId: number; tagNo:
       ) : busy ? (
         <div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{t.common.loading}</div>
       ) : !rows.length ? (
-        <div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{g.empty}</div>
+        <EmptyState text={g.empty} />
       ) : (
         <ol className="m-0 flex list-none flex-col gap-0 p-0">
           {rows.map((ev, i) => (

@@ -2,7 +2,9 @@
 // 契约: /openplat/apps(系列)、/openplat/deliveries、/openplat/subscriptions/{id};
 // Secret 仅创建响应返回一次(与 apikey 页同安全约定)。
 import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
+import { useConfirm } from '../../../components/ConfirmDialog'
 import { useT } from '../../../i18n'
 import { PageHead } from '../shared'
 import { formatTime } from '../../base/audit/logic'
@@ -31,6 +33,7 @@ export default function OpenPlatPage() {
   const [secret, setSecret] = useState('')
   const [busy, setBusy] = useState(false)
   const [selected, setSelected] = useState<number>(0)
+  const confirmDialog = useConfirm()
 
   const load = () => {
     setError('')
@@ -59,6 +62,7 @@ export default function OpenPlatPage() {
           sandbox: form.sandbox,
         },
       })
+      toast.success(t.pages.openplat.createOk)
       setForm(null)
       setSecret(res?.secret ?? '')
       load()
@@ -69,17 +73,20 @@ export default function OpenPlatPage() {
     }
   }
 
+  // 停用/启用直接影响线上调用方:先确认,成功/失败均有反馈。
   const toggleStatus = async (row: OpenAppRow) => {
     if (busy) return
+    if (!(await confirmDialog(t.pages.openplat.statusConfirm, { danger: row.status === 1 }))) return
     setBusy(true)
     try {
       await apiFetch(`/openplat/apps/${row.id}/status`, {
         method: 'PUT',
         body: { status: row.status === 1 ? 0 : 1 },
       })
+      toast.success(t.pages.openplat.statusOk)
       load()
     } catch (e) {
-      setError(e instanceof Error ? e.message : t.pages.openplat.loadFail)
+      toast.error(e instanceof Error ? e.message : t.pages.openplat.loadFail)
     } finally {
       setBusy(false)
     }

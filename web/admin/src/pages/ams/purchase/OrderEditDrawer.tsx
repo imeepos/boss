@@ -6,12 +6,13 @@ import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { Drawer } from '../../../components/Drawer'
 import { Dropdown } from '../../../components/Dropdown'
+import { SimplePicker } from '../../../components/pickers/SimplePicker'
+import { ErrorBanner } from '../../../components/business/page-head'
 import type { OrderItemRow, SupplierRow } from '../types'
 import { OrderItemsEditor } from './OrderItemsEditor'
 import { buildOrderEditPayload, orderEditErr, unwrapOrderDetail, type OrderEditFormState } from './purchaseLogic'
 
 const input = 'h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]'
-const errBanner = 'rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]'
 
 export function OrderEditDrawer({ order, suppliers, onClose, onSaved }: {
   order: { id: number; procurementNo: string }
@@ -25,6 +26,11 @@ export function OrderEditDrawer({ order, suppliers, onClose, onSaved }: {
   const [err, setErr] = useState('')
   const [loadErr, setLoadErr] = useState('')
   const [busy, setBusy] = useState(false)
+  const [entities, setEntities] = useState<{ id: number; name: string }[]>([])
+
+  useEffect(() => {
+    apiFetch<{ id: number; name: string }[]>('/legal-entities').then((d) => setEntities(d ?? [])).catch(() => setEntities([]))
+  }, [])
 
   useEffect(() => {
     apiFetch<{ item: { items: OrderItemRow[]; supplierId: number; legalEntityId: number; remark: string } }>(
@@ -78,11 +84,11 @@ export function OrderEditDrawer({ order, suppliers, onClose, onSaved }: {
         </>
       }>
       <div className="flex flex-col gap-3.5">
-        {loadErr && <div className={errBanner}>{loadErr}</div>}
+        {loadErr && <ErrorBanner message={loadErr} />}
         {!form && !loadErr && <div className="py-6 text-center text-[13px] text-[var(--shell-group-title)]">{t.common.loading}</div>}
         {form && (
           <>
-            {err && <div className={errBanner}>{errMsgKey(err)}</div>}
+            {err && <ErrorBanner message={errMsgKey(err)} />}
             <div className="flex flex-col gap-1.5">
               <label><span className="mr-0.5 text-[var(--color-danger)]">*</span>{d.colSupplier}</label>
               <Dropdown
@@ -93,16 +99,21 @@ export function OrderEditDrawer({ order, suppliers, onClose, onSaved }: {
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <label>{d.colEntity} ID</label>
-              <input type="number" className={input} value={form.legalEntityId}
-                onChange={(e) => setForm({ ...form, legalEntityId: Number(e.target.value) })} />
+              <label>{d.colEntity}</label>
+              <SimplePicker value={form.legalEntityId ? String(form.legalEntityId) : ''}
+                onChange={(v) => setForm({ ...form, legalEntityId: Number(v) || 0 })}
+                options={entities.map((e) => ({ value: String(e.id), label: e.name }))}
+                ariaLabel={d.colEntity} placeholder={d.pEntitySelect}
+                pinnedOptions={form.legalEntityId ? [{ value: String(form.legalEntityId), label: '#' + form.legalEntityId }] : undefined}
+                minWidth={260} />
             </div>
             <div className="flex flex-col gap-1.5">
               <label>{d.remark}</label>
               <input type="text" className={input} value={form.remark}
                 onChange={(e) => setForm({ ...form, remark: e.target.value })} />
             </div>
-            <OrderItemsEditor items={form.items} onChange={(items) => setForm({ ...form, items })} />
+            <OrderItemsEditor items={form.items} onChange={(items) => setForm({ ...form, items })}
+              onDelete={(idx) => setForm({ ...form, items: form.items.filter((_, i) => i !== idx) })} />
           </>
         )}
       </div>

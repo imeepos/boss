@@ -1,6 +1,7 @@
 // 应用详情:Webhook 订阅 CRUD(抽屉式新增) + 测试事件 + 投递 outbox(死信 requeue)。
 // 渲染为右侧 Drawer + 顶栏 TabBar(订阅/投递),订阅默认在前,投递独立 tab,避免被卡片底部挤出视野。
 import { useCallback, useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { useConfirm } from '../../../components/ConfirmDialog'
@@ -72,9 +73,10 @@ export function AppDetail({ app, onRefreshApps, onClose }: {
     setBusy(true)
     try {
       await apiFetch(`/openplat/subscriptions/${id}`, { method: 'DELETE' })
+      toast.success(t.pages.openplat.delSubOk)
       load()
     } catch (e) {
-      setError(e instanceof Error ? e.message : t.pages.openplat.loadFail)
+      toast.error(e instanceof Error ? e.message : t.pages.openplat.loadFail)
     } finally {
       setBusy(false)
     }
@@ -85,10 +87,11 @@ export function AppDetail({ app, onRefreshApps, onClose }: {
     setBusy(true)
     try {
       await apiFetch(`/openplat/apps/${app.id}/test-event`, { method: 'POST' })
+      toast.success(t.pages.openplat.testOk)
       load()
       onRefreshApps()
     } catch (e) {
-      setError(e instanceof Error ? e.message : t.pages.openplat.saveFail)
+      toast.error(e instanceof Error ? e.message : t.pages.openplat.saveFail)
     } finally {
       setBusy(false)
     }
@@ -99,9 +102,10 @@ export function AppDetail({ app, onRefreshApps, onClose }: {
     setBusy(true)
     try {
       await apiFetch(`/openplat/deliveries/${id}/requeue`, { method: 'POST' })
+      toast.success(t.pages.openplat.requeueOk)
       load()
     } catch (e) {
-      setError(e instanceof Error ? e.message : t.pages.openplat.loadFail)
+      toast.error(e instanceof Error ? e.message : t.pages.openplat.loadFail)
     } finally {
       setBusy(false)
     }
@@ -179,6 +183,7 @@ export function AppDetail({ app, onRefreshApps, onClose }: {
 
       {tab === 'deliveries' && (
         appDeliveries.length === 0 ? <EmptyState text={t.pages.openplat.noDeliveries} /> : (
+          <>
           <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
             <thead>
               <tr className="text-left text-xs font-medium text-[var(--shell-group-title)]">
@@ -205,6 +210,10 @@ export function AppDetail({ app, onRefreshApps, onClose }: {
               ))}
             </tbody>
           </table>
+          {appDeliveries.length > 20 && (
+            <div className="pt-2 text-xs text-[var(--shell-group-title)]">{t.pages.openplat.dlvTruncated}</div>
+          )}
+          </>
         )
       )}
 

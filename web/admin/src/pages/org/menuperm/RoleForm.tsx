@@ -60,6 +60,7 @@ export function RoleFormDrawer({ open, state, builtinTemplates, onChange, onClos
 }) {
   const t = useT()
   const [perms, setPerms] = useState<PermissionRow[]>([])
+  const [permKw, setPermKw] = useState('')
 
   useEffect(() => {
     if (!open) return
@@ -70,7 +71,10 @@ export function RoleFormDrawer({ open, state, builtinTemplates, onChange, onClos
 
   if (!open) return null
   const tr = t.pages.menuperm
-  const { menu, action } = splitPerms(perms)
+  // 权限码 50+ 无搜索难勾选:按名称/码本地过滤(纯展示过滤,不改变已选集合)。
+  const kw = permKw.trim().toLowerCase()
+  const filtered = perms.filter((p) => !kw || p.name.toLowerCase().includes(kw) || p.code.toLowerCase().includes(kw))
+  const { menu, action } = splitPerms(filtered)
   const nameOk = state.name.trim().length > 0 && state.name.trim().length <= 64
   const selected = new Set(state.codes)
   const onTemplate = (code: string) =>
@@ -101,6 +105,14 @@ export function RoleFormDrawer({ open, state, builtinTemplates, onChange, onClos
             />
         </FormField>
         )}
+        <FormField label={tr.permSearch}>
+          <input
+            className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]"
+            value={permKw}
+            placeholder={tr.permSearch}
+            onChange={(e) => setPermKw(e.target.value)}
+          />
+        </FormField>
         <PermGroup title={tr.permsMenu} perms={menu} codes={state.codes} onToggle={(c) => onChange({ ...state, codes: toggle(state.codes, c) })} />
         <PermGroup title={tr.permsAction} perms={action} codes={state.codes} onToggle={(c) => onChange({ ...state, codes: toggle(state.codes, c) })} />
         <span className="text-[11px] text-[var(--shell-crumb-text)]">{tr.permSelected.replace('{n}', String(selected.size))}</span>

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useT } from '../../../i18n'
 import { PageHead, pagerTexts } from '../../org/shared'
+import { ErrorBanner } from '../../../components/business/page-head'
 import { Dropdown } from '../../../components/Dropdown'
 import { Pagination } from '../../../components/Pagination'
 import { statusTagLabel } from '../../../components/StatusTag'
@@ -35,7 +36,7 @@ export default function AssetPage() {
   const [scrapRow, setScrapRow] = useState<AssetRow | null>(null)
   const [modelsOpen, setModelsOpen] = useState(false)
   const [batchesOpen, setBatchesOpen] = useState(false)
-  const { rows, total, error, busy, load, tagOf, delRow } = useAssetList({ page, pageSize, status, typeF, q })
+  const { rows, total, error, busy, load, tagOf, batchOf, delRow } = useAssetList({ page, pageSize, status, typeF, q })
 
   // q 防抖:输入停顿后下发服务端,并回第一页(挂载时同值回写不触发请求)。
   useEffect(() => {
@@ -56,7 +57,7 @@ export default function AssetPage() {
   const statusOptions = [{ value: ALL, label: a.filterAll }].concat(
     SCAN_STATUSES.map((s) => ({ value: s, label: statusTagLabel('asset', s, t.common.statusTags) })))
   // 类型筛选=P4-T2 白名单(权威码直出);服务端 type 精确匹配(ListAssetsPage)。
-  const typeOptions = [{ value: ALL, label: a.filterAll }].concat(
+  const typeOptions = [{ value: ALL, label: a.filterAllType }].concat(
     ASSET_TYPES.map((v) => ({ value: v, label: v })))
 
   return (
@@ -74,10 +75,9 @@ export default function AssetPage() {
           <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={() => setBatchesOpen(true)}>{a.batchesManage}</button>
           <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" onClick={() => setCreateOpen(true)}>{a.create}</button>
         </div>
-        {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : (
-          <AssetTable rows={rows} tagOf={tagOf} busy={busy}
-            onTrail={setTrail} onDetail={setDetail} onEdit={setEditRow} onScrap={setScrapRow} onDelete={delRow} />
-        )}
+        {error && <ErrorBanner message={error} />}
+        <AssetTable rows={rows} tagOf={tagOf} batchOf={batchOf} busy={busy}
+          onTrail={setTrail} onDetail={setDetail} onEdit={setEditRow} onScrap={setScrapRow} onDelete={delRow} />
         <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
           <Pagination total={total} page={page} pageSize={pageSize}
             onPage={setPage} onSize={pickSize} {...pagerTexts(a)} />

@@ -7,10 +7,13 @@ import { useT } from '../../../i18n'
 import { useConfirm } from '../../../components/ConfirmDialog'
 import { Drawer } from '../../../components/Drawer'
 import { Button } from '../../../components/ui/button'
+import { SimplePicker } from '../../../components/pickers/SimplePicker'
+import { FormField } from '../../../components/business/form-field'
+import { ErrorBanner } from '../../../components/business/page-head'
 import type { SupplierRow } from '../types'
 import { buildSupplierPayload, canEnableSupplier, emptySupplierForm, supplierFormErr, type SupplierFormState } from './purchaseLogic'
 
-const input = 'h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]'
+const input = 'h-8 w-full rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]'
 const smallBtn = 'h-7 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2 text-[12px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)] disabled:cursor-not-allowed disabled:opacity-50'
 const td = 'h-9 px-2 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)]'
 
@@ -23,6 +26,11 @@ export function SuppliersDrawer({ onClose, onSaved }: { onClose: () => void; onS
   const [busy, setBusy] = useState(false)
   const [editing, setEditing] = useState<SupplierRow | null>(null)
   const [form, setForm] = useState<SupplierFormState>(emptySupplierForm)
+  const [entities, setEntities] = useState<{ id: number; name: string }[]>([])
+
+  useEffect(() => {
+    apiFetch<{ id: number; name: string }[]>('/legal-entities').then((d) => setEntities(d ?? [])).catch(() => setEntities([]))
+  }, [])
 
   const load = useCallback(() => {
     setError('')
@@ -98,22 +106,25 @@ export function SuppliersDrawer({ onClose, onSaved }: { onClose: () => void; onS
         <div className="rounded-sm border border-[var(--shell-side-border)] p-3">
           <div className="mb-2 text-[13px] font-medium text-[var(--shell-heading)]">{editing ? d.supEdit : d.supCreate}</div>
           <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
-            <input className={input} placeholder={d.supName} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-            <input className={input} placeholder={d.supCode} value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} />
-            <input className={input} placeholder={d.supContact} value={form.contactName} onChange={(e) => setForm({ ...form, contactName: e.target.value })} />
-            <input className={input} placeholder={d.supPhone} value={form.contactPhone} onChange={(e) => setForm({ ...form, contactPhone: e.target.value })} />
-            <input className={input} type="number" placeholder={d.supEntity} value={form.legalEntityId} onChange={(e) => setForm({ ...form, legalEntityId: Number(e.target.value) })} />
-            <input className={input} placeholder={d.remark} value={form.remark} onChange={(e) => setForm({ ...form, remark: e.target.value })} />
+            <FormField label={d.supName} required><input className={input} placeholder={d.supName} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></FormField>
+            <FormField label={d.supCode} required><input className={input} placeholder={d.supCode} value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} /></FormField>
+            <FormField label={d.supContact}><input className={input} placeholder={d.supContact} value={form.contactName} onChange={(e) => setForm({ ...form, contactName: e.target.value })} /></FormField>
+            <FormField label={d.supPhone}><input className={input} placeholder={d.supPhone} value={form.contactPhone} onChange={(e) => setForm({ ...form, contactPhone: e.target.value })} /></FormField>
+            <FormField label={d.supEntity}>
+              <SimplePicker value={form.legalEntityId ? String(form.legalEntityId) : ''}
+                onChange={(v) => setForm({ ...form, legalEntityId: Number(v) || 0 })}
+                options={entities.map((e) => ({ value: String(e.id), label: e.name }))}
+                ariaLabel={d.supEntity} placeholder={d.supEntity} minWidth={180} />
+            </FormField>
+            <FormField label={d.remark}><input className={input} placeholder={d.remark} value={form.remark} onChange={(e) => setForm({ ...form, remark: e.target.value })} /></FormField>
           </div>
           <div className="mt-2 flex items-center gap-2">
             <Button size="sm" className="h-8 px-4 text-[13px]" disabled={busy} onClick={submit}>{editing ? d.save : d.supCreate}</Button>
             {editing && <button className={smallBtn} onClick={resetForm}>{d.cancel}</button>}
           </div>
         </div>
-        {error ? (
-          <div className="rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div>
-        ) : (
-          <div className="overflow-x-auto">
+        {error && <ErrorBanner message={error} />}
+        <div className="overflow-x-auto">
             <table className="w-full border-collapse text-[13px]">
               <thead>
                 <tr>{cols.map((x) => <th key={x} className="h-9 px-2 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr>
@@ -147,7 +158,6 @@ export function SuppliersDrawer({ onClose, onSaved }: { onClose: () => void; onS
               </tbody>
             </table>
           </div>
-        )}
       </div>
     </Drawer>
   )

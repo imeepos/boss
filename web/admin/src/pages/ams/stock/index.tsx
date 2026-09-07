@@ -10,6 +10,8 @@ import { Dropdown } from '../../../components/Dropdown'
 import { pageSlice, type StocktakeRow } from '../types'
 import { useConfirm } from '../../../components/ConfirmDialog'
 import { TableStateRow } from '../../../components/business'
+import { ErrorBanner } from '../../../components/business/page-head'
+import { toast } from 'sonner'
 import { ItemsDrawer } from './ItemsDrawer'
 
 export default function StockPage() {
@@ -55,6 +57,7 @@ export default function StockPage() {
       setOpen(false)
       setScope('')
       setLegalEntityId(0)
+      toast.success(s.createOk)
       load()
     } catch (e) {
       setFormError(e instanceof Error ? e.message : s.saveFail)
@@ -68,6 +71,7 @@ export default function StockPage() {
     setBusy(true)
     try {
       await apiFetch(`/stocktakes/${taskId}/diff-handle`, { method: 'POST' })
+      toast.success(s.diffHandleOk)
       load()
     } catch (e) {
       setError(e instanceof Error ? e.message : s.actionFail)
@@ -88,8 +92,8 @@ export default function StockPage() {
           <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
           <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" onClick={() => setOpen(true)}>{s.create}</button>
         </div>
-        {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : (
-          <div className="overflow-x-auto px-4 pb-4">
+        {error && <ErrorBanner message={error} />}
+        <div className="overflow-x-auto px-4 pb-4">
             <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
               <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{s.columns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
               <tbody>
@@ -114,7 +118,6 @@ export default function StockPage() {
               </tbody>
             </table>
           </div>
-        )}
         <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
           <Pagination total={rows.length} page={page} pageSize={pageSize}
             onPage={setPage} onSize={setPageSize} {...pagerTexts(s)} />

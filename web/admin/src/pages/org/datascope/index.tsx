@@ -13,17 +13,24 @@ export default function DataScopePage() {
   const [rows, setRows] = useState<ScopeRow[]>([])
   const [error, setError] = useState('')
   const [keyword, setKeyword] = useState('')
+  const [debounced, setDebounced] = useState('')
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
   const [detail, setDetail] = useState<ScopeRow | null>(null)
 
+  // 搜索语义统一:输入防抖 300ms 后走服务端 keyword;不再依赖手动刷新。
+  useEffect(() => {
+    const h = setTimeout(() => setDebounced(keyword.trim()), 300)
+    return () => clearTimeout(h)
+  }, [keyword])
+
   const load = () => {
     setError('')
-    apiFetch<ScopeRow[]>('/data-scopes', { query: { keyword: keyword || undefined } })
+    apiFetch<ScopeRow[]>('/data-scopes', { query: { keyword: debounced || undefined } })
       .then((d) => setRows(d ?? []))
       .catch((e) => setError(e instanceof Error ? e.message : t.pages.datascope.loadFail))
   }
-  useEffect(load, []) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(load, [debounced]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const filtered = useMemo(() => filterDataScopes(rows, keyword), [rows, keyword])
   const slice = pageSlice(filtered, page, pageSize)

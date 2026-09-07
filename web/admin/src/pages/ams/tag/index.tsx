@@ -15,6 +15,8 @@ import { TableStateRow } from '../../../components/business'
 import { tagActionsOf } from './logic'
 import { CreateTagDrawer } from './CreateTagDrawer'
 import { TagEventsDrawer } from './EventsDrawer'
+import { UnbindDialog } from './UnbindDialog'
+import { ErrorBanner } from '../../../components/business/page-head'
 
 const td = 'h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]'
 const th = 'h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]'
@@ -39,6 +41,7 @@ export default function TagPage() {
   const [busy, setBusy] = useState(false)
   const [createOpen, setCreateOpen] = useState(false)
   const [eventsTag, setEventsTag] = useState<TagRow | null>(null)
+  const [unbindRow, setUnbindRow] = useState<TagRow | null>(null)
 
   const load = useCallback(() => {
     setError('')
@@ -83,7 +86,7 @@ export default function TagPage() {
       toast.success(okMsg)
       load()
     } catch (e) {
-      setError(e instanceof Error ? e.message : g.loadFail)
+      toast.error(e instanceof Error ? e.message : g.loadFail)
       setBusy(false)
     }
   }
@@ -94,10 +97,9 @@ export default function TagPage() {
     await runOp(r, '/disable', g.disable)
   }
   const enableTag = (r: TagRow) => runOp(r, '/enable', g.enable)
-  const unbindTag = async (r: TagRow) => {
-    const no = r.tagNo || '#' + r.tagId
-    if (!(await confirm(g.unbindConfirm.replace('{no}', no), { danger: true, title: g.unbind }))) return
-    await runOp(r, '/unbind', g.unbindOk, { expectedAssetId: r.boundAssetId || undefined })
+  // 解绑走 UnbindDialog(影响面+原因必填,原因入 UNBIND 事件 detail),不再用简单 confirm。
+  const doUnbind = async (r: TagRow, reason: string) => {
+    await runOp(r, '/unbind', g.unbindOk, { expectedAssetId: r.boundAssetId || undefined, reason })
   }
 
   const actionLabel = (act: string): string => {
@@ -109,7 +111,7 @@ export default function TagPage() {
   const actionRun = (act: string, r: TagRow) => {
     if (act === 'disable') return disableTag(r)
     if (act === 'enable') return enableTag(r)
-    if (act === 'unbind') return unbindTag(r)
+    if (act === 'unbind') return setUnbindRow(r)
     setEventsTag(r)
   }
 
@@ -127,8 +129,8 @@ export default function TagPage() {
           <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
           <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" onClick={() => setCreateOpen(true)}>{g.create}</button>
         </div>
-        {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : (
-          <div className="overflow-x-auto px-4 pb-4">
+        {error && <ErrorBanner message={error} />}
+        <div className="overflow-x-auto px-4 pb-4">
             <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
               <thead><tr>{cols.map((x) => <th key={x} className={th}>{x}</th>)}</tr></thead>
               <tbody>
@@ -153,7 +155,6 @@ export default function TagPage() {
               </tbody>
             </table>
           </div>
-        )}
         <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
           <Pagination total={total} page={page} pageSize={pageSize}
             onPage={setPage} onSize={pickSize} {...pagerTexts(g)} />
@@ -161,6 +162,10 @@ export default function TagPage() {
       </div>
       {createOpen && <CreateTagDrawer onClose={() => setCreateOpen(false)} onSaved={load} />}
       {eventsTag && <TagEventsDrawer tag={eventsTag} onClose={() => setEventsTag(null)} />}
+      {unbindRow && (
+        <UnbindDialog tag={unbindRow} busy={busy} onClose={() => setUnbindRow(null)}
+          onConfirm={(reason) => { const row = unbindRow; setUnbindRow(null); doUnbind(row, reason) }} />
+      )}
     </div>
   )
 }

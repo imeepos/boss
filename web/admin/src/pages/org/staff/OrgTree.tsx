@@ -70,7 +70,7 @@ function DeptRow({ d, ...p }: OrgTreeProps & { d: DeptNode }) {
             {d.memberCount} {t.pages.staff.memberUnit} · {d.posts.length} {t.pages.staff.postUnit}
           </span>
         </button>
-        <span className="hidden items-center group-hover:flex">
+        <span className="inline-flex items-center">
           <button className={ACT_BTN} onClick={() => p.onAddPost(d.id)}>{t.pages.staff.addPost}</button>
           <button className={ACT_BTN} onClick={() => p.onEditDept(d)}>{t.pages.staff.edit}</button>
           <button className={ACT_BTN} onClick={() => p.onDelDept(d)}>{t.pages.staff.del}</button>

@@ -1,5 +1,6 @@
 // 角色管理卡片:内置(只读)+ 派生角色(新建/编辑/删除);模板=内置角色权限集。
 import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { useConfirm } from '../../../components/ConfirmDialog'
@@ -41,6 +42,7 @@ export function RoleManagerCard({ onChanged }: { onChanged: () => void }) {
       const body = rolePayload(form.name, form.codes)
       if (form.id) await apiFetch(`/roles/${form.id}`, { method: 'PUT', body })
       else await apiFetch('/roles', { method: 'POST', body })
+      toast.success(tr.roleSaveOk)
       setForm(null)
       load()
       onChanged()
@@ -55,10 +57,11 @@ export function RoleManagerCard({ onChanged }: { onChanged: () => void }) {
     if (!(await confirmDialog(tr.deleteConfirm.replace('{name}', r.name), { danger: true }))) return
     try {
       await apiFetch(`/roles/${r.id}`, { method: 'DELETE' })
+      toast.success(tr.roleDelOk)
       load()
       onChanged()
     } catch (e) {
-      setError(errText(e, tr.deleteFail))
+      toast.error(errText(e, tr.deleteFail))
     }
   }
 
@@ -96,9 +99,9 @@ export function RoleManagerCard({ onChanged }: { onChanged: () => void }) {
                       <span className="text-[var(--shell-crumb-text)]" title={tr.builtinReadOnly}>—</span>
                     ) : (
                       <span className="inline-flex items-center">
-                        <button onClick={() => { setFormError(''); setForm(roleToForm(r)) }}>{t.pages.account.edit}</button>
+                        <button disabled={busy} onClick={() => { setFormError(''); setForm(roleToForm(r)) }}>{t.pages.account.edit}</button>
                         <span className="text-[var(--shell-side-border)]">|</span>
-                        <button className="text-[var(--color-danger)]" onClick={() => remove(r)}>{tr.deleteRole}</button>
+                        <button className="text-[var(--color-danger)]" disabled={busy} onClick={() => remove(r)}>{tr.deleteRole}</button>
                       </span>
                     )}
                   </td>

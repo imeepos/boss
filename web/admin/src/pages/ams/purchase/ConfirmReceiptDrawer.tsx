@@ -1,13 +1,14 @@
-// 入库确认抽屉:建入库单 + 确认(同事务建批次+资产),POST /procurement/receipts 与 /:id/confirm。
-// 自 index.tsx 拆出,零行为变更;历史入库单回显只读。
+// 入库确认抽屉:建入库单 + 确认(同事务建批次+资产);明细回带订单明细(可改),不再硬编码预填。
 import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { Drawer } from '../../../components/Drawer'
+import { ErrorBanner } from '../../../components/business/page-head'
+import { unwrapOrderDetail } from './purchaseLogic'
 import type { OrderRow, ReceiptRow } from '../types'
 
 const input = 'h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]'
-const errBanner = 'rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]'
 
 export function ConfirmReceiptDrawer({
   order, onClose, onSaved,
@@ -20,12 +21,21 @@ export function ConfirmReceiptDrawer({
   const d = t.pages.purchasePage
   const [batchCode, setBatchCode] = useState('')
   const [batchName, setBatchName] = useState('')
-  const [items, setItems] = useState([{ materialCode: 'ONU', spec: '1GE', quantity: 1, unitAmount: 0 }])
+  const [items, setItems] = useState<{ materialCode: string; spec: string; quantity: number; unitAmount: number }[]>([])
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
   const [receipts, setReceipts] = useState<ReceiptRow[]>([])
 
   useEffect(() => {
+    // 明细回带:以订单明细为初始值(含已收数量不改),替代旧的硬编码 ONU/1GE 预填。
+    apiFetch<{ item: { items?: { materialCode: string; spec?: string; quantity: number; unitAmount: number }[] } }>('/procurement/orders/' + order.id)
+      .then((x) => {
+        const rows = (unwrapOrderDetail(x)?.items ?? []).map((i) => ({
+          materialCode: i.materialCode, spec: i.spec ?? '', quantity: i.quantity, unitAmount: i.unitAmount,
+        }))
+        setItems(rows.length ? rows : [{ materialCode: '', spec: '', quantity: 1, unitAmount: 0 }])
+      })
+      .catch(() => setItems([{ materialCode: '', spec: '', quantity: 1, unitAmount: 0 }]))
     apiFetch<{ items: ReceiptRow[] }>('/procurement/receipts', { query: { orderId: order.id } })
       .then((r) => setReceipts(r?.items ?? []))
       .catch(() => setReceipts([]))
@@ -44,6 +54,7 @@ export function ConfirmReceiptDrawer({
         method: 'POST',
         body: { batchCode, batchName, items },
       })
+      toast.success(d.confirmOk)
       onSaved()
     } catch (e) {
       setErr(e instanceof Error ? e.message : d.opFail)
@@ -63,7 +74,7 @@ export function ConfirmReceiptDrawer({
         </>
       }>
       <div className="flex flex-col gap-3.5">
-        {err && <div className={errBanner}>{err}</div>}
+        {err && <ErrorBanner message={err} />}
         {receipts.length > 0 && (
           <div className="text-[12px] text-[var(--shell-group-title)]">
             {d.historyReceipt}: {receipts.map((r) => `${r.receiptNo}(` + (t.common.statusTags[`receipt.${r.status}`] || r.status) + `)`).join(', ')}
@@ -72,7 +83,7 @@ export function ConfirmReceiptDrawer({
         <div className="flex flex-col gap-1.5">
           <label>{d.batchCode}</label>
           <input value={batchCode} onChange={(e) => setBatchCode(e.target.value)}
-            placeholder="RK-20260828-001"
+            placeholder={d.phBatchCode}
             className={input} />
         </div>
         <div className="flex flex-col gap-1.5">
@@ -84,7 +95,7 @@ export function ConfirmReceiptDrawer({
           <div className="mb-2 text-[13px] text-[var(--shell-content-text)]">{d.items}</div>
           {items.map((it, idx) => (
             <div key={idx} className="mb-2 grid grid-cols-12 gap-2">
-              <input placeholder="MI-ONU" value={it.materialCode}
+              <input placeholder={d.phMaterial} value={it.materialCode}
                 onChange={(e) => setItems(items.map((x, i) => i === idx ? { ...x, materialCode: e.target.value } : x))}
                 className={input + ' col-span-4'} />
               <input placeholder={d.spec} value={it.spec}

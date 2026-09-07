@@ -23,6 +23,12 @@ export function formErrOf(f: AssetFormState): FormErr {
   return ''
 }
 
+// 批次展示:编码+名称优先,缺失退 #id(关联信息不裸露内部编号)。
+export function batchLabel(b: { code?: string; name?: string } | null | undefined, id: number): string {
+  if (!b) return '#' + String(id)
+  return [b.code, b.name].filter(Boolean).join(' ') || '#' + String(id)
+}
+
 // 型号下拉展示:厂商 - 型号名,厂商缺失退型号名,再退 #id。
 export function modelLabel(m: AssetModelRow): string {
   const label = [m.vendor, m.model].filter(Boolean).join(' · ')

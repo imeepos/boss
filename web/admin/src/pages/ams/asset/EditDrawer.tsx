@@ -1,11 +1,12 @@
 // 编辑抽屉:契约 PUT /assets/:assetId {type?, modelId?, tagId?, batchId?}(仅传改动字段)。
 // 状态与部署地址只读展示;批次仅 IN_STOCK 态开放,其余状态禁用并提示走业务流转。
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { Drawer } from '../../../components/Drawer'
 import { StatusTag } from '../../../components/StatusTag'
 import { useT } from '../../../i18n'
+import { ErrorBanner } from '../../../components/business/page-head'
 import type { AssetBatchRow, AssetModelRow, AssetRow, TagRow } from '../types'
 import { AssetFormFields } from './AssetFormFields'
 import { buildEditPayload, formErrOf, modelLabel, type AssetFormState, type FormErr } from './logic'
@@ -28,13 +29,16 @@ export function EditDrawer({ asset, onClose, onSaved }: {
   const [apiError, setApiError] = useState('')
   const [busy, setBusy] = useState(false)
 
-  useEffect(() => {
-    apiFetch<{ items: AssetBatchRow[] }>('/assets/batches').then((d) => setBatches(d?.items ?? [])).catch(() => setBatches([]))
+  const [srcErr, setSrcErr] = useState(false)
+  const loadSrc = useCallback(() => {
+    setSrcErr(false)
+    apiFetch<{ items: AssetBatchRow[] }>('/assets/batches').then((d) => setBatches(d?.items ?? [])).catch(() => setSrcErr(true))
     // 型号下拉=启用项 + 当前挂型号(停用后仍需回显)
-    apiFetch<{ items: AssetModelRow[] }>('/asset-models').then((d) => setModels((d?.items ?? []).filter((m) => m.isActive || m.id === asset.modelId))).catch(() => setModels([]))
+    apiFetch<{ items: AssetModelRow[] }>('/asset-models').then((d) => setModels((d?.items ?? []).filter((m) => m.isActive || m.id === asset.modelId))).catch(() => setSrcErr(true))
     // 标签下拉=UNBOUND + 当前绑定标签(换绑/解绑都从当前态出发)
-    apiFetch<{ items: TagRow[] }>('/tags').then((d) => setTags((d?.items ?? []).filter((x) => x.status === 'UNBOUND' || x.tagId === asset.tagId))).catch(() => setTags([]))
+    apiFetch<{ items: TagRow[] }>('/tags').then((d) => setTags((d?.items ?? []).filter((x) => x.status === 'UNBOUND' || x.tagId === asset.tagId))).catch(() => setSrcErr(true))
   }, [asset.assetId, asset.modelId, asset.tagId]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(loadSrc, [loadSrc])
 
   const batchLocked = asset.status !== 'IN_STOCK'
   const modelOf = (id: number) => models.find((m) => m.id === id)
@@ -91,7 +95,13 @@ export function EditDrawer({ asset, onClose, onSaved }: {
         onSn={(sn) => { setForm((f) => ({ ...f, sn })) }}
         onMac={(mac) => { setForm((f) => ({ ...f, mac })) }}
         onLoid={(loid) => { setForm((f) => ({ ...f, loid })) }} />
-      {apiError && <div className="mt-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{apiError}</div>}
+      {srcErr && (
+        <div className="flex items-center gap-2 text-[12px] text-[var(--color-danger)]">
+          <span>{a.loadFail}</span>
+          <button type="button" className="cursor-pointer border-none bg-none p-0 text-[11px] text-[var(--color-text-link)] hover:underline" onClick={loadSrc}>{t.pages.pickers.common.retry}</button>
+        </div>
+      )}
+      {apiError && <ErrorBanner message={apiError} />}
     </Drawer>
   )
 }

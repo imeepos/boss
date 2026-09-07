@@ -6,7 +6,7 @@ import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { useConfirm } from '../../../components/ConfirmDialog'
 import { useT } from '../../../i18n'
-import type { AssetRow, TagRow } from '../types'
+import type { AssetBatchRow, AssetRow, TagRow } from '../types'
 
 export interface AssetListParams {
   page: number
@@ -23,6 +23,7 @@ export function useAssetList(params: AssetListParams) {
   const [rows, setRows] = useState<AssetRow[]>([])
   const [total, setTotal] = useState(0)
   const [tags, setTags] = useState<TagRow[]>([])
+  const [batches, setBatches] = useState<AssetBatchRow[]>([])
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
 
@@ -40,11 +41,14 @@ export function useAssetList(params: AssetListParams) {
       apiFetch<{ items: AssetRow[]; total: number }>('/assets', { query }),
       apiFetch<{ items: TagRow[] }>('/tags', { query: { limit: 200 } })
         .catch(() => ({ items: [] as TagRow[] })),
+      apiFetch<{ items: AssetBatchRow[] }>('/assets/batches')
+        .catch(() => ({ items: [] as AssetBatchRow[] })),
     ])
-      .then(([d, tg]) => {
+      .then(([d, tg, bt]) => {
         setRows(d?.items ?? [])
         setTotal(d?.total ?? 0)
         setTags(tg?.items ?? [])
+        setBatches(bt?.items ?? [])
       })
       .catch((e) => setError(e instanceof Error ? e.message : a.loadFail))
       .finally(() => setBusy(false))
@@ -55,6 +59,7 @@ export function useAssetList(params: AssetListParams) {
   useEffect(() => { load() }, [load])
 
   const tagOf = (tagId: number) => tags.find((x) => x.tagId === tagId)
+  const batchOf = (batchId: number) => batches.find((x) => x.id === batchId)
 
   // 删除:二次确认(仅入库且无引用可删);成功后刷新当前页。
   const delRow = async (r: AssetRow) => {
@@ -64,9 +69,9 @@ export function useAssetList(params: AssetListParams) {
       toast.success(a.deleteOk)
       load()
     } catch (e) {
-      setError(e instanceof Error ? e.message : a.loadFail)
+      toast.error(e instanceof Error ? e.message : a.loadFail)
     }
   }
 
-  return { rows, total, error, busy, load, tagOf, delRow }
+  return { rows, total, error, busy, load, tagOf, batchOf, delRow }
 }
