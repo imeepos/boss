@@ -3,6 +3,7 @@
 // worker.yaml + worker_handlers_fact.go)。字段口径对齐 docs/contract/fields.md §7.3/§7.5
 // 与 internal/domain/worker/events.go Feedback 结构体。文案/颜色走 i18n + 主题令牌。
 import { useEffect, useMemo, useState } from 'react'
+import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { PageHead, pagerTexts } from '../../org/shared'
@@ -39,6 +40,7 @@ export default function FeedbackPage() {
     setBusy(true)
     try {
       await apiFetch(`/worker-feedbacks/${id}/review`, { method: 'POST' })
+      toast.success(c.toastReviewOk)
       load()
     } catch (e) {
       setError(e instanceof Error ? e.message : c.actionFail)
@@ -82,9 +84,9 @@ export default function FeedbackPage() {
             onClick={load}
           >{t.pages.audit.refresh}</button>
         </div>
-        {error ? (
+        {error && (
           <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div>
-        ) : (
+        )}
           <div className="overflow-x-auto px-4 pb-4">
             <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
               <thead className="border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">
