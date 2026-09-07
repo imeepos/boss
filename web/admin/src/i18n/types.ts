@@ -338,6 +338,22 @@ export interface Translations {
       hintGotoGrids: string
       hintNeedSite: string
       nextNoFail: string
+      pickDevice: string
+      pickDeviceSearch: string
+      pickAsset: string
+      pickAssetSearch: string
+      pickProject: string
+      pickProjectSearch: string
+      pickFacility: string
+      pickFacilitySearch: string
+      projStatus: { PENDING: string; BUILDING: string; ACCEPTED: string }
+      issuePickBtn: string
+      issuePickTitle: string
+      issueNeedAsset: string
+      issueColCode: string
+      issueColType: string
+      issueColStatus: string
+      issueField: string
       siteNo: string
       parentId: string
       deviceCode: string
