@@ -418,6 +418,7 @@ export interface Translations {
       importing: string
       pastePlaceholder: string
       parseFailAt: string
+      parseFailAtCol: string
       reasonNotArray: string
       reasonNotObject: string
       reasonBadRow: string
@@ -3034,6 +3035,8 @@ export interface Translations {
       originValue: string
       close: string
       loadFail: string
+      jsonInvalid: string
+      jsonInvalidAt: string
     }
     authconfig: {
       title: string
@@ -3211,6 +3214,11 @@ export interface Translations {
       rotated: string
       rotateFail: string
       cancel: string
+      testBtn: string
+      testing: string
+      testOk: string
+      testFail: string
+      testHint: string
     }
     realidconfig: {
       title: string
