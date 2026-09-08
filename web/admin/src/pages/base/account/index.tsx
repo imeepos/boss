@@ -16,6 +16,7 @@ import {
   ActionLinks, ActionLink, ActionSep, ErrorBanner, PageHead, ToolbarButton, pagerTexts,
 } from '../../../components/business/page-head'
 import { Card } from '../../../components/ui/card'
+import { Input } from '../../../components/ui/input'
 import { DetailDrawer } from '../../org/shared'
 import { filterAccounts, pageSlice, type AccountRow } from './list'
 import { buildAccountPayload, validateAccount, type AccountFormValues } from './form'
@@ -109,7 +110,7 @@ export default function AccountListPage() {
       <PageHead title={t.pages.account.title} desc={t.pages.account.desc} />
       <Card>
         <div className="flex flex-wrap items-center gap-2 p-4">
-          <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" placeholder={t.pages.account.searchPlaceholder}
+          <Input className="w-60" placeholder={t.pages.account.searchPlaceholder}
             value={keyword} onChange={(e) => { setKeyword(e.target.value); setPage(1) }} />
           <Dropdown
             value={role}
