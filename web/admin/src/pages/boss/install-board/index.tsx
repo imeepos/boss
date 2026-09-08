@@ -7,10 +7,13 @@ import { apiFetch } from '../../../api/client'
 import { fmtTime } from '../../../lib/format'
 import { useT } from '../../../i18n'
 import { PageHead, pagerTexts } from '../../org/shared'
+import { ErrorBanner, ToolbarButton } from '../../../components/business'
 import { StatusTag } from '../../../components/StatusTag'
 import { Pagination } from '../../../components/Pagination'
 import { TableStateRow } from '../../../components/business'
 import { StatCard } from '../../../components/business/charts'
+import { Card } from '../../../components/ui/card'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/table'
 
 interface TicketWithLogs {
   ticketId: number
@@ -34,9 +37,9 @@ export default function InstallBoardPage() {
   const load = () => {
     setError('')
     setBusy(true)
-    apiFetch<{ items: any[] }>('/dispatch-tickets')
+    apiFetch<{ items: TicketWithLogs[] }>('/dispatch-tickets')
       .then((r) => {
-        const ts: TicketWithLogs[] = (r?.items ?? []).map((x: any) => ({
+        const ts: TicketWithLogs[] = (r?.items ?? []).map((x) => ({
           ticketId: x.ticketId,
           ticketNo: x.ticketNo,
           workerName: x.workerName || '—',
@@ -69,48 +72,42 @@ export default function InstallBoardPage() {
         <StatCard label={d.metricArrived} value={arrived} />
       </div>
 
-      <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
+      <Card>
         <div className="flex flex-wrap items-center gap-2 p-4">
           <span className="spacer" />
-          <button
-            type="button"
-            onClick={load}
-            className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]"
-          >
-            {t.pages.audit.refresh}
-          </button>
+          <ToolbarButton disabled={busy} onClick={load}>{t.pages.audit.refresh}</ToolbarButton>
         </div>
         {error ? (
-          <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div>
+          <ErrorBanner message={error} />
         ) : (
-          <div className="overflow-x-auto px-4 pb-4">
-            <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
-              <thead>
-                <tr>
-                  <th className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{d.colTicketNo}</th>
-                  <th className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{d.colWorker}</th>
-                  <th className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{d.colStatus}</th>
-                  <th className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{d.colArrived}</th>
-                  <th className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{d.colCoords}</th>
-                </tr>
-              </thead>
-              <tbody>
+          <div className="px-4 pb-4">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{d.colTicketNo}</TableHead>
+                  <TableHead>{d.colWorker}</TableHead>
+                  <TableHead>{d.colStatus}</TableHead>
+                  <TableHead>{d.colArrived}</TableHead>
+                  <TableHead>{d.colCoords}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {slice.map((r) => (
-                  <tr key={r.ticketId} className="hover:bg-[var(--shell-menu-hover-bg)]">
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] font-mono">{r.ticketNo}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)]">{r.workerName}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)]"><StatusTag domain="ticket" value={r.status} /></td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)]">{fmtTime(r.arrivedAt)}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] font-mono text-xs">
+                  <TableRow key={r.ticketId}>
+                    <TableCell className="font-mono">{r.ticketNo}</TableCell>
+                    <TableCell>{r.workerName}</TableCell>
+                    <TableCell><StatusTag domain="ticket" value={r.status} /></TableCell>
+                    <TableCell>{fmtTime(r.arrivedAt)}</TableCell>
+                    <TableCell className="font-mono text-xs">
                       {r.arriveLat != null && r.arriveLng != null
                         ? `${r.arriveLat.toFixed(4)}, ${r.arriveLng.toFixed(4)}`
                         : '—'}
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
                 {!slice.length && <TableStateRow colSpan={5} loading={busy} text={d.empty} />}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         )}
         <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
@@ -119,11 +116,11 @@ export default function InstallBoardPage() {
             page={page}
             pageSize={pageSize}
             onPage={setPage}
-            onSize={setPageSize}
+            onSize={(s) => { setPageSize(s); setPage(1) }}
             {...pagerTexts(t.pages.company)}
           />
         </div>
-      </div>
+      </Card>
     </div>
   )
 }

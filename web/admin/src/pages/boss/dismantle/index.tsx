@@ -4,10 +4,14 @@ import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { PageHead, pagerTexts } from '../../org/shared'
+import { ErrorBanner, ToolbarButton, IdRef } from '../../../components/business'
 import { StatusTag } from '../../../components/StatusTag'
 import { Pagination } from '../../../components/Pagination'
 import { Drawer } from '../../../components/Drawer'
 import { ResourcePicker } from '../../../components/ResourcePicker'
+import { Card } from '../../../components/ui/card'
+import { Button } from '../../../components/ui/button'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/table'
 import { pageSlice, type DismantleRow, type OrderListRow } from '../types'
 import type { AssetRow } from '../../ams/types'
 import type { PortRow } from '../../oss/types'
@@ -65,44 +69,46 @@ export default function DismantlePage() {
   return (
     <div>
       <PageHead title={d.title} desc={d.desc} />
-      <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
+      <Card>
         <div className="flex flex-wrap items-center gap-2 p-4">
           <span className="spacer" />
-          <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
-          <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" onClick={() => setOpen(true)}>{d.create}</button>
+          <ToolbarButton disabled={busy} onClick={load}>{t.pages.audit.refresh}</ToolbarButton>
+          <ToolbarButton primary onClick={() => setOpen(true)}>{d.create}</ToolbarButton>
         </div>
-        {error && <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div>}
-          <div className="overflow-x-auto px-4 pb-4">
-            <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
-              <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{d.columns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
-              <tbody>
-                {slice.map((x) => (
-                  <tr key={x.id}>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.dismantleNo || `#${x.id}`}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]" title={'orderId=' + x.orderId}>#{x.orderId}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.legalEntityName || `#${x.legalEntityId}`}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]" title={'assetId=' + x.assetId}>{x.assetId ? `#${x.assetId}` : '—'}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]" title={'portId=' + x.portId}>{x.portId ? `#${x.portId}` : '—'}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><StatusTag domain="task" value={x.status} /></td>
-                  </tr>
-                ))}
-                {!slice.length && <TableStateRow colSpan={6} loading={busy} text={d.empty} />}
-              </tbody>
-            </table>
-          </div>
+        {error && <ErrorBanner message={error} />}
+        <div className="px-4 pb-4">
+          <Table>
+            <TableHeader>
+              <TableRow>{d.columns.map((x) => <TableHead key={x}>{x}</TableHead>)}</TableRow>
+            </TableHeader>
+            <TableBody>
+              {slice.map((x) => (
+                <TableRow key={x.id}>
+                  <TableCell>{x.dismantleNo || `#${x.id}`}</TableCell>
+                  <TableCell><IdRef value={x.orderId} /></TableCell>
+                  <TableCell>{x.legalEntityName || `#${x.legalEntityId}`}</TableCell>
+                  <TableCell>{x.assetId ? <IdRef value={x.assetId} /> : '—'}</TableCell>
+                  <TableCell>{x.portId ? <IdRef value={x.portId} /> : '—'}</TableCell>
+                  <TableCell><StatusTag domain="task" value={x.status} /></TableCell>
+                </TableRow>
+              ))}
+              {!slice.length && <TableStateRow colSpan={6} loading={busy} text={d.empty} />}
+            </TableBody>
+          </Table>
+        </div>
         <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
           <Pagination total={rows.length} page={page} pageSize={pageSize}
-            onPage={setPage} onSize={setPageSize} {...pagerTexts(d)} />
+            onPage={setPage} onSize={(s) => { setPageSize(s); setPage(1) }} {...pagerTexts(d)} />
         </div>
-      </div>
+      </Card>
       {open && (
         <Drawer title={d.createTitle} onClose={() => setOpen(false)}
           footer={
             <>
-              <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={() => setOpen(false)}>{t.pages.company.cancel}</button>
-              <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" disabled={busy || !orderOk} onClick={submit}>
+              <Button variant="outline" size="sm" onClick={() => setOpen(false)}>{t.pages.company.cancel}</Button>
+              <Button size="sm" disabled={busy || !orderOk} onClick={submit}>
                 {busy ? t.pages.account.submitting : t.pages.company.save}
-              </button>
+              </Button>
             </>
           }>
           <div className="flex flex-col gap-3.5">
@@ -144,7 +150,7 @@ export default function DismantlePage() {
                 errorText={d.loadFail}
               />
             </div>
-            {formError && <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]" style={{ margin: 0 }}>{formError}</div>}
+            {formError && <div className="rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] break-all text-[var(--color-danger)]">{formError}</div>}
           </div>
         </Drawer>
       )}

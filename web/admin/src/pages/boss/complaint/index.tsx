@@ -5,13 +5,16 @@ import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { PageHead, pagerTexts } from '../../org/shared'
+import { ErrorBanner, ToolbarButton, IdRef } from '../../../components/business'
 import { StatusTag } from '../../../components/StatusTag'
 import { Pagination } from '../../../components/Pagination'
 import { Drawer } from '../../../components/Drawer'
+import { Card } from '../../../components/ui/card'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/table'
 import { fmtTime } from '../../../lib/format'
 import { pageSlice, type ComplaintRow, type CSMetrics } from '../types'
 import { useConfirm } from '../../../components/ConfirmDialog'
-import { TableStateRow } from '../../../components/business'
+import { TableStateRow, LoadingState, EmptyState } from '../../../components/business'
 
 interface TicketEvent {
   id: number
@@ -22,7 +25,15 @@ interface TicketEvent {
   createdAt: string
 }
 
-const BANNER = 'mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]'
+/** 行内动作链接:busy 提交中禁用。 */
+function RowAction({ label, disabled, onClick }: { label: string; disabled?: boolean; onClick: () => void }) {
+  return (
+    <button type="button" disabled={disabled} onClick={onClick}
+      className="cursor-pointer border-none bg-none px-0 text-xs text-[var(--color-text-link)] hover:underline disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:no-underline">
+      {label}
+    </button>
+  )
+}
 
 export default function ComplaintPage() {
   const t = useT()
@@ -98,61 +109,65 @@ export default function ComplaintPage() {
           [c.columns[3], metrics.slaBreachedOpen], [c.columns[5], metrics.avgCloseHours.toFixed(1) + 'h'],
         ].map(([label, value]) => <div key={String(label)} className="rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] p-3"><div className="text-xs text-[var(--shell-group-title)]">{label}</div><div className="mt-1 text-xl font-semibold text-[var(--shell-heading)]">{value}</div></div>)}
       </div>}
-      <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
+      <Card>
         <div className="flex flex-wrap items-center gap-2 p-4">
           <span className="spacer" />
-          <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
+          <ToolbarButton disabled={busy} onClick={load}>{t.pages.audit.refresh}</ToolbarButton>
         </div>
-        {error && <div className={BANNER}>{error}</div>}
-        <div className="overflow-x-auto px-4 pb-4">
-          <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
-            <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{c.columns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
-            <tbody>
+        {error && <ErrorBanner message={error} />}
+        <div className="px-4 pb-4">
+          <Table>
+            <TableHeader>
+              <TableRow>{c.columns.map((x) => <TableHead key={x}>{x}</TableHead>)}</TableRow>
+            </TableHeader>
+            <TableBody>
               {slice.map((x) => (
-                <tr key={x.id}>
-                  <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.ticketNo}</td>
-                  <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]" title={'customerId=' + x.customerId}>#{x.customerId}</td>
-                  <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]" title={x.orderId ? 'orderId=' + x.orderId : undefined}>{x.orderId ? '#' + x.orderId : '—'}</td>
-                  <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{c.types[x.type] ?? x.type}</td>
-                  <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><StatusTag domain="complaint" value={x.status} /></td>
-                  <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">
+                <TableRow key={x.id}>
+                  <TableCell>{x.ticketNo}</TableCell>
+                  <TableCell><IdRef value={x.customerId} /></TableCell>
+                  <TableCell>{x.orderId ? <IdRef value={x.orderId} /> : '—'}</TableCell>
+                  <TableCell>{c.types[x.type] ?? x.type}</TableCell>
+                  <TableCell><StatusTag domain="complaint" value={x.status} /></TableCell>
+                  <TableCell>
                     <span className="inline-flex items-center gap-2">
-                      {x.status === 'OPEN' && <button disabled={busy} onClick={() => accept(x.ticketNo)}>{c.accept}</button>}
-                      {x.status !== 'CLOSED' && <button disabled={busy} onClick={() => close(x.ticketNo)}>{c.close}</button>}
-                      <button disabled={busy} onClick={() => openEvents(x.ticketNo)}>{c.eventsBtn}</button>
+                      {x.status === 'OPEN' && <RowAction label={c.accept} disabled={busy} onClick={() => accept(x.ticketNo)} />}
+                      {x.status !== 'CLOSED' && <RowAction label={c.close} disabled={busy} onClick={() => close(x.ticketNo)} />}
+                      <RowAction label={c.eventsBtn} disabled={busy} onClick={() => openEvents(x.ticketNo)} />
                     </span>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
               {!slice.length && <TableStateRow colSpan={6} loading={busy} text={c.empty} />}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
         <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
           <Pagination total={rows.length} page={page} pageSize={pageSize}
-            onPage={setPage} onSize={setPageSize} {...pagerTexts(c)} />
+            onPage={setPage} onSize={(s) => { setPageSize(s); setPage(1) }} {...pagerTexts(c)} />
         </div>
-      </div>
+      </Card>
       {events && (
         <Drawer title={c.eventsTitle + ' · ' + events.no} onClose={() => setEvents(null)}>
-          {events.error ? <div className={BANNER}>{events.error}</div> : events.loading ? (
-            <div className="p-4 text-[13px] text-[var(--shell-group-title)]">…</div>
+          {events.error ? <ErrorBanner message={events.error} /> : events.loading ? (
+            <LoadingState />
           ) : (
-            <div className="overflow-x-auto px-4 pb-4">
-              <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
-                <thead><tr>{c.eventsColumns.map((x) => <th key={x} className="h-9 px-2 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
-                <tbody>
+            <div className="px-4 pb-4">
+              <Table>
+                <TableHeader>
+                  <TableRow>{c.eventsColumns.map((x) => <TableHead key={x}>{x}</TableHead>)}</TableRow>
+                </TableHeader>
+                <TableBody>
                   {events.items.map((ev) => (
-                    <tr key={ev.id}>
-                      <td className="h-9 px-2 whitespace-nowrap border-b border-[var(--shell-side-border)]">{fmtTime(ev.createdAt)}</td>
-                      <td className="h-9 px-2 whitespace-nowrap border-b border-[var(--shell-side-border)]">{ev.eventType}</td>
-                      <td className="h-9 px-2 whitespace-nowrap border-b border-[var(--shell-side-border)]">{ev.fromStatus || '—'} → {ev.toStatus || '—'}</td>
-                      <td className="h-9 px-2 border-b border-[var(--shell-side-border)]">{ev.note || '—'}</td>
-                    </tr>
+                    <TableRow key={ev.id}>
+                      <TableCell>{fmtTime(ev.createdAt)}</TableCell>
+                      <TableCell>{ev.eventType}</TableCell>
+                      <TableCell>{ev.fromStatus || '—'} → {ev.toStatus || '—'}</TableCell>
+                      <TableCell className="whitespace-normal">{ev.note || '—'}</TableCell>
+                    </TableRow>
                   ))}
-                  {!events.items.length && <tr><td colSpan={4} className="h-11 px-3 text-center text-[var(--shell-group-title)]">{c.eventsEmpty}</td></tr>}
-                </tbody>
-              </table>
+                  {!events.items.length && <TableRow><TableCell colSpan={4}><EmptyState text={c.eventsEmpty} /></TableCell></TableRow>}
+                </TableBody>
+              </Table>
             </div>
           )}
         </Drawer>
