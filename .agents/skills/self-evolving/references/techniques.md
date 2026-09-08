@@ -709,3 +709,12 @@ chr(39)/String.fromCharCode(34) 运行时构造；③ 正则字符类 [0-9] 替�
 ## devloop_accept 超时甄别(2026-09-08 T14)
 - acceptanceCommand >2 分钟(pp2-gate 全量:typecheck+test+build)会被运行器超时杀掉,exit null、verdict=fail 连环 redo/halt,与代码无关。
 - 处置:后台 bash 显式跑同命令留 `GATE_RC=0` 日志 + 文档引用;exit null 一律先查运行器超时(gate 各阶段日志)再怀疑代码。
+
+## 外围页走查路由先查 menu.def(2026-09-08 W3)
+- 场景:批量 DOM 走查 admin 外围页时,组件目录名(pages/alarm、pages/backup)≠URL 路由(alarm→/alarm/alarm、backup→/base/backup、aaa-session→/aaa/aaasession、aaalog→/aaa/aaalog、aaa-dashboard→/aaa/dashboard)。
+- 用法:采集前 `grep "key: 'x'" router/menu.def.ts` 拿真实 path;首探 h=404 先查路由映射再怀疑页面。
+- 附:批量采集的 --eval 断言 stdout 严禁吃 `| tail` 管道(证据会静默丢失),输出重定向到文件再解析。
+
+## ui-table 替换裸 table 的内边距(2026-09-08 W3)
+- ui/table.tsx 的 Table 自带 `div.w-full.overflow-x-auto` 容器但无 padding;原裸 table 外层 `overflow-x-auto px-4 pb-4` 直替换会丢内边距贴卡边。
+- 用法:包一层 `<div className="px-4 pb-4"><Table>…</Table></div>`(inventory 先例);TableHead 自带 bg-menu-hover-bg,原 shadcn th 语义类(border-border/text-muted-foreground)可整体删除。

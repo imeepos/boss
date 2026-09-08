@@ -120,7 +120,7 @@
 
 ## 遗留缺口(2026-10-01 查证,勿与已修项混淆)
 
-- `/boss/site`(官网内容列表,sitePage)的 `columns` 数组仍是**裸字段标识符**(title/slug/category/status/publishedAt/version),zh-CN 界面下列头裸英文——siteCatsPage 与 knowledgePage 均已本地化(knowledge 页由 feat/knowledge-i18n-theme 修复,columns ['标识码','标题','内容','状态','版本']),sitePage 待同样处理
+- ~~`/boss/site`(官网内容列表,sitePage)的 `columns` 数组仍是裸字段标识符~~ **已修(2026-09-08 W3 复核查证)**:sitePage columns 现为 ['标题','别名','语言','分类','状态','发布时间','版本'],三语闭环,该缺口销账
 
 ## API 文档页(/base/apidocs,2026-09-06 接入)
 

@@ -1,5 +1,12 @@
 # Notes
 
+## 2026-09-08 Wave3 收官(基座遗留+外围页+全站一致性,feat/ux-final)
+
+- 最耗时坑(2 轮):外围页走查拿组件目录名当 URL(/alarm、/backup、/aaa-session…),五页全 404 险些误判「页面坏了」;真实路由在 router/menu.def.ts(alarm→/alarm/alarm、aaalog→/aaa/aaalog、session→/aaa/aaasession、aaa-dashboard→/aaa/dashboard、backup→/base/backup)。教训:走查采集前先 grep menu.def 拿 path,组件目录名≠路由。
+- 次坑:批量采集管道 `| tail -2` 把 eval 断言 stdout 截掉——logs JSON 还在但探针结果全丢,重跑一轮才拿到 DOM 证据。红线 24(管道吞退出码)的 stdout 变体:关键断言产物不吃管道,落文件再解析。
+- 小坑:①dev 端口 5199 被并行会话占用,按 AGENTS 立即换 5213 零冲突;②ui-table 自带 overflow-x-auto 容器但无内边距,裸 table 直替换会丢 px-4,外层补 `<div className="px-4 pb-4">`(inventory 先例);③Card 组件本身带 mb-4+rounded-md,DOM 探针 `div.mb-4.rounded-md` 会把规范 Card 误报为「裸卡片壳」,残留清点以源码 grep 为准、DOM 探针只做辅助。
+- 成功实践:任务C 机械四项 grep 先行,定位「真实残留恰好=任务B 四页」,B/C 自然汇合一轮改完双收口;基座加法(onOpenChange/reopen)全部配 vitest 回归后再动页面,门禁全程绿零返工。
+
 ## 2026-09-07 OSS-ODN 域关联字段 picker 改造 7 处(feat/oss-odn-pickers,已 ff 回 main)
 
 - 最耗时坑(2 轮):cdp-admin-capture --no-proxy 放中间吞掉后一个参数,断言 eval 静默丢失而截图正常——像「页面没渲染」,实际是包装器 parseArgs 吞参;布尔旗标放最末一次过(已登 recidivism#17/techniques)。
