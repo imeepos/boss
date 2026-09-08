@@ -9,6 +9,7 @@ import { Dropdown, type DropdownOption } from '../../../components/Dropdown'
 import { SimplePicker } from '../../../components/pickers/SimplePicker'
 import { useT } from '../../../i18n'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../../components/ui/table'
+import { Card } from '../../../components/ui/card'
 import { EmptyState, ErrorBanner, ToolbarButton } from '../../../components/business/page-head'
 import { useConfirm } from '../../../components/ConfirmDialog'
 import { fmtMoney, type Project } from './constructions'
@@ -16,10 +17,6 @@ import { BudgetMilestonePanel } from './BudgetMilestonePanel'
 import { PERMIT_KIND_TEXT, PERMIT_STATUS_TEXT, PERMIT_STATUS_VARIANT } from './permits'
 import { MaterialIssuesCard } from './MaterialIssuesCard'
 import { ProgressCard } from './ProgressCard'
-
-const CARD = 'rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]'
-const FIELD = 'flex flex-col gap-1'
-const LABEL = 'text-xs text-[var(--shell-content-text)]'
 
 interface Item { id: number; projectId: number; facilityCode: string; quantity: number; unitPrice: number; amount: number }
 interface PermitLite { id: number; permitNo: string; kind: string; status: string; validUntil?: string }
@@ -60,7 +57,11 @@ export function ConstructionDetail({ projectId, onChanged }: { projectId: number
       setSettlements((await apiFetch<Settlement[]>('/odn/constructions/' + projectId + '/settlements')) ?? [])
       setPermits((await apiFetch<PermitLite[]>('/odn/constructions/' + projectId + '/permits')) ?? [])
       setUnlinked((await apiFetch<PermitLite[]>('/odn/permits', { query: { unlinked: 1, limit: 200 } })) ?? [])
-    } catch (e) { setError(e instanceof Error ? e.message : '加载失败') }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : '加载失败'
+      setError(msg)
+      toast.error('施工单加载失败', { description: msg })
+    }
   }, [projectId])
 
   useEffect(() => { void load() }, [load])
@@ -85,7 +86,11 @@ export function ConstructionDetail({ projectId, onChanged }: { projectId: number
   const act = async (fn: () => Promise<unknown>, okMsg: string) => {
     setBusy(true); setError('')
     try { await fn(); toast.success(okMsg); await load(); onChanged() }
-    catch (e) { setError(e instanceof Error ? e.message : '操作失败') } finally { setBusy(false) }
+    catch (e) {
+      const msg = e instanceof Error ? e.message : '操作失败'
+      setError(msg)
+      toast.error(okMsg + ' 失败', { description: msg })
+    } finally { setBusy(false) }
   }
 
   const assignContractor = () => act(() => apiFetch('/odn/constructions/' + projectId + '/contractor',
@@ -128,39 +133,39 @@ export function ConstructionDetail({ projectId, onChanged }: { projectId: number
   const lockSettle = settlements.some((s) => s.status !== 'VOIDED')
   const active = settlements.find((s) => s.status !== 'VOIDED')
 
-  return <div className='mt-4 space-y-3'>
+  return <div className="mt-4 space-y-3">
     {error && <ErrorBanner message={error} />}
     <BudgetMilestonePanel project={project} onChanged={onChanged} />
     <ProgressCard projectId={projectId} />
-    <div className={CARD + ' p-4'}>
-      <div className='mb-2 flex flex-wrap items-center gap-2'>
-        <span className='text-sm font-semibold'>承包商</span>
+    <Card className="p-4">
+      <div className="mb-2 flex flex-wrap items-center gap-2">
+        <span className="text-sm font-semibold">承包商</span>
         {project && project.contractorName && <Badge>{project.contractorName}</Badge>}
-        {project && !project.contractorName && <span className='text-xs opacity-60'>未指定(存量项目兼容;结算前须指定施工类供应商)</span>}
-        {!lockSettle && <div className='flex items-end gap-2'>
-          <Dropdown value={contractorId} ariaLabel='选择施工类供应商' placeholder='选择施工类供应商' searchable searchPlaceholder='搜索供应商'
+        {project && !project.contractorName && <span className="text-xs opacity-60">未指定(存量项目兼容;结算前须指定施工类供应商)</span>}
+        {!lockSettle && <div className="flex items-end gap-2">
+          <Dropdown value={contractorId} ariaLabel="选择施工类供应商" placeholder="选择施工类供应商" searchable searchPlaceholder="搜索供应商"
             options={suppliers.map((s) => ({ value: String(s.id), label: s.name + ' (' + s.code + ')' }))}
             onChange={(v) => setContractorId(v)} />
           <ToolbarButton primary disabled={busy || !contractorId} onClick={() => void assignContractor()}>指定</ToolbarButton>
         </div>}
-        {lockSettle && <span className='text-xs opacity-60'>已有有效结算单,承包商锁定</span>}
+        {lockSettle && <span className="text-xs opacity-60">已有有效结算单,承包商锁定</span>}
       </div>
-      <div className='flex flex-wrap gap-2'>
+      <div className="flex flex-wrap gap-2">
         {project?.status === 'PENDING' && <ToolbarButton primary disabled={busy} onClick={() => void start()}>开工</ToolbarButton>}
         {project?.status === 'BUILDING' && <ToolbarButton primary disabled={busy} onClick={() => void accept()}>竣工验收</ToolbarButton>}
         {project?.status === 'ACCEPTED' && !lockSettle &&
           <ToolbarButton primary disabled={busy || !project.contractorId} onClick={() => void createSettlement()}>发起结算</ToolbarButton>}
-        {project?.status === 'ACCEPTED' && !project.contractorId && <span className='text-xs opacity-60'>竣工未指定承包商,不可发起结算</span>}
+        {project?.status === 'ACCEPTED' && !project.contractorId && <span className="text-xs opacity-60">竣工未指定承包商,不可发起结算</span>}
       </div>
-    </div>
+    </Card>
 
-    <div className={CARD + ' p-4'}>
-      <div className='mb-2 text-sm font-semibold'>工程量清单{project?.status === 'ACCEPTED' && <span className='ml-2 text-xs opacity-60'>已竣工锁定</span>}</div>
-      {project && project.status !== 'ACCEPTED' && <div className='mb-3 grid grid-cols-2 gap-3 md:grid-cols-4'>
-        <label className={FIELD}><span className={LABEL}>设施编码</span><SimplePicker value={fac} onChange={setFac} options={facOpts} ariaLabel={t.pages.odn.pickFacility} searchPlaceholder={t.pages.odn.pickFacilitySearch} clearable clearLabel={t.pages.pickers.common.clear} minWidth={200} /></label>
-        <label className={FIELD}><span className={LABEL}>数量</span><Input value={qty} onChange={(e) => setQty(e.target.value)} inputMode='decimal' /></label>
-        <label className={FIELD}><span className={LABEL}>单价</span><Input value={price} onChange={(e) => setPrice(e.target.value)} inputMode='decimal' /></label>
-        <div className='flex items-end'><ToolbarButton primary disabled={busy} onClick={addItem}>追加明细</ToolbarButton></div>
+    <Card className="p-4">
+      <div className="mb-2 text-sm font-semibold">工程量清单{project?.status === 'ACCEPTED' && <span className="ml-2 text-xs opacity-60">已竣工锁定</span>}</div>
+      {project && project.status !== 'ACCEPTED' && <div className="mb-3 grid grid-cols-2 gap-3 md:grid-cols-4">
+        <label className="flex flex-col gap-1"><span className="text-xs text-[var(--shell-content-text)]">设施编码</span><SimplePicker value={fac} onChange={setFac} options={facOpts} ariaLabel={t.pages.odn.pickFacility} searchPlaceholder={t.pages.odn.pickFacilitySearch} clearable clearLabel={t.pages.pickers.common.clear} minWidth={200} /></label>
+        <label className="flex flex-col gap-1"><span className="text-xs text-[var(--shell-content-text)]">数量</span><Input value={qty} onChange={(e) => setQty(e.target.value)} inputMode="decimal" /></label>
+        <label className="flex flex-col gap-1"><span className="text-xs text-[var(--shell-content-text)]">单价</span><Input value={price} onChange={(e) => setPrice(e.target.value)} inputMode="decimal" /></label>
+        <div className="flex items-end"><ToolbarButton primary disabled={busy} onClick={addItem}>追加明细</ToolbarButton></div>
       </div>}
       {items.length === 0 ? <EmptyState text='暂无明细' /> : <div className='overflow-x-auto'><Table>
         <TableHeader><TableRow><TableHead>设施</TableHead><TableHead>数量</TableHead><TableHead>单价</TableHead><TableHead>金额(后端计算)</TableHead><TableHead>操作</TableHead></TableRow></TableHeader>
@@ -183,17 +188,17 @@ export function ConstructionDetail({ projectId, onChanged }: { projectId: number
           })}
         </TableBody>
       </Table></div>}
-    </div>
+    </Card>
 
-    <div className={CARD + ' p-4'}>
-      <div className='mb-2 text-sm font-semibold'>开工许可<span className='ml-2 text-xs font-normal opacity-60'>许可前置门控开启时,未获批/未盖章的许可将拒绝开工(P-INFRA-1 W4)</span></div>
-      <div className='mb-3 flex flex-wrap items-end gap-2'>
-        <Dropdown value={linkId} ariaLabel='选择待关联许可' placeholder='选择未关联许可单' searchable searchPlaceholder='搜索单号'
+    <Card className="p-4">
+      <div className="mb-2 text-sm font-semibold">开工许可<span className="ml-2 text-xs font-normal opacity-60">许可前置门控开启时,未获批/未盖章的许可将拒绝开工(P-INFRA-1 W4)</span></div>
+      <div className="mb-3 flex flex-wrap items-end gap-2">
+        <Dropdown value={linkId} ariaLabel="选择待关联许可" placeholder="选择未关联许可单" searchable searchPlaceholder="搜索单号"
           options={unlinked.map((p) => ({ value: String(p.id), label: p.permitNo + ' (' + (PERMIT_KIND_TEXT[p.kind] ?? p.kind) + ')' }))}
           onChange={(v) => setLinkId(v)} />
         <ToolbarButton primary disabled={busy || !linkId} onClick={linkPermit}>关联许可</ToolbarButton>
       </div>
-      {permits.length === 0 ? <EmptyState text='暂无关联许可(覆盖门控开启时开工将被拒绝)' /> : <div className='overflow-x-auto'><Table>
+      {permits.length === 0 ? <EmptyState text="暂无关联许可(覆盖门控开启时开工将被拒绝)" /> : <div className="overflow-x-auto"><Table>
         <TableHeader><TableRow><TableHead>许可单号</TableHead><TableHead>类型</TableHead><TableHead>状态</TableHead><TableHead>有效期止</TableHead><TableHead>操作</TableHead></TableRow></TableHeader>
         <TableBody>
           {permits.map((p) => <TableRow key={p.id}>
@@ -205,16 +210,16 @@ export function ConstructionDetail({ projectId, onChanged }: { projectId: number
           </TableRow>)}
         </TableBody>
       </Table></div>}
-    </div>
+    </Card>
 
-    <div className={CARD + ' p-4'}>
-      <div className='mb-2 text-sm font-semibold'>工程结算</div>
-      {active?.status === 'PENDING' && <div className='mb-2 flex flex-wrap items-end gap-2'>
+    <Card className="p-4">
+      <div className="mb-2 text-sm font-semibold">工程结算</div>
+      {active?.status === 'PENDING' && <div className="mb-2 flex flex-wrap items-end gap-2">
         <ToolbarButton primary disabled={busy} onClick={() => void settle()}>确认结算</ToolbarButton>
-        <label className={FIELD}><span className={LABEL}>作废原因</span><Input value={voidReason} onChange={(e) => setVoidReason(e.target.value)} placeholder='作废必填原因' /></label>
+        <label className="flex flex-col gap-1"><span className="text-xs text-[var(--shell-content-text)]">作废原因</span><Input value={voidReason} onChange={(e) => setVoidReason(e.target.value)} placeholder="作废必填原因" /></label>
         <ToolbarButton disabled={busy} onClick={() => void voidSettlement()}>作废</ToolbarButton>
       </div>}
-      {settlements.length === 0 ? <EmptyState text='暂无结算单' /> : <div className='overflow-x-auto'><Table>
+      {settlements.length === 0 ? <EmptyState text="暂无结算单" /> : <div className="overflow-x-auto"><Table>
         <TableHeader><TableRow><TableHead>结算单号</TableHead><TableHead>承包商</TableHead><TableHead>应付金额</TableHead><TableHead>明细数</TableHead><TableHead>状态</TableHead><TableHead>作废原因</TableHead><TableHead>发起时间</TableHead></TableRow></TableHeader>
         <TableBody>
           {settlements.map((s) => <TableRow key={s.id}>
@@ -228,7 +233,7 @@ export function ConstructionDetail({ projectId, onChanged }: { projectId: number
           </TableRow>)}
         </TableBody>
       </Table></div>}
-    </div>
+    </Card>
 
     <MaterialIssuesCard projectId={projectId} locked={project?.status === 'ACCEPTED'} />,
   </div>
