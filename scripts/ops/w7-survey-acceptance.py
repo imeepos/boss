@@ -239,8 +239,9 @@ def main():
     check("A9 admin 取消后 status=CANCELLED", d["task"]["status"] == "CANCELLED", d)
 
     # 验收设施:SQL 直造 PLANNED 杆(admin API 新建设施默认 IN_SERVICE,入施工单要求 PLANNED);
-    # 取号口径同 web 端 nextcode.ts(现存 MAX 3 位序号+1;/facility-next-code 端点的 SUBSTRING
-    # 会把网格位并入序号,P91xxx 误报编号用尽,故客户端计算)。
+    # 取号口径同 web 端 nextcode.ts(现存 MAX 3 位序号+1)。历史上 /facility-next-code 端点
+    # 的 SUBSTRING 把网格位并入序号致 P91xxx 误报用尽,已在服务端修复(序号=第 4-6 位);
+    # 此处保留客户端计算,是为让验收断言不依赖被验对象自身的取号结果。
     facs, _ = api("GET", "/api/admin/v1/odn/facilities?kind=P&gridCode=91")
     mx = 0
     for f in (facs or []):
