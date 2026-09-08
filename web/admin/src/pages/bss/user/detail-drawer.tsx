@@ -6,7 +6,8 @@ import { useT } from '../../../i18n'
 import { Drawer } from '../../../components/Drawer'
 import { StatusTag } from '../../../components/StatusTag'
 import { TabBar } from '../../../components/business/tab-bar'
-import { EmptyState } from '../../../components/business/page-head'
+import { EmptyState, LoadingState } from '../../../components/business/feedback'
+import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from '../../../components/ui/table'
 import { fmtFee, fmtTime } from '../../../lib/format'
 import type { UserRow } from './filter'
 import { DETAIL_TABS, NOTIFY_CARD_KEY, PROFILE_FIELDS, SECTION_LIMIT, currentPlanName,
@@ -14,7 +15,7 @@ import { DETAIL_TABS, NOTIFY_CARD_KEY, PROFILE_FIELDS, SECTION_LIMIT, currentPla
 
 type Detail = Record<string, unknown>
 
-const cellBase = 'px-3 py-2 text-xs align-top border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)]'
+const cellBase = 'px-3 py-2 text-xs align-top border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] whitespace-normal break-words'
 
 function renderCell(v: unknown, spec: ColSpec | undefined, d: Record<string, string>): ReactNode {
   if (v === null || v === undefined || v === '') return <span className="text-[var(--shell-crumb-text)]">—</span>
@@ -51,26 +52,24 @@ function SectionBlock({ section, detail, empty }: {
       </h4>
       {rows.length === 0 ? <EmptyState text={empty} /> : (
         <>
-          <div className="overflow-x-auto rounded-sm border border-[var(--shell-card-border)]">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr>
-                  {section.cols.map((c) => (
-                    <th key={c.key} className="h-9 bg-[var(--shell-menu-hover-bg)] px-3 text-left text-[11px] font-medium whitespace-nowrap text-[var(--shell-group-title)]">{d[c.k] ?? c.key}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {visible.map((row, i) => (
-                  <tr key={i} className="hover:bg-[var(--shell-menu-hover-bg)]">
-                    {section.cols.map((c: DetailCol) => (
-                      <td key={c.key} className={cellBase}>{renderCell(row[c.key], c.spec, d)}</td>
-                    ))}
-                  </tr>
+          <Table className="rounded-sm border border-[var(--shell-card-border)]">
+            <TableHeader>
+              <TableRow>
+                {section.cols.map((c) => (
+                  <TableHead key={c.key} className="h-9 text-[11px]">{d[c.k] ?? c.key}</TableHead>
                 ))}
-              </tbody>
-            </table>
-          </div>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {visible.map((row, i) => (
+                <TableRow key={i}>
+                  {section.cols.map((c: DetailCol) => (
+                    <TableCell key={c.key} className={cellBase}>{renderCell(row[c.key], c.spec, d)}</TableCell>
+                  ))}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
           {capped && (
             <button className="mt-2 cursor-pointer border-none bg-none px-0 text-xs text-[var(--color-border-focus)] hover:underline" onClick={() => setExpanded(!expanded)}>
               {expanded ? d.dCollapse : d.dSeeAll.replace('{count}', String(rows.length))}
@@ -146,7 +145,7 @@ export function UserDetailDrawer({ id, summary, onClose }: {
       {error ? (
         <div className="rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div>
       ) : !detail ? (
-        <EmptyState text={u.loading} />
+        <LoadingState text={u.loading} />
       ) : (
         <div>
           {/* 主档头部 */}

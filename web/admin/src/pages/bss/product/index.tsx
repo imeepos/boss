@@ -1,12 +1,16 @@
 // 产品资费页:列名以 fields.md §2.2 为准;契约 GET/POST /products + PUT /products/{id}
 // + PUT /products/{id}/status + POST /products/{id}/price-history(调价)。
 import { useEffect, useMemo, useState } from 'react'
+import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { DetailDrawer, PageHead, pagerTexts } from '../../org/shared'
 import { StatusTag } from '../../../components/StatusTag'
 import { Pagination } from '../../../components/Pagination'
 import { Dropdown } from '../../../components/Dropdown'
+import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from '../../../components/ui/table'
+import { Card } from '../../../components/ui/card'
+import { ActionLink, ActionLinks, ActionSep, ErrorBanner, TableStateRow, ToolbarButton } from '../../../components/business'
 import { useConfirm } from '../../../components/ConfirmDialog'
 import type { ProductCategory, ProductRow, ProductStatus } from './types'
 import { PRODUCT_CATEGORIES, PRODUCT_STATUSES } from './types'
@@ -16,7 +20,6 @@ import { PriceChangeDrawer } from './PriceChangeDrawer'
 import { emptyProductForm, ProductFormDrawer, type ProductFormValues } from './ProductForm'
 import { BindTemplateDrawer } from './BindTemplateDrawer'
 import { BatchImportEntry } from '../../base/importer/BatchImportEntry'
-import { TableStateRow } from '../../../components/business'
 import type { OfferBindingRow } from './types'
 
 function pageSlice<T>(rows: T[], page: number, pageSize: number): T[] {
@@ -53,12 +56,19 @@ export default function ProductPage() {
   const loadBindings = () => {
     apiFetch<{ items: OfferBindingRow[] }>('/provision-bindings')
       .then((d) => setBindings(new Map((d?.items ?? []).map((b) => [b.offerId, b]))))
-      .catch(() => setBindings(new Map()))
+      .catch((e) => {
+        // 模板绑定列取不到一律显示"未绑定",需留痕便于发现接口异常
+        setBindings(new Map())
+        console.warn('[product] provision-bindings 拉取失败:', e instanceof Error ? e.message : e)
+      })
   }
   useEffect(() => {
     apiFetch<{ id: number; name: string }[]>('/legal-entities')
       .then((d) => setCompanies(d ?? []))
-      .catch(() => setCompanies([]))
+      .catch((e) => {
+        setCompanies([])
+        console.warn('[product] legal-entities 拉取失败:', e instanceof Error ? e.message : e)
+      })
     loadBindings()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(load, []) // eslint-disable-line react-hooks/exhaustive-deps
@@ -86,6 +96,7 @@ export default function ProductPage() {
           },
         })
       }
+      toast.success(p.savedOk)
       setForm(null)
       load()
     } catch (e) {
@@ -97,6 +108,7 @@ export default function ProductPage() {
 
   // 上下架:发布即生效;OFFLINE→PUBLISHED 重新上架同口径。
   const toggleStatus = async (r: ProductRow) => {
+    if (busy) return
     const next = r.status === 'PUBLISHED' ? 'OFFLINE' : 'PUBLISHED'
     const msg = next === 'PUBLISHED' ? p.publishConfirm : p.unpublishConfirm
     if (!(await confirmDialog(msg, { title: next === 'PUBLISHED' ? p.publish : p.unpublish }))) return
@@ -104,6 +116,7 @@ export default function ProductPage() {
     setBusy(true)
     try {
       await apiFetch(`/products/${r.id}/status`, { method: 'PUT', body: { status: next } })
+      toast.success(next === 'PUBLISHED' ? p.publishOk : p.unpublishOk)
       load()
     } catch (e) {
       setError(e instanceof Error ? e.message : p.actFail)
@@ -118,13 +131,10 @@ export default function ProductPage() {
   const statusLabel = (raw: string) => p.statusOptions[PRODUCT_STATUSES.indexOf(toStatus(raw))] ?? raw
   const slice = useMemo(() => pageSlice(rows, page, pageSize), [rows, page, pageSize])
 
-  const act = 'cursor-pointer border-none bg-transparent p-0 text-[13px] text-[var(--color-text-link)] hover:underline'
-  const sep = <span className="text-[var(--shell-side-border)]">|</span>
-
   return (
     <div>
       <PageHead title={p.title} desc={p.desc} />
-      <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
+      <Card>
         <div className="flex flex-wrap items-center gap-2 p-4">
           <Dropdown
             value={company ? String(company) : ''}
@@ -134,60 +144,62 @@ export default function ProductPage() {
           />
           <span className="spacer" />
           <BatchImportEntry kind="product" onImported={load} />
-          <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
-          <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" onClick={() => setForm(emptyProductForm())}>{p.create}</button>
+          <ToolbarButton disabled={busy} onClick={load}>{t.pages.audit.refresh}</ToolbarButton>
+          <ToolbarButton primary onClick={() => setForm(emptyProductForm())}>{p.create}</ToolbarButton>
         </div>
-        {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : (
+        {error ? <ErrorBanner message={error} /> : (
           <div className="overflow-x-auto px-4 pb-4">
-            <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
-              <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{p.columns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
-              <tbody>
+            <Table>
+              <TableHeader>
+                <TableRow>{p.columns.map((x) => <TableHead key={x}>{x}</TableHead>)}</TableRow>
+              </TableHeader>
+              <TableBody>
                 {slice.map((r) => (
-                  <tr key={r.id}>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{companyName(r.legalEntityId)}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.name}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{categoryLabel(r.category)}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.bandwidth || '—'}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{fmtFee(r.monthlyFee)}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{fmtTime(r.effectiveAt)}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><StatusTag domain="product" value={r.status} /></td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">
+                  <TableRow key={r.id}>
+                    <TableCell>{companyName(r.legalEntityId)}</TableCell>
+                    <TableCell>{r.name}</TableCell>
+                    <TableCell>{categoryLabel(r.category)}</TableCell>
+                    <TableCell>{r.bandwidth || '—'}</TableCell>
+                    <TableCell>{fmtFee(r.monthlyFee)}</TableCell>
+                    <TableCell>{fmtTime(r.effectiveAt)}</TableCell>
+                    <TableCell><StatusTag domain="product" value={r.status} /></TableCell>
+                    <TableCell>
                       {(() => {
                         const b = bindings.get(r.id)
                         return b ? `${b.templateName} (${b.templateCode})` : <span className="text-[var(--shell-group-title)]">{p.templateUnbound}</span>
                       })()}
-                    </td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">
-                      <span className="inline-flex items-center gap-2">
-                        <button className={act} onClick={() => setDetail(r)}>{p.detail}</button>
-                        {sep}
-                        <button className={act} onClick={() => setForm({
+                    </TableCell>
+                    <TableCell>
+                      <ActionLinks>
+                        <ActionLink onClick={() => setDetail(r)} label={p.detail} testId={'prod-detail-' + r.id} />
+                        <ActionSep />
+                        <ActionLink onClick={() => setForm({
                           id: r.id, legalEntityId: r.legalEntityId, name: r.name,
                           bandwidth: r.bandwidth || '', category: toCategory(r.category),
                           monthlyFee: String(r.monthlyFee), status: toStatus(r.status),
-                        })}>{p.edit}</button>
-                        {sep}
-                        <button className={act} onClick={() => setPriceTarget(r)}>{p.priceChange}</button>
-                        {sep}
-                        <button className={act} onClick={() => setBindTarget(r)}>{p.templateBind}</button>
-                        {sep}
-                        <button className={act} disabled={busy} onClick={() => toggleStatus(r)}>{r.status === 'PUBLISHED' ? p.unpublish : p.publish}</button>
-                        {sep}
-                        <button className={act} onClick={() => setHistory(r)}>{p.history}</button>
-                      </span>
-                    </td>
-                  </tr>
+                        })} label={p.edit} />
+                        <ActionSep />
+                        <ActionLink onClick={() => setPriceTarget(r)} label={p.priceChange} />
+                        <ActionSep />
+                        <ActionLink onClick={() => setBindTarget(r)} label={p.templateBind} />
+                        <ActionSep />
+                        <ActionLink onClick={() => toggleStatus(r)} label={r.status === 'PUBLISHED' ? p.unpublish : p.publish} testId={'prod-toggle-' + r.id} />
+                        <ActionSep />
+                        <ActionLink onClick={() => setHistory(r)} label={p.history} />
+                      </ActionLinks>
+                    </TableCell>
+                  </TableRow>
                 ))}
                 {!slice.length && <TableStateRow colSpan={9} loading={busy} text={p.empty} />}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         )}
         <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
           <Pagination total={rows.length} page={page} pageSize={pageSize}
             onPage={setPage} onSize={setPageSize} {...pagerTexts(p)} />
         </div>
-      </div>
+      </Card>
       {detail && (
         <DetailDrawer
           title={p.detail}

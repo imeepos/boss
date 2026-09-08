@@ -2,6 +2,7 @@
 // 通过/驳回统一在抽屉内完成,latest PENDING 时抽屉显示核验动作)。
 import { useState } from 'react'
 import { StatusTag } from '../../../components/StatusTag'
+import { Card } from '../../../components/ui/card'
 import { RealNameDrawer } from '../customer/RealNameDrawer'
 import type { CustomerRow } from '../customer/types'
 import { useT } from '../../../i18n'
@@ -16,7 +17,7 @@ export function RealNameCard({
   if (!customer) return null
 
   return (
-    <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
+    <Card>
       <div className="flex flex-wrap items-center gap-2 p-4">
         <span className="text-[13px] font-medium text-[var(--shell-heading)]">2. {w.realNameTitle}</span>
         <StatusTag domain="realName" value={customer.realNameStatus} />
@@ -26,6 +27,6 @@ export function RealNameCard({
       {rnOpen && (
         <RealNameDrawer customerId={customer.id} customerName={customer.name} onClose={() => setRnOpen(false)} onSubmitted={onChanged} />
       )}
-    </div>
+    </Card>
   )
 }

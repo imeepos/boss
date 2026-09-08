@@ -1,13 +1,17 @@
 // 用户端配置页(列表页模式 × TabBar 页签,antd pro Card+Tabs 布局):
-// 页签行(含计数徽标 + 右侧刷新)→ 错误横幅 → DataTable(per-tab 列)→ 合计/更新时间页脚。
+// 页签行(含计数徽标 + 右侧刷新)→ 错误横幅 → DataTable(per-tab 列)→ 分页/合计/更新时间页脚。
 // 数据面不变:GET 列表族 + 行级开关/停用(userdata.yaml 配置管理面)。
 import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
-import { PageHead } from '../../org/shared'
+import { PageHead, pagerTexts } from '../../org/shared'
 import { ErrorBanner, EmptyState } from '../../../components/business/page-head'
 import { DataTable } from '../../../components/business/data-table'
 import { TabBar } from '../../../components/business/tab-bar'
+import { Pagination } from '../../../components/Pagination'
+import { Card } from '../../../components/ui/card'
+import { ToolbarButton } from '../../../components/business'
 import { fmtTime } from '../../../lib/format'
 import { TABS, type Row, type TabDef } from './tabs'
 import { columnsFor } from './columns'
@@ -29,6 +33,8 @@ export default function UserDataPage() {
   const [tab, setTab] = useState<string>(TABS[0].key)
   const [st, setSt] = useState<Record<string, Loader>>({})
   const [notice, setNotice] = useState<{ text: string; ok: boolean } | null>(null)
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
 
   const load = (def: TabDef) => {
     const at = new Date().toISOString()
@@ -49,8 +55,17 @@ export default function UserDataPage() {
     }
     if (!(await confirmDialog(u.actConfirm.replace('{id}', String(id)), { danger: true }))) return
     apiFetch(`${def.actionPath}/${encodeURIComponent(String(id))}/${def.action}`, { method: 'PUT' })
-      .then(() => { setNotice({ text: u.acted, ok: true }); load(def) })
-      .catch(() => setNotice({ text: u.actFail, ok: false }))
+      .then(() => {
+        toast.success(u.acted)
+        setNotice({ text: u.acted, ok: true })
+        load(def)
+      })
+      .catch((e) => {
+        // 失败必须透出接口原因(此前静默吞错只显示固定文案)
+        const text = e instanceof Error ? e.message : u.actFail
+        toast.error(text)
+        setNotice({ text, ok: false })
+      })
   }
 
   const cur = TABS.find((x) => x.key === tab) ?? TABS[0]
@@ -72,10 +87,12 @@ export default function UserDataPage() {
     return n === undefined ? u.tabs[d.key] : `${u.tabs[d.key]} (${n})`
   }
 
+  const sliced = state.rows.slice((page - 1) * pageSize, page * pageSize)
+
   return (
     <div>
       <PageHead title={u.title} desc={u.desc} />
-      <div className="rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
+      <Card>
         <div className="px-4 pt-3">
           <TabBar
             tabs={TABS.map((d) => ({ key: d.key, label: tabLabel(d) }))}
@@ -83,15 +100,12 @@ export default function UserDataPage() {
             onChange={(key) => {
               setNotice(null)
               setTab(key)
+              setPage(1)
               const def = TABS.find((x) => x.key === key)
               if (def && !st[key]) load(def)
             }}
             extra={
-              <button
-                className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]"
-                disabled={state.busy}
-                onClick={() => load(cur)}
-              >{t.pages.audit.refresh}</button>
+              <ToolbarButton disabled={state.busy} onClick={() => load(cur)}>{t.pages.audit.refresh}</ToolbarButton>
             }
           />
         </div>
@@ -115,7 +129,7 @@ export default function UserDataPage() {
               {state.rows.length ? (
                 <DataTable
                   emptyText={u.empty}
-                  rows={state.rows}
+                  rows={sliced}
                   columns={columnsFor(cur, {
                     cols: u.cols, channels: u.channels, nameCol: u.nameCol, statusCol: u.statusCol,
                     opCol: u.opCol, disable: u.disable, on: u.on, off: u.off, list: u.list, unlist: u.unlist,
@@ -127,13 +141,19 @@ export default function UserDataPage() {
                 </div>
               )}
             </div>
+            {state.rows.length > 0 && (
+              <div className="flex items-center justify-end px-4 pb-1 text-xs text-[var(--shell-group-title)]">
+                <Pagination total={state.rows.length} page={page} pageSize={pageSize}
+                  onPage={setPage} onSize={(s) => { setPageSize(s); setPage(1) }} {...pagerTexts(u)} />
+              </div>
+            )}
             <p className="border-t border-[var(--shell-side-border)] px-4 py-3 text-xs text-[var(--shell-crumb-text)]">
               {u.total.replace('{count}', String(state.rows.length))}
               {state.at ? ` · ${u.updated.replace('{time}', fmtTime(state.at))}` : ''}
             </p>
           </>
         )}
-      </div>
+      </Card>
     </div>
   )
 }

@@ -703,6 +703,7 @@ export interface Translations {
       addrBtn: string
       orderBtn: string
       createFail: string
+      createOk: string
       regBtn: string
       regTitle: string
       regStatusAll: string
@@ -772,6 +773,12 @@ export interface Translations {
       unpublish: string
       publishConfirm: string
       unpublishConfirm: string
+      publishOk: string
+      unpublishOk: string
+      savedOk: string
+      priceChanged: string
+      bindSaved: string
+      unbindOk: string
       actFail: string
       saveFail: string,
       loadFail: string
@@ -2794,6 +2801,12 @@ export interface Translations {
       updated: string
       list: string
       unlist: string
+      prev: string
+      next: string
+      perPage: string
+      rangeText: string
+      jumpText: string
+      pageUnit: string
       cols: Record<string, string>
       channels: Record<string, string>
     }
@@ -3536,6 +3549,12 @@ export interface Translations {
       prev: string; next: string; perPage: string
       rangeText: string; jumpText: string; pageUnit: string
       disableConfirm: string
+      createdOk: string; disabledOk: string; saving: string
+      diffMatch: string; diffCounterDrift: string; diffRedemptionLost: string; diffDrift: string
+      giftNamePh: string; giftBuyPh: string; giftGiftPh: string
+      levelNamePh: string; levelMinPh: string
+      taskCodePh: string; taskNamePh: string; taskPointsPh: string
+      earnPointsPh: string; earnMinPh: string; earnExpirePh: string
     }
     error: {
       forbidden: string

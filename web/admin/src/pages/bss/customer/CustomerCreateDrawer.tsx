@@ -2,6 +2,7 @@
 // 地址不在建档必填之列(000176):先建档,后经档案行"地址"动作内联建址回填,
 // 再进开户工作台走 下单→支付→开户→施工→通网;区域/主体来自 GET /customers/onboarding-catalog。
 import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { Drawer } from '../../../components/Drawer'
 import { Dropdown } from '../../../components/Dropdown'
@@ -50,6 +51,7 @@ export function CustomerCreateDrawer({
           idNo: idNo.trim() || undefined, regionId, legalEntityId: entityId,
         },
       })
+      toast.success(c.createOk.replace('{id}', String(d?.id ?? 0)))
       onCreated(d?.id ?? 0)
       reset()
       onClose()

@@ -2,6 +2,7 @@
 // 回显 GET /customers/:id/real-name(40410=暂无核验单);提交 POST 同端点落 PENDING,
 // 二要素通道启用时即时自动判定(fields.md §7.6);证件照预览复用实名审核中心的 AttachmentPreview。
 import { useEffect, useState, type ReactNode } from 'react'
+import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { ApiError } from '../../../api/envelope'
 import { Drawer } from '../../../components/Drawer'
@@ -56,7 +57,9 @@ export function RealNameDrawer({
         method: 'POST',
         body: { realName: realName.trim(), idCardNo: idCardNo.trim(), method },
       })
-      setNotice(c.rnSubmitted.replace('{result}', c.verifyResultLabels[d?.result ?? ''] ?? d?.result ?? ''))
+      const text = c.rnSubmitted.replace('{result}', c.verifyResultLabels[d?.result ?? ''] ?? d?.result ?? '')
+      setNotice(text)
+      toast.success(text)
       onSubmitted()
       apiFetch<LatestRealName>(`/customers/${customerId}/real-name`).then((v) => setLatest(v))
     } catch (e) {
@@ -73,7 +76,9 @@ export function RealNameDrawer({
       await apiFetch(`/customers/${customerId}/real-name/verify`, {
         method: 'POST', body: { result, reason: reason.trim() || undefined },
       })
-      setNotice(c.verifyResultLabels[result] ?? result)
+      const text = c.verifyResultLabels[result] ?? result
+      setNotice(text)
+      toast.success(text)
       setVerifying(false); setReason('')
       onSubmitted()
       apiFetch<LatestRealName>(`/customers/${customerId}/real-name`).then((v) => setLatest(v))

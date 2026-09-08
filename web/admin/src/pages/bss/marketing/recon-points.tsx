@@ -37,7 +37,9 @@ export default function PointsReconTab() {
     { key: 'lifetimeEarn', label: m.reconLifetimeEarn, render: (r) => String(r.lifetimeEarn ?? '—') },
     { key: 'expiredTotal', label: m.reconExpiredTotal, render: (r) => String(r.expiredTotal ?? '—') },
     { key: 'diff', label: m.reconDiff, render: (r) => (
-      <Badge variant={r.diffKind === 'MATCH' ? 'success' : 'danger'}>{String(r.diffKind)}</Badge>
+      <Badge variant={r.diffKind === 'MATCH' ? 'success' : 'danger'}>
+        {r.diffKind === 'MATCH' ? m.diffMatch : m.diffDrift}
+      </Badge>
     ) },
   ]
 

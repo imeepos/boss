@@ -9,6 +9,10 @@ import { PageHead, pagerTexts } from '../../org/shared'
 import { StatusTag } from '../../../components/StatusTag'
 import { Pagination } from '../../../components/Pagination'
 import { Dropdown } from '../../../components/Dropdown'
+import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from '../../../components/ui/table'
+import { Card } from '../../../components/ui/card'
+import { Input } from '../../../components/ui/input'
+import { ActionLink, ActionLinks, ActionSep, ErrorBanner, ToolbarButton } from '../../../components/business'
 import { SERVICE_STATUSES, filterCustomers, pageSlice } from './filter'
 import type { CustomerRow } from './types'
 import { VerifyLogsDrawer } from './VerifyLogsDrawer'
@@ -59,11 +63,11 @@ export default function CustomerPage() {
   return (
     <div>
       <PageHead title={c.title} desc={c.desc} />
-      <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
+      <Card>
         <div className="flex flex-wrap items-center gap-2 p-4">
-          <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" placeholder={c.searchPlaceholder}
+          <Input className="w-44" placeholder={c.searchPlaceholder}
             value={keyword} onChange={(e) => { setKeyword(e.target.value); setUrlKeyword(e.target.value); setPage(1) }} />
-          <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" placeholder={c.phonePlaceholder}
+          <Input className="w-40" placeholder={c.phonePlaceholder}
             value={phone} onChange={(e) => { setPhone(e.target.value); setPage(1) }} />
           <Dropdown
             value={status}
@@ -72,49 +76,51 @@ export default function CustomerPage() {
             ariaLabel={c.allStatus}
           />
           <span className="spacer" />
-          <button type="button" className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" onClick={() => setCreateOpen(true)}>{c.createBtn}</button>
-          <button type="button" className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={() => setRegOpen(true)}>{c.regBtn}</button>
+          <ToolbarButton primary onClick={() => setCreateOpen(true)}>{c.createBtn}</ToolbarButton>
+          <ToolbarButton onClick={() => setRegOpen(true)}>{c.regBtn}</ToolbarButton>
           <BatchImportEntry kind="customer" onImported={load} />
-          <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
+          <ToolbarButton disabled={busy} onClick={load}>{t.pages.audit.refresh}</ToolbarButton>
         </div>
-        {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : (
+        {error ? <ErrorBanner message={error} /> : (
           <div className="overflow-x-auto px-4 pb-4">
-            <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
-              <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{c.columns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
-              <tbody>
+            <Table>
+              <TableHeader>
+                <TableRow>{c.columns.map((x) => <TableHead key={x}>{x}</TableHead>)}</TableRow>
+              </TableHeader>
+              <TableBody>
                 {slice.map((r) => (
-                  <tr key={r.id}>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.name}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.phone}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.idType || '—'}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.idNo || '—'}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><StatusTag domain="realName" value={r.realNameStatus} /></td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><StatusTag domain="service" value={r.serviceStatus} /></td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">
-                      <span className="inline-flex items-center">
-                        <button onClick={() => setDetail(r)}>{c.detail}</button>
-                        <span className="text-[var(--shell-side-border)]">|</span>
-                        <button onClick={() => setRnId(r)}>{c.rnBtn}</button>
-                        <span className="text-[var(--shell-side-border)]">|</span>
-                        <button onClick={() => setAddrRow(r)}>{c.addrBtn}</button>
-                        <span className="text-[var(--shell-side-border)]">|</span>
-                        <button onClick={() => navigate(`/bss/onboarding?customerId=${r.id}`)}>{c.orderBtn}</button>
-                        <span className="text-[var(--shell-side-border)]">|</span>
-                        <button onClick={() => setVerifyId(r)}>{c.verify}</button>
-                      </span>
-                    </td>
-                  </tr>
+                  <TableRow key={r.id}>
+                    <TableCell>{r.name}</TableCell>
+                    <TableCell>{r.phone}</TableCell>
+                    <TableCell>{r.idType || '—'}</TableCell>
+                    <TableCell>{r.idNo || '—'}</TableCell>
+                    <TableCell><StatusTag domain="realName" value={r.realNameStatus} /></TableCell>
+                    <TableCell><StatusTag domain="service" value={r.serviceStatus} /></TableCell>
+                    <TableCell>
+                      <ActionLinks>
+                        <ActionLink onClick={() => setDetail(r)} label={c.detail} testId={'cust-detail-' + r.id} />
+                        <ActionSep />
+                        <ActionLink onClick={() => setRnId(r)} label={c.rnBtn} />
+                        <ActionSep />
+                        <ActionLink onClick={() => setAddrRow(r)} label={c.addrBtn} />
+                        <ActionSep />
+                        <ActionLink onClick={() => navigate(`/bss/onboarding?customerId=${r.id}`)} label={c.orderBtn} />
+                        <ActionSep />
+                        <ActionLink onClick={() => setVerifyId(r)} label={c.verify} />
+                      </ActionLinks>
+                    </TableCell>
+                  </TableRow>
                 ))}
                 {!slice.length && <TableStateRow colSpan={7} loading={busy} text={c.empty} />}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         )}
         <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
           <Pagination total={filtered.length} page={page} pageSize={pageSize}
             onPage={setPage} onSize={setPageSize} {...pagerTexts(c)} />
         </div>
-      </div>
+      </Card>
       {detail && (
         <CustomerDetailDrawer detail={detail} onClose={() => setDetail(null)} />
       )}
@@ -210,12 +216,12 @@ function CustomerDetailDrawer({ detail, onClose }: { detail: CustomerRow; onClos
           { k: c.columns[1], v: detail.phone },
           { k: c.columns[2], v: detail.idType },
           { k: c.columns[3], v: detail.idNo },
-          { k: c.columns[4], v: detail.realNameStatus },
-          { k: c.columns[5], v: detail.serviceStatus },
+          { k: c.columns[4], v: <StatusTag domain="realName" value={detail.realNameStatus} /> },
+          { k: c.columns[5], v: <StatusTag domain="service" value={detail.serviceStatus} /> },
           { k: 'ID', v: String(detail.id) },
           { k: c.regionLabel, v: detail.regionName },
           { k: 'createdAt', v: fmtTime(detail.createdAt) },
-        ] as { k: string; v?: string }[]).map((it) => (
+        ] as { k: string; v?: React.ReactNode }[]).map((it) => (
           <div key={it.k} className="flex gap-3 text-[13px]">
             <span className="w-24 flex-none text-[var(--shell-group-title)]">{it.k}</span>
             <span className="break-all text-[var(--shell-content-text)]">{it.v || '—'}</span>
