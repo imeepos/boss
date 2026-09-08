@@ -1,6 +1,7 @@
 // ODN 关联统计卡(spec oss-odn-v2 §3):网格/设施/局点/关联 OLT;第四卡蓝色
 // tinted 图标强调跨域关联(资源域 /resources)。计数取页面已加载行数。
 import { Building2, LayoutGrid, MapPin, Server } from 'lucide-react'
+import { Card } from '../../../components/ui/card'
 
 export interface KpiTexts { grids: string; facilities: string; sites: string; linkedOlt: string; capacity: string }
 
@@ -14,7 +15,6 @@ interface KpiProps {
   g: KpiTexts
 }
 
-const CARD = 'flex-1 min-w-[180px] rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] p-4 shadow-[var(--shell-card-shadow)]'
 const ICON_BOX = 'flex h-10 w-10 items-center justify-center rounded-md'
 
 // tinted 图标底:color-mix 14% alpha + 同源文字色(主题变量,双主题自适应)。
@@ -35,7 +35,7 @@ export function KpiCards({ grids, facilities, sites, olts, capacityPct, g }: Kpi
     {cards.map((c) => {
       const tone = TONES[c.tone]
       const Icon = c.icon
-      return <div key={c.label} className={CARD}>
+      return <Card key={c.label} className="flex-1 min-w-[180px] p-4">
         <div className="flex items-center gap-3">
           <span className={ICON_BOX} style={{ background: tone.box }}><Icon className={'h-5 w-5 ' + tone.icon} /></span>
           <div className="min-w-0">
@@ -52,7 +52,7 @@ export function KpiCards({ grids, facilities, sites, olts, capacityPct, g }: Kpi
             <span className="text-[11px] text-[var(--color-text-tertiary)]">{capacityPct}%</span>
           </div>
         )}
-      </div>
+      </Card>
     })}
   </div>
 }
