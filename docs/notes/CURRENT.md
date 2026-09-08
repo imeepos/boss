@@ -63,6 +63,7 @@
 - 数据核查红线:先查库再接口复核;验收造数 acc_ 不过夜+孤儿巡检三通道(2026-08-29, audit-closeout-rulings)
 - 开户工作台聚合页 /bss/onboarding:建档→实名→下单→派单一页完成(2026-08-29, onboarding-workbench)
 - 新建 worktree .env 自动接入:post-checkout 钩子补齐(主 .env 优先,example 兜底,绝不覆盖);clone 后一次性引导 sh scripts/env-hooks-init.sh(2026-09-04, worktree-env-auto-provision)
+- 前端体验打磨:有现成组件一律复用(pickers/Dropdown/ConfirmDialog/StatusTag/DataTable/Card 等),禁止原生 select;逐页打磨每条验收须真实走查留证;选择器族改动只动 components/pickers 且对外 API 只加不改(2026-09-08, ux-polish-component-adoption)
 
 ## 已代谢(勿再引用原文裁定)
 
