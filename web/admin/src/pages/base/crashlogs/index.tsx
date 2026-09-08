@@ -1,25 +1,35 @@
 // 客户端崩溃日志:GET /crash-logs 列表 + 单条堆栈展开排查。
 // 契约 admin/sys.yaml /crash-logs (menu:crash_logs);迁移 000140 授 sysadmin。
 // 样式统一走 shell-* 令牌;堆栈面板主题中性底色,禁内联裸色值。
-import { Fragment, useEffect, useState } from 'react'
+import { Fragment, useEffect, useMemo, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
-import { PageHead, ErrorBanner, ToolbarButton } from '../../../components/business/page-head'
+import { PageHead, ErrorBanner, ToolbarButton, pagerTexts } from '../../../components/business/page-head'
 import { EmptyState } from '../../../components/business/feedback'
 import { Pagination } from '../../../components/Pagination'
+import { Card } from '../../../components/ui/card'
+import { Input } from '../../../components/ui/input'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/table'
 
-const TH = 'h-9 px-3 text-left text-xs font-semibold whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]'
-const TD = 'px-3 py-2.5 align-top text-[13px] whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)]'
 const EXPAND_BTN = 'cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 py-1 text-xs text-[var(--shell-content-text)] hover:border-[var(--shell-input-border-hover)] hover:text-[var(--shell-heading)]'
+
+type CrashLog = {
+  id: number
+  subjectType: string
+  subjectId: number
+  app: string
+  log: string
+  createdAt: string
+}
 
 export default function CrashLogsPage() {
   const t = useT()
   const [logs, setLogs] = useState<CrashLog[]>([])
   const [error, setError] = useState('')
+  const [keyword, setKeyword] = useState('')
   const [openId, setOpenId] = useState<number | null>(null)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
-  const slice = logs.slice((page - 1) * pageSize, page * pageSize)
 
   const load = () => {
     setError('')
@@ -30,81 +40,83 @@ export default function CrashLogsPage() {
 
   useEffect(load, []) // eslint-disable-line react-hooks/exhaustive-deps
 
+  const filtered = useMemo(() => {
+    const kw = keyword.trim().toLowerCase()
+    if (!kw) return logs
+    return logs.filter((l) =>
+      String(l.id).includes(kw) || (l.app || '').toLowerCase().includes(kw)
+      || l.subjectType.toLowerCase().includes(kw) || String(l.subjectId).includes(kw))
+  }, [logs, keyword])
+
+  const slice = filtered.slice((page - 1) * pageSize, page * pageSize)
+
   return (
     <div>
       <PageHead title={t.pages.crashlogs.title} desc={t.pages.crashlogs.desc} />
-      <div className="mb-3">
-        <ToolbarButton onClick={load}>{t.pages.crashlogs.refresh}</ToolbarButton>
-      </div>
-      {error ? (
-        <ErrorBanner message={error} className="!mx-0" />
-      ) : logs.length === 0 ? (
-        <EmptyState text={t.pages.crashlogs.empty} />
-      ) : (
-        <div className="overflow-x-auto rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
-          <table className="w-full border-collapse text-[13px]">
-            <thead>
-              <tr>
-                <th className={TH}>{t.pages.crashlogs.colTime}</th>
-                <th className={TH}>{t.pages.crashlogs.colApp}</th>
-                <th className={TH}>{t.pages.crashlogs.colSubject}</th>
-                <th className={TH}>{t.pages.crashlogs.colOp}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {slice.map((l) => (
-                <Fragment key={l.id}>
-                  <tr className="border-b border-[var(--shell-side-border)] hover:bg-[var(--shell-menu-hover-bg)]">
-                    <td className={TD}>{new Date(l.createdAt).toLocaleString()}</td>
-                    <td className={TD}>{l.app || '—'}</td>
-                    <td className={TD}>
-                      {l.subjectType}/{l.subjectId || 0}
-                    </td>
-                    <td className={TD}>
-                      <button className={EXPAND_BTN} onClick={() => setOpenId(openId === l.id ? null : l.id)}>
-                        {openId === l.id ? t.pages.crashlogs.collapse : t.pages.crashlogs.expand}
-                      </button>
-                    </td>
-                  </tr>
-                  {openId === l.id ? (
-                    <tr>
-                      <td colSpan={4} className="whitespace-pre-wrap break-words border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] p-3 font-mono text-xs text-[var(--shell-content-text)]">
-                        {l.log}
-                      </td>
-                    </tr>
-                  ) : null}
-                </Fragment>
-              ))}
-            </tbody>
-          </table>
+      {error && <div className="mb-3"><ErrorBanner message={error} /></div>}
+      <Card>
+        <div className="flex flex-wrap items-center gap-2 p-4">
+          <Input
+            className="w-64"
+            placeholder={t.pages.crashlogs.searchPlaceholder}
+            value={keyword}
+            onChange={(e) => { setKeyword(e.target.value); setPage(1) }}
+          />
+          <span className="flex-1" />
+          <ToolbarButton onClick={load}>{t.pages.crashlogs.refresh}</ToolbarButton>
         </div>
-      )}
-      {logs.length > 0 && (
+        <div className="px-4 pb-4">
+          {filtered.length === 0 ? (
+            <EmptyState text={keyword ? t.pages.crashlogs.noMatch : t.pages.crashlogs.empty} />
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{t.pages.crashlogs.colTime}</TableHead>
+                  <TableHead>{t.pages.crashlogs.colApp}</TableHead>
+                  <TableHead>{t.pages.crashlogs.colSubject}</TableHead>
+                  <TableHead className="w-24">{t.pages.crashlogs.colOp}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {slice.map((l) => (
+                  <Fragment key={l.id}>
+                    <TableRow>
+                      <TableCell>{new Date(l.createdAt).toLocaleString()}</TableCell>
+                      <TableCell>{l.app || '—'}</TableCell>
+                      <TableCell>{l.subjectType}/{l.subjectId || 0}</TableCell>
+                      <TableCell>
+                        <button className={EXPAND_BTN} onClick={() => setOpenId(openId === l.id ? null : l.id)}>
+                          {openId === l.id ? t.pages.crashlogs.collapse : t.pages.crashlogs.expand}
+                        </button>
+                      </TableCell>
+                    </TableRow>
+                    {openId === l.id ? (
+                      <TableRow>
+                        <TableCell colSpan={4} className="whitespace-pre-wrap break-words bg-[var(--shell-menu-hover-bg)] p-3 font-mono text-xs">
+                          {l.log}
+                        </TableCell>
+                      </TableRow>
+                    ) : null}
+                  </Fragment>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </div>
+      </Card>
+      {filtered.length > 0 && (
         <div className="mt-3 flex justify-end px-1 text-xs text-[var(--shell-group-title)]">
           <Pagination
-            total={logs.length}
+            total={filtered.length}
             page={page}
             pageSize={pageSize}
             onPage={setPage}
             onSize={(n) => { setPageSize(n); setPage(1) }}
-            rangeText={t.pages.company.rangeText}
-            prevText={t.pages.company.prev}
-            nextText={t.pages.company.next}
-            perPageText={t.pages.company.perPage}
-            jumpText={t.pages.company.jumpText}
-            pageUnitText={t.pages.company.pageUnit}
+            {...pagerTexts(t.pages.company)}
           />
         </div>
       )}
     </div>
   )
-}
-
-type CrashLog = {
-  id: number
-  subjectType: string
-  subjectId: number
-  app: string
-  log: string
-  createdAt: string
 }

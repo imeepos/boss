@@ -3319,7 +3319,9 @@ export interface Translations {
       title: string
       desc: string
       refresh: string
+      searchPlaceholder: string
       empty: string
+      noMatch: string
       loadFail: string
       colTime: string
       colApp: string
