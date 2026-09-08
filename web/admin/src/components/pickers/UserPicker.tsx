@@ -18,6 +18,8 @@ export function UserPicker({ value, onChange, disabled }: {
       search={searchUsers}
       toOption={(u) => ({ value: String(u.customerId), label: `${u.name} · ${u.phone}` })}
       fetchDetail={() => getUserDetail(value)}
+      clearable
+      clearLabel={p.common.clear}
       detailItems={(u) => userDetailItems(u, p.user)}
       detailTitle={p.user.title}
       listPath="/bss/user"

@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { Pagination } from '../Pagination'
 import { Loading } from '../Loading'
 import { ToolbarButton } from '../business/page-head'
-import { PICKER_DEBOUNCE_MS, pickSingleKey, toSelectionChips, togglePickKey } from './pickerCore'
+import { PICKER_DEBOUNCE_MS, pickKeysFromItems, pickSingleKey, toSelectionChips, togglePickKey } from './pickerCore'
 import { PickerChips, PickerFilterBar, PickerTable } from './DialogPickerParts'
 
 export interface DialogPickerColumn<T> {
@@ -81,6 +81,11 @@ export interface DialogPickerProps<T> {
   /** 附加筛选项(与关键字构成多维搜索)。 */
   filters?: DialogPickerFilterDef[]
   initialPageSize?: number
+  /**
+   * 重开定位(W0-R4):上次确认的实体数组传入后,再次打开时预勾选这些行,
+   * chips 同步回显;单选模式只取首项。不传保持原行为(打开即空选)。
+   */
+  initialItems?: T[]
   texts: DialogPickerTexts
 }
 
@@ -163,23 +168,38 @@ function usePickerSelection<T>(mode: 'single' | 'multiple', rowKey: (item: T) =>
     keyToLabel.current.clear()
     keyToItem.current.clear()
   }
+  /** 重开预选:按实体数组铺勾选集与回显索引,确认可原样回传(pickKeysFromItems 去重保序)。 */
+  const seed = (items: T[]) => {
+    const keys = pickKeysFromItems(items, rowKey)
+    setSelected(mode === 'multiple' ? keys : keys.slice(0, 1))
+    for (const item of items) {
+      const key = rowKey(item)
+      keyToLabel.current.set(key, rowLabel(item))
+      keyToItem.current.set(key, item)
+    }
+  }
   const chips = useMemo(() => toSelectionChips(selected, keyToLabel.current), [selected])
   const pickedItems = useMemo(
     () => selected.map((k) => keyToItem.current.get(k)).filter((x): x is T => x !== undefined),
     [selected],
   )
-  return { selected, onRowPick, onRemoveChip, onClearAll, reset, chips, pickedItems }
+  return { selected, onRowPick, onRemoveChip, onClearAll, reset, seed, chips, pickedItems }
 }
 
 export function DialogPicker<T>({
   open, mode = 'single', title, onClose, onPick, columns, query,
-  rowKey, rowLabel, filters = [], initialPageSize, texts,
+  rowKey, rowLabel, filters = [], initialPageSize, initialItems, texts,
 }: DialogPickerProps<T>) {
   const data = usePickerDialogData<T>({ open, query, initialPageSize })
   const commonRetry = useT().pages.pickers.common.retry
   const sel = usePickerSelection<T>(mode, rowKey, rowLabel)
+  const initialRef = useRef(initialItems)
+  initialRef.current = initialItems
   useEffect(() => {
-    if (open) sel.reset()
+    if (!open) return
+    sel.reset()
+    if (initialRef.current?.length) sel.seed(initialRef.current)
+    // initialItems 经 ref 读取避免调用方内联数组字面量触发重放;仅 open 驱动。
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
   const confirm = () => {

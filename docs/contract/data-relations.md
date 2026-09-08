@@ -289,3 +289,10 @@ ODN 层      geo_subdivision → odn_region_code → odn_city_code → grid/faci
 3. 列表页过滤函数统一 `matches(row, extra)`：平铺 extra={}；下钻 extra={维度:值} 且 Tab 头显示锁定 tag。
 4. 本表管数据关系，domain-map.md 管域边界，fields.md 管字段名——三者冲突时先在此对齐再改码。
 5. 设计问题与风险台账：docs/review/db-design-review.md（两轮评估结论）。
+
+## 6. 已知债务（后端侧,前端已 graceful 降级）
+
+> 体验打磨项目(Wave0-W3)走查中登记;前端一律降级+留痕(console.warn),不硬造数据。补齐后逐条销账。
+
+1. **归属链公司名**：GET /customers 行仅回 legalEntityId/regionName,不含法人名称;客户详情抽屉公司名前端靠 /legal-entities 全量查找兜底(失败降级 #id 且 console.warn,web/admin pages/bss/customer CustomerDetailDrawer)。需要:行内直接回 legalEntityName 或批量查询端点。(2026-09-08,bss 批次提请)
+2. **详情接口名称字段缺失**：worker 详情缺班组名(groupName)/区域名(regionName)、customer 详情区域兜底仅有 regionId——detailItems 渲染 #id 裸编号。需要:详情响应补名称字段;前端 detailItems 消化见 docs/admin/selector-audit.md §二.4。(2026-09-08,W0 选择器审计提请)
