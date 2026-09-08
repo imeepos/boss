@@ -1,6 +1,7 @@
 // 行编辑抽屉:PUT 单行 upsert。字段由 TableMeta 驱动并排除 month/region 与派生列
 // (PUT 请求体没有派生字段,前端禁编辑——对应模板灰色「勿填」列)。
 import { useState } from 'react'
+import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { Drawer } from '../../../components/Drawer'
@@ -49,9 +50,12 @@ export function EditDrawer({ meta, row, onClose, onSaved }: EditDrawerProps) {
         method: 'PUT',
         body: { month: row.month, region: row.region, ...valuesBody },
       })
+      toast.success(m.save)
       onSaved()
     } catch (e) {
-      setErr(e instanceof Error ? e.message : m.saveFail)
+      const msg = e instanceof Error ? e.message : m.saveFail
+      setErr(msg)
+      toast.error(m.saveFail, { description: msg })
       setBusy(false)
     }
   }
