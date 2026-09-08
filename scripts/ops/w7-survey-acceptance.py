@@ -238,9 +238,10 @@ def main():
     d, _ = api("GET", "/api/admin/v1/odn/surveys/" + str(tid2))
     check("A9 admin 取消后 status=CANCELLED", d["task"]["status"] == "CANCELLED", d)
 
-    # 验收设施:SQL 直造 PLANNED 杆(admin API 新建设施默认 IN_SERVICE,入施工单要求 PLANNED);
-    # 取号口径同 web 端 nextcode.ts(现存 MAX 3 位序号+1;/facility-next-code 端点的 SUBSTRING
-    # 会把网格位并入序号,P91xxx 误报编号用尽,故客户端计算)。
+    # 验收设施:T2 起 admin API 新建设施 lifecycleStatus 留空即 PLANNED(可入施工单),
+    # 原「SQL 直改 lifecycle_status」绕行已移除;取号口径同 web 端 nextcode.ts(现存 MAX
+    # 3 位序号+1;/facility-next-code 端点的 SUBSTRING 会把网格位并入序号,P91xxx 误报
+    # 编号用尽,故客户端计算)。
     facs, _ = api("GET", "/api/admin/v1/odn/facilities?kind=P&gridCode=91")
     mx = 0
     for f in (facs or []):
@@ -251,8 +252,7 @@ def main():
     r, _ = api("POST", "/api/admin/v1/odn/facilities", {"kind": "P", "code": fac,
         "prvCode": "PHL001", "cityPrefix": "MNL", "gridCode": 91,
         "name": "W7验收杆", "lat": 14.606, "lng": 120.991})
-    check("B1 创建 PLANNED 验收设施 " + fac, r is not None, r)
-    sql("UPDATE odn_facility SET lifecycle_status='PLANNED' WHERE code='" + fac + "'")
+    check("B1 创建 PLANNED 验收设施 " + fac, r is not None and r.get("lifecycleStatus") == "PLANNED", r)
     TRACK["facility"] = fac
 
     projNo = "ACC-W7-" + STAMP
