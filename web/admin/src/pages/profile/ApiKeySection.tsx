@@ -1,6 +1,7 @@
 // API 密钥分区:本人密钥列表/创建(弹窗+一次性明钥展示)/吊销。
 // 403 视为无权限单独提示;文案走 i18n profile.apiKey 块。
 import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import { useProfile } from '../../layouts/profile'
 import { apiFetch } from '../../api/client'
 import { ApiError } from '../../api/envelope'
@@ -54,7 +55,7 @@ export function ApiKeySection() {
       body: { subjectType: 'account', subjectRef: profile.accountId, name: keyName.trim() },
     })
       .then((res) => { setModalOpen(false); setKeyName(''); setPlainKey(res?.plainKey ?? ''); load() })
-      .catch((e) => setError(e instanceof Error ? e.message : k.loadFail))
+      .catch((e) => toast.error(k.loadFail, { description: e instanceof Error ? e.message : undefined }))
       .finally(() => setBusy(false))
   }
 
@@ -63,8 +64,8 @@ export function ApiKeySection() {
     if (!(await confirmDialog(t.pages.profile.apiKey.revokeConfirm, { danger: true }))) return
     setBusy(true)
     apiFetch(`/api-keys/${id}`, { method: 'DELETE' })
-      .then(load)
-      .catch((e) => setError(e instanceof Error ? e.message : k.loadFail))
+      .then(() => { load(); toast.success(t.pages.profile.apiKey.revoke) })
+      .catch((e) => toast.error(t.pages.profile.apiKey.revoke, { description: e instanceof Error ? e.message : undefined }))
       .finally(() => setBusy(false))
   }
 
@@ -106,7 +107,7 @@ export function ApiKeySection() {
               <h2 className="m-0 text-[17px] text-[var(--shell-heading)]">{k.create}</h2>
               <button aria-label={t.pages.profile.cancel} className="cursor-pointer border-0 bg-transparent p-0 text-sm text-[var(--shell-crumb-text)]" onClick={() => setModalOpen(false)}>×</button>
             </div>
-            <label className={FORM_LABEL}>{k.name}<Input value={keyName} onChange={(event) => setKeyName(event.target.value)} placeholder={k.namePlaceholder} /></label>
+            <label className={FORM_LABEL}>{k.name}<Input value={keyName} onChange={(event) => setKeyName(event.target.value)} placeholder={k.namePlaceholder} autoFocus /></label>
             <div className="mt-6 flex justify-end gap-2.5">
               <ToolbarButton onClick={() => setModalOpen(false)}>{t.pages.profile.cancel}</ToolbarButton>
               <ToolbarButton primary disabled={busy || !keyName.trim()} onClick={create}>{k.create}</ToolbarButton>

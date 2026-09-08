@@ -3,14 +3,15 @@
 // 样式:tailwind 原子类(原 profile.css 已删除),令牌走 shell-* 体系。
 import { useState, type FormEvent } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
 import { useProfile } from '../../layouts/profile'
 import type { Profile } from '../../api/auth'
 import { apiFetch } from '../../api/client'
 import { useT } from '../../i18n'
-import { ToolbarButton } from '../../components/business/page-head'
+import { SubmitButton, type SubmitState } from '../../components/business/submit-button'
 import { Input } from '../../components/ui/input'
 import {
-  AVATAR, BOX, FORM_LABEL, LIST_BTN, MSG, PAGE, READONLY_INPUT,
+  AVATAR, BOX, FORM_LABEL, LIST_BTN, PAGE, READONLY_INPUT,
   SectionTitle, SecurityRow, Summary, OverviewLink, ReadOnlyField,
 } from './shared'
 import { ApiKeySection } from './ApiKeySection'
@@ -64,34 +65,36 @@ function OverviewSection({ profile }: { profile: Profile }) {
 // 基本资料:自助可编辑仅 realName/phone(PUT /auth/profile);角色/公司/数据范围只读。
 function PersonalSection({ profile }: { profile: Profile }) {
   const t = useT()
+  const p = t.pages.profile.personal
   const [realName, setRealName] = useState(profile.realName)
   const [phone, setPhone] = useState(profile.phone ?? '')
-  const [msg, setMsg] = useState('')
-  const [ok, setOk] = useState(false)
-  const [busy, setBusy] = useState(false)
-  const submit = (event: FormEvent<HTMLFormElement>) => {
+  const [submit, setSubmit] = useState<SubmitState>('idle')
+  const onSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    setMsg(''); setBusy(true)
+    if (submit === 'loading') return
+    setSubmit('loading')
     apiFetch('/auth/profile', { method: 'PUT', body: { realName: realName.trim(), phone: phone.trim() } })
-      .then(() => { setOk(true); setMsg(t.pages.profile.personal.saved) })
-      .catch(() => { setOk(false); setMsg(t.pages.profile.personal.saveFail) })
-      .finally(() => setBusy(false))
+      .then(() => { setSubmit('success'); toast.success(p.saved) })
+      .catch((e) => { setSubmit('failed'); toast.error(p.saveFail, { description: e instanceof Error ? e.message : undefined }) })
+      .finally(() => setTimeout(() => setSubmit('idle'), 1500))
+  }
+  const labels: Record<SubmitState, string> = {
+    idle: t.pages.profile.save, loading: t.common.loading, success: p.saved, failed: p.saveFail,
   }
   return (
     <div className={PAGE}>
-      <SectionTitle title={t.pages.profile.personal.title} desc={t.pages.profile.personal.desc} />
-      <form className="grid max-w-[760px] grid-cols-2 gap-x-6 gap-y-4.5 pt-6 max-[560px]:grid-cols-1" onSubmit={submit}>
-        <label className={FORM_LABEL}>{t.pages.profile.personal.username}<Input value={profile.username} readOnly className={READONLY_INPUT} /></label>
-        <label className={FORM_LABEL}>{t.pages.profile.personal.realName}<Input value={realName} required onChange={(e) => setRealName(e.target.value)} /></label>
-        <label className={FORM_LABEL}>{t.pages.profile.personal.phone}<Input value={phone} placeholder={t.pages.profile.personal.phonePlaceholder} onChange={(e) => setPhone(e.target.value)} /></label>
+      <SectionTitle title={p.title} desc={p.desc} />
+      <form className="grid max-w-[760px] grid-cols-2 gap-x-6 gap-y-4.5 pt-6 max-[560px]:grid-cols-1" onSubmit={onSubmit}>
+        <label className={FORM_LABEL}>{p.username}<Input value={profile.username} readOnly className={READONLY_INPUT} /></label>
+        <label className={FORM_LABEL}>{p.realName}<Input value={realName} required onChange={(e) => setRealName(e.target.value)} /></label>
+        <label className={FORM_LABEL}>{p.phone}<Input value={phone} placeholder={p.phonePlaceholder} onChange={(e) => setPhone(e.target.value)} /></label>
         <div className="col-span-full grid grid-cols-3 gap-4 border border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] p-4 max-[560px]:grid-cols-1">
-          <ReadOnlyField label={t.pages.profile.personal.role} value={profile.roleName} />
-          <ReadOnlyField label={t.pages.profile.personal.company} value={profile.legalEntityName || t.pages.profile.personal.unassigned} />
-          <ReadOnlyField label={t.pages.profile.personal.dataScope} value={profile.regionScope || t.pages.profile.personal.allScope} />
+          <ReadOnlyField label={p.role} value={profile.roleName} />
+          <ReadOnlyField label={p.company} value={profile.legalEntityName || p.unassigned} />
+          <ReadOnlyField label={p.dataScope} value={profile.regionScope || p.allScope} />
         </div>
-        <div className="col-span-full flex min-h-9 items-center justify-between text-xs">
-          <span style={MSG(ok)}>{msg}</span>
-          <ToolbarButton primary disabled={busy}>{t.pages.profile.save}</ToolbarButton>
+        <div className="col-span-full flex min-h-9 items-center justify-end text-xs">
+          <SubmitButton state={submit} labels={labels} />
         </div>
       </form>
     </div>
@@ -104,29 +107,33 @@ function SecuritySection() {
   const [oldPw, setOldPw] = useState('')
   const [newPw, setNewPw] = useState('')
   const [confirmPw, setConfirmPw] = useState('')
-  const [msg, setMsg] = useState('')
-  const [ok, setOk] = useState(false)
-  const [busy, setBusy] = useState(false)
-  const submit = (event: FormEvent<HTMLFormElement>) => {
+  const [submit, setSubmit] = useState<SubmitState>('idle')
+  const onSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    if (newPw !== confirmPw) { setOk(false); setMsg(p.mismatch); return }
-    setMsg('')
-    setBusy(true)
+    if (submit === 'loading') return
+    if (newPw !== confirmPw) { setSubmit('failed'); toast.error(p.mismatch); return }
+    setSubmit('loading')
     apiFetch('/auth/change-password', { method: 'POST', body: { oldPassword: oldPw, newPassword: newPw } })
-      .then(() => { setOk(true); setMsg(p.success); setOldPw(''); setNewPw(''); setConfirmPw('') })
-      .catch(() => { setOk(false); setMsg(p.fail) })
-      .finally(() => setBusy(false))
+      .then(() => {
+        setSubmit('success')
+        toast.success(p.success)
+        setOldPw(''); setNewPw(''); setConfirmPw('')
+      })
+      .catch((e) => { setSubmit('failed'); toast.error(p.fail, { description: e instanceof Error ? e.message : undefined }) })
+      .finally(() => setTimeout(() => setSubmit('idle'), 1500))
+  }
+  const labels: Record<SubmitState, string> = {
+    idle: p.submit, loading: t.common.loading, success: p.success, failed: p.fail,
   }
   return (
     <div className={PAGE}>
       <SectionTitle title={p.title} desc={p.desc} />
-      <form className="grid max-w-[520px] gap-y-4.5 pt-6" onSubmit={submit}>
-        <label className={FORM_LABEL}>{p.old}<Input type="password" required value={oldPw} onChange={(e) => setOldPw(e.target.value)} /></label>
-        <label className={FORM_LABEL}>{p.next}<Input type="password" required minLength={6} value={newPw} onChange={(e) => setNewPw(e.target.value)} /></label>
-        <label className={FORM_LABEL}>{p.confirm}<Input type="password" required minLength={6} value={confirmPw} onChange={(e) => setConfirmPw(e.target.value)} /></label>
-        <div className="flex min-h-9 items-center justify-between text-xs">
-          <span style={MSG(ok)}>{msg}</span>
-          <ToolbarButton primary disabled={busy}>{p.submit}</ToolbarButton>
+      <form className="grid max-w-[520px] gap-y-4.5 pt-6" onSubmit={onSubmit}>
+        <label className={FORM_LABEL}>{p.old}<Input type="password" required autoComplete="current-password" value={oldPw} onChange={(e) => setOldPw(e.target.value)} /></label>
+        <label className={FORM_LABEL}>{p.next}<Input type="password" required minLength={6} autoComplete="new-password" value={newPw} onChange={(e) => setNewPw(e.target.value)} /></label>
+        <label className={FORM_LABEL}>{p.confirm}<Input type="password" required minLength={6} autoComplete="new-password" value={confirmPw} onChange={(e) => setConfirmPw(e.target.value)} /></label>
+        <div className="flex min-h-9 items-center justify-end text-xs">
+          <SubmitButton state={submit} labels={labels} />
         </div>
       </form>
       <div className="mt-8 max-w-[760px] border-t border-[var(--shell-side-border)]">

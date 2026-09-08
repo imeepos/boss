@@ -10,7 +10,6 @@ export const AVATAR = 'grid h-[52px] w-[52px] flex-none place-items-center round
 export const CHEVRON = 'absolute right-4 top-10 inline-block h-2 w-2 rotate-45 border-t-[1.5px] border-r-[1.5px] border-current text-[var(--color-brand-gold-600)]'
 export const FORM_LABEL = 'grid gap-[7px] text-[13px] text-[var(--shell-content-text)]'
 export const READONLY_INPUT = 'read-only:bg-[var(--shell-input-disabled-bg)] read-only:text-[var(--shell-crumb-text)]'
-export const MSG = (ok: boolean) => ({ color: ok ? 'var(--color-success)' : 'var(--color-danger)' })
 export const TIP = 'mt-4 bg-[var(--shell-menu-hover-bg)] px-3.5 py-2.5 text-xs leading-relaxed text-[var(--shell-content-text)]'
 export const LIST_BTN = 'flex w-full min-h-16 cursor-pointer items-center justify-between border-0 border-b border-[var(--shell-side-border)] bg-transparent px-1 py-3 text-left text-[var(--shell-heading)] hover:text-[var(--color-brand-gold-600)]'
 
