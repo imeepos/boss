@@ -44,6 +44,8 @@ def http(method, path, key, body=None):
         return e.code, None
 
 
+def api(method, path, body=None, worker=False):
+    key = WKEY if worker else AKEY
     code, env = http(method, path, key, body)
     ok = code == 200 and isinstance(env, dict) and env.get("code") in (0, 200)
     if not ok:
@@ -51,8 +53,8 @@ def http(method, path, key, body=None):
         return None, code
     return env.get("data"), code
 
+
 def check(name, cond, detail=""):
-    global OK, FAIL
     if cond:
         OK += 1
         print("[PASS] " + name)
