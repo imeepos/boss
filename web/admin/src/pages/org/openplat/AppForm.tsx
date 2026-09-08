@@ -3,6 +3,7 @@ import { useT } from '../../../i18n'
 import { Drawer } from '../../../components/Drawer'
 import { FormField } from '../../../components/business/form-field'
 import { ErrorBanner } from '../../../components/business/page-head'
+import { Input } from '../../../components/ui/input'
 
 export interface AppFormValues {
   name: string
@@ -27,7 +28,6 @@ export function AppFormDrawer({
   const nameOk = values.name.trim().length > 0 && values.name.trim().length <= 64
   const rpmOk = Number.isFinite(values.rateLimitRpm) && values.rateLimitRpm >= 0
   const quotaOk = Number.isFinite(values.dailyQuota) && values.dailyQuota >= 0
-  const inputCls = 'h-8 w-full rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]'
 
   return (
     <Drawer title={t.pages.openplat.createTitle} onClose={onClose}
@@ -41,15 +41,15 @@ export function AppFormDrawer({
       }>
       <div className="flex flex-col gap-3.5">
         <FormField label={t.pages.openplat.fName} required>
-          <input className={inputCls} value={values.name} maxLength={64}
+          <Input value={values.name} maxLength={64}
             placeholder={t.pages.openplat.pName} onChange={(e) => onChange({ ...values, name: e.target.value })} />
         </FormField>
         <FormField label={t.pages.openplat.fRpm}>
-          <input className={inputCls} type="number" min={0} value={values.rateLimitRpm}
+          <Input type="number" min={0} value={values.rateLimitRpm}
             onChange={(e) => onChange({ ...values, rateLimitRpm: Number(e.target.value) })} />
         </FormField>
         <FormField label={t.pages.openplat.fQuota}>
-          <input className={inputCls} type="number" min={0} value={values.dailyQuota}
+          <Input type="number" min={0} value={values.dailyQuota}
             onChange={(e) => onChange({ ...values, dailyQuota: Number(e.target.value) })} />
         </FormField>
         <FormField label={t.pages.openplat.fSandbox}>

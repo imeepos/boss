@@ -7,7 +7,9 @@ import { useT } from '../../../i18n'
 import { useConfirm } from '../../../components/ConfirmDialog'
 import { formatTime } from '../../base/audit/logic'
 import { EmptyState, TabBar } from '../../../components/business'
+import { ErrorBanner } from '../../../components/business/page-head'
 import { Drawer } from '../../../components/Drawer'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/table'
 import { SubForm } from './SubForm'
 import type { OpenAppRow } from './index'
 
@@ -156,60 +158,60 @@ export function AppDetail({ app, onRefreshApps, onClose }: {
 
       {tab === 'subs' && (
         subs.length === 0 ? <EmptyState text={t.pages.openplat.noSubs} /> : (
-          <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
-            <thead>
-              <tr className="text-left text-xs font-medium text-[var(--shell-group-title)]">
-                <th className="h-9 px-2 border-b border-[var(--shell-side-border)]">{t.pages.openplat.fEvents}</th>
-                <th className="h-9 px-2 border-b border-[var(--shell-side-border)]">{t.pages.openplat.endpointLabel}</th>
-                <th className="h-9 px-2 whitespace-nowrap border-b border-[var(--shell-side-border)]">{t.pages.openplat.createdLabel}</th>
-                <th className="h-9 px-2 border-b border-[var(--shell-side-border)] text-right">{t.pages.openplat.actionLabel}</th>
-              </tr>
-            </thead>
-            <tbody>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="h-9 px-2">{t.pages.openplat.fEvents}</TableHead>
+                <TableHead className="h-9 px-2">{t.pages.openplat.endpointLabel}</TableHead>
+                <TableHead className="h-9 whitespace-nowrap px-2">{t.pages.openplat.createdLabel}</TableHead>
+                <TableHead className="h-9 px-2 text-right">{t.pages.openplat.actionLabel}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {subs.map((s) => (
-                <tr key={s.id} className="hover:bg-[var(--shell-menu-hover-bg)]">
-                  <td className="h-10 px-2 whitespace-nowrap border-b border-[var(--shell-side-border)] font-mono text-xs">{s.eventType}</td>
-                  <td className="h-10 px-2 break-all border-b border-[var(--shell-side-border)]">{s.endpointUrl}</td>
-                  <td className="h-10 px-2 whitespace-nowrap border-b border-[var(--shell-side-border)]">{formatTime(s.createdAt)}</td>
-                  <td className="h-10 px-2 border-b border-[var(--shell-side-border)] text-right">
+                <TableRow key={s.id}>
+                  <TableCell className="h-10 whitespace-nowrap px-2 font-mono text-xs">{s.eventType}</TableCell>
+                  <TableCell className="h-10 break-all px-2">{s.endpointUrl}</TableCell>
+                  <TableCell className="h-10 whitespace-nowrap px-2">{formatTime(s.createdAt)}</TableCell>
+                  <TableCell className="h-10 px-2 text-right">
                     <button className="cursor-pointer text-[var(--color-danger)] hover:underline disabled:cursor-not-allowed disabled:opacity-50" disabled={busy} onClick={() => delSub(s.id)}>{t.pages.openplat.delSub}</button>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         )
       )}
 
       {tab === 'deliveries' && (
         appDeliveries.length === 0 ? <EmptyState text={t.pages.openplat.noDeliveries} /> : (
           <>
-          <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
-            <thead>
-              <tr className="text-left text-xs font-medium text-[var(--shell-group-title)]">
-                <th className="h-9 px-2 border-b border-[var(--shell-side-border)]">{t.pages.openplat.fEvents}</th>
-                <th className="h-9 px-2 border-b border-[var(--shell-side-border)]">{t.pages.openplat.eventIdLabel}</th>
-                <th className="h-9 px-2 whitespace-nowrap border-b border-[var(--shell-side-border)]">{t.pages.openplat.statusLabel}</th>
-                <th className="h-9 px-2 border-b border-[var(--shell-side-border)]">{t.pages.openplat.responseLabel}</th>
-                <th className="h-9 px-2 border-b border-[var(--shell-side-border)] text-right">{t.pages.openplat.actionLabel}</th>
-              </tr>
-            </thead>
-            <tbody>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="h-9 px-2">{t.pages.openplat.fEvents}</TableHead>
+                <TableHead className="h-9 px-2">{t.pages.openplat.eventIdLabel}</TableHead>
+                <TableHead className="h-9 whitespace-nowrap px-2">{t.pages.openplat.statusLabel}</TableHead>
+                <TableHead className="h-9 px-2">{t.pages.openplat.responseLabel}</TableHead>
+                <TableHead className="h-9 px-2 text-right">{t.pages.openplat.actionLabel}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {appDeliveries.slice(0, 20).map((d) => (
-                <tr key={d.id} className="hover:bg-[var(--shell-menu-hover-bg)]">
-                  <td className="h-10 px-2 whitespace-nowrap border-b border-[var(--shell-side-border)] font-mono text-xs">{d.eventType}</td>
-                  <td className="h-10 px-2 break-all border-b border-[var(--shell-side-border)] font-mono text-xs">{d.eventId}</td>
-                  <td className="h-10 px-2 whitespace-nowrap border-b border-[var(--shell-side-border)]">{statusLabel(d.status)} · {d.attempts}</td>
-                  <td className="h-10 px-2 border-b border-[var(--shell-side-border)]">{d.lastError || (d.httpStatus ? `HTTP ${d.httpStatus}` : '')}</td>
-                  <td className="h-10 px-2 whitespace-nowrap border-b border-[var(--shell-side-border)] text-right">
+                <TableRow key={d.id}>
+                  <TableCell className="h-10 whitespace-nowrap px-2 font-mono text-xs">{d.eventType}</TableCell>
+                  <TableCell className="h-10 break-all px-2 font-mono text-xs">{d.eventId}</TableCell>
+                  <TableCell className="h-10 whitespace-nowrap px-2">{statusLabel(d.status)} · {d.attempts}</TableCell>
+                  <TableCell className="h-10 px-2">{d.lastError || (d.httpStatus ? `HTTP ${d.httpStatus}` : '')}</TableCell>
+                  <TableCell className="h-10 whitespace-nowrap px-2 text-right">
                     {d.status !== 1
                       ? <button className="cursor-pointer text-[var(--color-text-link)] hover:underline disabled:cursor-not-allowed disabled:opacity-50" disabled={busy} onClick={() => requeue(d.id)}>{t.pages.openplat.requeue}</button>
                       : <span className="text-[var(--shell-group-title)]">—</span>}
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
           {appDeliveries.length > 20 && (
             <div className="pt-2 text-xs text-[var(--shell-group-title)]">{t.pages.openplat.dlvTruncated}</div>
           )}
@@ -217,7 +219,7 @@ export function AppDetail({ app, onRefreshApps, onClose }: {
         )
       )}
 
-      {error && <div className="mt-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div>}
+      {error && <div className="mt-3"><ErrorBanner message={error} /></div>}
 
       {subOpen && (
         <SubForm appId={app.id} onClose={closeSubForm}
