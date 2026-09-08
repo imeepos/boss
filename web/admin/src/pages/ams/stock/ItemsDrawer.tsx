@@ -8,14 +8,14 @@ import { Drawer } from '../../../components/Drawer'
 import { Dropdown } from '../../../components/Dropdown'
 import { SimplePicker } from '../../../components/pickers/SimplePicker'
 import { statusTagLabel } from '../../../components/StatusTag'
-import { TableStateRow } from '../../../components/business'
+import { ActionLink, ActionLinks, ActionSep, TableStateRow } from '../../../components/business'
 import { FormField } from '../../../components/business/form-field'
 import { ErrorBanner } from '../../../components/business/page-head'
+import { SubmitButton } from '../../../components/business/submit-button'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../../components/ui/table'
 import { SCAN_STATUSES, type AssetRow, type StocktakeItemRow } from '../types'
 
-const td = 'h-10 px-2.5 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)]'
 const input = 'h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]'
-const btn = 'h-7 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-xs text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)] disabled:cursor-not-allowed disabled:opacity-50'
 
 export function ItemsDrawer({ taskId, canEdit, onClose, onChanged }: {
   taskId: number
@@ -57,7 +57,6 @@ export function ItemsDrawer({ taskId, canEdit, onClose, onChanged }: {
       onChanged()
     } catch (e) {
       setError(e instanceof Error ? e.message : s.scanFail)
-    } finally {
       setBusy(false)
     }
   }
@@ -81,13 +80,15 @@ export function ItemsDrawer({ taskId, canEdit, onClose, onChanged }: {
       onChanged()
     } catch (e) {
       setError(e instanceof Error ? e.message : s.actionFail)
-    } finally {
       setBusy(false)
     }
   }
 
   const kindText = (k: string) => (s as unknown as Record<string, string>)[`kind${k}`] ?? k
   const resText = (r: string) => (s as unknown as Record<string, string>)[`res${r}`] ?? r
+
+  const scanState = busy ? 'loading' : (error ? 'failed' : 'idle')
+  const scanLabels = { idle: s.scan, loading: t.pages.account.submitting, success: s.scanOk, failed: s.scanFail }
 
   return (
     <Drawer title={`${s.detail} · #${taskId}`} onClose={onClose} width={860}>
@@ -113,41 +114,41 @@ export function ItemsDrawer({ taskId, canEdit, onClose, onChanged }: {
             <FormField label={s.notePrompt}>
               <input className={`${input} w-56`} value={note} onChange={(e) => setNote(e.target.value)} />
             </FormField>
-            <button className={`h-8 border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)] disabled:opacity-50`} disabled={busy || !assetId} onClick={scan}>{s.scan}</button>
+            <SubmitButton state={scanState} labels={scanLabels} disabled={busy || !assetId} onClick={scan} />
           </div>
         )}
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-xs">
-            <thead>
-              <tr>{s.itemCols.map((x) => <th key={x} className="h-9 px-2.5 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr>
-            </thead>
-            <tbody>
-              {items.map((it) => (
-                <tr key={it.id}>
-                  <td className={td}>#{it.id}</td>
-                  <td className={td}>{it.assetId}</td>
-                  <td className={td}>{it.expectedStatus || '—'}</td>
-                  <td className={td}>{it.scannedStatus || '—'}</td>
-                  <td className={td}>{kindText(it.kind)}</td>
-                  <td className={td}>{resText(it.resolution)}{it.handledBy > 0 ? ` · ${s.handledBy.replace('{id}', String(it.handledBy))}` : ''}</td>
-                  <td className={`${td} max-w-40 truncate`} title={it.note}>{it.note || '—'}</td>
-                  {canEdit && (
-                    <td className={td}>
-                      {it.kind !== 'OK' && it.resolution === 'OPEN' && (
-                        <span className="inline-flex gap-1.5">
-                          <button className={btn} disabled={busy} onClick={() => handle(it, 'CONFIRM')}>{s.actConfirm}</button>
-                          <button className={btn} disabled={busy} onClick={() => handle(it, 'FIX')}>{s.actFix}</button>
-                          <button className={btn} disabled={busy} onClick={() => handle(it, 'ESCALATE')}>{s.actEscalate}</button>
-                        </span>
-                      )}
-                    </td>
-                  )}
-                </tr>
-              ))}
-              {!items.length && <TableStateRow colSpan={canEdit ? 8 : 7} loading={busy} text={s.emptyItems} />}
-            </tbody>
-          </table>
-        </div>
+        <Table>
+          <TableHeader>
+            <TableRow>{s.itemCols.map((x) => <TableHead key={x}>{x}</TableHead>)}</TableRow>
+          </TableHeader>
+          <TableBody>
+            {items.map((it) => (
+              <TableRow key={it.id}>
+                <TableCell className="font-mono">#{it.id}</TableCell>
+                <TableCell>{it.assetId}</TableCell>
+                <TableCell>{it.expectedStatus || '—'}</TableCell>
+                <TableCell>{it.scannedStatus || '—'}</TableCell>
+                <TableCell>{kindText(it.kind)}</TableCell>
+                <TableCell>{resText(it.resolution)}{it.handledBy > 0 ? ` · ${s.handledBy.replace('{id}', String(it.handledBy))}` : ''}</TableCell>
+                <TableCell className="max-w-40 truncate" title={it.note}>{it.note || '—'}</TableCell>
+                {canEdit && (
+                  <TableCell>
+                    {it.kind !== 'OK' && it.resolution === 'OPEN' && (
+                      <ActionLinks>
+                        <ActionLink onClick={() => handle(it, 'CONFIRM')} label={s.actConfirm} testId={`item-confirm-${it.id}`} />
+                        <ActionSep />
+                        <ActionLink onClick={() => handle(it, 'FIX')} label={s.actFix} testId={`item-fix-${it.id}`} />
+                        <ActionSep />
+                        <ActionLink onClick={() => handle(it, 'ESCALATE')} label={s.actEscalate} testId={`item-escalate-${it.id}`} />
+                      </ActionLinks>
+                    )}
+                  </TableCell>
+                )}
+              </TableRow>
+            ))}
+            {!items.length && <TableStateRow colSpan={canEdit ? 8 : 7} loading={busy} text={s.emptyItems} />}
+          </TableBody>
+        </Table>
         {error && <ErrorBanner message={error} />}
       </div>
     </Drawer>
