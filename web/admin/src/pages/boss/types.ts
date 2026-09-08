@@ -120,6 +120,7 @@ export interface ComplaintRow {
   id: number
   ticketNo: string
   customerId: number
+  customerName: string // 客户名(读取时 JOIN 现值,data-relations §6.2 同批)
   orderId: number
   legalEntityId: number
   legalEntityName: string

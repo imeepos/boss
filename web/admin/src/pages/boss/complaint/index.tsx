@@ -125,7 +125,11 @@ export default function ComplaintPage() {
               {slice.map((x) => (
                 <TableRow key={x.id}>
                   <TableCell>{x.ticketNo}</TableCell>
-                  <TableCell><IdRef value={x.customerId} /></TableCell>
+                  <TableCell>
+                    {/* 客户名直显(JOIN 现值),编号并列保留;空名降级 — 不渲染空 IdRef。 */}
+                    {x.customerName || '—'}
+                    {x.customerId ? <IdRef value={x.customerId} /> : null}
+                  </TableCell>
                   <TableCell>{x.orderId ? <IdRef value={x.orderId} /> : '—'}</TableCell>
                   <TableCell>{c.types[x.type] ?? x.type}</TableCell>
                   <TableCell><StatusTag domain="complaint" value={x.status} /></TableCell>
