@@ -1,15 +1,15 @@
 // 预算与里程碑面板(P-INFRA-1 W6/G2,000218;挂施工单详情)。
 // 文案为字面量:沿用 ODN 施工页签先例,中央登记仅登记菜单项。
-// 追加/编辑里程碑经右侧抽屉承载;预算内联表单与状态按钮暂留(分步改造)。
+// 追加/编辑里程碑与编辑预算一律右侧抽屉承载(全站抽屉口径),状态按钮保留行内。
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
-import { Input } from '../../../components/ui/input'
 import { Badge } from '../../../components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../../components/ui/table'
 import { Card } from '../../../components/ui/card'
 import { EmptyState, ErrorBanner, ToolbarButton } from '../../../components/business/page-head'
 import { fmtMoney } from './constructions'
+import { BudgetEditDrawer } from './BudgetEditDrawer'
 import { MilestoneDrawer, type Milestone, type MilestoneDrawerTarget } from './MilestoneDrawer'
 
 const M_VARIANT: Record<string, 'default' | 'success'> = { PENDING: 'default', DONE: 'success' }
@@ -20,10 +20,10 @@ export function BudgetMilestonePanel({ project, onChanged }: {
   onChanged: () => void
 }) {
   const [rows, setRows] = useState<Milestone[]>([])
-  const [budget, setBudget] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [mTarget, setMTarget] = useState<MilestoneDrawerTarget | null>(null)
+  const [budgetOpen, setBudgetOpen] = useState(false)
 
   const pid = project?.id
   const load = useCallback(async () => {
@@ -36,7 +36,6 @@ export function BudgetMilestonePanel({ project, onChanged }: {
     }
   }, [pid])
   useEffect(() => { void load() }, [load])
-  useEffect(() => { setBudget(project?.budgetAmount != null ? String(project.budgetAmount) : '') }, [project?.budgetAmount])
 
   const act = async (fn: () => Promise<unknown>, okMsg: string) => {
     setBusy(true); setError('')
@@ -46,13 +45,6 @@ export function BudgetMilestonePanel({ project, onChanged }: {
       setError(msg)
       toast.error(okMsg + ' 失败', { description: msg })
     } finally { setBusy(false) }
-  }
-
-  const saveBudget = () => {
-    const raw = budget.trim()
-    const v = raw === '' ? null : Number(raw)
-    if (raw !== '' && (!Number.isFinite(v) || (v as number) < 0)) { setError('预算金额须为非负数或留空清除'); return }
-    void act(() => apiFetch('/odn/constructions/' + pid + '/budget', { method: 'PUT', body: { budgetAmount: v } }), '预算已保存')
   }
   const mark = (id: number, to: 'DONE' | 'PENDING') =>
     void act(() => apiFetch('/odn/milestones/' + id + (to === 'DONE' ? '/complete' : '/reopen'), { method: 'POST' }),
@@ -68,9 +60,10 @@ export function BudgetMilestonePanel({ project, onChanged }: {
     <Card className="p-4">
       <div className="mb-2 text-sm font-semibold">工程预算<span className="ml-2 text-xs font-normal opacity-60">预算与里程碑清单仅待开工期可改;执行进度=已结算金额/预算(只读派生,已结算=SETTLED 结算单合计)</span></div>
       <div className="flex flex-wrap items-end gap-2">
-        {editable && <><label className="flex flex-col gap-1"><span className="text-xs text-[var(--shell-content-text)]">预算金额</span><Input className="w-40" value={budget} onChange={(e) => setBudget(e.target.value.replace(/[^0-9.]/g, ''))} inputMode="decimal" placeholder="留空=清除" /></label>
-        <ToolbarButton primary disabled={busy} onClick={saveBudget}>保存预算</ToolbarButton></>}
-        {!editable && <span className="text-xs opacity-60">预算金额:{budgetAmt != null ? fmtMoney(budgetAmt) : '未登记'}{!markable && '(已竣工锁定)'}</span>}
+        {editable && project
+          ? <><span className="text-xs">预算金额:{budgetAmt != null ? fmtMoney(budgetAmt) : '未登记'}</span>
+            <ToolbarButton disabled={busy} onClick={() => setBudgetOpen(true)}>编辑预算</ToolbarButton></>
+          : <span className="text-xs opacity-60">预算金额:{budgetAmt != null ? fmtMoney(budgetAmt) : '未登记'}{!markable && '(已竣工锁定)'}</span>}
         {budgetAmt != null && <span className="text-xs">执行进度:{fmtMoney(settled)} / {fmtMoney(budgetAmt)}{pct != null ? '（' + pct + '%）' : ''}</span>}
       </div>
     </Card>
@@ -103,5 +96,7 @@ export function BudgetMilestonePanel({ project, onChanged }: {
     </Card>
     {mTarget && <MilestoneDrawer target={mTarget} onClose={() => setMTarget(null)}
       onSaved={() => { void load(); onChanged() }} />}
+    {budgetOpen && project && <BudgetEditDrawer projectId={project.id} current={project.budgetAmount}
+      onClose={() => setBudgetOpen(false)} onSaved={() => { void load(); onChanged() }} />}
   </div>
 }
