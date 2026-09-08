@@ -5,6 +5,9 @@ import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { useConfirm } from '../../../components/ConfirmDialog'
 import { EmptyState } from '../../../components/business'
+import { ErrorBanner } from '../../../components/business/page-head'
+import { Card } from '../../../components/ui/card'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/table'
 import { roleErrorCode, toRoleRows, type RoleDetail } from './roles'
 import { emptyRoleForm, rolePayload, roleToForm, RoleFormDrawer, type RoleFormState } from './RoleForm'
 
@@ -65,8 +68,11 @@ export function RoleManagerCard({ onChanged }: { onChanged: () => void }) {
     }
   }
 
+  const act = 'cursor-pointer border-none bg-none p-0 text-[13px] text-[var(--shell-content-text)] underline-offset-2 hover:text-[var(--shell-heading)] hover:underline disabled:cursor-not-allowed disabled:opacity-60'
+  const actDanger = 'cursor-pointer border-none bg-none p-0 text-[13px] text-[var(--color-danger)] underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:opacity-60'
+
   return (
-    <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
+    <Card>
       <div className="flex flex-wrap items-center gap-2 p-4">
         <div className="text-[15px] font-semibold text-[var(--shell-heading)]">{tr.roleTitle}</div>
         <span className="spacer" />
@@ -74,43 +80,43 @@ export function RoleManagerCard({ onChanged }: { onChanged: () => void }) {
         <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" onClick={() => { setFormError(''); setForm(emptyRoleForm()) }}>{tr.createRole}</button>
       </div>
       {error ? (
-        <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div>
+        <div className="mx-4 mb-3"><ErrorBanner message={error} /></div>
       ) : (
-        <div className="overflow-x-auto px-4 pb-4">
-          <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
-            <thead>
-              <tr>
-                {[tr.roleName, tr.roleCode, tr.roleType, tr.permCount, tr.actionColumn].map((c) => (
-                  <th key={c} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{c}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {roles.map((r) => (
-                <tr key={r.id}>
-                  <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.name}</td>
-                  <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.code}</td>
-                  <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">
-                    <span className={r.isBuiltin ? 'text-[var(--shell-group-title)]' : 'font-medium text-[var(--shell-heading)]'}>{r.isBuiltin ? tr.builtin : tr.custom}</span>
-                  </td>
-                  <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.permissionCodes.length}</td>
-                  <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">
-                    {r.isBuiltin ? (
-                      <span className="text-[var(--shell-crumb-text)]" title={tr.builtinReadOnly}>—</span>
-                    ) : (
-                      <span className="inline-flex items-center">
-                        <button disabled={busy} onClick={() => { setFormError(''); setForm(roleToForm(r)) }}>{t.pages.account.edit}</button>
-                        <span className="text-[var(--shell-side-border)]">|</span>
-                        <button className="text-[var(--color-danger)]" disabled={busy} onClick={() => remove(r)}>{tr.deleteRole}</button>
-                      </span>
-                    )}
-                  </td>
-                </tr>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              {[tr.roleName, tr.roleCode, tr.roleType, tr.permCount, tr.actionColumn].map((c) => (
+                <TableHead key={c}>{c}</TableHead>
               ))}
-              {!roles.length && <tr><td colSpan={5} className="px-3 py-6"><EmptyState text={tr.empty} /></td></tr>}
-            </tbody>
-          </table>
-        </div>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {roles.map((r) => (
+              <TableRow key={r.id}>
+                <TableCell>{r.name}</TableCell>
+                <TableCell>{r.code}</TableCell>
+                <TableCell>
+                  <span className={r.isBuiltin ? 'text-[var(--shell-group-title)]' : 'font-medium text-[var(--shell-heading)]'}>{r.isBuiltin ? tr.builtin : tr.custom}</span>
+                </TableCell>
+                <TableCell>{r.permissionCodes.length}</TableCell>
+                <TableCell>
+                  {r.isBuiltin ? (
+                    <span className="text-[var(--shell-crumb-text)]" title={tr.builtinReadOnly}>—</span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5">
+                      <button className={act} disabled={busy} onClick={() => { setFormError(''); setForm(roleToForm(r)) }}>{t.pages.account.edit}</button>
+                      <span className="text-[var(--shell-side-border)]">|</span>
+                      <button className={actDanger} disabled={busy} onClick={() => remove(r)}>{tr.deleteRole}</button>
+                    </span>
+                  )}
+                </TableCell>
+              </TableRow>
+            ))}
+            {!roles.length && (
+              <TableRow><TableCell colSpan={5} className="px-3 py-6"><EmptyState text={tr.empty} /></TableCell></TableRow>
+            )}
+          </TableBody>
+        </Table>
       )}
       <RoleFormDrawer
         open={form !== null}
@@ -122,6 +128,6 @@ export function RoleManagerCard({ onChanged }: { onChanged: () => void }) {
         busy={busy}
         submitError={formError}
       />
-    </div>
+    </Card>
   )
 }

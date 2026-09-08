@@ -9,6 +9,9 @@ import { filterMatrixRows, pageSlice, type MenuPermData, type MenuPermViewRow } 
 import { Pagination } from '../../../components/Pagination'
 import { EmptyState } from '../../../components/business'
 import { ErrorBanner } from '../../../components/business/page-head'
+import { Card } from '../../../components/ui/card'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/table'
+import { Input } from '../../../components/ui/input'
 import { RoleManagerCard } from './RoleManagerCard'
 
 export default function MenuPermPage() {
@@ -45,24 +48,27 @@ export default function MenuPermPage() {
     <div>
       <PageHead title={t.pages.menuperm.title} desc={t.pages.menuperm.desc} />
       <RoleManagerCard onChanged={load} />
-      <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
+      <Card>
         <div className="px-4 pt-3.5 text-[15px] font-semibold text-[var(--shell-heading)]">{t.pages.menuperm.modelTitle}</div>
         {error && <div className="px-4 pb-2"><ErrorBanner message={error} className="!mx-0 !mb-0" /></div>}
-        <div className="overflow-x-auto px-4 pb-4">
-          <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
-            <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr><th className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{t.pages.menuperm.modelLayerLabel}</th></tr></thead>
-            <tbody>
-              {(data.layers ?? []).map((l, i) => (
-                <tr key={l}><td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{i + 1}. {l}</td></tr>
-              ))}
-              {!(data.layers ?? []).length && <tr><td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><EmptyState text={t.pages.menuperm.empty} /></td></tr>}
-            </tbody>
-          </table>
-        </div>
-      </div>
-      <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
+        <Table>
+          <TableHeader>
+            <TableRow><TableHead>{t.pages.menuperm.modelLayerLabel}</TableHead></TableRow>
+          </TableHeader>
+          <TableBody>
+            {(data.layers ?? []).map((l, i) => (
+              <TableRow key={l}><TableCell>{i + 1}. {l}</TableCell></TableRow>
+            ))}
+            {!(data.layers ?? []).length && (
+              <TableRow><TableCell><EmptyState text={t.pages.menuperm.empty} /></TableCell></TableRow>
+            )}
+          </TableBody>
+        </Table>
+        <div className="pb-3" />
+      </Card>
+      <Card>
         <div className="flex flex-wrap items-center gap-2 p-4">
-          <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" placeholder={t.pages.menuperm.searchPlaceholder}
+          <Input className="w-56" placeholder={t.pages.menuperm.searchPlaceholder}
             value={keyword} onChange={(e) => { setKeyword(e.target.value); setPage(1) }} />
           <Dropdown
             value={role}
@@ -74,41 +80,39 @@ export default function MenuPermPage() {
           <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={load}>{t.pages.audit.refresh}</button>
         </div>
         {!error && (
-          <div className="overflow-x-auto px-4 pb-4">
-            <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
-              <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">
-                <tr>
-                  <th className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{t.pages.menuperm.menuColumn}</th>
-                  {data.roleColumns.map((c) => <th key={c.roleCode} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{c.roleName}</th>)}
-                  <th className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{t.pages.menuperm.actionColumn}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {slice.map((r) => (
-                  <tr key={r.code}>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.name}</td>
-                    {data.roleColumns.map((c) => (
-                      <td key={c.roleCode} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.roles.includes(c.roleCode) ? '✓' : ''}</td>
-                    ))}
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">
-                      <span className="inline-flex items-center">
-                        <button onClick={() => setDetail(r)}>{t.pages.menuperm.detailTitle}</button>
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-                {!slice.length && (
-                  <tr><td colSpan={data.roleColumns.length + 2} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><EmptyState text={t.pages.menuperm.empty} /></td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{t.pages.menuperm.menuColumn}</TableHead>
+                {data.roleColumns.map((c) => <TableHead key={c.roleCode}>{c.roleName}</TableHead>)}
+                <TableHead>{t.pages.menuperm.actionColumn}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {slice.map((r) => (
+                <TableRow key={r.code}>
+                  <TableCell>{r.name}</TableCell>
+                  {data.roleColumns.map((c) => (
+                    <TableCell key={c.roleCode}>{r.roles.includes(c.roleCode) ? '✓' : ''}</TableCell>
+                  ))}
+                  <TableCell>
+                    <span className="inline-flex items-center">
+                      <button className="cursor-pointer border-none bg-none p-0 text-[13px] text-[var(--shell-content-text)] underline-offset-2 hover:text-[var(--shell-heading)] hover:underline" onClick={() => setDetail(r)}>{t.pages.menuperm.detailTitle}</button>
+                    </span>
+                  </TableCell>
+                </TableRow>
+              ))}
+              {!slice.length && (
+                <TableRow><TableCell colSpan={data.roleColumns.length + 2}><EmptyState text={t.pages.menuperm.empty} /></TableCell></TableRow>
+              )}
+            </TableBody>
+          </Table>
         )}
         <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
           <Pagination total={filtered.length} page={page} pageSize={pageSize}
             onPage={setPage} onSize={setPageSize} {...pagerTexts(t.pages.menuperm)} />
         </div>
-      </div>
+      </Card>
       {detail && (
         <DetailDrawer
           title={t.pages.menuperm.detailTitle}
