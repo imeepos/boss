@@ -49,6 +49,8 @@ export default function ClientReleasePage() {
   const [formError, setFormError] = useState('')
   const [form, setForm] = useState(EMPTY_FORM)
   const [wlOpen, setWlOpen] = useState(false)
+  /** 上次确认的白名单实体:重开抽屉时经 initialItems 预勾选回显(W0-R4)。 */
+  const [wlPicked, setWlPicked] = useState<AccountRow[]>([])
   const accRef = useRef<AccountRow[]>([])
   const accLoaded = useRef(false)
 
@@ -221,7 +223,8 @@ export default function ClientReleasePage() {
     {wlOpen && editing && <DialogPicker<AccountRow>
       open={wlOpen} mode="multiple" title={s.wlPickerTitle}
       onClose={() => setWlOpen(false)}
-      onPick={(picked) => { setPatch({ ...patch, whitelistIds: picked.map((a) => a.id) }); setWlOpen(false) }}
+      onPick={(picked) => { setPatch({ ...patch, whitelistIds: picked.map((a) => a.id) }); setWlPicked(picked); setWlOpen(false) }}
+      initialItems={wlPicked}
       columns={wlColumns}
       query={accountQuery}
       rowKey={(a) => String(a.id)}

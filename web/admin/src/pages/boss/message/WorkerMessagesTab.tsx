@@ -60,10 +60,10 @@ export function WorkerMessagesTab({ t }: { t: Ns }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workerId])
 
-  // 师傅 id → 姓名映射:列表只回 workerId,失败降级 #id(不空转)。
+  // 师傅 id → 人读名映射:列表列与筛选钉选回显共用;失败降级 #id(不空转)。
   useEffect(() => {
     apiFetch<{ items: { id: number; name: string; staffNo: string }[] }>('/workers')
-      .then((d) => setWorkerNames(new Map((d?.items ?? []).map((w) => [w.id, `${w.name}(${w.staffNo})`]))))
+      .then((d) => setWorkerNames(new Map((d?.items ?? []).map((w) => [w.id, `${w.name} · ${w.staffNo}`]))))
       .catch(() => setWorkerNames(new Map()))
   }, [])
 
@@ -101,6 +101,11 @@ export function WorkerMessagesTab({ t }: { t: Ns }) {
     const name = workerNames.get(id)
     return <span title={'workerId=' + String(id)}>{name ?? `#${id}`}</span>
   }
+  /** 已选师傅钉选回显:页签重挂/检索失败时触发器不再跌回裸编号(W0 契约 6)。 */
+  const workerPinOptions = (id: string) => {
+    const label = id ? workerNames.get(Number(id)) : undefined
+    return label ? [{ value: id, label }] : undefined
+  }
 
   return (
     <Card className="p-4">
@@ -132,6 +137,7 @@ export function WorkerMessagesTab({ t }: { t: Ns }) {
           emptyLabel={p.common.all}
           searchPlaceholder={p.common.placeholder}
           errorText={t.loadFail}
+          pinnedOptions={workerPinOptions(workerId)}
         />
         <span className="spacer" />
         <ToolbarButton onClick={load}>{t.refresh}</ToolbarButton>
@@ -190,6 +196,7 @@ export function WorkerMessagesTab({ t }: { t: Ns }) {
                   emptyLabel={p.common.all}
                   searchPlaceholder={p.common.placeholder}
                   errorText={t.loadFail}
+                  pinnedOptions={workerPinOptions(sendWorker)}
                 />
               </div>
             </label>

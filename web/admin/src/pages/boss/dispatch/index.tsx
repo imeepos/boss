@@ -44,6 +44,8 @@ export default function DispatchPage() {
   const [pageSize, setPageSize] = useState(10)
   const [busy, setBusy] = useState(false)
   const [workerFilter, setWorkerFilter] = useState('')
+  /** 已选师傅人读名缓存:页签切回/检索失败时钉选回显,避免触发器跌回裸编号(W0 契约 6)。 */
+  const [workerNames, setWorkerNames] = useState<Map<number, string>>(new Map())
   const [act, setAct] = useState<{ mode: 'assign' | 'transfer'; ticket: DispatchTicketRow } | null>(null)
   const [masterId, setMasterId] = useState('')
   const [picked, setPicked] = useState<PickedWorker | null>(null)
@@ -68,6 +70,12 @@ export default function DispatchPage() {
       .finally(() => setBusy(false))
   }
   useEffect(() => { load(tab) }, [tab]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    searchWorkers('')
+      .then((list) => setWorkerNames(new Map((list ?? []).map((w) => [w.id, `${w.name} · ${w.staffNo}`]))))
+      .catch(() => setWorkerNames(new Map()))
+  }, [])
 
   const submit = async () => {
     if (!act || busy) return
@@ -143,6 +151,11 @@ export default function DispatchPage() {
               emptyLabel={t.pages.pickers.common.all}
               searchPlaceholder={t.pages.pickers.common.placeholder}
               errorText={d.loadFail}
+              pinnedOptions={
+                workerFilter && workerNames.get(Number(workerFilter))
+                  ? [{ value: workerFilter, label: workerNames.get(Number(workerFilter))! }]
+                  : undefined
+              }
             />
               )}
               <ToolbarButton disabled={busy} onClick={() => load(tab)}>{t.pages.audit.refresh}</ToolbarButton>

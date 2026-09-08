@@ -170,6 +170,11 @@ export default function WorkerPage() {
                 searchPlaceholder={w.pickWorkerPlaceholder}
                 errorText={w.loadFail}
                 minWidth={180}
+                pinnedOptions={(() => {
+                  // 已选钉选:rows 即选项源,直接给人类可读回显(W0 契约 6)。
+                  const r = rows.find((x) => String(x.id) === pickWorker && x.status === 1 && x.groupId !== selGroup)
+                  return pickWorker && r ? [{ value: pickWorker, label: `${r.name}(${r.staffNo})` }] : undefined
+                })()}
               />
             )}
             <ToolbarButton disabled={busy} onClick={load}>{t.pages.audit.refresh}</ToolbarButton>
