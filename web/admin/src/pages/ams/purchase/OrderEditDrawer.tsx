@@ -7,7 +7,9 @@ import { useT } from '../../../i18n'
 import { Drawer } from '../../../components/Drawer'
 import { Dropdown } from '../../../components/Dropdown'
 import { SimplePicker } from '../../../components/pickers/SimplePicker'
-import { ErrorBanner } from '../../../components/business/page-head'
+import { FormField } from '../../../components/business/form-field'
+import { ErrorBanner, ToolbarButton } from '../../../components/business/page-head'
+import { SubmitButton } from '../../../components/business/submit-button'
 import type { OrderItemRow, SupplierRow } from '../types'
 import { OrderItemsEditor } from './OrderItemsEditor'
 import { buildOrderEditPayload, orderEditErr, unwrapOrderDetail, type OrderEditFormState } from './purchaseLogic'
@@ -73,14 +75,15 @@ export function OrderEditDrawer({ order, suppliers, onClose, onSaved }: {
   const errMsgKey = (k: string) =>
     k === 'errSupplier' ? d.errSupplier : d.errItems
 
+  const submitState = busy ? 'loading' : (err ? 'failed' : 'idle')
+  const submitLabels = { idle: d.save, loading: d.submitting, success: d.save, failed: d.opFail }
+
   return (
     <Drawer title={d.orderEditTitle.replace('{no}', order.procurementNo || '#' + order.id)} onClose={onClose}
       footer={
         <>
-          <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={onClose}>{d.cancel}</button>
-          <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" disabled={busy || !form} onClick={submit}>
-            {busy ? d.submitting : d.save}
-          </button>
+          <ToolbarButton onClick={onClose} disabled={busy || !form}>{d.cancel}</ToolbarButton>
+          <SubmitButton state={submitState} labels={submitLabels} disabled={busy || !form} onClick={submit} />
         </>
       }>
       <div className="flex flex-col gap-3.5">
@@ -89,29 +92,26 @@ export function OrderEditDrawer({ order, suppliers, onClose, onSaved }: {
         {form && (
           <>
             {err && <ErrorBanner message={errMsgKey(err)} />}
-            <div className="flex flex-col gap-1.5">
-              <label><span className="mr-0.5 text-[var(--color-danger)]">*</span>{d.colSupplier}</label>
+            <FormField label={d.colSupplier} required>
               <Dropdown
                 value={String(form.supplierId)}
                 options={[{ value: '', label: d.colSupplier }, ...suppliers.map((s) => ({ value: String(s.id), label: s.name }))]}
                 onChange={(v) => setForm({ ...form, supplierId: Number(v) || 0 })}
                 ariaLabel={d.colSupplier}
               />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label>{d.colEntity}</label>
+            </FormField>
+            <FormField label={d.colEntity}>
               <SimplePicker value={form.legalEntityId ? String(form.legalEntityId) : ''}
                 onChange={(v) => setForm({ ...form, legalEntityId: Number(v) || 0 })}
                 options={entities.map((e) => ({ value: String(e.id), label: e.name }))}
                 ariaLabel={d.colEntity} placeholder={d.pEntitySelect}
                 pinnedOptions={form.legalEntityId ? [{ value: String(form.legalEntityId), label: '#' + form.legalEntityId }] : undefined}
                 minWidth={260} />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label>{d.remark}</label>
+            </FormField>
+            <FormField label={d.remark}>
               <input type="text" className={input} value={form.remark}
                 onChange={(e) => setForm({ ...form, remark: e.target.value })} />
-            </div>
+            </FormField>
             <OrderItemsEditor items={form.items} onChange={(items) => setForm({ ...form, items })}
               onDelete={(idx) => setForm({ ...form, items: form.items.filter((_, i) => i !== idx) })} />
           </>

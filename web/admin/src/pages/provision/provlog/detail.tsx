@@ -2,6 +2,7 @@
 // 关联数据已删时后端回空串/0,各字段统一回退"—";FAILED 结果以 danger 令牌高亮。
 import { useT } from '../../../i18n'
 import { Drawer } from '../../../components/Drawer'
+import { ToolbarButton } from '../../../components/business/page-head'
 import { fmtTime } from '../../../lib/format'
 import type { ProvisionLogDetail } from '../types'
 
@@ -42,11 +43,7 @@ export function ProvisionLogDetailDrawer({ detail, onClose }: { detail: Provisio
       title={p.detailTitle}
       width={560}
       onClose={onClose}
-      footer={
-        <button className="h-8 cursor-pointer rounded-sm border-none px-4 text-xs text-[var(--shell-fab-icon)] bg-[var(--shell-fab-bg)] hover:bg-[var(--shell-fab-bg-hover)]" onClick={onClose}>
-          {t.pages.company.cancel}
-        </button>
-      }
+      footer={<ToolbarButton onClick={onClose}>{t.pages.company.cancel}</ToolbarButton>}
     >
       <div className="flex flex-col gap-2.5">
         <KV k={p.labelTask} v={task.taskNo || `#${log.taskId}`} />

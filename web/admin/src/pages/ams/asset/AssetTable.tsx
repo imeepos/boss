@@ -1,12 +1,10 @@
 // 资产台账表格:列名以 fields.md §4.1 为准;操作列五动作,SCRAPPED 行隐藏报废/删除入口。
 import { StatusTag } from '../../../components/StatusTag'
-import { TableStateRow } from '../../../components/business'
+import { ActionLink, ActionLinks, ActionSep, TableStateRow } from '../../../components/business'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../../components/ui/table'
 import { useT } from '../../../i18n'
 import type { AssetRow, TagRow } from '../types'
 import { batchLabel } from './logic'
-
-const td = 'h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]'
-const th = 'h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]'
 
 interface AssetTableProps {
   rows: AssetRow[]
@@ -24,33 +22,49 @@ export function AssetTable(p: AssetTableProps) {
   const t = useT()
   const a = t.pages.assetPage
   return (
-    <div className="overflow-x-auto px-4 pb-4">
-      <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
-        <thead><tr>{a.columns.map((x) => <th key={x} className={th}>{x}</th>)}</tr></thead>
-        <tbody>
+    <div className="px-4 pb-4">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            {a.columns.map((x) => <TableHead key={x}>{x}</TableHead>)}
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {p.rows.map((r) => (
-            <tr key={r.assetId}>
-              <td className={td}>{r.assetCode}</td>
-              <td className={td}>{p.tagOf(r.tagId)?.tagNo ?? '—'}</td>
-              <td className={td}>{p.tagOf(r.tagId)?.epcCode ?? '—'}</td>
-              <td className={td}>{r.type || '—'}</td>
-              <td className={td}>{batchLabel(p.batchOf(r.batchId), r.batchId)}</td>
-              <td className={td}>{r.addressId ? '#' + String(r.addressId) : '—'}</td>
-              <td className={td}><StatusTag domain="asset" value={r.status} /></td>
-              <td className={td}>
-                <span className="inline-flex items-center gap-3">
-                  <button disabled={p.busy} onClick={() => p.onTrail(r)}>{a.lifecycle}</button>
-                  <button disabled={p.busy} onClick={() => p.onDetail(r)}>{a.detail}</button>
-                  <button disabled={p.busy} onClick={() => p.onEdit(r)}>{a.edit}</button>
-                  {r.status !== 'SCRAPPED' && <button disabled={p.busy} onClick={() => p.onScrap(r)}>{a.scrapAction}</button>}
-                  {r.status !== 'SCRAPPED' && <button disabled={p.busy} onClick={() => p.onDelete(r)}>{a.deleteAction}</button>}
-                </span>
-              </td>
-            </tr>
+            <TableRow key={r.assetId}>
+              <TableCell>{r.assetCode}</TableCell>
+              <TableCell>{p.tagOf(r.tagId)?.tagNo ?? '—'}</TableCell>
+              <TableCell>{p.tagOf(r.tagId)?.epcCode ?? '—'}</TableCell>
+              <TableCell>{r.type || '—'}</TableCell>
+              <TableCell>{batchLabel(p.batchOf(r.batchId), r.batchId)}</TableCell>
+              <TableCell>{r.addressId ? '#' + String(r.addressId) : '—'}</TableCell>
+              <TableCell><StatusTag domain="asset" value={r.status} /></TableCell>
+              <TableCell>
+                <ActionLinks>
+                  <ActionLink onClick={() => p.onTrail(r)} label={a.lifecycle} testId={`asset-trail-${r.assetId}`} />
+                  <ActionSep />
+                  <ActionLink onClick={() => p.onDetail(r)} label={a.detail} testId={`asset-detail-${r.assetId}`} />
+                  <ActionSep />
+                  <ActionLink onClick={() => p.onEdit(r)} label={a.edit} testId={`asset-edit-${r.assetId}`} />
+                  {r.status !== 'SCRAPPED' && (
+                    <>
+                      <ActionSep />
+                      <ActionLink onClick={() => p.onScrap(r)} label={a.scrapAction} testId={`asset-scrap-${r.assetId}`} />
+                    </>
+                  )}
+                  {r.status !== 'SCRAPPED' && (
+                    <>
+                      <ActionSep />
+                      <ActionLink onClick={() => p.onDelete(r)} label={a.deleteAction} testId={`asset-del-${r.assetId}`} />
+                    </>
+                  )}
+                </ActionLinks>
+              </TableCell>
+            </TableRow>
           ))}
           {!p.rows.length && <TableStateRow colSpan={8} loading={p.busy} text={a.empty} />}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
     </div>
   )
 }

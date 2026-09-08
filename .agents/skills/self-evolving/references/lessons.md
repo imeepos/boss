@@ -571,3 +571,4 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 【已犯 1 次】验证「dev server 服务的是哪棵树」:curl 一个本分支独有标记串(vite transform 后函数名仍在)+ lsof 查进程 cwd;端口冲突必须显式 rc,禁止管道掩码。
 - 【已犯 1 次】生产 bundle 验证版本:标识符已 minify、CJK 字符串被 esbuild unicode 转义,grep 源码字面量恒 0;改用行为断言(DOM/接口)或纯 ASCII 标记串。
 - 【已犯 1 次】React 18 效应接线:标记写 state 会重放效应并触发 alive 清理自杀在途 promise——标记用 ref、就绪信号用 state、配 jsdom 渲染回归。
+当声称"全域走查完毕"被负责人质询复核时(2026-09-08 base 批次):首轮逐页审计只深读了改动页面,未改动叶子组件(详情抽屉/译名维护等)漏网 3 处 catch(() => undefined) 完全吞错——失败时输入框清空,用户误以为成功。修复:全域审计 grep 模式必须单列静默吞错特征 `catch(() => undefined)`、`catch {}`+固定文案、以及裸 await 无 catch(unhandled rejection);「未改动」≠「无问题」,质询是免费的第二遍审计,如实复盘比辩解 34/34 更有价值。

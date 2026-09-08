@@ -6,6 +6,7 @@ import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { Drawer } from '../../../components/Drawer'
 import { PageHead, ErrorBanner, ToolbarButton } from '../../../components/business/page-head'
+import { SubmitButton, type SubmitState } from '../../../components/business/submit-button'
 import { FormField } from '../../../components/business/form-field'
 import { Card } from '../../../components/ui/card'
 import { Input } from '../../../components/ui/input'
@@ -14,6 +15,16 @@ import { Switch } from '../../../components/ui/switch'
 import { CH_KEYS, WH_KEYS, STRIPE_SECRET_KEYS, draftFrom, stripePayloadFor, type StripeFields } from './logic'
 
 type Draft = Record<string, string>
+type Group = 'channel' | 'webhook'
+
+function InfoIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="shrink-0 text-[var(--shell-crumb-text)]">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 8h.01M11 12h1v5h1" />
+    </svg>
+  )
+}
 
 /** 密码输入 + 眼睛切换;占位符提示"已配置(不回显)"而非明文。 */
 function SecretInput({ value, onChange, placeholder, hasValue }: {
@@ -51,11 +62,16 @@ export default function StripeConfigPage() {
   const [loaded, setLoaded] = useState<Draft>({})
   const [secretSet, setSecretSet] = useState<Record<string, boolean>>({})
   const [error, setError] = useState('')
-  const [saving, setSaving] = useState('')
+  const [saveState, setSaveState] = useState<Record<Group, SubmitState>>({ channel: 'idle', webhook: 'idle' })
+  const [saveError, setSaveError] = useState<Record<Group, string>>({ channel: '', webhook: '' })
+  const [testState, setTestState] = useState<SubmitState>('idle')
+  const [testError, setTestError] = useState('')
   const [testing, setTesting] = useState(false)
-  const [editing, setEditing] = useState<'channel' | 'webhook' | null>(null)
+  const [editing, setEditing] = useState<Group | null>(null)
 
   const set = (key: string, v: string) => setDraft((d) => ({ ...d, [key]: v }))
+  const setGroupState = (g: Group, s: SubmitState) => setSaveState((p) => ({ ...p, [g]: s }))
+  const setGroupError = (g: Group, msg: string) => setSaveError((p) => ({ ...p, [g]: msg }))
 
   const load = () => {
     setError('')
@@ -75,10 +91,11 @@ export default function StripeConfigPage() {
 
   useEffect(load, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const save = async (group: 'channel' | 'webhook', keys: readonly string[]) => {
-    if (saving) return
+  const save = async (group: Group, keys: readonly string[]) => {
+    if (saveState[group] === 'loading') return
     const values = stripePayloadFor(keys, draft, loaded)
-    setSaving(group)
+    setGroupState(group, 'loading')
+    setGroupError(group, '')
     try {
       await apiFetch(`/stripe-config/${group}`, { method: 'PUT', body: { values } })
       setLoaded((l) => ({ ...l, ...values }))
@@ -89,16 +106,22 @@ export default function StripeConfigPage() {
       }
       setEditing(null)
       toast.success(a.saved)
+      setGroupState(group, 'success')
+      setTimeout(() => setGroupState(group, 'idle'), 1500)
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : a.saveFail)
-    } finally {
-      setSaving('')
+      const msg = e instanceof Error ? e.message : a.saveFail
+      setGroupError(group, msg)
+      toast.error(msg)
+      setGroupState(group, 'failed')
+      setTimeout(() => setGroupState(group, 'idle'), 2500)
     }
   }
 
   const test = async () => {
     if (testing) return
     setTesting(true)
+    setTestError('')
+    setTestState('loading')
     try {
       // 草稿跨两组一起参与自检:webhookSecret/webhookUrl 未保存也可先验(见后端跨组合并)。
       const values = { ...stripePayloadFor(CH_KEYS, draft, loaded), ...stripePayloadFor(WH_KEYS, draft, loaded) }
@@ -106,10 +129,23 @@ export default function StripeConfigPage() {
         method: 'POST',
         body: { values },
       })
-      if (d?.ok) toast.success(d.message || a.testOk)
-      else toast.error(d?.message || a.testFail)
+      if (d?.ok) {
+        toast.success(d.message || a.testOk)
+        setTestState('success')
+        setTimeout(() => setTestState((s) => (s === 'success' ? 'idle' : s)), 1500)
+      } else {
+        const msg = d?.message || a.testFail
+        setTestError(msg)
+        toast.error(msg)
+        setTestState('failed')
+        setTimeout(() => setTestState((s) => (s === 'failed' ? 'idle' : s)), 2500)
+      }
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : a.testFail)
+      const msg = e instanceof Error ? e.message : a.testFail
+      setTestError(msg)
+      toast.error(msg)
+      setTestState('failed')
+      setTimeout(() => setTestState((s) => (s === 'failed' ? 'idle' : s)), 2500)
     } finally {
       setTesting(false)
     }
@@ -124,14 +160,17 @@ export default function StripeConfigPage() {
       <span className="break-all">{value || '—'}</span>
     </div>
   )
-  const footerBtns = (group: 'channel' | 'webhook', onSaved: () => void) => (
+  const footerBtns = (group: Group, onSaved: () => void) => (
     <>
-      <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={() => setEditing(null)}>
+      <ToolbarButton onClick={() => setEditing(null)} disabled={saveState[group] === 'loading'}>
         {t.common.confirmDialog.cancel}
-      </button>
-      <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" disabled={saving === group} onClick={onSaved}>
-        {saving === group ? a.saving : a.save}
-      </button>
+      </ToolbarButton>
+      <SubmitButton
+        state={saveState[group]}
+        labels={{ idle: a.save, loading: a.saving, success: a.saved, failed: a.saveFail }}
+        disabled={saveState[group] === 'loading'}
+        onClick={onSaved}
+      />
     </>
   )
 
@@ -163,7 +202,7 @@ export default function StripeConfigPage() {
           {summaryRow(a.apiKey, secretSet['stripe.apiKey'] ? a.secretSet : '')}
           {summaryRow(a.publishableKey, draft['stripe.publishableKey'])}
           {summaryRow(a.currency, draft['stripe.currency'])}
-          <div className="mt-1 text-xs text-[var(--shell-crumb-text)]">ⓘ {a.envNote}</div>
+          <div className="mt-1 flex items-center gap-1 text-xs text-[var(--shell-crumb-text)]"><InfoIcon /><span>{a.envNote}</span></div>
         </Card>
 
         {/* 卡片二:回调配置(webhook) */}
@@ -174,12 +213,13 @@ export default function StripeConfigPage() {
           </div>
           {summaryRow(a.webhookSecret, secretSet['stripe.webhookSecret'] ? a.secretSet : '')}
           {summaryRow(a.webhookUrl, draft['stripe.webhookUrl'])}
-          <div className="mt-1 text-xs text-[var(--shell-crumb-text)]">ⓘ {a.webhookUrlHint}</div>
+          <div className="mt-1 flex items-center gap-1 text-xs text-[var(--shell-crumb-text)]"><InfoIcon /><span>{a.webhookUrlHint}</span></div>
         </Card>
       </div>
 
       {editing === 'channel' && (
         <Drawer title={a.chTitle} onClose={() => setEditing(null)} footer={footerBtns('channel', () => save('channel', CH_KEYS))}>
+          {saveError.channel && <div className="mb-3"><ErrorBanner message={saveError.channel} /></div>}
           <div className="mb-4 flex items-center gap-2">
             <Switch checked={enabled} onCheckedChange={(v) => set('stripe.enabled', String(v))} aria-label={a.chTitle} />
             {enabled ? a.enabledReady : a.disabled}
@@ -203,10 +243,14 @@ export default function StripeConfigPage() {
               <Input className="w-72" value={draft['stripe.apiBaseUrl'] ?? ''} onChange={(e) => set('stripe.apiBaseUrl', e.target.value)} />
             </FormField>
           </div>
+          {testError && <div className="mt-3"><ErrorBanner message={testError} /></div>}
           <div className="mt-4 flex items-center gap-2 border-t border-[var(--shell-side-border)] pt-3">
-            <ToolbarButton disabled={testing} onClick={test}>
-              {testing ? a.testing : a.testBtn}
-            </ToolbarButton>
+            <SubmitButton
+              state={testState}
+              labels={{ idle: a.testBtn, loading: a.testing, success: a.testOk, failed: a.testFail }}
+              disabled={testing}
+              onClick={test}
+            />
             <span className="text-xs text-[var(--shell-crumb-text)]">{a.testHint}</span>
           </div>
         </Drawer>
@@ -214,6 +258,7 @@ export default function StripeConfigPage() {
 
       {editing === 'webhook' && (
         <Drawer title={a.whTitle} onClose={() => setEditing(null)} footer={footerBtns('webhook', () => save('webhook', WH_KEYS))}>
+          {saveError.webhook && <div className="mb-3"><ErrorBanner message={saveError.webhook} /></div>}
           <div className="grid grid-cols-2 gap-4">
             <FormField label={a.webhookSecret} hint={a.webhookSecretHint}>
               <SecretInput

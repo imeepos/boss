@@ -11,16 +11,14 @@ import { Dropdown } from '../../../components/Dropdown'
 import { Pagination } from '../../../components/Pagination'
 import { useConfirm } from '../../../components/ConfirmDialog'
 import type { TagRow } from '../types'
-import { TableStateRow } from '../../../components/business'
+import { ActionLink, ActionLinks, ActionSep, TableStateRow, ToolbarButton } from '../../../components/business'
+import { ErrorBanner } from '../../../components/business/page-head'
+import { Card, CardContent, CardFooter } from '../../../components/ui/card'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../../components/ui/table'
 import { tagActionsOf } from './logic'
 import { CreateTagDrawer } from './CreateTagDrawer'
 import { TagEventsDrawer } from './EventsDrawer'
 import { UnbindDialog } from './UnbindDialog'
-import { ErrorBanner } from '../../../components/business/page-head'
-
-const td = 'h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]'
-const th = 'h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]'
-const actBtn = 'h-7 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2 text-[12px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)] disabled:cursor-not-allowed disabled:opacity-50'
 
 const ALL = ''
 const TAG_STATUSES = ['UNBOUND', 'BOUND', 'DISABLED']
@@ -120,46 +118,53 @@ export default function TagPage() {
   return (
     <div>
       <PageHead title={g.title} desc={g.desc} />
-      <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
-        <div className="flex flex-wrap items-center gap-2 p-4">
-          <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" placeholder={g.searchPlaceholder}
-            value={keyword} onChange={(e) => setKeyword(e.target.value)} />
-          <Dropdown value={status} ariaLabel={g.columns[5]} onChange={pickStatus} options={statusOptions} />
-          <span className="spacer" />
-          <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
-          <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" onClick={() => setCreateOpen(true)}>{g.create}</button>
-        </div>
-        {error && <ErrorBanner message={error} />}
-        <div className="overflow-x-auto px-4 pb-4">
-            <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
-              <thead><tr>{cols.map((x) => <th key={x} className={th}>{x}</th>)}</tr></thead>
-              <tbody>
-                {rows.map((r) => (
-                  <tr key={r.tagId}>
-                    <td className={td}>{r.tagNo}</td>
-                    <td className={td}>{r.epcCode}</td>
-                    <td className={td}>{r.band || '—'}</td>
-                    <td className={td}>{r.boundAssetId ? '#' + r.boundAssetId : '—'}</td>
-                    <td className={td}>{r.battery || '—'}</td>
-                    <td className={td}><StatusTag domain="tag" value={r.status} /></td>
-                    <td className={td}>
-                      <span className="inline-flex items-center gap-2">
-                        {tagActionsOf(r).map((act) => (
-                          <button key={act} className={actBtn} disabled={busy} onClick={() => actionRun(act, r)}>{actionLabel(act)}</button>
-                        ))}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-                {!rows.length && <TableStateRow colSpan={7} loading={busy} text={g.empty} />}
-              </tbody>
-            </table>
+      <Card>
+        <CardContent>
+          <div className="flex flex-wrap items-center gap-2">
+            <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" placeholder={g.searchPlaceholder}
+              value={keyword} onChange={(e) => setKeyword(e.target.value)} />
+            <Dropdown value={status} ariaLabel={g.columns[5]} onChange={pickStatus} options={statusOptions} />
+            <span className="spacer" />
+            <ToolbarButton disabled={busy} onClick={load}>{t.pages.audit.refresh}</ToolbarButton>
+            <ToolbarButton primary onClick={() => setCreateOpen(true)}>{g.create}</ToolbarButton>
           </div>
-        <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
+        </CardContent>
+        {error && <ErrorBanner message={error} />}
+        <div className="px-4 pb-4">
+          <Table>
+            <TableHeader>
+              <TableRow>{cols.map((x) => <TableHead key={x}>{x}</TableHead>)}</TableRow>
+            </TableHeader>
+            <TableBody>
+              {rows.map((r) => (
+                <TableRow key={r.tagId}>
+                  <TableCell className="font-mono">{r.tagNo}</TableCell>
+                  <TableCell className="font-mono">{r.epcCode}</TableCell>
+                  <TableCell>{r.band || '—'}</TableCell>
+                  <TableCell className="font-mono">{r.boundAssetId ? '#' + r.boundAssetId : '—'}</TableCell>
+                  <TableCell>{r.battery || '—'}</TableCell>
+                  <TableCell><StatusTag domain="tag" value={r.status} /></TableCell>
+                  <TableCell>
+                    <ActionLinks>
+                      {tagActionsOf(r).map((act, idx) => (
+                        <span key={act} className="inline-flex items-center">
+                          {idx > 0 && <ActionSep />}
+                          <ActionLink onClick={() => actionRun(act, r)} label={actionLabel(act)} testId={`tag-${act}-${r.tagId}`} />
+                        </span>
+                      ))}
+                    </ActionLinks>
+                  </TableCell>
+                </TableRow>
+              ))}
+              {!rows.length && <TableStateRow colSpan={7} loading={busy} text={g.empty} />}
+            </TableBody>
+          </Table>
+        </div>
+        <CardFooter>
           <Pagination total={total} page={page} pageSize={pageSize}
             onPage={setPage} onSize={pickSize} {...pagerTexts(g)} />
-        </div>
-      </div>
+        </CardFooter>
+      </Card>
       {createOpen && <CreateTagDrawer onClose={() => setCreateOpen(false)} onSaved={load} />}
       {eventsTag && <TagEventsDrawer tag={eventsTag} onClose={() => setEventsTag(null)} />}
       {unbindRow && (

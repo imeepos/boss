@@ -6,16 +6,16 @@ import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { useConfirm } from '../../../components/ConfirmDialog'
 import { Drawer } from '../../../components/Drawer'
-import { Button } from '../../../components/ui/button'
 import { SimplePicker } from '../../../components/pickers/SimplePicker'
+import { ActionLink, ActionLinks, ActionSep, TableStateRow } from '../../../components/business'
 import { FormField } from '../../../components/business/form-field'
-import { ErrorBanner } from '../../../components/business/page-head'
+import { ErrorBanner, ToolbarButton } from '../../../components/business/page-head'
+import { SubmitButton } from '../../../components/business/submit-button'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../../components/ui/table'
 import type { SupplierRow } from '../types'
 import { buildSupplierPayload, canEnableSupplier, emptySupplierForm, supplierFormErr, type SupplierFormState } from './purchaseLogic'
 
 const input = 'h-8 w-full rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]'
-const smallBtn = 'h-7 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2 text-[12px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)] disabled:cursor-not-allowed disabled:opacity-50'
-const td = 'h-9 px-2 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)]'
 
 export function SuppliersDrawer({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
   const t = useT()
@@ -72,6 +72,7 @@ export function SuppliersDrawer({ onClose, onSaved }: { onClose: () => void; onS
   const disable = async (r: SupplierRow) => {
     const ok = await confirm(d.supDisableConfirm.replace('{name}', r.name), { danger: true, title: d.supDisable })
     if (!ok) return
+    setBusy(true)
     try {
       await apiFetch('/procurement/suppliers/' + r.id + '/disable', { method: 'POST' })
       toast.success(d.supDisable)
@@ -79,6 +80,8 @@ export function SuppliersDrawer({ onClose, onSaved }: { onClose: () => void; onS
       onSaved()
     } catch (e) {
       toast.error(e instanceof Error ? e.message : d.opFail)
+    } finally {
+      setBusy(false)
     }
   }
 
@@ -98,10 +101,17 @@ export function SuppliersDrawer({ onClose, onSaved }: { onClose: () => void; onS
     }
   }
 
+  const submitState = busy ? 'loading' : (error ? 'failed' : 'idle')
+  const submitLabels = { idle: editing ? d.save : d.supCreate, loading: d.submitting, success: d.supSaveOk, failed: d.opFail }
   const cols = [d.supName, d.supCode, d.supContact, d.supPhone, d.colStatus, d.colActions]
   return (
     <Drawer title={d.suppliersTitle} onClose={onClose} width={680}
-      footer={<Button variant="outline" size="sm" className="h-8 px-4 text-[13px]" onClick={onClose}>{d.cancel}</Button>}>
+      footer={
+        <>
+          <ToolbarButton onClick={onClose} disabled={busy}>{d.cancel}</ToolbarButton>
+          <SubmitButton state={submitState} labels={submitLabels} disabled={busy} onClick={submit} />
+        </>
+      }>
       <div className="flex flex-col gap-3">
         <div className="rounded-sm border border-[var(--shell-side-border)] p-3">
           <div className="mb-2 text-[13px] font-medium text-[var(--shell-heading)]">{editing ? d.supEdit : d.supCreate}</div>
@@ -118,46 +128,47 @@ export function SuppliersDrawer({ onClose, onSaved }: { onClose: () => void; onS
             </FormField>
             <FormField label={d.remark}><input className={input} placeholder={d.remark} value={form.remark} onChange={(e) => setForm({ ...form, remark: e.target.value })} /></FormField>
           </div>
-          <div className="mt-2 flex items-center gap-2">
-            <Button size="sm" className="h-8 px-4 text-[13px]" disabled={busy} onClick={submit}>{editing ? d.save : d.supCreate}</Button>
-            {editing && <button className={smallBtn} onClick={resetForm}>{d.cancel}</button>}
-          </div>
+          {editing && <div className="mt-2"><ToolbarButton onClick={resetForm} disabled={busy}>{d.cancel}</ToolbarButton></div>}
         </div>
         {error && <ErrorBanner message={error} />}
-        <div className="overflow-x-auto">
-            <table className="w-full border-collapse text-[13px]">
-              <thead>
-                <tr>{cols.map((x) => <th key={x} className="h-9 px-2 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr>
-              </thead>
-              <tbody>
-                {rows.map((r) => (
-                  <tr key={r.id}>
-                    <td className={td}>{r.name}</td>
-                    <td className={td + ' font-mono'}>{r.code}</td>
-                    <td className={td}>{r.contactName || '—'}</td>
-                    <td className={td}>{r.contactPhone || '—'}</td>
-                    <td className={td}>
-                      <span className={r.status === 'ENABLED' ? 'text-[var(--color-success)]' : 'text-[var(--shell-group-title)]'}>
-                        {r.status === 'ENABLED' ? d.supEnabled : d.supDisabled}
-                      </span>
-                    </td>
-                    <td className={td}>
-                      <span className="inline-flex items-center gap-2">
-                        <button className={smallBtn} disabled={busy} onClick={() => startEdit(r)}>{d.supEdit}</button>
-                        {r.status === 'ENABLED' && (
-                          <button className={smallBtn} disabled={busy} onClick={() => disable(r)}>{d.supDisable}</button>
-                        )}
-                        {canEnableSupplier(r.status) && (
-                          <button className={smallBtn} disabled={busy} onClick={() => enable(r)}>{d.supEnable}</button>
-                        )}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-                {!rows.length && <tr><td className={td + ' text-center'} colSpan={6}>{t.common.loading}</td></tr>}
-              </tbody>
-            </table>
-          </div>
+        <Table>
+          <TableHeader>
+            <TableRow>{cols.map((x) => <TableHead key={x}>{x}</TableHead>)}</TableRow>
+          </TableHeader>
+          <TableBody>
+            {rows.map((r) => (
+              <TableRow key={r.id}>
+                <TableCell>{r.name}</TableCell>
+                <TableCell className="font-mono">{r.code}</TableCell>
+                <TableCell>{r.contactName || '—'}</TableCell>
+                <TableCell>{r.contactPhone || '—'}</TableCell>
+                <TableCell>
+                  <span className={r.status === 'ENABLED' ? 'text-[var(--color-success)]' : 'text-[var(--shell-group-title)]'}>
+                    {r.status === 'ENABLED' ? d.supEnabled : d.supDisabled}
+                  </span>
+                </TableCell>
+                <TableCell>
+                  <ActionLinks>
+                    <ActionLink onClick={() => startEdit(r)} label={d.supEdit} testId={`sup-edit-${r.id}`} />
+                    {r.status === 'ENABLED' && (
+                      <>
+                        <ActionSep />
+                        <ActionLink onClick={() => disable(r)} label={d.supDisable} testId={`sup-disable-${r.id}`} />
+                      </>
+                    )}
+                    {canEnableSupplier(r.status) && (
+                      <>
+                        <ActionSep />
+                        <ActionLink onClick={() => enable(r)} label={d.supEnable} testId={`sup-enable-${r.id}`} />
+                      </>
+                    )}
+                  </ActionLinks>
+                </TableCell>
+              </TableRow>
+            ))}
+            {!rows.length && <TableStateRow colSpan={cols.length} loading={false} text={t.common.loading} />}
+          </TableBody>
+        </Table>
       </div>
     </Drawer>
   )

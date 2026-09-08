@@ -101,8 +101,13 @@ export default function AddressPage() {
 
   const remove = async (row: AddressRow) => {
     if (!(await confirmDialog(`${a.deleteConfirm}: ${row.name}?`, { danger: true }))) return
-    await apiFetch(`/addresses/${row.id}`, { method: 'DELETE' })
-      .catch(() => setError(a.deleteFail))
+    try {
+      await apiFetch(`/addresses/${row.id}`, { method: 'DELETE' })
+    } catch (e) {
+      // 删除被后端拒绝(如被引用 40900):原样透出接口原因,禁止吞成固定文案。
+      setError(e instanceof Error ? e.message : a.deleteFail)
+      return
+    }
     loadRoots()
   }
 

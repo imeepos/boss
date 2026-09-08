@@ -1,5 +1,6 @@
 // 采购单明细行编辑器(创建/编辑抽屉共用):物料/规格/数量/单价四列 + 添加明细。
 import { useT } from '../../../i18n'
+import { ToolbarButton } from '../../../components/business/page-head'
 import type { OrderItemRow } from '../types'
 
 const input = 'h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]'
@@ -12,7 +13,6 @@ export function OrderItemsEditor({ items, onChange, onDelete }: {
   const d = useT().pages.purchasePage
   const set = (idx: number, patch: Partial<OrderItemRow>) =>
     onChange(items.map((x, i) => (i === idx ? { ...x, ...patch } : x)))
-  const del = 'h-7 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2 text-[12px] text-[var(--color-danger)] hover:border-[var(--color-border-hover)] disabled:cursor-not-allowed disabled:opacity-50'
   return (
     <div>
       <div className="mb-2 text-[13px] text-[var(--shell-content-text)]">{d.items}</div>
@@ -31,18 +31,16 @@ export function OrderItemsEditor({ items, onChange, onDelete }: {
             onChange={(e) => set(idx, { unitAmount: Number(e.target.value) })}
             className={input + ' col-span-2'} />
           {onDelete && (
-            <button type="button" className={del + ' col-span-1'} disabled={items.length <= 1}
-              onClick={() => onDelete(idx)}>{d.delRow}</button>
+            <div className="col-span-1"><ToolbarButton
+              onClick={() => onDelete(idx)}
+              disabled={items.length <= 1}
+            >{d.delRow}</ToolbarButton></div>
           )}
         </div>
       ))}
-      <button
-        type="button"
-        className="h-7 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-3 text-[12px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]"
+      <ToolbarButton
         onClick={() => onChange([...items, { materialCode: '', spec: '', quantity: 1, unitAmount: 0 }])}
-      >
-        {d.addItem}
-      </button>
+      >{d.addItem}</ToolbarButton>
     </div>
   )
 }

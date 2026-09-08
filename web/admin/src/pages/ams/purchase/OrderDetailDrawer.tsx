@@ -4,10 +4,11 @@ import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { Drawer } from '../../../components/Drawer'
 import { StatusTag } from '../../../components/StatusTag'
+import { ErrorBanner, ToolbarButton } from '../../../components/business/page-head'
+import { TableStateRow } from '../../../components/business'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../../components/ui/table'
 import type { OrderItemRow } from '../types'
 import { fmtAmount, unwrapOrderDetail } from './purchaseLogic'
-
-const errBanner = 'rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]'
 
 interface OrderDetail {
   id: number
@@ -49,9 +50,9 @@ export function OrderDetailDrawer({ orderId, onClose }: { orderId: number; onClo
 
   return (
     <Drawer title={d.orderDetailTitle} onClose={onClose} width={640}
-      footer={<button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={onClose}>{t.pages.company.cancel}</button>}>
+      footer={<ToolbarButton onClick={onClose}>{t.pages.company.cancel}</ToolbarButton>}>
       {error ? (
-        <div className={errBanner}>{error}</div>
+        <div className="p-4"><ErrorBanner message={error} /></div>
       ) : busy || !detail ? (
         <div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{t.common.loading}</div>
       ) : (
@@ -70,27 +71,23 @@ export function OrderDetailDrawer({ orderId, onClose }: { orderId: number; onClo
               <Field label={d.dRemark} value={detail.remark ?? ''} />
             </div>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse text-[13px]">
-              <thead>
-                <tr>{d.detailItemCols.map((x) => <th key={x} className="h-9 px-2 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr>
-              </thead>
-              <tbody>
-                {(detail.items ?? []).map((i, idx) => (
-                  <tr key={idx}>
-                    <td className="h-9 px-2 whitespace-nowrap border-b border-[var(--shell-side-border)] font-mono text-[var(--shell-content-text)]">{i.materialCode}</td>
-                    <td className="h-9 px-2 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)]">{i.spec || '—'}</td>
-                    <td className="h-9 px-2 whitespace-nowrap border-b border-[var(--shell-side-border)] text-right text-[var(--shell-content-text)]">{i.quantity}</td>
-                    <td className="h-9 px-2 whitespace-nowrap border-b border-[var(--shell-side-border)] text-right text-[var(--shell-content-text)]">{fmtAmount(i.unitAmount)}</td>
-                    <td className="h-9 px-2 whitespace-nowrap border-b border-[var(--shell-side-border)] text-right text-[var(--shell-content-text)]">{i.receivedQty ?? 0}</td>
-                  </tr>
-                ))}
-                {!(detail.items ?? []).length && (
-                  <tr><td className="h-9 px-2 text-center text-[var(--shell-group-title)]" colSpan={d.detailItemCols.length}>{d.empty}</td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+          <Table>
+            <TableHeader>
+              <TableRow>{d.detailItemCols.map((x) => <TableHead key={x}>{x}</TableHead>)}</TableRow>
+            </TableHeader>
+            <TableBody>
+              {(detail.items ?? []).map((i, idx) => (
+                <TableRow key={idx}>
+                  <TableCell className="font-mono">{i.materialCode}</TableCell>
+                  <TableCell>{i.spec || '—'}</TableCell>
+                  <TableCell className="text-right">{i.quantity}</TableCell>
+                  <TableCell className="text-right">{fmtAmount(i.unitAmount)}</TableCell>
+                  <TableCell className="text-right">{i.receivedQty ?? 0}</TableCell>
+                </TableRow>
+              ))}
+              <TableStateRow colSpan={d.detailItemCols.length} loading={false} text={d.empty} />
+            </TableBody>
+          </Table>
         </div>
       )}
     </Drawer>

@@ -4,6 +4,7 @@ import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { Drawer } from '../../../components/Drawer'
 import { EmptyState } from '../../../components/business'
+import { ErrorBanner } from '../../../components/business/page-head'
 import type { TagEventRow } from '../types'
 
 const dotOf: Record<string, string> = {
@@ -35,7 +36,7 @@ export function TagEventsDrawer({ tag, onClose }: { tag: { tagId: number; tagNo:
   return (
     <Drawer title={g.eventsTitle.replace('{no}', tag.tagNo || '#' + tag.tagId)} onClose={onClose} width={480}>
       {error ? (
-        <div className="rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div>
+        <div className="p-4"><ErrorBanner message={error} /></div>
       ) : busy ? (
         <div className="py-8 text-center text-[13px] text-[var(--shell-group-title)]">{t.common.loading}</div>
       ) : !rows.length ? (

@@ -6,6 +6,8 @@ import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '../../../components/ui/dialog'
 import { useT } from '../../../i18n'
+import { ErrorBanner, ToolbarButton } from '../../../components/business/page-head'
+import { SubmitButton } from '../../../components/business/submit-button'
 import type { AssetRow, TagRow } from '../types'
 import { scrapConfirmErr, scrapReasonErr, type ScrapConfirmField } from './logic'
 
@@ -14,7 +16,6 @@ const refKey = 'text-[12px] text-[var(--shell-content-text)] shrink-0'
 const refVal = 'font-mono text-[13px] text-[var(--shell-heading)] break-all text-right'
 const refRow = 'flex items-center justify-between gap-3 border-b border-dashed border-[var(--shell-side-border)] py-1 text-[13px]'
 const errText = 'text-[11px] text-[var(--color-danger)]'
-const apiErrBox = 'rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]'
 
 type ATexts = ReturnType<typeof useT>['pages']['assetPage']
 export type ErrField = ScrapConfirmField | 'reason'
@@ -104,6 +105,9 @@ export function ScrapDialog({ asset, tag, onClose, onSaved }: {
     }
   }
 
+  const submitState = busy ? 'loading' : (apiError ? 'failed' : 'idle')
+  const submitLabels = { idle: a.scrapAction, loading: t.pages.account.submitting, success: a.scrapOk, failed: a.scrapAction }
+
   return (
     <Dialog open onOpenChange={(open) => { if (!open) onClose() }}>
       <DialogContent className='max-w-sm border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] p-0'>
@@ -116,13 +120,11 @@ export function ScrapDialog({ asset, tag, onClose, onSaved }: {
           <ScrapFields a={a} hasSn={hasSn} hasTag={hasTag} errField={errField} clear={() => setErrField('')}
             reason={reason} onReason={setReason} code={code} onCode={setCode}
             sn={sn} onSn={setSn} tagNo={tagNo} onTagNo={setTagNo} />
-          {apiError && <div className={apiErrBox}>{apiError}</div>}
+          {apiError && <ErrorBanner message={apiError} />}
         </div>
         <DialogFooter className='gap-2 border-t border-[var(--shell-side-border)] px-5 py-3 sm:space-x-0'>
-          <button className='h-8 min-w-20 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]' onClick={onClose}>{t.pages.company.cancel}</button>
-          <button className='h-8 min-w-20 cursor-pointer rounded-sm border-none bg-[var(--color-danger)] px-4 text-[13px] text-white hover:opacity-90' disabled={busy} onClick={submit}>
-            {busy ? t.pages.account.submitting : a.scrapAction}
-          </button>
+          <ToolbarButton onClick={onClose} disabled={busy}>{t.pages.company.cancel}</ToolbarButton>
+          <SubmitButton state={submitState} labels={submitLabels} disabled={busy} onClick={submit} />
         </DialogFooter>
       </DialogContent>
     </Dialog>

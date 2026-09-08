@@ -1,9 +1,10 @@
 // 服务端信息配置页:表格 CRUD(逻辑复用 lib/serverConfig);空列表时弹框引导配置。
 import { useEffect, useState } from 'react'
 import { useT } from '../../../i18n'
-import { PageHead, ToolbarButton } from '../../../components/business/page-head'
+import { PageHead, EmptyState, ToolbarButton } from '../../../components/business/page-head'
 import { Card } from '../../../components/ui/card'
 import { Badge } from '../../../components/ui/badge'
+import { Input } from '../../../components/ui/input'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/table'
 import {
   activeServerId,
@@ -17,9 +18,6 @@ import {
 import { useConfirm } from '../../../components/ConfirmDialog'
 import { toast } from 'sonner'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../../components/ui/dialog'
-
-const ACT_CLS = 'mr-2.5 border-none bg-none px-0 text-xs text-[var(--color-text-link)] cursor-pointer hover:underline'
-const DANGER_CLS = ACT_CLS + ' text-[var(--color-danger)]'
 
 export default function ServersPage() {
   const t = useT()
@@ -89,7 +87,7 @@ export default function ServersPage() {
         </div>
         {!items.length ? (
           <>
-            <p className="mb-3 text-xs text-[var(--shell-crumb-text)]">{t.pages.servers.gateHint}</p>
+            <EmptyState text={t.pages.servers.gateHint} />
             <div className="mt-3.5 flex items-center gap-2">
               <ToolbarButton primary onClick={openCreate}>{t.pages.servers.add}</ToolbarButton>
             </div>
@@ -115,9 +113,19 @@ export default function ServersPage() {
                       : <Badge>{t.pages.servers.ready}</Badge>}
                   </TableCell>
                   <TableCell>
-                    {active !== it.id && <button className={ACT_CLS} onClick={() => use(it)}>{t.pages.servers.use}</button>}
-                    <button className={ACT_CLS} onClick={() => openEdit(it)}>{t.pages.servers.edit}</button>
-                    <button className={DANGER_CLS} onClick={() => del(it)}>{t.pages.servers.delete}</button>
+                    <button
+                      className="mr-2.5 cursor-pointer border-none bg-none px-0 text-xs text-[var(--color-text-link)] hover:underline"
+                      onClick={() => use(it)}
+                      disabled={active === it.id}
+                    >{t.pages.servers.use}</button>
+                    <button
+                      className="mr-2.5 cursor-pointer border-none bg-none px-0 text-xs text-[var(--color-text-link)] hover:underline"
+                      onClick={() => openEdit(it)}
+                    >{t.pages.servers.edit}</button>
+                    <button
+                      className="mr-2.5 cursor-pointer border-none bg-none px-0 text-xs text-[var(--color-danger)] hover:underline"
+                      onClick={() => del(it)}
+                    >{t.pages.servers.delete}</button>
                   </TableCell>
                 </TableRow>
               ))}
@@ -139,8 +147,7 @@ export default function ServersPage() {
             <dl className="mb-4 grid grid-cols-[80px_1fr] gap-x-3 gap-y-2 text-[13px]">
               <dt className="text-[var(--shell-crumb-text)]">{t.pages.servers.colName}</dt>
               <dd className="m-0">
-                <input
-                  className="h-8 w-full rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-xs text-[var(--shell-input-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--shell-input-border-focus)]"
+                <Input
                   value={editing.name}
                   onChange={(e) => setEditing({ ...editing, name: e.target.value })}
                   placeholder={t.pages.servers.namePlaceholder}
@@ -149,8 +156,7 @@ export default function ServersPage() {
               </dd>
               <dt className="text-[var(--shell-crumb-text)]">{t.pages.servers.colUrl}</dt>
               <dd className="m-0">
-                <input
-                  className="h-8 w-full rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-xs text-[var(--shell-input-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--shell-input-border-focus)]"
+                <Input
                   value={editing.baseUrl}
                   onChange={(e) => setEditing({ ...editing, baseUrl: e.target.value })}
                   placeholder={t.pages.servers.urlPlaceholder}

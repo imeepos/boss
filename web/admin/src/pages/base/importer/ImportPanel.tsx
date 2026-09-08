@@ -2,8 +2,10 @@
 // 修复项:地址导入包 {rows} 信封、geo 结果按 countries/subdivisions 计数、后端错误信息透传。
 import { useMemo, useRef, useState, type DragEvent } from 'react'
 import { apiFetch } from '../../../api/client'
-import { ToolbarButton } from '../../../components/business/page-head'
+import { ToolbarButton, ErrorBanner } from '../../../components/business/page-head'
 import { Badge } from '../../../components/ui/badge'
+import { Textarea } from '../../../components/ui/textarea'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/table'
 import type { Translations } from '../../../i18n/types'
 import {
   MAX_BYTES, PREVIEW_ROWS, buildPreview, parseJson, resultCount, templateJson,
@@ -19,10 +21,7 @@ function excelErrorText(r: Extract<ExcelParseResult, { ok: false }>, text: Text)
   return text.excelBadRow.replace('{sheet}', r.sheet ?? '').replace('{row}', String(r.row ?? ''))
 }
 
-const AREA_CLS = 'min-h-35 resize-y rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-3 py-2 font-mono text-xs text-[var(--shell-input-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--shell-input-border-focus)]'
 const DROP_CLS = 'cursor-pointer rounded-sm border border-dashed border-[var(--shell-input-border)] bg-[var(--shell-menu-hover-bg)] px-4 py-6 text-center text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-focus)]'
-const TH = 'h-9 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]'
-const TD = 'h-9 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)]'
 
 type Text = Translations['pages']['importer']
 
@@ -171,8 +170,8 @@ export function ImportPanel({ kind, title, hint, endpoint, noPerm, text, onImpor
         onPick={(f) => readFile(f)}
       />
       {advanced && (
-        <textarea
-          className={AREA_CLS}
+        <Textarea
+          className="min-h-35 font-mono text-xs"
           value={payload}
           placeholder={text.pastePlaceholder}
           onChange={(e) => setPayload(e.target.value)}
@@ -197,16 +196,16 @@ export function ImportPanel({ kind, title, hint, endpoint, noPerm, text, onImpor
           </p>
           {kind === 'addr' ? (
             <div className="mt-2 overflow-x-auto">
-              <table className="w-full border-collapse text-[13px]">
-                <thead>
-                  <tr>{text.addrColumns.map((c) => <th key={c} className={TH}>{c}</th>)}</tr>
-                </thead>
-                <tbody>
+              <Table>
+                <TableHeader>
+                  <TableRow>{text.addrColumns.map((c) => <TableHead key={c}>{c}</TableHead>)}</TableRow>
+                </TableHeader>
+                <TableBody>
                   {preview.model.rows.map((cells, i) => (
-                    <tr key={i}>{cells.map((v, j) => <td key={j} className={TD}>{v}</td>)}</tr>
+                    <TableRow key={i}>{cells.map((v, j) => <TableCell key={j}>{v}</TableCell>)}</TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           ) : (
             <ul className="m-0 mt-1 list-none px-3 pb-2 text-xs text-[var(--shell-content-text)]">
@@ -222,13 +221,13 @@ export function ImportPanel({ kind, title, hint, endpoint, noPerm, text, onImpor
           )}
         </div>
       )}
-      <div className="mt-3 flex items-center gap-3">
+      <div className="mt-3 flex flex-wrap items-center gap-3">
         <ToolbarButton primary disabled={noPerm || !preview?.ok || busy} onClick={run}>
           {busy ? text.importing : text.importBtn}
         </ToolbarButton>
         {result && <Badge variant="success">{result}</Badge>}
-        {error && <span className="text-xs text-[var(--color-danger)]">{error}</span>}
       </div>
+      {error && <div className="mt-2"><ErrorBanner message={error} /></div>}
     </div>
   )
 }

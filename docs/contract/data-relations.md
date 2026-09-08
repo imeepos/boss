@@ -296,3 +296,4 @@ ODN 层      geo_subdivision → odn_region_code → odn_city_code → grid/faci
 
 1. **归属链公司名**：GET /customers 行仅回 legalEntityId/regionName,不含法人名称;客户详情抽屉公司名前端靠 /legal-entities 全量查找兜底(失败降级 #id 且 console.warn,web/admin pages/bss/customer CustomerDetailDrawer)。需要:行内直接回 legalEntityName 或批量查询端点。(2026-09-08,bss 批次提请)
 2. **详情接口名称字段缺失**：worker 详情缺班组名(groupName)/区域名(regionName)、customer 详情区域兜底仅有 regionId——detailItems 渲染 #id 裸编号。需要:详情响应补名称字段;前端 detailItems 消化见 docs/admin/selector-audit.md §二.4。(2026-09-08,W0 选择器审计提请)
+3. **存储配置缺测试连接端点**：GET/PUT /storage-config 与 POST /storage-config/rotate-secret 已有(permCode menu:params),但无 `/storage-config/test` 一类连通性自检(对比 auth/sms/push/realid/stripe 五组配置页均有 POST */test);MinIO 凭据填错只能等首次附件上传失败才暴露。需要:POST /storage-config/test(校验 endpoint/accessKey/secretKey/bucket/useSSL 可达,零副作用)。前端本轮已按现契约不动,页面在 fields.md §1.6.3 范围。(2026-09-08,base 批次提请)

@@ -3,15 +3,13 @@ import { useCallback, useEffect, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { StatusTag } from '../../../components/StatusTag'
-import { TableStateRow } from '../../../components/business'
+import { ActionLink, TableStateRow, ToolbarButton } from '../../../components/business'
+import { ErrorBanner } from '../../../components/business/page-head'
+import { Card } from '../../../components/ui/card'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../../components/ui/table'
 import { type ReceiptRow } from '../types'
 import { canRejectReceipt } from './purchaseLogic'
 import { RejectReceiptDrawer } from './RejectReceiptDrawer'
-
-const th = 'h-9 px-2 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]'
-const td = 'h-9 px-2 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]'
-const smallBtn = 'h-7 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2 text-[12px] text-[var(--color-danger)] hover:border-[var(--color-border-hover)] disabled:cursor-not-allowed disabled:opacity-50'
-const errBanner = 'rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]'
 
 export function ReceiptsPanel() {
   const t = useT()
@@ -33,46 +31,39 @@ export function ReceiptsPanel() {
 
   const cols = [d.colReceiptNo, d.colOrderNo, d.colStatus, d.colReceivedAt, d.colActions]
   return (
-    <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
+    <Card>
       <div className="flex flex-wrap items-center gap-2 p-4">
         <div className="text-[13px] font-medium text-[var(--shell-heading)]">{d.receiptsTitle}</div>
         <span className="spacer" />
-        <button type="button" onClick={load}
-          className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]">
-          {t.pages.audit.refresh}
-        </button>
+        <ToolbarButton disabled={busy} onClick={load}>{t.pages.audit.refresh}</ToolbarButton>
       </div>
-      {error ? (
-        <div className="mx-4 mb-3"><div className={errBanner}>{error}</div></div>
-      ) : (
-        <div className="overflow-x-auto px-4 pb-4">
-          <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
-            <thead><tr>{cols.map((x) => <th key={x} className={th}>{x}</th>)}</tr></thead>
-            <tbody>
-              {rows.map((r) => (
-                <tr key={r.id}>
-                  <td className={td + ' font-mono'}>{r.receiptNo || '#' + r.id}</td>
-                  <td className={td + ' font-mono'}>{r.orderNo || '#' + r.orderId}</td>
-                  <td className={td}><StatusTag domain="receipt" value={r.status} /></td>
-                  <td className={td}>{r.receivedAt || '—'}</td>
-                  <td className={td}>
-                    <span className="inline-flex items-center gap-2">
-                      {canRejectReceipt(r.status) && (
-                        <button className={smallBtn} disabled={busy} onClick={() => setRejecting(r)}>{d.reject}</button>
-                      )}
-                      {!canRejectReceipt(r.status) && <span className="text-[var(--shell-group-title)]">—</span>}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-              {!rows.length && <TableStateRow colSpan={5} loading={busy} text={d.receiptsEmpty} />}
-            </tbody>
-          </table>
-        </div>
-      )}
+      {error && <ErrorBanner message={error} />}
+      <div className="px-4 pb-4">
+        <Table>
+          <TableHeader>
+            <TableRow>{cols.map((x) => <TableHead key={x}>{x}</TableHead>)}</TableRow>
+          </TableHeader>
+          <TableBody>
+            {rows.map((r) => (
+              <TableRow key={r.id}>
+                <TableCell className="font-mono">{r.receiptNo || '#' + r.id}</TableCell>
+                <TableCell className="font-mono">{r.orderNo || '#' + r.orderId}</TableCell>
+                <TableCell><StatusTag domain="receipt" value={r.status} /></TableCell>
+                <TableCell>{r.receivedAt || '—'}</TableCell>
+                <TableCell>
+                  {canRejectReceipt(r.status)
+                    ? <ActionLink onClick={() => setRejecting(r)} label={d.reject} testId={`receipt-reject-${r.id}`} />
+                    : <span className="text-[var(--shell-group-title)]">—</span>}
+                </TableCell>
+              </TableRow>
+            ))}
+            {!rows.length && <TableStateRow colSpan={5} loading={busy} text={d.receiptsEmpty} />}
+          </TableBody>
+        </Table>
+      </div>
       {rejecting && (
         <RejectReceiptDrawer receipt={rejecting} onClose={() => setRejecting(null)} onSaved={load} />
       )}
-    </div>
+    </Card>
   )
 }

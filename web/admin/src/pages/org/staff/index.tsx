@@ -17,6 +17,7 @@ import { PostFormDrawer, emptyPostForm, type PostFormValues } from '../post/Post
 import { AccountFormDrawer } from '../../base/account/AccountForm'
 import { buildAccountPayload, validateAccount, type AccountFormValues } from '../../base/account/form'
 import type { AccountRow } from '../../base/account/list'
+import type { SubmitState } from '../../../components/business/submit-button'
 
 interface EntityRow { id: number; code: string; name: string }
 interface DeptRow { id: number; legalEntityId: number; name: string }
@@ -30,6 +31,7 @@ export default function StaffOrgPage() {
   const [accounts, setAccounts] = useState<AccountRow[]>([])
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  const [submitState, setSubmitState] = useState<SubmitState>('idle')
   const [treeKw, setTreeKw] = useState('')
   const [selection, setSelection] = useState<Selection | null>(null)
   const [deptForm, setDeptForm] = useState<DeptFormValues | null>(null)
@@ -97,14 +99,24 @@ export default function StaffOrgPage() {
     setPostForm(null)
   }, t.pages.staff.saved)
 
-  const submitMember = () => guard(async () => {
-    if (!memberForm) return
+  const submitMember = () => {
+    if (busy || !memberForm) return
     if (validateAccount(memberForm, Boolean(memberForm.id)).length) return
-    const body = buildAccountPayload(memberForm, Boolean(memberForm.id))
-    if (memberForm.id) await apiFetch(`/accounts/${memberForm.id}`, { method: 'PUT', body })
-    else await apiFetch('/accounts', { method: 'POST', body })
-    setMemberForm(null)
-  }, t.pages.staff.saved)
+    setBusy(true)
+    setFormError('')
+    setSubmitState('loading')
+    guard(async () => {
+      const body = buildAccountPayload(memberForm, Boolean(memberForm.id))
+      if (memberForm.id) await apiFetch(`/accounts/${memberForm.id}`, { method: 'PUT', body })
+      else await apiFetch('/accounts', { method: 'POST', body })
+      setMemberForm(null)
+      setSubmitState('success')
+      setTimeout(() => setSubmitState('idle'), 1500)
+    }, t.pages.staff.saved).catch(() => {
+      setSubmitState('failed')
+      setTimeout(() => setSubmitState((s) => (s === 'failed' ? 'idle' : s)), 2500)
+    })
+  }
 
   const toggleMember = async (r: AccountRow) => {
     const msg = r.status === 1
@@ -206,6 +218,7 @@ export default function StaffOrgPage() {
         onSubmit={submitMember}
         busy={busy}
         submitError={memberForm ? formError : ''}
+        submitState={submitState}
       />
     </div>
   )

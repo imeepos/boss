@@ -4,7 +4,9 @@ import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { Drawer } from '../../../components/Drawer'
-import { ErrorBanner } from '../../../components/business/page-head'
+import { FormField } from '../../../components/business/form-field'
+import { ErrorBanner, ToolbarButton } from '../../../components/business/page-head'
+import { SubmitButton } from '../../../components/business/submit-button'
 import { unwrapOrderDetail } from './purchaseLogic'
 import type { OrderRow, ReceiptRow } from '../types'
 
@@ -63,14 +65,15 @@ export function ConfirmReceiptDrawer({
     }
   }
 
+  const submitState = busy ? 'loading' : (err ? 'failed' : 'idle')
+  const submitLabels = { idle: d.confirmReceipt, loading: d.submitting, success: d.confirmOk, failed: d.opFail }
+
   return (
     <Drawer title={`${d.confirmReceipt} · ${order.procurementNo}`} onClose={onClose}
       footer={
         <>
-          <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={onClose}>{d.cancel}</button>
-          <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" disabled={busy} onClick={submit}>
-            {busy ? d.submitting : d.confirmReceipt}
-          </button>
+          <ToolbarButton onClick={onClose} disabled={busy}>{d.cancel}</ToolbarButton>
+          <SubmitButton state={submitState} labels={submitLabels} disabled={busy} onClick={submit} />
         </>
       }>
       <div className="flex flex-col gap-3.5">
@@ -80,17 +83,15 @@ export function ConfirmReceiptDrawer({
             {d.historyReceipt}: {receipts.map((r) => `${r.receiptNo}(` + (t.common.statusTags[`receipt.${r.status}`] || r.status) + `)`).join(', ')}
           </div>
         )}
-        <div className="flex flex-col gap-1.5">
-          <label>{d.batchCode}</label>
+        <FormField label={d.batchCode}>
           <input value={batchCode} onChange={(e) => setBatchCode(e.target.value)}
             placeholder={d.phBatchCode}
             className={input} />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <label>{d.batchName}</label>
+        </FormField>
+        <FormField label={d.batchName}>
           <input value={batchName} onChange={(e) => setBatchName(e.target.value)}
             className={input} />
-        </div>
+        </FormField>
         <div>
           <div className="mb-2 text-[13px] text-[var(--shell-content-text)]">{d.items}</div>
           {items.map((it, idx) => (

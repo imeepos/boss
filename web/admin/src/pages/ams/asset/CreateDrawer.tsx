@@ -5,7 +5,8 @@ import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { Drawer } from '../../../components/Drawer'
 import { useT } from '../../../i18n'
-import { ErrorBanner } from '../../../components/business/page-head'
+import { ErrorBanner, ToolbarButton } from '../../../components/business/page-head'
+import { SubmitButton } from '../../../components/business/submit-button'
 import type { AssetBatchRow, AssetModelRow, TagRow } from '../types'
 import { AssetFormFields } from './AssetFormFields'
 import { buildCreatePayload, emptyForm, formErrOf, modelLabel, typeValue, type AssetFormState, type FormErr } from './logic'
@@ -50,14 +51,15 @@ export function CreateDrawer({ onClose, onSaved }: { onClose: () => void; onSave
     }
   }
 
+  const submitState = busy ? 'loading' : (apiError ? 'failed' : 'idle')
+  const submitLabels = { idle: t.pages.company.save, loading: t.pages.account.submitting, success: t.pages.company.save, failed: a.loadFail }
+
   return (
     <Drawer title={a.createTitle} onClose={onClose}
       footer={
         <>
-          <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={onClose}>{t.pages.company.cancel}</button>
-          <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" disabled={busy} onClick={submit}>
-            {busy ? t.pages.account.submitting : t.pages.company.save}
-          </button>
+          <ToolbarButton onClick={onClose} disabled={busy}>{t.pages.company.cancel}</ToolbarButton>
+          <SubmitButton state={submitState} labels={submitLabels} disabled={busy} onClick={submit} />
         </>
       }>
       <AssetFormFields form={form}
@@ -76,7 +78,7 @@ export function CreateDrawer({ onClose, onSaved }: { onClose: () => void; onSave
       {srcErr && (
         <div className="flex items-center gap-2 text-[12px] text-[var(--color-danger)]">
           <span>{a.loadFail}</span>
-          <button type="button" className="cursor-pointer border-none bg-none p-0 text-[11px] text-[var(--color-text-link)] hover:underline" onClick={loadSrc}>{t.pages.pickers.common.retry}</button>
+          <ToolbarButton onClick={loadSrc}>{t.pages.pickers.common.retry}</ToolbarButton>
         </div>
       )}
       {apiError && <ErrorBanner message={apiError} />}
