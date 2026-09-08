@@ -563,3 +563,6 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 【已犯 1 次】docker build 经管道 tail 判成败再犯(SERVER_BUILD_OK 假阳性):远程构建一律显式 rc + 日志落盘后 tail。
 - 【已犯 1 次】共享主树目录下长文件多次 edit 内容/行号漂移(read 视图与磁盘不一致):重构类修改改用「python fixer 文件 + bash 执行 + grep 验证」三段式,锚定内容而非行号。
 - 经验:CI runner 宿主故障时的手动等价部署链:git archive/rsync 源码→构建机;上下文必须最小化(全仓 5-9G 上下文会令 buildkit grpc Canceled);DOCKER_BUILDKIT=0 legacy builder 免联网核对基础镜像;缺的基镜像走 daocloud 镜像源 pull 后打 tag。
+- 当 import 报 TS2305「module has no exported member」时,修复是:grep 该模块的全部 export 行,再 grep 全域同款 import 一次改完;不要按记忆猜 re-export 清单(pages/org/shared 只兼容导出 PageHead/pagerTexts/DetailDrawer/Empty,ErrorBanner/ToolbarButton/IdRef 在 components/business)。
+- 当 cdp-capture 的 --eval 打印 {} 而非预期 JSON 时,修复是:探针表达式一律包 try/catch 返回 'ERR:'+e.message——异常会被宿主打印成 {},像空数据;另外每次 cdp-admin-capture 都是新浏览器实例,跨 eval 依赖页面状态的流程必须压进同一次 invoke 的连续 --eval。
+- 当验收要求「组件采用」批量迁移时,修复是:先盘点共享组件真实公开接口(components/business/index.ts 的 export 全表),写一页锚定后,后续页面按同一 import 模板抄,不再即兴组 import。

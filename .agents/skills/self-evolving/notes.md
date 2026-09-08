@@ -2195,3 +2195,8 @@
 - 三次返工根因:分段草稿只落了后半段(py_compile 不拦运行时 NameError,误以为完整);此后编辑基于幻象读内容反复错位——长文件修复一律 python fixer 脚本(base64 传块)+bash grep 验证,不信任 read 缓存视图。
 - 真实代码 bug 三个:AcceptSurvey 只占位未流转 status;NULLIF($n,0) 使坐标参数被推断为 integer;000213 reported_by 外键 accounts 在 WORKER 代次下 23503(加代次列必须同步松绑旧外键)。都是 102 真环境才暴露,单测全绿的教训:SQL 参数类型/外键类缺陷必须有真库集成验收。
 - 下次开工前重读:红线11(引号穿层)+红线24(管道掩码退出码,本次 SERVER_BUILD_OK 假阳性再犯)+红线13(长任务后台跑)。
+
+## 2026-09-08 Wave1 boss 域体验打磨轮(10 页面群 33 文件,分支 feat/ux-boss)
+- 哪个坑浪费了最多时间? 同一个 import 错误连犯 6 次:把 ErrorBanner/ToolbarButton/IdRef 从 pages/org/shared 导入(它只导出 PageHead/pagerTexts/DetailDrawer/Empty),这仨实际在 components/business——每犯一次就是一轮 typecheck+修复。org/shared 的注释写着「已迁移到 components/business,此处保留兼容导出」,但兼容导出清单里没有这几个,凭印象猜导出面必炸。
+- skill 有没有提前警告? 部分有:红线 4(edit 对称性)与红线 14(发车前自检)避免了别的坑;但「跨文件复用 import 前先 grep 该模块的 export 清单」无预警,本轮喂回 lessons。
+- 重来一次我会怎么做? ①第一次 typecheck 报 TS2305 后应立即 grep components/business/index.ts 的 export 全表,并 grep 全域还有几处同样的错误 import 一次修完(tsc 一次只肯报前几个文件,后面被 tail 掩码又多跑两轮);②cdp-admin-capture 每次 invoke 都是全新浏览器,跨 eval 有状态的 UI 流程必须压进同一次 invoke 的多个 --eval;③eval 里 async IIFE 忘 try/catch 时异常表现为打印 {},与「组件没渲染」难区分——探针一律包 try/catch 返回 ERR:。
