@@ -57,10 +57,15 @@ export function CountryPanel() {
   }
 
   const toggle = async (row: CountryRow) => {
-    await apiFetch(`/geo/countries/${row.alpha2}/active`, {
-      method: 'PUT',
-      body: { active: !row.isActive },
-    }).catch(() => setError(g.saveFail))
+    try {
+      await apiFetch(`/geo/countries/${row.alpha2}/active`, {
+        method: 'PUT',
+        body: { active: !row.isActive },
+      })
+    } catch (e) {
+      setError(e instanceof Error ? e.message : g.saveFail)
+      return
+    }
     load()
   }
 

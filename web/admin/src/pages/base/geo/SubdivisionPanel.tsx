@@ -70,9 +70,14 @@ export function SubdivisionPanel() {
   useEffect(load, [load])
 
   const toggle = async (row: SubdivRow) => {
-    await apiFetch(`/geo/subdivisions/${row.code}/active`, {
-      method: 'PUT', body: { active: !row.isActive },
-    }).catch(() => setError(g.saveFail))
+    try {
+      await apiFetch(`/geo/subdivisions/${row.code}/active`, {
+        method: 'PUT', body: { active: !row.isActive },
+      })
+    } catch (e) {
+      setError(e instanceof Error ? e.message : g.saveFail)
+      return
+    }
     load()
   }
 
