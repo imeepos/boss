@@ -5,6 +5,7 @@ import { apiFetch } from '../../../api/client'
 import { useQueryState } from '../../../lib/useQueryState'
 import { useT } from '../../../i18n'
 import { PageHead, pagerTexts } from '../../org/shared'
+import { ErrorBanner, ToolbarButton, IdRef } from '../../../components/business'
 import { StatusTag } from '../../../components/StatusTag'
 import { Pagination } from '../../../components/Pagination'
 import { Drawer } from '../../../components/Drawer'
@@ -15,6 +16,20 @@ import { ResourcePicker } from '../../../components/ResourcePicker'
 import { searchWorkers } from '../../../api/pickers'
 import { TableStateRow } from '../../../components/business'
 import { TabBar } from '../../../components/business/tab-bar'
+import { Card } from '../../../components/ui/card'
+import { Input } from '../../../components/ui/input'
+import { Button } from '../../../components/ui/button'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/table'
+
+/** 行内动作链接:busy 提交中禁用。 */
+function RowAction({ label, disabled, onClick }: { label: string; disabled?: boolean; onClick: () => void }) {
+  return (
+    <button type="button" disabled={disabled} onClick={onClick}
+      className="cursor-pointer border-none bg-none px-0 text-xs text-[var(--color-text-link)] hover:underline disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:no-underline">
+      {label}
+    </button>
+  )
+}
 
 export default function DispatchPage() {
   const t = useT()
@@ -35,12 +50,13 @@ export default function DispatchPage() {
   const [reason, setReason] = useState('')
   const [formError, setFormError] = useState('')
 
-  const load = (key: string) => {
+  // wf:师傅筛选触发时状态未进闭包,显式带参(与订单页同款 stale-closure 防线)。
+  const load = (key: string, wf?: string) => {
     setError('')
     setBusy(true)
     const req = key === 'pool' ? apiFetch<{ items: DispatchTicketRow[] }>('/dispatch/pool')
       : key === 'mine'
-        ? apiFetch<{ items: DispatchTicketRow[] }>('/dispatch/my-tickets', { query: { workerId: workerFilter || undefined } })
+        ? apiFetch<{ items: DispatchTicketRow[] }>('/dispatch/my-tickets', { query: { workerId: (wf ?? workerFilter) || undefined } })
         : apiFetch<{ items: DispatchTransferRow[] }>('/dispatch/transfers')
     req.then((x) => {
       const items = (x as { items?: DispatchTicketRow[] & DispatchTransferRow[] } | null)?.items ?? []
@@ -90,10 +106,27 @@ export default function DispatchPage() {
   const slice = pageSlice<DispatchTicketRow | DispatchTransferRow>(filtered, page, pageSize)
   const count = filtered.length
 
+  const updateWorkerFilter = (v: string) => {
+    setWorkerFilter(v)
+    setPage(1)
+    load('mine', v) // 筛选即查
+  }
+
+  const ticketHead = (
+    <TableHeader>
+      <TableRow>{d.ticketColumns.map((x) => <TableHead key={x}>{x}</TableHead>)}</TableRow>
+    </TableHeader>
+  )
+  const transferHead = (
+    <TableHeader>
+      <TableRow>{d.transferColumns.map((x) => <TableHead key={x}>{x}</TableHead>)}</TableRow>
+    </TableHeader>
+  )
+
   return (
     <div>
       <PageHead title={d.title} desc={d.desc} />
-      <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
+      <Card>
         <TabBar
           tabs={[{ key: 'pool', label: d.tabPool }, { key: 'mine', label: d.tabMine }, { key: 'transfers', label: d.tabTransfers }]}
           value={tab}
@@ -103,7 +136,7 @@ export default function DispatchPage() {
           {tab === 'mine' && (
             <ResourcePicker
               value={workerFilter}
-              onChange={(v) => { setWorkerFilter(v); setPage(1) }}
+              onChange={updateWorkerFilter}
               search={searchWorkers}
               toOption={(w) => ({ value: String(w.id), label: `${w.name} · ${w.staffNo}` })}
               ariaLabel={d.filterWorker}
@@ -112,76 +145,70 @@ export default function DispatchPage() {
               errorText={d.loadFail}
             />
               )}
-              <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={() => load(tab)}>{t.pages.audit.refresh}</button>
+              <ToolbarButton disabled={busy} onClick={() => load(tab)}>{t.pages.audit.refresh}</ToolbarButton>
             </div>
           }
         />
-        {error && <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div>}
+        {error && <ErrorBanner message={error} />}
         {tab !== 'transfers' ? (
-          <div className="overflow-x-auto px-4 pb-4">
-            <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
-              <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{d.ticketColumns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
-              <tbody>
+          <div className="px-4 pb-4">
+            <Table>
+              {ticketHead}
+              <TableBody>
                 {(slice as DispatchTicketRow[]).map((x) => (
-                  <tr key={x.ticketId}>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.ticketNo}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]" title={'orderId=' + x.orderId}>#{x.orderId}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.workerName || (x.workerId ? `#${x.workerId}` : '—')}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.groupName || '—'}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.regionName || '—'}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><StatusTag domain="ticket" value={x.status} /></td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">
-                      <span className="inline-flex items-center">
-                        {x.workerId === 0 ? (
-                          <button disabled={busy} onClick={() => { setAct({ mode: 'assign', ticket: x }); setMasterId(''); setPicked(null); setFormError('') }}>
-                            {d.assign}
-                          </button>
-                        ) : (
-                          <button disabled={busy} onClick={() => { setAct({ mode: 'transfer', ticket: x }); setMasterId(''); setPicked(null); setReason(''); setFormError('') }}>
-                            {d.transfer}
-                          </button>
-                        )}
-                      </span>
-                    </td>
-                  </tr>
+                  <TableRow key={x.ticketId}>
+                    <TableCell>{x.ticketNo}</TableCell>
+                    <TableCell><IdRef value={x.orderId} /></TableCell>
+                    <TableCell>{x.workerName || (x.workerId ? `#${x.workerId}` : '—')}</TableCell>
+                    <TableCell>{x.groupName || '—'}</TableCell>
+                    <TableCell>{x.regionName || '—'}</TableCell>
+                    <TableCell><StatusTag domain="ticket" value={x.status} /></TableCell>
+                    <TableCell>
+                      {x.workerId === 0 ? (
+                        <RowAction label={d.assign} disabled={busy} onClick={() => { setAct({ mode: 'assign', ticket: x }); setMasterId(''); setPicked(null); setFormError('') }} />
+                      ) : (
+                        <RowAction label={d.transfer} disabled={busy} onClick={() => { setAct({ mode: 'transfer', ticket: x }); setMasterId(''); setPicked(null); setReason(''); setFormError('') }} />
+                      )}
+                    </TableCell>
+                  </TableRow>
                 ))}
                 {!slice.length && <TableStateRow colSpan={7} loading={busy} text={d.empty} />}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         ) : (
-          <div className="overflow-x-auto px-4 pb-4">
-            <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
-              <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{d.transferColumns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
-              <tbody>
+          <div className="px-4 pb-4">
+            <Table>
+              {transferHead}
+              <TableBody>
                 {(slice as DispatchTransferRow[]).map((x) => (
-                  <tr key={x.id}>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]" title={'transferId=' + x.id}>#{x.id}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]" title={'ticketId=' + x.ticketId}>#{x.ticketId}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.fromWorkerName || (x.fromWorkerId ? `#${x.fromWorkerId}` : '—')}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.toWorkerName || (x.toWorkerId ? `#${x.toWorkerId}` : '—')}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.reason || '—'}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{fmtTime(x.transferredAt)}</td>
-                  </tr>
+                  <TableRow key={x.id}>
+                    <TableCell><IdRef value={x.id} /></TableCell>
+                    <TableCell><IdRef value={x.ticketId} /></TableCell>
+                    <TableCell>{x.fromWorkerName || (x.fromWorkerId ? `#${x.fromWorkerId}` : '—')}</TableCell>
+                    <TableCell>{x.toWorkerName || (x.toWorkerId ? `#${x.toWorkerId}` : '—')}</TableCell>
+                    <TableCell>{x.reason || '—'}</TableCell>
+                    <TableCell>{fmtTime(x.transferredAt)}</TableCell>
+                  </TableRow>
                 ))}
                 {!slice.length && <TableStateRow colSpan={6} loading={busy} text={d.empty} />}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         )}
         <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
           <Pagination total={count} page={page} pageSize={pageSize}
-            onPage={setPage} onSize={setPageSize} {...pagerTexts(d)} />
+            onPage={setPage} onSize={(s) => { setPageSize(s); setPage(1) }} {...pagerTexts(d)} />
         </div>
-      </div>
+      </Card>
       {act && (
         <Drawer title={act.mode === 'assign' ? d.assign : d.transfer} onClose={() => setAct(null)}
           footer={
             <>
-              <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={() => setAct(null)}>{t.pages.company.cancel}</button>
-              <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" disabled={busy} onClick={submit}>
+              <Button variant="outline" size="sm" onClick={() => setAct(null)}>{t.pages.company.cancel}</Button>
+              <Button size="sm" disabled={busy} onClick={submit}>
                 {busy ? t.pages.account.submitting : t.pages.company.save}
-              </button>
+              </Button>
             </>
           }>
           <div className="flex flex-col gap-3.5">
@@ -197,11 +224,10 @@ export default function DispatchPage() {
             {act.mode === 'transfer' && (
               <div className="flex flex-col gap-1.5">
                 <label><span className="mr-0.5 text-[var(--color-danger)]">*</span>{d.fReason}</label>
-                <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" value={reason} placeholder={d.pReason}
-                  onChange={(e) => setReason(e.target.value)} />
+                <Input value={reason} placeholder={d.pReason} onChange={(e) => setReason(e.target.value)} />
               </div>
             )}
-            {formError && <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]" style={{ margin: 0 }}>{formError}</div>}
+            {formError && <div className="rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] break-all text-[var(--color-danger)]">{formError}</div>}
           </div>
         </Drawer>
       )}

@@ -113,10 +113,13 @@ export function WorkerPicker({ selectedId, onSelect }: {
           const perf = perfs.get(w.id)
           const load = loads.get(w.id)
           const on = String(w.id) === selectedId
+          // 离职师傅后端 workerAssignable 拒收:置灰禁选,免得必失败的提交。
+          const off = w.status !== 1
           return (
             <button
               key={w.id}
-              className={`${CARD} ${on ? CARD_ON : CARD_IDLE}`}
+              className={`${CARD} ${on ? CARD_ON : CARD_IDLE} ${off ? 'cursor-not-allowed opacity-50' : ''}`}
+              disabled={off}
               onClick={() => onSelect(pick(w))}
             >
               <div className="min-w-0 flex-1">
