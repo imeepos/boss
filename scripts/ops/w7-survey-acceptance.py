@@ -187,12 +187,15 @@ def main():
     d, _ = api("GET", "/api/admin/v1/odn/surveys/" + str(tid2))
     check("A9 admin 取消后 status=CANCELLED", d["task"]["status"] == "CANCELLED", d)
 
-    # B 施工进度(F5a):建 PLANNED 设施->建项目->挂明细->开工->师傅上报->admin 可见
-    nc, _ = api("GET", "/api/admin/v1/odn/facility-next-code?kind=P&gridCode=91")
-    fac = (nc or {}).get("code") or (nc or {}).get("nextCode") or ""
-    fac = str(fac) or ("ACCW7P" + STAMP[-4:])
-    TRACK["facility"] = fac
-    r, _ = api("POST", "/api/admin/v1/odn/facilities", {"code": fac, "kind": "P",
+    # 取号口径同 web 端 nextcode.ts:现存 MAX 3 位序号+1(端点 /facility-next-code 的
+    # SUBSTRING 会把网格位并入序号,P91xxx 场景误报编号用尽,故客户端计算)。
+    facs, _ = api("GET", "/api/admin/v1/odn/facilities?kind=P&gridCode=91")
+    mx = 0
+    for f in (facs or []):
+        c = str(f.get("code", ""))
+        if c.startswith("P91") and c[3:].isdigit():
+            mx = max(mx, int(c[3:]))
+    fac = "P91" + str(mx + 1).zfill(3)
         "prvCode": "PHL001", "cityPrefix": "MNL", "gridCode": 91,
         "name": "W7验收杆", "lat": 14.606, "lng": 120.991})
     check("B1 创建 PLANNED 验收设施 " + fac, r is not None, r)

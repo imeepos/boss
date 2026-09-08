@@ -117,34 +117,33 @@ func (s *PGStore) CancelSurvey(ctx context.Context, id int64) error {
 	return nil
 }
 
-// AcceptSurvey 师傅接单:未指派单抢单(校验接单资格并占位),已指派单仅指派师傅可接。
+// AcceptSurvey 师傅接单:未指派单抢单(校验接单资格并占位),已指派单仅指派师傅可接;
+// 命中即置 ACCEPTED(状态流转与占位同语句,防抢到位未流转的中间态)。
 func (s *PGStore) AcceptSurvey(ctx context.Context, id, workerID int64) error {
 	if err := s.ensureAssignableWorker(ctx, workerID); err != nil {
 		return err
 	}
-	var status string
 	var assignee int64
-	err := s.db.QueryRow(ctx, "SELECT status, COALESCE(assigned_worker_id,0) FROM survey_tasks WHERE id=$1", id).
-		Scan(&status, &assignee)
+	err := s.db.QueryRow(ctx, "SELECT COALESCE(assigned_worker_id,0) FROM survey_tasks WHERE id=$1 AND status=$2", id, SurveyPending).Scan(&assignee)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return ErrNotFound
+		return fmt.Errorf("odn: survey %d not pending: %w", id, ErrSurveyState)
 	}
 	if err != nil {
 		log.Printf("[odn-survey] ACCEPT READ FAILED id=%d worker=%d: %v", id, workerID, err)
 		return fmt.Errorf("odn: survey accept read: %w", err)
 	}
-	if status != SurveyPending {
-		return fmt.Errorf("odn: survey status=%s: %w", status, ErrSurveyState)
-	}
 	if assignee > 0 && assignee != workerID {
 		return fmt.Errorf("odn: survey %d assigned to %d: %w", id, assignee, ErrSurveyNotAssignee)
 	}
-	ok, err := s.surveyTransition(ctx, id, []string{SurveyPending}, assignee, workerID)
+	tag, err := s.db.Exec(ctx, "UPDATE survey_tasks SET status=$2, assigned_worker_id=$3, updated_at=now() "+
+		"WHERE id=$1 AND status=$4 AND COALESCE(assigned_worker_id,0)=$5",
+		id, SurveyAccepted, workerID, SurveyPending, assignee)
 	if err != nil {
-		return err
+		log.Printf("[odn-survey] ACCEPT UPDATE FAILED id=%d worker=%d: %v", id, workerID, err)
+		return fmt.Errorf("odn: survey accept update: %w", err)
 	}
-	if !ok {
-		return fmt.Errorf("odn: survey %d state=%s: %w", id, status, ErrSurveyState)
+	if tag.RowsAffected() == 0 {
+		return fmt.Errorf("odn: survey %d state changed: %w", id, ErrSurveyState)
 	}
 	return nil
 }
