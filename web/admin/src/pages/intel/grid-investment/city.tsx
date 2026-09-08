@@ -3,6 +3,8 @@ import { useMemo, useState } from 'react'
 import { useT } from '../../../i18n'
 import { Pagination } from '../../../components/Pagination'
 import { TableStateRow } from '../../../components/business'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/table'
+import { CardFooter } from '../../../components/ui/card'
 import { pagerTexts } from '../../org/shared'
 import { pageSlice } from '../types'
 import type { CityInvestmentRow } from '../types'
@@ -12,8 +14,6 @@ type CitySortKey =
   | 'facilitiesInService' | 'coverageServed'
   | 'settledCost' | 'plannedCost' | 'materialCost' | 'costPerServed'
   | 'potentialHomes' | 'connectedHomes' | 'expandableHomes' | 'costPerPotential'
-
-const TH_CLS = 'h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]'
 
 function cityLabel(r: CityInvestmentRow): string {
   return r.cityPrefix
@@ -45,7 +45,7 @@ export default function CityView({ rows, busy }: { rows: CityInvestmentRow[]; bu
   const onSort = (k: CitySortKey) =>
     setSort((s) => (s?.key === k ? { key: k, dir: s.dir === 1 ? -1 : 1 } : { key: k, dir: -1 }))
   const head = (label: string, k?: CitySortKey) => (
-    <th className={TH_CLS}>
+    <TableHead>
       {k ? (
         <button type="button" onClick={() => onSort(k)}
           className="flex cursor-pointer items-center gap-1 text-xs font-medium hover:text-[var(--shell-heading)]">
@@ -53,54 +53,52 @@ export default function CityView({ rows, busy }: { rows: CityInvestmentRow[]; bu
           {sort?.key === k && <span aria-hidden>{sort.dir === 1 ? '↑' : '↓'}</span>}
         </button>
       ) : label}
-    </th>
+    </TableHead>
   )
 
   return (
     <>
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
-          <thead>
-            <tr>
-              {head(a.colCity)}
-              {head(a.colGridCount)}
-              {head(a.colInService, 'facilitiesInService')}
-              {head(a.colServed, 'coverageServed')}
-              {head(a.colSettledCost, 'settledCost')}
-              {head(a.colPlannedCost, 'plannedCost')}
-              {head(a.colMaterialCost, 'materialCost')}
-              {head(a.colCostPerServed, 'costPerServed')}
-              {head(a.colPotentialHomes, 'potentialHomes')}
-              {head(a.colConnectedHomes, 'connectedHomes')}
-              {head(a.colExpandableHomes, 'expandableHomes')}
-              {head(a.colCostPerPotential, 'costPerPotential')}
-            </tr>
-          </thead>
-          <tbody>
-            {slice.map((r) => (
-              <tr key={`${r.prvCode}-${r.cityPrefix}`}>
-                <td className={TD_CLS}>{cityLabel(r)}</td>
-                <td className={TD_CLS}>{r.gridCount}</td>
-                <td className={TD_CLS}>{r.facilitiesInService}</td>
-                <td className={TD_CLS}>{r.coverageServed}</td>
-                <td className={TD_CLS}><CostCell v={r.settledCost} /></td>
-                <td className={TD_CLS}><CostCell v={r.plannedCost} /></td>
-                <td className={TD_CLS}><CostCell v={r.materialCost} /></td>
-                <td className={TD_CLS}><CostCell v={r.costPerServed} /></td>
-                <td className={TD_CLS}><CountCell v={r.potentialHomes} /></td>
-                <td className={TD_CLS}><CountCell v={r.connectedHomes} /></td>
-                <td className={TD_CLS}><CountCell v={r.expandableHomes} /></td>
-                <td className={TD_CLS}><CostCell v={r.costPerPotential} /></td>
-              </tr>
-            ))}
-            {!slice.length && <TableStateRow colSpan={12} loading={busy} text={a.empty} />}
-          </tbody>
-        </table>
-      </div>
-      <div className="flex justify-end pt-3 text-xs text-[var(--shell-group-title)]">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            {head(a.colCity)}
+            {head(a.colGridCount)}
+            {head(a.colInService, 'facilitiesInService')}
+            {head(a.colServed, 'coverageServed')}
+            {head(a.colSettledCost, 'settledCost')}
+            {head(a.colPlannedCost, 'plannedCost')}
+            {head(a.colMaterialCost, 'materialCost')}
+            {head(a.colCostPerServed, 'costPerServed')}
+            {head(a.colPotentialHomes, 'potentialHomes')}
+            {head(a.colConnectedHomes, 'connectedHomes')}
+            {head(a.colExpandableHomes, 'expandableHomes')}
+            {head(a.colCostPerPotential, 'costPerPotential')}
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {slice.map((r) => (
+            <TableRow key={`${r.prvCode}-${r.cityPrefix}`}>
+              <TableCell className={TD_CLS}>{cityLabel(r)}</TableCell>
+              <TableCell className={TD_CLS}>{r.gridCount}</TableCell>
+              <TableCell className={TD_CLS}>{r.facilitiesInService}</TableCell>
+              <TableCell className={TD_CLS}>{r.coverageServed}</TableCell>
+              <TableCell className={TD_CLS}><CostCell v={r.settledCost} /></TableCell>
+              <TableCell className={TD_CLS}><CostCell v={r.plannedCost} /></TableCell>
+              <TableCell className={TD_CLS}><CostCell v={r.materialCost} /></TableCell>
+              <TableCell className={TD_CLS}><CostCell v={r.costPerServed} /></TableCell>
+              <TableCell className={TD_CLS}><CountCell v={r.potentialHomes} /></TableCell>
+              <TableCell className={TD_CLS}><CountCell v={r.connectedHomes} /></TableCell>
+              <TableCell className={TD_CLS}><CountCell v={r.expandableHomes} /></TableCell>
+              <TableCell className={TD_CLS}><CostCell v={r.costPerPotential} /></TableCell>
+            </TableRow>
+          ))}
+          {!slice.length && <TableStateRow colSpan={12} loading={busy} text={a.empty} />}
+        </TableBody>
+      </Table>
+      <CardFooter>
         <Pagination total={sorted.length} page={page} pageSize={pageSize}
           onPage={setPage} onSize={setPageSize} {...pagerTexts(a)} />
-      </div>
+      </CardFooter>
     </>
   )
 }
