@@ -904,6 +904,11 @@ export interface Translations {
       total: string
       empty: string
       loadFail: string
+      pendingTasksTitle: string
+      mTotalAmount: string
+      mCustomers: string
+      mStopped: string
+      mOverdueBills: string
       prev: string
       next: string
       perPage: string
