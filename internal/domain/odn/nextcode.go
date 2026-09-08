@@ -67,8 +67,10 @@ func nextFacilityCode(ctx context.Context, q seqRowQuerier, kind string, gridCod
 		return "", err
 	}
 	var maxSeq int
+	// $2/$3 必须 ::int 显式定型:裸参数会被 PG 推断成 text,解析到 POSIX 正则变体
+	// substring(text,text,text),切片结果恒 NULL,取号永远返回 001(102 实测踩坑)。
 	if err := q.QueryRow(ctx,
-		`SELECT COALESCE(MAX(SUBSTRING(code FROM $2 FOR $3)::int),0)
+		`SELECT COALESCE(MAX(SUBSTRING(code FROM $2::int FOR $3::int)::int),0)
 			FROM odn_facility WHERE code ~ $1`,
 		spec.pattern, spec.offset, spec.digits).Scan(&maxSeq); err != nil {
 		return "", fmt.Errorf("odn: next facility code %s: %w", kind, err)

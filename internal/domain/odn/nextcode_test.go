@@ -105,7 +105,7 @@ func TestFormatFacilityCode(t *testing.T) {
 }
 
 // nextSeqSQL SUBSTRING 取号语句的 pgxmock 匹配式(圆括号在正则里是分组符,须转义)。
-const nextSeqSQL = `SELECT COALESCE[(]MAX[(]SUBSTRING[(]code FROM \$2 FOR \$3[)]::int[)],0\)`
+const nextSeqSQL = `SELECT COALESCE[(]MAX[(]SUBSTRING[(]code FROM \$2::int FOR \$3::int[)]::int[)],0\)`
 
 // NextFacilityCode 取号口径回归(W7 实锤缺陷):序号=前缀+网格之后的 3 位,
 // 旧实现按 '[0-9]+$' 贪婪取数把网格位并入序号,P91011 读成 91011 致网格 91 误报用尽。
