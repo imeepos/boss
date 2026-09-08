@@ -12,6 +12,9 @@ import { PageHead, pagerTexts } from '../shared'
 import { buildRegionView, filterRegions, pageSlice, type RegionRow } from './tree'
 import { Pagination } from '../../../components/Pagination'
 import { TableStateRow } from '../../../components/business'
+import { Card } from '../../../components/ui/card'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/table'
+import { Input } from '../../../components/ui/input'
 
 interface EntityOption { id: number; name: string; isPlatform: boolean }
 
@@ -81,9 +84,9 @@ export default function RegionPage() {
   return (
     <div>
       <PageHead title={t.pages.region.title} desc={t.pages.region.desc} />
-      <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
+      <Card>
         <div className="flex flex-wrap items-center gap-2 p-4">
-          <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" placeholder={t.pages.region.searchPlaceholder}
+          <Input className="w-56" placeholder={t.pages.region.searchPlaceholder}
             value={keyword} onChange={(e) => { setKeyword(e.target.value); setPage(1) }} />
           <Dropdown
             value={level}
@@ -100,43 +103,45 @@ export default function RegionPage() {
           <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)] disabled:cursor-not-allowed disabled:opacity-50" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
         </div>
         {error && <ErrorBanner message={error} />}
-        <div className="overflow-x-auto px-4 pb-4">
-            <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
-              <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{t.pages.region.columns.map((c) => <th key={c} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{c}</th>)}</tr></thead>
-              <tbody>
-                {slice.map((r) => (
-                  <tr key={r.path}>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.path}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.name}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.levelName}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.parent || '—'}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.childCount}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">
-                      <Dropdown
-                        value={r.legalEntityId ? String(r.legalEntityId) : ''}
-                        options={coverageOptions}
-                        onChange={(v) => assignCoverage(r.id, Number(v) || 0)}
-                        ariaLabel={t.pages.region.coverageNone}
-                      />
-                    </td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">
-                      {r.childCount > 0 && (
-                        <span className="inline-flex items-center">
-                          <button onClick={() => { setDrillPath(r.path); setPage(1) }}>{t.pages.region.drill}</button>
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-                {!slice.length && <TableStateRow colSpan={7} loading={busy} text={t.pages.region.empty} />}
-              </tbody>
-            </table>
-          </div>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              {t.pages.region.columns.map((c) => <TableHead key={c}>{c}</TableHead>)}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {slice.map((r) => (
+              <TableRow key={r.path}>
+                <TableCell>{r.path}</TableCell>
+                <TableCell>{r.name}</TableCell>
+                <TableCell>{r.levelName}</TableCell>
+                <TableCell>{r.parent || '—'}</TableCell>
+                <TableCell>{r.childCount}</TableCell>
+                <TableCell>
+                  <Dropdown
+                    value={r.legalEntityId ? String(r.legalEntityId) : ''}
+                    options={coverageOptions}
+                    onChange={(v) => assignCoverage(r.id, Number(v) || 0)}
+                    ariaLabel={t.pages.region.coverageNone}
+                  />
+                </TableCell>
+                <TableCell>
+                  {r.childCount > 0 && (
+                    <span className="inline-flex items-center">
+                      <button className="cursor-pointer border-none bg-none p-0 text-[13px] text-[var(--shell-content-text)] underline-offset-2 hover:text-[var(--shell-heading)] hover:underline" onClick={() => { setDrillPath(r.path); setPage(1) }}>{t.pages.region.drill}</button>
+                    </span>
+                  )}
+                </TableCell>
+              </TableRow>
+            ))}
+            {!slice.length && <TableStateRow colSpan={7} loading={busy} text={t.pages.region.empty} />}
+          </TableBody>
+        </Table>
         <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
           <Pagination total={view.length} page={page} pageSize={pageSize}
             onPage={setPage} onSize={setPageSize} {...pagerTexts(t.pages.region)} />
         </div>
-      </div>
+      </Card>
     </div>
   )
 }
