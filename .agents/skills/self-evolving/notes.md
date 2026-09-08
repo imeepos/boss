@@ -2256,3 +2256,14 @@
 - 哪个坑浪费了最多时间?dev server 起在 5173 被**别人的应用**占用,vite 静默自增到 5174;CDP 采 5173 截到的是陌生应用页面,像"我的页面坏了"白查一轮。开工前应先看 dev job 输出确认实际端口,或 curl HTML 核对应用身份(<title>/特征串)再采。
 - git worktree remove 遇 node_modules 极慢,前台 60s 超时被 SIGTERM 杀在半路→worktree 半拆状态(557 文件显示 deleted)反而要 --force 收尾。教训:凡 worktree remove/全量删除一律直接 run_in_background。
 - Dropdown 选中值经 effect 回显,renderToStaticMarkup(SSR)下触发器恒显示 placeholder——组件默认值断言要么抽纯函数(initialFormState),要么真浏览器 CDP 断言,别用 SSR 标记硬刚。
+
+## 2026-09-08 ODN 抽屉化 A(施工单/许可单,子会话派发)
+- 哪个坑浪费了最多时间?Node 侧 fetch 直连 102:28080 ECONNREFUSED 而 curl 同地址通(无 proxy env,网络策略只放行部分客户端),cdp-admin-capture 内建 fetchToken 首跑即 fetch failed;分层定位(纯 cdp-capture 打本地页通 → node -e 单测 fetch 复现)约一轮。旁路=先 curl 取 token 再 --token 传入(脚本本就支持,Chrome 侧到 102 一路畅通,三份冒烟 logs 0 错 0 失败请求)。
+- skill 有没有提前预警?部分:docs 记了 Chrome --no-proxy 与 AuthGuard servers 先注,没记 Node 登录 fetch 会被拒;Drawer 断言锚点 aside[role=dialog]、TZ=Asia/Shanghai 门禁、红线 8a(.gitignore 预检)均提前命中零踩。
+- 重来一次怎么做?冒烟前置检查直接把「curl 取 token + --token」当默认路径。新增可复用手法:目标表为空且造数违禁时,页内 eval 桩 window.fetch(仅拦 /odn/permits* 前缀,列表/单条信封形状区分)+ 点「刷新」走真实 React load(),再点「详情」驱动真抽屉——浏览器本地桩、102 零写入、桩行单号带 SMOKE 前缀自披露。
+
+## 2026-09-09 ODN 抽屉化负责人轮（3 子会话并行派发）
+- 哪个坑浪费了最多时间?任务书枚举法漏网:首轮按「新建/编辑/详情」按钮枚举出 7 处违规就派发,B 交付后我先在冒烟截图目检时发现 AssetsPanel 常驻冲销内联表单,再做全模块 `<Input` 分布扫描又兜出 coverage 登记表单——两轮补正往返约 40 分钟。正解=派发前就跑「模式级全量扫描」(grep 输入控件在非抽屉文件的分布,逐个甄别查询控件 vs 写入表单),按钮枚举只配做补充;常驻(非条件渲染)表单最容易漏。
+- skill 有没有提前预警?没有负责人侧的「派发前机械扫描」流程经验,本次补入 lessons;worktree 合并协议/两段式建树/红线 24(禁管道吞退出码)全程零踩。
+- 重来一次怎么做?派发前扫描生成完整违规清单进任务书;每个会话验收时同一扫描必须复跑归零才算过,而不是只对枚举点逐项核。
+- 环境坑(本轮实记):pnpm-workspace.yaml 只有 onlyBuiltDependencies 无 packages 字段,根目录 pnpm install 报 No projects found,须 pnpm -C web/admin install;ENOSPC 磁盘满时 du 大目录必超时,先 df 再小步查,APFS 可回收空间恢复后重试即可;workspace_session_manage 前 workspaceId 必须 workspace_list 查,本轮猜错 id 碰巧成功不可复制。

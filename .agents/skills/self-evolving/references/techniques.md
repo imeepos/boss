@@ -720,3 +720,7 @@ chr(39)/String.fromCharCode(34) 运行时构造；③ 正则字符类 [0-9] 替�
 - 用法:包一层 `<div className="px-4 pb-4"><Table>…</Table></div>`(inventory 先例);TableHead 自带 bg-menu-hover-bg,原 shadcn th 语义类(border-border/text-muted-foreground)可整体删除。
 - 【多会话协调 2026-09-08】批次完成确认标准动作:session_link_talk(120-180s 有界超时)同步问答,优于 send+异步等;空回复=会话在长步骤中,勿连发;「dirty=0+已推送」只是页间过渡态,完成判定只认明确「待合并」汇报。
 - 【多会话协调 2026-09-08】派发批次时通告「CI 部署 102 滞后 10-20 分钟,DOM 断言前先核对 nginx Last-Modified」;归档会话放在全部 Q&A 结束后最后一步(归档后 send/talk 全拒,回信通道永久切断)。
+
+## cdp-admin-capture 登录 fetch 被拒与空表详情抽屉冒烟(2026-09-08 ODN-A)
+- 场景:①脚本内建 fetchToken 报 fetch failed(ECONNREFUSED 102:28080)但 curl 同地址通——Node fetch 直连被网络策略拒,Chrome 不受影响;②详情抽屉冒烟遇目标表为空且禁止造数(实体无删除端点,造数必留脏数据)。
+- 用法:①curl 取 token 后 --token "$(cat token.txt)" 传入,绕过脚本内 Node fetch;②--eval 桩 window.fetch:按 url 前缀拦列表(data:数组)与单条(data:对象)两种信封形状,桩完点页面「刷新」按钮走真实 React load(),再点「详情」开真抽屉;桩行单号用 SMOKE 前缀自披露并在报告注明。断言锚点:aside[role=dialog] + th 表头文本逐列比对 + 表单/详情标记元素的 closest("aside[role=dialog]") 归属判定。

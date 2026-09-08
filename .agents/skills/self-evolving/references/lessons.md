@@ -579,3 +579,5 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - cdp-capture --eval 传多步断言时顶层 await 会 SyntaxError,定时等待用 `new Promise(r=>setTimeout(()=>r({...}),ms))` 形态。
 - 当 vite dev 端口被占自动 +1 而 CDP 采了旧端口时,截到的是占端口应用的页面(像"页面坏了"),修复是先 curl 目标端口 HTML 核对特征串再采集,或读 dev job 输出拿真实端口。
 - 当 git worktree remove 卡 node_modules 超时被杀时,worktree 会停在半拆状态(--force 才能收尾),修复是大 worktree 删除直接 run_in_background,不开前台。
+- 负责人派发「模式迁移类」任务(内联表单→抽屉这类)时,任务书必须基于机械全量扫描(grep `<Input|<Textarea|<select` 在非容器文件的分布再逐个甄别)生成违规清单,不能按按钮/功能枚举;验收时同一扫描复跑归零才算过——常驻非条件渲染表单(如资产冲销、覆盖登记)枚举法必漏(2026-09-09 ODN 抽屉化轮两处漏网实证)。
+- pnpm workspace 根目录 pnpm-workspace.yaml 只有 onlyBuiltDependencies 没有 packages 字段时,根目录 pnpm install 报 No projects found(exit 1),install 必须进实际包目录(pnpm -C web/admin install);boss 仓库属此形态。
