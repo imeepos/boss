@@ -3,18 +3,23 @@ import { useEffect, useState } from 'react'
 import { fetchPartnerProfile, type PartnerProfile } from '../../../api/partner'
 import { useT } from '../../../i18n'
 import { Card } from '../../../components/ui/card'
-import { PageHead, ErrorBanner, EmptyState } from '../../../components/business/page-head'
+import { PageHead, ErrorBanner, EmptyState, ToolbarButton } from '../../../components/business/page-head'
+import { LoadingState } from '../../../components/business/feedback'
 
 export default function PartnerHomePage() {
   const t = useT()
   const [profile, setProfile] = useState<PartnerProfile | null>(null)
   const [error, setError] = useState('')
+  const [busy, setBusy] = useState(false)
 
-  useEffect(() => {
+  const load = () => {
+    setError(''); setBusy(true)
     fetchPartnerProfile()
       .then(setProfile)
       .catch((e) => setError(e instanceof Error ? e.message : t.pages.partnerHome.loadFail))
-  }, [t]) // eslint-disable-line react-hooks/exhaustive-deps
+      .finally(() => setBusy(false))
+  }
+  useEffect(load, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const rows: Array<[string, string]> = profile ? [
     [t.pages.partnerHome.companyName, profile.companyName],
@@ -28,8 +33,12 @@ export default function PartnerHomePage() {
   return (
     <div>
       <PageHead title={t.pages.partnerHome.title} desc={t.pages.partnerHome.desc} />
+      <div className="mb-3 flex items-center">
+        <div className="flex-1" />
+        <ToolbarButton onClick={load} disabled={busy}>{t.pages.audit.refresh}</ToolbarButton>
+      </div>
       <Card className="p-5">
-        {error ? <ErrorBanner message={error} /> : !profile ? (
+        {error ? <ErrorBanner message={error} /> : busy ? <LoadingState /> : !profile ? (
           <EmptyState text={t.pages.partnerHome.loadFail} />
         ) : (
           <dl className="m-0 grid grid-cols-[130px_1fr] gap-x-4 gap-y-3 text-[13px]">

@@ -3518,6 +3518,7 @@ export interface Translations {
       colRole: string; colStatus: string; colCreatedAt: string; colOp: string; add: string
       password: string; create: string; cancel: string; roleAdmin: string; roleStaff: string
       enabled: string; disabled: string; enable: string; disable: string; empty: string; loadFail: string
+      enableConfirm: string; disableConfirm: string
     }
     partnerOrders: {
       title: string; desc: string; colOrderNo: string; colCustomer: string; colStage: string
