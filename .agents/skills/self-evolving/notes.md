@@ -2245,3 +2245,9 @@
 - **哪个坑浪费了最多时间?** production bundle 验证走弯路:index-*.js 里 grep 新文案为 0,差点误判部署失败——lazy 路由代码在 permits-qKi3706K.js 独立 chunk 里。下次验证线上 bundle 先想清楚目标代码落在哪个 chunk(路由级 code-split),别只盯 index。
 - **skill 有没有提前预警?** 红线 7(模型不能读图)第三次命中,这次直接改走 DOM 断言+特征串 grep,零浪费。红线 26(Dropdown 选项 onMouseDown)命中一次,开工前 grep 了 techniques 避开。cdp --eval 顶层 await 会 SyntaxError,要用 `new Promise(r=>setTimeout(...))` 形态(本次踩了一次)。
 - **重来一次会怎么做?** 一样的顺序:先读同域同类页(ResourceDrawer/CreateLinkDrawer)定模式,再写抽屉组件。额外收获:用户报 UI 问题的任务,做完 UI 顺手必须真实点一遍 API 全链路——本次就这么挖出 POST /odn/permits 未关联项目必炸 50000(旧内联表单同样命中,只是从没人点过保存)。修后端时的标准动作全用上了:容器日志 grep 告警行 → psql BEGIN/ROLLBACK 探针验证 SQL → COALESCE 修复 → DSN 守卫集成测试(SSH 隧道 25432)→ CI 部署后 curl 实测。集成测试断言 st.PermitNo 非空还顺带揪出 RETURNING 缺 permit_no 的暗坑。
+
+## 2026-09-09 T1 取号端点修复(SUBSTRING 序号口径两段缺陷)
+- **哪个坑浪费了最多时间?** 二段缺陷的发现-定位闭环:第一段(网格位并入序号)修完单测全绿、102 部署后端点却对一切网格返回 001——第二段是 PG 对 SUBSTRING 裸位置参数的重载推断(text→POSIX 正则变体→切片恒 NULL),pgxmock 只校验 SQL 文本和参数个数根本拦不住。浪费约 20 分钟的误区是先怀疑「部署了旧镜像/连错库」,其实首轮 psql PREPARE 显式 (text,int,int) 复核通过就是假阳性伏笔。正解闭环=用与服务器同驱动的 pgx 客户端直发 SQL 复现 → ::int 显式定型 → DSN 门控集成测试守真实驱动路径。
+- **skill 有没有提前预警?** 部分有:后端.md 早有「pgxmock 拦不住,靠真库验收」条目(jsonb/可空列先例),方向对但没覆盖重载推断这类语法层缺陷;worktree 收尾红线(9/24 条)全程零踩。
+- **重来一次会怎么做?** 涉及 SQL 语义的修复,第一轮就把「pgx 客户端直连真库跑新 SQL」纳入本地验证清单,不等部署后 102 实测才暴露;集成测试自清第一版就写成「显式 cleanup + Close」,不依赖 t.Cleanup 的 LIFO 时序(台账已有 lessons #58 还是踩了,下次写集成测试前先 grep 台账)。
+- **额外发现(报负责人)**:102 库 P98001/MH98001/TW98001/P98002 为存量集成测试泄漏物(t.Cleanup 时序坑,非本会话造数,未动);存量 pg_integration_test.go 同坑待修。
