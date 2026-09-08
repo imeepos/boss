@@ -1,9 +1,10 @@
 // 积分任务规则 Tab:列表 + 抽屉式新建 + 停用。周期 ONE_TIME/DAILY/MONTHLY。
 import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import { listTasks, createTask, disableTask, type LoyTask } from '../../../api/marketing'
 import { useT } from '../../../i18n'
-import { Badge } from '../../../components/ui/badge'
 import { Card } from '../../../components/ui/card'
+import { RuleStatus } from './RuleStatus'
 import {
   PageHead, pagerTexts, ErrorBanner, ToolbarButton, FormField, ActionLink,
   DataTable, type ColumnDef,
@@ -64,6 +65,7 @@ export default function TasksTab() {
         code: form.code.trim(), name: form.name.trim(),
         points: Number(form.points), period: form.period as LoyTask['period'],
       })
+      toast.success(m.createdOk)
       closeForm()
       load()
     } catch (e) {
@@ -75,7 +77,7 @@ export default function TasksTab() {
 
   const disable = async (id: number, name: string) => {
     if (!(await confirmDialog(m.disableConfirm.replace('{name}', name), { danger: true }))) return
-    try { await disableTask(id); load() } catch (e) {
+    try { await disableTask(id); toast.success(m.disabledOk); load() } catch (e) {
       setError(e instanceof Error ? e.message : m.loadFail)
     }
   }
@@ -86,7 +88,7 @@ export default function TasksTab() {
     { key: 'points', label: m.taskPoints, render: (r) => String(r.points ?? '—') },
     { key: 'period', label: m.taskPeriod, render: (r) => periodOpts.find((o) => o.value === r.period)?.label ?? String(r.period) },
     { key: 'status', label: m.colStatus, render: (r) => (
-      <Badge variant={r.status === 'ENABLED' ? 'success' : 'default'}>{String(r.status)}</Badge>
+      <RuleStatus status={String(r.status)} />
     ) },
     { key: 'op', label: m.colOp, render: (r) => (r.status === 'ENABLED'
       ? <ActionLink onClick={() => disable(Number(r.taskId), String(r.name))} label={m.disable} />
@@ -126,15 +128,15 @@ export default function TasksTab() {
           }>
           <div className="grid grid-cols-2 gap-3">
             <FormField label={m.taskCode} required>
-              <Input value={form.code}
+              <Input value={form.code} placeholder={m.taskCodePh}
                 onChange={(e) => setForm({ ...form, code: e.target.value })} />
             </FormField>
             <FormField label={m.colName} required>
-              <Input value={form.name}
+              <Input value={form.name} placeholder={m.taskNamePh}
                 onChange={(e) => setForm({ ...form, name: e.target.value })} />
             </FormField>
             <FormField label={m.taskPoints} required>
-              <Input inputMode="numeric" value={form.points}
+              <Input inputMode="numeric" value={form.points} placeholder={m.taskPointsPh}
                 onChange={(e) => setForm({ ...form, points: e.target.value })} />
             </FormField>
             <FormField label={m.taskPeriod}>

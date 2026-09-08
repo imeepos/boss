@@ -5,8 +5,8 @@ import {
   listCouponTemplates, createCouponTemplate, disableCouponTemplate, type CouponTemplate,
 } from '../../../api/marketing'
 import { useT } from '../../../i18n'
-import { Badge } from '../../../components/ui/badge'
 import { Card } from '../../../components/ui/card'
+import { RuleStatus } from './RuleStatus'
 import {
   PageHead, pagerTexts, ErrorBanner, ToolbarButton, FormField, SubmitButton,
   ActionLink, DataTable, type ColumnDef, type SubmitState,
@@ -112,7 +112,7 @@ export default function CouponTemplatesTab() {
 
   const disable = async (id: number, name: string) => {
     if (!(await confirmDialog(m.disableConfirm.replace('{name}', name), { danger: true }))) return
-    try { await disableCouponTemplate(id); load() } catch (e) {
+    try { await disableCouponTemplate(id); toast.success(m.disabledOk); load() } catch (e) {
       setError(e instanceof Error ? e.message : m.loadFail)
     }
   }
@@ -125,7 +125,7 @@ export default function CouponTemplatesTab() {
     { key: 'validDays', label: m.couponValidDays, render: (r) => (Number(r.validDays) > 0 ? String(r.validDays) : '-') },
     { key: 'issued', label: m.couponIssued, render: (r) => (Number(r.totalQty) > 0 ? Number(r.issuedQty) + '/' + Number(r.totalQty) : String(r.issuedQty)) },
     { key: 'status', label: m.colStatus, render: (r) => (
-      <Badge variant={r.status === 'ENABLED' ? 'success' : 'default'}>{String(r.status)}</Badge>
+      <RuleStatus status={String(r.status)} />
     ) },
     { key: 'op', label: m.colOp, render: (r) => (r.status === 'ENABLED'
       ? <ActionLink onClick={() => disable(Number(r.templateId), String(r.name))} label={m.disable} />

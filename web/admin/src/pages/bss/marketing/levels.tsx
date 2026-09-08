@@ -1,9 +1,10 @@
 // 积分等级规则 Tab:列表(按门槛升序)+ 抽屉式新建 + 停用。等级=累计获得积分匹配最高档。
 import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import { listLevels, createLevel, disableLevel, type LoyLevel } from '../../../api/marketing'
 import { useT } from '../../../i18n'
-import { Badge } from '../../../components/ui/badge'
 import { Card } from '../../../components/ui/card'
+import { RuleStatus } from './RuleStatus'
 import {
   PageHead, pagerTexts, ErrorBanner, ToolbarButton, FormField, ActionLink,
   DataTable, type ColumnDef,
@@ -51,6 +52,7 @@ export default function LevelsTab() {
     setCreating(true)
     try {
       await createLevel({ name: form.name.trim(), minPoints: Number(form.minPoints) })
+      toast.success(m.createdOk)
       closeForm()
       load()
     } catch (e) {
@@ -62,7 +64,7 @@ export default function LevelsTab() {
 
   const disable = async (id: number, name: string) => {
     if (!(await confirmDialog(m.disableConfirm.replace('{name}', name), { danger: true }))) return
-    try { await disableLevel(id); load() } catch (e) {
+    try { await disableLevel(id); toast.success(m.disabledOk); load() } catch (e) {
       setError(e instanceof Error ? e.message : m.loadFail)
     }
   }
@@ -71,7 +73,7 @@ export default function LevelsTab() {
     { key: 'name', label: m.colName, render: (r) => <span className="font-medium">{String(r.name ?? '—')}</span> },
     { key: 'minPoints', label: m.levelMinPoints, render: (r) => String(r.minPoints ?? '—') },
     { key: 'status', label: m.colStatus, render: (r) => (
-      <Badge variant={r.status === 'ENABLED' ? 'success' : 'default'}>{String(r.status)}</Badge>
+      <RuleStatus status={String(r.status)} />
     ) },
     { key: 'op', label: m.colOp, render: (r) => (r.status === 'ENABLED'
       ? <ActionLink onClick={() => disable(Number(r.levelId), String(r.name))} label={m.disable} />
@@ -111,11 +113,11 @@ export default function LevelsTab() {
           }>
           <div className="grid gap-3">
             <FormField label={m.colName} required>
-              <Input value={form.name}
+              <Input value={form.name} placeholder={m.levelNamePh}
                 onChange={(e) => setForm({ ...form, name: e.target.value })} />
             </FormField>
             <FormField label={m.levelMinPoints} required>
-              <Input inputMode="numeric" value={form.minPoints}
+              <Input inputMode="numeric" value={form.minPoints} placeholder={m.levelMinPh}
                 onChange={(e) => setForm({ ...form, minPoints: e.target.value })} />
             </FormField>
           </div>

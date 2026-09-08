@@ -10,10 +10,14 @@ import {
 import { Pagination } from '../../../components/Pagination'
 
 function DiffBadge({ kind }: { kind: CouponReconRow['diffKind'] }) {
-  const map: Record<string, 'success' | 'warning' | 'danger' | 'default'> = {
+  const m = useT().pages.marketing
+  const variantMap: Record<string, 'success' | 'warning' | 'danger' | 'default'> = {
     MATCH: 'success', COUNTER_DRIFT: 'warning', REDEMPTION_LOST: 'danger',
   }
-  return <Badge variant={map[kind] ?? 'default'}>{kind}</Badge>
+  const labelMap: Record<string, string> = {
+    MATCH: m.diffMatch, COUNTER_DRIFT: m.diffCounterDrift, REDEMPTION_LOST: m.diffRedemptionLost,
+  }
+  return <Badge variant={variantMap[kind] ?? 'default'}>{labelMap[kind] ?? kind}</Badge>
 }
 
 export default function CouponReconTab() {
