@@ -4,9 +4,15 @@ import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { useT } from '../../../i18n'
 import { PageHead } from '../../org/shared'
-import { TableStateRow, ToolbarButton } from '../../../components/business'
+import { TableStateRow, ToolbarButton, ErrorBanner } from '../../../components/business'
 import { Dropdown } from '../../../components/Dropdown'
 import { Drawer } from '../../../components/Drawer'
+import { Card } from '../../../components/ui/card'
+import { Input } from '../../../components/ui/input'
+import { Textarea } from '../../../components/ui/textarea'
+import { Checkbox } from '../../../components/ui/checkbox'
+import { Button } from '../../../components/ui/button'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/table'
 import { apiBaseUrl, apiFetch } from '../../../api/client'
 import { DialogPicker } from '../../../components/pickers/DialogPicker'
 import { fmtTime } from '../../../lib/format'
@@ -119,14 +125,10 @@ export default function ClientReleasePage() {
 
   const appLabel = (v: string) => (v === 'worker' ? s.appWorker : s.appUser)
   const stLabel = (v: Status) => v === 'DRAFT' ? s.stDraft : v === 'GRAY' ? s.stGray : v === 'PUBLISHED' ? s.stPublished : s.stRolledBack
-  const inputCls = 'h-8 w-full rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]'
-  const td = 'border-b border-[var(--shell-side-border)] px-3 py-2'
-  const btnPrimary = 'h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]'
-  const btnPlain = 'h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]'
 
   return <div>
     <PageHead title={s.title} desc={s.desc} />
-    {error && <div className="mb-3 text-sm text-[var(--color-danger)]">{error}</div>}
+    {error && <ErrorBanner message={error} />}
 
     <div className="mb-3 flex items-center gap-3">
       <Dropdown value={appFilter}
@@ -136,34 +138,36 @@ export default function ClientReleasePage() {
       <ToolbarButton primary onClick={() => setUploadOpen(true)}>+ {s.upload}</ToolbarButton>
     </div>
 
-    <div className="rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] p-4">
+    <Card className="p-4">
       <div className="overflow-x-auto">
-        <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
-          <thead><tr>{s.columns.map((x) => <th key={x} className="border-b border-[var(--shell-side-border)] px-3 py-2 text-left text-xs">{x}</th>)}</tr></thead>
-          <tbody>
-            {rows.map((r) => <tr key={r.id}>
-              <td className={td}>{appLabel(r.app)}</td>
-              <td className={td}>v{r.version} ({r.versionCode})</td>
-              <td className={td}>{r.minSupportedCode}</td>
-              <td className={td}>{stLabel(r.status)}</td>
-              <td className={td}>{r.status === 'GRAY' ? `${r.rolloutPercent}% / ${r.whitelistIds.length}` : '—'}</td>
-              <td className={td} title={r.sha256}>{(r.apkSize / 1048576).toFixed(1)}MB</td>
-              <td className={td}>{fmtTime(r.updatedAt)}</td>
-              <td className={td}>
+        <Table>
+          <TableHeader>
+            <TableRow>{s.columns.map((x) => <TableHead key={x}>{x}</TableHead>)}</TableRow>
+          </TableHeader>
+          <TableBody>
+            {rows.map((r) => <TableRow key={r.id}>
+              <TableCell>{appLabel(r.app)}</TableCell>
+              <TableCell>v{r.version} ({r.versionCode})</TableCell>
+              <TableCell>{r.minSupportedCode}</TableCell>
+              <TableCell>{stLabel(r.status)}</TableCell>
+              <TableCell>{r.status === 'GRAY' ? `${r.rolloutPercent}% / ${r.whitelistIds.length}` : '—'}</TableCell>
+              <TableCell title={r.sha256}>{(r.apkSize / 1048576).toFixed(1)}MB</TableCell>
+              <TableCell>{fmtTime(r.updatedAt)}</TableCell>
+              <TableCell>
                 <button className="cursor-pointer border-none bg-none text-[13px] text-[var(--shell-content-text)] underline-offset-2 hover:text-[var(--shell-heading)] hover:underline" onClick={() => { setEditing(r); setPatch({}) }}>{s.edit}</button>
                 <a className="ml-3 text-[13px] text-[var(--shell-fab-bg)] underline-offset-2 hover:underline" href={`${apiBaseUrl()}/client-releases/${r.id}/apk`} download>{s.download}</a>
-              </td>
-            </tr>)}
+              </TableCell>
+            </TableRow>)}
             {!rows.length && <TableStateRow colSpan={s.columns.length} loading={busy} text={s.empty} />}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
-    </div>
+    </Card>
 
     {uploadOpen && <Drawer title={s.upload} onClose={closeUpload}
       footer={<>
-        <button className={btnPlain} onClick={closeUpload}>{s.cancel}</button>
-        <button className={btnPrimary} disabled={uploading} onClick={submitUpload}>{s.upload}</button>
+        <Button variant="outline" size="sm" onClick={closeUpload}>{s.cancel}</Button>
+        <Button size="sm" disabled={uploading} onClick={submitUpload}>{uploading ? t.pages.account.submitting : s.upload}</Button>
       </>}>
       <div className="grid gap-3">
         <label className="text-xs">{s.fApp}
@@ -171,22 +175,22 @@ export default function ClientReleasePage() {
             options={[{ value: 'user', label: s.appUser }, { value: 'worker', label: s.appWorker }]}
             onChange={(v) => setForm({ ...form, app: v })} /></div>
         </label>
-        <label className="text-xs">{s.fVersion}<input className={inputCls + ' mt-1'} placeholder="1.2.0" value={form.version} onChange={(e) => setForm({ ...form, version: e.target.value })} /></label>
-        <label className="text-xs">{s.fVersionCode}<input className={inputCls + ' mt-1'} placeholder="12" inputMode="numeric" value={form.versionCode} onChange={(e) => setForm({ ...form, versionCode: e.target.value })} /></label>
-        <label className="text-xs">{s.fMinSupported}<input className={inputCls + ' mt-1'} placeholder="10" inputMode="numeric" value={form.minSupportedCode} onChange={(e) => setForm({ ...form, minSupportedCode: e.target.value })} /></label>
+        <label className="text-xs">{s.fVersion}<Input className="mt-1" placeholder="1.2.0" value={form.version} onChange={(e) => setForm({ ...form, version: e.target.value })} /></label>
+        <label className="text-xs">{s.fVersionCode}<Input className="mt-1" placeholder="12" inputMode="numeric" value={form.versionCode} onChange={(e) => setForm({ ...form, versionCode: e.target.value })} /></label>
+        <label className="text-xs">{s.fMinSupported}<Input className="mt-1" placeholder="10" inputMode="numeric" value={form.minSupportedCode} onChange={(e) => setForm({ ...form, minSupportedCode: e.target.value })} /></label>
         <label className="text-xs">{s.fFile}
           <input className="mt-1 block w-full text-xs text-[var(--shell-content-text)] file:mr-3 file:cursor-pointer file:rounded-sm file:border file:border-[var(--shell-input-border)] file:bg-[var(--shell-input-bg)] file:px-3 file:py-1.5 file:text-xs" type="file" accept=".apk"
             onChange={(e) => setForm({ ...form, file: e.target.files?.[0] })} />
         </label>
-        <label className="block text-xs">{s.fNotes}<input className={inputCls + ' mt-1'} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></label>
+        <label className="block text-xs">{s.fNotes}<Textarea className="mt-1" rows={3} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></label>
       </div>
       {formError && <p className="mt-3 text-sm text-[var(--color-danger)]">{formError}</p>}
     </Drawer>}
 
     {editing && <Drawer title={s.edit} onClose={() => { setEditing(null); setPatch({}) }}
       footer={<>
-        <button className={btnPlain} onClick={() => { setEditing(null); setPatch({}) }}>{s.cancel}</button>
-        <button className={btnPrimary} disabled={busy} onClick={savePatch}>{s.save}</button>
+        <Button variant="outline" size="sm" onClick={() => { setEditing(null); setPatch({}) }}>{s.cancel}</Button>
+        <Button size="sm" disabled={busy} onClick={savePatch}>{busy ? t.pages.account.submitting : s.save}</Button>
       </>}>
       <div className="grid gap-3">
         <label className="text-xs">{s.fStatus}
@@ -196,18 +200,18 @@ export default function ClientReleasePage() {
               { value: 'PUBLISHED', label: s.stPublished }, { value: 'ROLLED_BACK', label: s.stRolledBack },
             ].map((o) => ({ ...o, disabled: !ALLOWED_NEXT[editing.status].includes(o.value as Status) }))} /></div>
         </label>
-        <label className="text-xs">{s.fRollout}<input className={inputCls + ' mt-1'} inputMode="numeric" placeholder={String(editing.rolloutPercent)} onChange={(e) => setPatch({ ...patch, rolloutPercent: Number(e.target.value) })} /></label>
+        <label className="text-xs">{s.fRollout}<Input className="mt-1" inputMode="numeric" placeholder={String(editing.rolloutPercent)} onChange={(e) => setPatch({ ...patch, rolloutPercent: Number(e.target.value) })} /></label>
         <label className="text-xs">{s.fWhitelist}
           <div className="mt-1 flex flex-wrap items-center gap-1.5">
-            <button type="button" className={btnPlain + ' h-7 px-3 text-xs'} onClick={openWlPicker}>{s.wlPickBtn}</button>
+            <ToolbarButton onClick={openWlPicker}>{s.wlPickBtn}</ToolbarButton>
             <span className="text-[11px] text-[var(--shell-group-title)]">{s.wlSelectedCount.replace('{n}', String(wlCurrent.length))}</span>
             {wlCurrent.length > 0 && <span className="text-[11px] text-[var(--shell-content-text)]">{wlLabels(wlCurrent).join('; ')}</span>}
           </div>
         </label>
-        <label className="text-xs">{s.fMinSupported}<input className={inputCls + ' mt-1'} inputMode="numeric" placeholder={String(editing.minSupportedCode)} onChange={(e) => setPatch({ ...patch, minSupportedCode: Number(e.target.value) })} /></label>
-        <label className="text-xs">{s.fNotes}<input className={inputCls + ' mt-1'} placeholder={editing.notes} onChange={(e) => setPatch({ ...patch, notes: e.target.value })} /></label>
+        <label className="text-xs">{s.fMinSupported}<Input className="mt-1" inputMode="numeric" placeholder={String(editing.minSupportedCode)} onChange={(e) => setPatch({ ...patch, minSupportedCode: Number(e.target.value) })} /></label>
+        <label className="text-xs">{s.fNotes}<Textarea className="mt-1" rows={3} placeholder={editing.notes} onChange={(e) => setPatch({ ...patch, notes: e.target.value })} /></label>
         <label className="mt-1 flex items-center gap-2 text-xs">
-          <input type="checkbox" checked={patch.force ?? editing.force} onChange={(e) => setPatch({ ...patch, force: e.target.checked })} />
+          <Checkbox checked={patch.force ?? editing.force} onCheckedChange={(v) => setPatch({ ...patch, force: v === true })} />
           {s.fForce}
         </label>
       </div>
