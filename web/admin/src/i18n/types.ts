@@ -990,6 +990,74 @@ export interface Translations {
       jumpText: string
       pageUnit: string
     }
+    /** 工程应付台账(000219;挂 billing 分组,domain-map §2.1)。 */
+    payablesPage: {
+      title: string
+      desc: string
+      filterStatus: string
+      filterAllStatus: string
+      filterProject: string
+      filterAllProject: string
+      columns: string[]
+      statusTexts: Record<string, string>
+      methodTexts: Record<string, string>
+      empty: string
+      loadFail: string
+      detail: string
+      detailRefresh: string
+      detailTitle: string
+      settlement: string
+      project: string
+      contractor: string
+      createdAt: string
+      payableAmount: string
+      deducted: string
+      paid: string
+      balance: string
+      voidedNote: string
+      voidReason: string
+      payTitle: string
+      payAmount: string
+      payAmountHint: string
+      payMethod: string
+      payAt: string
+      payAtHint: string
+      payReference: string
+      payNote: string
+      optional: string
+      paySubmit: string
+      payOk: string
+      deductTitle: string
+      deductReason: string
+      deductReasonPh: string
+      deductReasonRequired: string
+      deductSubmit: string
+      deductOk: string
+      invoiceTitle: string
+      invoiceNo: string
+      invoiceNoRequired: string
+      invoicedAt: string
+      invoicedAtHint: string
+      invoiceSubmit: string
+      invoiceOk: string
+      amountInvalid: string
+      actionFail: string
+      paymentsTitle: string
+      paymentsEmpty: string
+      paymentCols: string[]
+      deductionsTitle: string
+      deductionsEmpty: string
+      deductionCols: string[]
+      invoicesLogTitle: string
+      invoicesLogEmpty: string
+      invoiceCols: string[]
+      prev: string
+      next: string
+      perPage: string
+      rangeText: string
+      jumpText: string
+      pageUnit: string
+    }
     assetPage: {
       title: string
       desc: string
