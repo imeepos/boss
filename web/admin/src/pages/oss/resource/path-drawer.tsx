@@ -1,10 +1,13 @@
 // PON 链路反查抽屉(P5-W2):GET /ports/{portId}/path 逐跳展示(类型/编码/状态/占用)。
 // 断点行醒目标记;只读派生视图,断链不补链。
 import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { Drawer } from '../../../components/Drawer'
 import { StatusTag } from '../../../components/StatusTag'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/table'
+import { ErrorBanner, ToolbarButton } from '../../../components/business'
 import type { PortPath, PortPathHop, PortRow } from '../types'
 
 export function PathDrawer({ port, onClose }: { port: PortRow; onClose: () => void }) {
@@ -18,7 +21,11 @@ export function PathDrawer({ port, onClose }: { port: PortRow; onClose: () => vo
     setFail('')
     apiFetch<PortPath>('/ports/' + port.portId + '/path')
       .then(setPath)
-      .catch((e) => setFail(e instanceof Error ? e.message : r.loadFail))
+      .catch((e) => {
+        const msg = e instanceof Error ? e.message : r.loadFail
+        setFail(msg)
+        toast.error(r.loadFail, { description: msg })
+      })
   }, [port.portId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const kindText = (kind: string) => {
@@ -64,44 +71,44 @@ export function PathDrawer({ port, onClose }: { port: PortRow; onClose: () => vo
       title={r.linkViewTitle + ' · ' + port.portCode}
       onClose={onClose}
       footer={
-        <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" onClick={onClose}>
+        <ToolbarButton primary onClick={onClose}>
           {t.pages.company.cancel}
-        </button>
+        </ToolbarButton>
       }
     >
       <div className="px-4 pb-2">{path ? completeBadge(path.complete) : null}</div>
       {fail ? (
-        <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{fail}</div>
+        <div className="px-4 pb-3"><ErrorBanner message={fail} /></div>
       ) : (
-        <div className="overflow-x-auto px-4 pb-4">
-          <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
-            <thead>
-              <tr>
+        <div className="px-4 pb-4">
+          <Table>
+            <TableHeader>
+              <TableRow>
                 {r.linkColumns.map((x) => (
-                  <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>
+                  <TableHead key={x}>{x}</TableHead>
                 ))}
-              </tr>
-            </thead>
-            <tbody>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {(path?.hops ?? []).map((h) => (
-                <tr key={h.seq} className={h.missing ? 'bg-[color-mix(in_srgb,var(--color-danger)_6%,transparent)]' : ''}>
-                  <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)]">{h.seq}</td>
-                  <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)]">{kindText(h.kind)}</td>
-                  <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)]">
+                <TableRow key={h.seq} className={h.missing ? 'bg-[color-mix(in_srgb,var(--color-danger)_6%,transparent)]' : undefined}>
+                  <TableCell>{h.seq}</TableCell>
+                  <TableCell>{kindText(h.kind)}</TableCell>
+                  <TableCell>
                     {h.missing ? '—' : h.code}
                     {!h.missing && h.name ? <span className="ml-1 text-xs text-[var(--shell-group-title)]">{h.name}</span> : null}
-                  </td>
-                  <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)]">{statusCell(h)}</td>
-                  <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)]">
+                  </TableCell>
+                  <TableCell>{statusCell(h)}</TableCell>
+                  <TableCell>
                     {h.occupiedBy ? '#' + h.occupiedBy.id + (h.occupiedBy.orderNo ? ' · ' + h.occupiedBy.orderNo : '') : '—'}
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
               {path !== null && !path.hops.length && (
-                <tr><td colSpan={5} className="h-11 px-3 border-b border-[var(--shell-side-border)]">{r.empty}</td></tr>
+                <TableRow><TableCell colSpan={5} className="h-11 px-3 text-center text-[var(--shell-group-title)]">{r.empty}</TableCell></TableRow>
               )}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       )}
     </Drawer>
