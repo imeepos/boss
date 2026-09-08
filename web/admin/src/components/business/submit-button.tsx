@@ -13,6 +13,9 @@ const STATE_CLS: Record<SubmitState, string> = {
   failed: 'bg-[var(--color-danger)] text-white',
 }
 
+// danger 显式声明:危险动作(删除/停用等)idle/loading 用危险色实底;success/failed 语义色不变。
+const DANGER_CLS = 'bg-[var(--color-danger)] text-white hover:opacity-90'
+
 /** 状态图标:描边 SVG,24 viewBox,尺寸适配 13px 文案。 */
 function StateIcon({ kind }: { kind: 'check' | 'cross' }) {
   return (
@@ -22,15 +25,17 @@ function StateIcon({ kind }: { kind: 'check' | 'cross' }) {
   )
 }
 
-export function SubmitButton({ state, labels, disabled, onClick }: {
+export function SubmitButton({ state, labels, disabled, danger, onClick }: {
   state: SubmitState
   labels: Record<SubmitState, string>
   disabled?: boolean
+  /** 危险动作(删除/停用等):idle/loading 态用危险色实底;success/failed 语义色不变。 */
+  danger?: boolean
   onClick?: () => void
 }) {
   return (
     <button type="button" data-submit-state={state} disabled={disabled || state === 'loading'}
-      className={cn(BASE, STATE_CLS[state])} onClick={onClick}>
+      className={cn(BASE, danger && (state === 'idle' || state === 'loading') ? DANGER_CLS : STATE_CLS[state])} onClick={onClick}>
       {state === 'loading' && <span aria-hidden className="inline-block h-3 w-3 animate-spin rounded-full border-[1.5px] border-current border-t-transparent" />}
       {state === 'success' && <StateIcon kind="check" />}
       {state === 'failed' && <StateIcon kind="cross" />}
