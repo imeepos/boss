@@ -55,7 +55,7 @@ func (s *PGStore) RecordProgress(ctx context.Context, p ProgressEntry) (int64, b
 	var id int64
 	err = s.db.QueryRow(ctx, "INSERT INTO construction_progress "+
 		"(project_id, facility_code, done_qty, lat, lng, note, photo_ids, client_msg_id, reporter_type, reported_by) "+
-		"VALUES ($1,$2,$3,NULLIF($4,0),NULLIF($5,0),$6,$7,$8,$9,NULLIF($10,0)) "+
+		"VALUES ($1,$2,$3,NULLIF($4::float8,0),NULLIF($5::float8,0),$6,$7,$8,$9,NULLIF($10,0)) "+
 		"ON CONFLICT (project_id, facility_code, client_msg_id) DO NOTHING RETURNING id",
 		p.ProjectID, p.FacilityCode, p.DoneQty, p.Lat, p.Lng, p.Note, p.PhotoIDs, p.ClientMsgID, rtype, p.ReportedBy).Scan(&id)
 	if err == nil {

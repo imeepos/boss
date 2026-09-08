@@ -174,7 +174,7 @@ func (s *PGStore) AddSurveyReport(ctx context.Context, r SurveyReport) (int64, b
 	var id int64
 	err = s.db.QueryRow(ctx, "INSERT INTO survey_task_reports "+
 		"(task_id, worker_id, lat, lng, facility_note, suggestion, photo_ids, client_msg_id) "+
-		"VALUES ($1,$2,NULLIF($3,0),NULLIF($4,0),$5,$6,$7,$8) ON CONFLICT (task_id, client_msg_id) "+
+		"VALUES ($1,$2,NULLIF($3::float8,0),NULLIF($4::float8,0),$5,$6,$7,$8) ON CONFLICT (task_id, client_msg_id) "+
 		"DO NOTHING RETURNING id",
 		r.TaskID, r.WorkerID, r.Lat, r.Lng, r.FacilityNote, r.Suggestion, r.PhotoIDs, r.ClientMsgID).Scan(&id)
 	if err == nil {
