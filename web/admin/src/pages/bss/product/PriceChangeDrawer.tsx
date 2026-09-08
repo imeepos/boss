@@ -1,6 +1,7 @@
 // 调价抽屉:POST /products/{id}/price-history(customer.yaml changeProductPrice)。
 // 只收新月费+原因,立即生效;生效时间由服务端落 now,与调价台账同口径。
 import { useState } from 'react'
+import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { Drawer } from '../../../components/Drawer'
 import { FormField } from '../../../components/business/form-field'
@@ -35,6 +36,7 @@ export function PriceChangeDrawer({
         method: 'POST',
         body: { newPrice: Number(fee), reason: reason.trim() },
       })
+      toast.success(p.priceChanged)
       onDone()
     } catch (e) {
       setError(e instanceof Error ? e.message : p.saveFail)

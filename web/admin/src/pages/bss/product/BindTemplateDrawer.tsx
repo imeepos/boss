@@ -1,6 +1,7 @@
 // 产品↔下发模板绑定抽屉:选该产品所属公司的启用模板,保存 PUT /products/{id}/provision-binding。
 // 绑定后订单环节7 按下发模板开通;无带宽套餐(IPTV/增值包)必须绑定,否则环节7 显性失败。
 import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { Drawer } from '../../../components/Drawer'
 import { Dropdown } from '../../../components/Dropdown'
@@ -31,7 +32,10 @@ export function BindTemplateDrawer({ offerId, offerName, legalEntityId, onClose,
   useEffect(() => {
     apiFetch<{ items: ProvisionTemplateRow[] }>('/provision-templates')
       .then((d) => setTemplates(d?.items ?? []))
-      .catch(() => setTemplates([]))
+      .catch((e) => {
+        setTemplates([])
+        console.warn('[product] provision-templates 拉取失败:', e instanceof Error ? e.message : e)
+      })
     apiFetch<OfferBindingRow>(`/products/${offerId}/provision-binding`)
       .then((b) => {
         if (b && b.templateId > 0) {
@@ -40,7 +44,10 @@ export function BindTemplateDrawer({ offerId, offerName, legalEntityId, onClose,
           setRemark(b.remark ?? '')
         }
       })
-      .catch(() => setBound(false))
+      .catch((e) => {
+        setBound(false)
+        console.warn('[product] provision-binding 回显失败 offerId=' + offerId, e instanceof Error ? e.message : e)
+      })
   }, [offerId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const opts = templates
@@ -52,6 +59,7 @@ export function BindTemplateDrawer({ offerId, offerName, legalEntityId, onClose,
     setBusy(true); setErr('')
     try {
       await apiFetch(`/products/${offerId}/provision-binding`, { method: 'PUT', body: { templateId, remark } })
+      toast.success(p.bindSaved)
       onDone()
     } catch (e) {
       setErr(e instanceof Error ? e.message : p.saveFail)
@@ -64,6 +72,7 @@ export function BindTemplateDrawer({ offerId, offerName, legalEntityId, onClose,
     setBusy(true); setErr('')
     try {
       await apiFetch(`/products/${offerId}/provision-binding`, { method: 'DELETE' })
+      toast.success(p.unbindOk)
       onDone()
     } catch (e) {
       setErr(e instanceof Error ? e.message : p.saveFail)

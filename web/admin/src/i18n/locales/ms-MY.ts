@@ -978,6 +978,7 @@ const msMY: Translations = {
       publishConfirm: 'Terbitkan sekarang? Ia berkesan serta-merta dan dapat dilihat oleh pelanggan.',
       unpublishConfirm: 'Nyah terbit? Pelanggan tidak dapat menempah produk ini lagi.',
       publishOk: 'Diterbitkan', unpublishOk: 'Ditarik',
+      savedOk: 'Produk disimpan',
       priceChanged: 'Perubahan harga berkuat kuasa', bindSaved: 'Ikatan templat disimpan', unbindOk: 'Ikatan templat dibuang',
       actFail: 'Operasi gagal',
       saveFail: 'Gagal disimpan',

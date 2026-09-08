@@ -775,6 +775,7 @@ export interface Translations {
       unpublishConfirm: string
       publishOk: string
       unpublishOk: string
+      savedOk: string
       priceChanged: string
       bindSaved: string
       unbindOk: string

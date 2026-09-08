@@ -978,6 +978,7 @@ const zhCN: Translations = {
       publishConfirm: '确认上架?上架即生效,用户端立即可见可订购。',
       unpublishConfirm: '确认下架?下架后用户端不可再订购该产品。',
       publishOk: '已发布上架', unpublishOk: '已下架',
+      savedOk: '产品已保存',
       priceChanged: '调价已生效', bindSaved: '下发模板绑定已保存', unbindOk: '下发模板绑定已解除',
       actFail: '操作失败',
       saveFail: '保存失败',

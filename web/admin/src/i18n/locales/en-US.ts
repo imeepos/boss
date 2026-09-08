@@ -978,6 +978,7 @@ const enUS: Translations = {
       publishConfirm: 'Publish now? It takes effect immediately and becomes visible to subscribers.',
       unpublishConfirm: 'Unpublish? Subscribers will no longer be able to order this product.',
       publishOk: 'Published', unpublishOk: 'Unpublished',
+      savedOk: 'Product saved',
       priceChanged: 'Price change applied', bindSaved: 'Provision binding saved', unbindOk: 'Provision binding removed',
       actFail: 'Action failed',
       saveFail: 'Failed to save',
