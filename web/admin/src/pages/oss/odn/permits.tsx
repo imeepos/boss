@@ -1,6 +1,7 @@
 // ROW 路权与 PECE 许可单列表页(P-INFRA-1 W4,000211;F3)。
 // 设施/项目关联走 pickers 选择器(2026-09-07 域改造);新增文案走 pages.odn 三语词条。
 // 新建走右侧抽屉 PermitCreateDrawer(2026-09-09):与全站表单口径统一,不再用页内内联卡片。
+// 详情走右侧抽屉 PermitDetailDrawer(2026-09-08):详情组件原样入壳,行内展开态取消。
 import { useCallback, useEffect, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { Badge } from '../../../components/ui/badge'
@@ -10,7 +11,7 @@ import { useT } from '../../../i18n'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../../components/ui/table'
 import { Card } from '../../../components/ui/card'
 import { EmptyState, ErrorBanner, ToolbarButton } from '../../../components/business/page-head'
-import { PermitDetail } from './PermitDetail'
+import { PermitDetailDrawer } from './PermitDetailDrawer'
 import { PermitCreateDrawer } from './PermitCreateDrawer'
 
 export interface PermitRow {
@@ -92,6 +93,9 @@ export default function PermitsPage() {
 
   const statusOptions = kind === 'PECE' ? PECE_STATUS_OPTIONS : kind === 'ROW' ? ROW_STATUS_OPTIONS : []
 
+  // 详情抽屉标题(单号+名称):行对象随列表数据派生,不在行内维护展开态。
+  const openRow = openId != null ? rows.find((x) => x.id === openId) : undefined
+
   return <div>
     <div className="mb-3 flex items-center justify-between"><div className="flex flex-wrap items-end gap-2">
       <Dropdown value={kind} ariaLabel="类型筛选" placeholder="全部类型" options={[{ value: 'ROW', label: 'ROW 路权' }, { value: 'PECE', label: 'PECE 许可' }]} onChange={(v) => { setKind(v); setStatus('') }} />
@@ -114,11 +118,13 @@ export default function PermitsPage() {
             <TableCell>{r.validUntil || '-'}</TableCell>
             <TableCell><Badge variant={PERMIT_STATUS_VARIANT[r.status] ?? 'default'}>{PERMIT_STATUS_TEXT[r.status] ?? r.status}</Badge></TableCell>
             <TableCell>{r.projectNo ? <span className='font-mono'>{r.projectNo}</span> : <span className='text-xs opacity-60'>未关联</span>}</TableCell>
-            <TableCell><button className='text-[var(--color-text-link)]' onClick={() => setOpenId(openId === r.id ? null : r.id)}>{openId === r.id ? '收起' : '详情'}</button></TableCell>
+            <TableCell><button className='text-[var(--color-text-link)]' onClick={() => setOpenId(r.id)}>详情</button></TableCell>
           </TableRow>)}
         </TableBody>
       </Table></div>}
     </Card>
-    {openId != null && <PermitDetail permitId={openId} onChanged={() => void load()} />}
+    {openId != null && <PermitDetailDrawer permitId={openId}
+      title={openRow ? openRow.permitNo + (openRow.title ? ' ' + openRow.title : '') : ''}
+      onClose={() => setOpenId(null)} onChanged={() => void load()} />}
   </div>
 }
