@@ -1,15 +1,15 @@
 // W7 勘测任务面板(挂 ODN 管理页勘测页签;P-INFRA-1 W7,迁移 000223)。
 // 文案为字面量:同 constructions 面板口径,不动 i18n 中央登记。
+// 新建走右侧抽屉 SurveyCreateDrawer(2026-09-09):与全站表单口径统一,不再用页内内联卡片。
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
-import { Input } from '../../../components/ui/input'
 import { Badge } from '../../../components/ui/badge'
 import { Dropdown } from '../../../components/Dropdown'
 import { Drawer } from '../../../components/Drawer'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../../components/ui/table'
-import { Card } from '../../../components/ui/card'
 import { EmptyState, ErrorBanner, ToolbarButton } from '../../../components/business/page-head'
+import { SurveyCreateDrawer, type WorkerLite } from './SurveyCreateDrawer'
 
 interface SurveyTask {
   id: number
@@ -36,7 +36,6 @@ interface SurveyReport {
   photoIds: number[]
   reportedAt: string
 }
-interface WorkerLite { id: number; name: string }
 
 const STATUS_TEXT: Record<string, string> = { PENDING: '待执行', ACCEPTED: '已接单', BACKFILLED: '已回填', CANCELLED: '已取消' }
 const STATUS_VARIANT: Record<string, 'default' | 'success' | 'warning' | 'danger' | 'info'> = { PENDING: 'warning', ACCEPTED: 'info', BACKFILLED: 'success', CANCELLED: 'danger' }
@@ -47,11 +46,6 @@ export default function SurveysPanel() {
   const [error, setError] = useState('')
   const [showCreate, setShowCreate] = useState(false)
   const [workers, setWorkers] = useState<WorkerLite[]>([])
-  const [title, setTitle] = useState('')
-  const [desc, setDesc] = useState('')
-  const [grid, setGrid] = useState('')
-  const [assignee, setAssignee] = useState('')
-  const [busy, setBusy] = useState(false)
   const [detail, setDetail] = useState<SurveyTask | null>(null)
   const [reports, setReports] = useState<SurveyReport[]>([])
 
@@ -72,23 +66,6 @@ export default function SurveysPanel() {
       } catch { setWorkers([]) }
     })()
   }, [])
-
-  const create = async () => {
-    if (!title.trim()) { setError('任务标题必填'); return }
-    setBusy(true); setError('')
-    try {
-      await apiFetch('/odn/surveys', { method: 'POST', body: {
-        title: title.trim(), description: desc.trim(), gridCode: Number(grid) || 0,
-        assignedWorkerId: Number(assignee) || 0 } })
-      toast.success('勘测任务已创建')
-      setTitle(''); setDesc(''); setGrid(''); setAssignee(''); setShowCreate(false)
-      await load()
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : '保存失败'
-      setError(msg)
-      toast.error('勘测任务创建失败', { description: msg })
-    } finally { setBusy(false) }
-  }
 
   const assign = async (t: SurveyTask, workerId: number) => {
     try {
@@ -126,23 +103,10 @@ export default function SurveysPanel() {
 
   return <div>
     <div className='mb-3 flex items-center justify-between'>
-      <ToolbarButton primary onClick={() => setShowCreate(!showCreate)}>{showCreate ? '取消' : '新建勘测任务'}</ToolbarButton>
+      <ToolbarButton primary onClick={() => setShowCreate(true)}>新建勘测任务</ToolbarButton>
       <ToolbarButton onClick={() => void load()}>刷新</ToolbarButton>
     </div>
-    {showCreate && <Card className="mb-3">
-      <div className="p-4">
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          <label className="flex flex-col gap-1"><span className="text-xs text-[var(--shell-content-text)]">任务标题</span><Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="主干光缆段现场勘测" /></label>
-          <label className="flex flex-col gap-1"><span className="text-xs text-[var(--shell-content-text)]">任务说明</span><Input value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="目标区域/网格、勘测要点" /></label>
-          <label className="flex flex-col gap-1"><span className="text-xs text-[var(--shell-content-text)]">目标网格</span><Input value={grid} onChange={(e) => setGrid(e.target.value)} inputMode="numeric" placeholder="0=不限" /></label>
-          <label className="flex flex-col gap-1"><span className="text-xs text-[var(--shell-content-text)]">指派师傅</span>
-            <Dropdown value={assignee} ariaLabel="选择指派师傅" placeholder="不指派(进抢单池)" searchable searchPlaceholder="搜索师傅"
-              options={workers.map((w) => ({ value: String(w.id), label: w.name + ' (#' + w.id + ')' }))}
-              onChange={(v) => setAssignee(v)} /></label>
-        </div>
-        <div className="mt-3 flex justify-end"><ToolbarButton primary disabled={busy} onClick={() => void create()}>{busy ? '保存中…' : '保存'}</ToolbarButton></div>
-      </div>
-    </Card>}
+    {showCreate && <SurveyCreateDrawer workers={workers} onClose={() => setShowCreate(false)} onCreated={() => void load()} />}
     {error && <ErrorBanner message={error} className='mb-3' />}
     {rows.length === 0 ? <EmptyState text='暂无勘测任务' /> : <div className='overflow-x-auto'><Table>
       <TableHeader><TableRow><TableHead>任务号</TableHead><TableHead>标题</TableHead><TableHead>目标网格</TableHead><TableHead>指派师傅</TableHead><TableHead>状态</TableHead><TableHead>回填数</TableHead><TableHead>创建时间</TableHead><TableHead>操作</TableHead></TableRow></TableHeader>
