@@ -718,3 +718,5 @@ chr(39)/String.fromCharCode(34) 运行时构造；③ 正则字符类 [0-9] 替�
 ## ui-table 替换裸 table 的内边距(2026-09-08 W3)
 - ui/table.tsx 的 Table 自带 `div.w-full.overflow-x-auto` 容器但无 padding;原裸 table 外层 `overflow-x-auto px-4 pb-4` 直替换会丢内边距贴卡边。
 - 用法:包一层 `<div className="px-4 pb-4"><Table>…</Table></div>`(inventory 先例);TableHead 自带 bg-menu-hover-bg,原 shadcn th 语义类(border-border/text-muted-foreground)可整体删除。
+- 【多会话协调 2026-09-08】批次完成确认标准动作:session_link_talk(120-180s 有界超时)同步问答,优于 send+异步等;空回复=会话在长步骤中,勿连发;「dirty=0+已推送」只是页间过渡态,完成判定只认明确「待合并」汇报。
+- 【多会话协调 2026-09-08】派发批次时通告「CI 部署 102 滞后 10-20 分钟,DOM 断言前先核对 nginx Last-Modified」;归档会话放在全部 Q&A 结束后最后一步(归档后 send/talk 全拒,回信通道永久切断)。
