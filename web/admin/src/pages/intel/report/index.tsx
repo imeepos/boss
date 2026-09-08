@@ -12,10 +12,11 @@ import { ErrorBanner } from '../../../components/business/page-head'
 import { Pagination } from '../../../components/Pagination'
 import { Dropdown } from '../../../components/Dropdown'
 import { Drawer } from '../../../components/Drawer'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/table'
 import { fmtTime } from '../../../lib/format'
 import { pageSlice, type ReportPayload, type ReportRow } from '../types'
 import { useConfirm } from '../../../components/ConfirmDialog'
-import { TableStateRow, EmptyState, LoadingState } from '../../../components/business'
+import { TableStateRow, EmptyState, LoadingState, ToolbarButton } from '../../../components/business'
 import { copyText } from '../../../components/business/feedback'
 import { CardShell, StatCard, LineTrend, StackedBars } from '../../../components/business/charts'
 import { formatCurrency, formatIndicatorDetail, formatIndicatorValue } from '../../../components/business/charts/format-value'
@@ -26,11 +27,6 @@ import { Input } from '../../../components/ui/input'
 // 业务 code 40400 = 该周期尚无快照(后端 reportLatestHandler ErrNoSnapshot)。
 const CODE_NOT_FOUND = 40400
 const Q_DEBOUNCE_MS = 300
-
-const th = 'h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]'
-const td = 'h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]'
-const actBtn = 'h-7 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2 text-[12px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)] disabled:cursor-not-allowed disabled:opacity-50'
-const toolBtn = 'h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)] disabled:cursor-not-allowed disabled:opacity-50'
 
 const errText = (e: unknown, fallback: string): string =>
   e instanceof Error && e.message ? e.message : fallback
@@ -217,38 +213,38 @@ export default function ReportPage() {
             onChange={(v) => { setPeriodFilter(v); setPage(1) }} />
           <span className="flex-1" />
           {PERIODS.map((p, i) => (
-            <button key={p} className={toolBtn} disabled={busy} onClick={() => viewLatest(p)}>
+            <ToolbarButton key={p} disabled={busy} onClick={() => viewLatest(p)}>
               {r.view} · {r.periods[i]}
-            </button>
+            </ToolbarButton>
           ))}
-          <button className={toolBtn} disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
+          <ToolbarButton disabled={busy} onClick={load}>{t.pages.audit.refresh}</ToolbarButton>
         </div>
         {error ? <ErrorBanner message={error} className="mx-2 mb-2" /> : (
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
-              <thead><tr>{r.columns.map((x) => <th key={x} className={th}>{x}</th>)}</tr></thead>
-              <tbody>
-                {slice.map((x) => (
-                  <tr key={x.id}>
-                    <td className={td}>#{x.id}</td>
-                    <td className={td}>{periodLabel(x.period, r)}</td>
-                    <td className={td}>{fmtTime(x.windowStart)}</td>
-                    <td className={td}>{fmtTime(x.windowEnd)}</td>
-                    <td className={td}>{fmtTime(x.createdAt)}</td>
-                    <td className={td}>
-                      <span className="inline-flex items-center gap-2">
-                        <button className={actBtn} disabled={sendingId !== null} onClick={() => viewLatest(x.period)}>{r.view}</button>
-                        <button className={actBtn} disabled={sendingId !== null} onClick={() => send(x)}>
-                          {sendingId === x.id ? r.sending : r.send}
-                        </button>
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-                {!slice.length && <TableStateRow colSpan={6} loading={busy} text={r.empty} />}
-              </tbody>
-            </table>
-          </div>
+          <Table>
+            <TableHeader>
+              <TableRow>{r.columns.map((x) => <TableHead key={x}>{x}</TableHead>)}</TableRow>
+            </TableHeader>
+            <TableBody>
+              {slice.map((x) => (
+                <TableRow key={x.id}>
+                  <TableCell>#{x.id}</TableCell>
+                  <TableCell>{periodLabel(x.period, r)}</TableCell>
+                  <TableCell>{fmtTime(x.windowStart)}</TableCell>
+                  <TableCell>{fmtTime(x.windowEnd)}</TableCell>
+                  <TableCell>{fmtTime(x.createdAt)}</TableCell>
+                  <TableCell>
+                    <span className="inline-flex items-center gap-2">
+                      <button className="h-7 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2 text-[12px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)] disabled:cursor-not-allowed disabled:opacity-50" disabled={sendingId !== null} onClick={() => viewLatest(x.period)}>{r.view}</button>
+                      <button className="h-7 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2 text-[12px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)] disabled:cursor-not-allowed disabled:opacity-50" disabled={sendingId !== null} onClick={() => send(x)}>
+                        {sendingId === x.id ? r.sending : r.send}
+                      </button>
+                    </span>
+                  </TableCell>
+                </TableRow>
+              ))}
+              {!slice.length && <TableStateRow colSpan={6} loading={busy} text={r.empty} />}
+            </TableBody>
+          </Table>
         )}
         <div className="flex justify-end pt-3 text-xs text-[var(--shell-group-title)]">
           <Pagination total={filtered.length} page={page} pageSize={pageSize}
