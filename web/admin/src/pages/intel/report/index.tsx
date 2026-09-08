@@ -8,13 +8,14 @@ import { apiFetch } from '../../../api/client'
 import { ApiError } from '../../../api/envelope'
 import { useT } from '../../../i18n'
 import { PageHead, pagerTexts } from '../../org/shared'
+import { ErrorBanner } from '../../../components/business/page-head'
 import { Pagination } from '../../../components/Pagination'
 import { Dropdown } from '../../../components/Dropdown'
 import { Drawer } from '../../../components/Drawer'
 import { fmtTime } from '../../../lib/format'
 import { pageSlice, type ReportPayload, type ReportRow } from '../types'
 import { useConfirm } from '../../../components/ConfirmDialog'
-import { TableStateRow, EmptyState, LoadingState, CopyButton } from '../../../components/business'
+import { TableStateRow, EmptyState, LoadingState } from '../../../components/business'
 import { copyText } from '../../../components/business/feedback'
 import { CardShell, StatCard, LineTrend, StackedBars } from '../../../components/business/charts'
 import { formatCurrency, formatIndicatorDetail, formatIndicatorValue } from '../../../components/business/charts/format-value'
@@ -30,7 +31,6 @@ const th = 'h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b b
 const td = 'h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]'
 const actBtn = 'h-7 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2 text-[12px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)] disabled:cursor-not-allowed disabled:opacity-50'
 const toolBtn = 'h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)] disabled:cursor-not-allowed disabled:opacity-50'
-const errBanner = 'rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]'
 
 const errText = (e: unknown, fallback: string): string =>
   e instanceof Error && e.message ? e.message : fallback
@@ -223,12 +223,7 @@ export default function ReportPage() {
           ))}
           <button className={toolBtn} disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
         </div>
-        {error ? (
-          <div className="mx-2 mb-2 flex items-center gap-2">
-            <div className={errBanner + ' flex-1 break-all'}>{error}</div>
-            <CopyButton text={error} className="flex-none" />
-          </div>
-        ) : (
+        {error ? <ErrorBanner message={error} className="mx-2 mb-2" /> : (
           <div className="overflow-x-auto">
             <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
               <thead><tr>{r.columns.map((x) => <th key={x} className={th}>{x}</th>)}</tr></thead>
@@ -267,10 +262,7 @@ export default function ReportPage() {
             {t.pages.company.cancel}
           </button>}>
           {viewError ? (
-            <div className="mx-4 mb-3 flex items-center gap-2">
-              <div className={errBanner + ' flex-1 break-all'}>{viewError}</div>
-              <CopyButton text={viewError} className="flex-none" />
-            </div>
+            <ErrorBanner message={viewError} className="mx-4 mb-3" />
           ) : viewLoading ? (
             <LoadingState />
           ) : !view ? (
