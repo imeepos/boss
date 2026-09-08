@@ -54,12 +54,12 @@ func (s *PGStore) CreatePermit(ctx context.Context, p Permit, createdBy int64) (
 	qq := "INSERT INTO odn_permits (permit_no, kind, title, approval_no, authority, valid_from, valid_until, " +
 		"status, project_id, project_no, facility_code, chain_id, attachment_ids, note, created_by) " +
 		"VALUES ($1,$2,$3,$4,$5,$6::date,$7::date,$8," +
-		"NULLIF($9,0),(SELECT proj_no FROM construction_projects WHERE id=NULLIF($9,0))," +
+		"NULLIF($9,0),COALESCE((SELECT proj_no FROM construction_projects WHERE id=NULLIF($9,0)),'')," +
 		"NULLIF($10,''),NULLIF($11,0),$12,$13,NULLIF($14,0)) " +
-		"RETURNING id, to_char(created_at,'YYYY-MM-DD HH24:MI:SS')"
+		"RETURNING id, permit_no, to_char(created_at,'YYYY-MM-DD HH24:MI:SS')"
 	err = s.db.QueryRow(ctx, qq, nextPermitNo(), p.Kind, p.Title, p.ApprovalNo, p.Authority,
 		dateArg(p.ValidFrom), dateArg(p.ValidUntil), st, p.ProjectID, p.FacilityCode, p.ChainID,
-		ids, p.Note, createdBy).Scan(&p.ID, &created)
+		ids, p.Note, createdBy).Scan(&p.ID, &p.PermitNo, &created)
 	if err != nil {
 		log.Printf("[odn-permit] CREATE FAILED kind=%s proj=%d: %v", p.Kind, p.ProjectID, err)
 		return nil, fmt.Errorf("odn: create permit: %w", err)

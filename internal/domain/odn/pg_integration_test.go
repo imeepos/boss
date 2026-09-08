@@ -291,3 +291,30 @@ func TestODNSiteDevice_Integration(t *testing.T) {
 		t.Fatal("SNW990 仍挂局点 998,退役应失败")
 	}
 }
+
+// TestPermitCreateUnlinked_Integration 未关联项目新建许可单(回归 2026-09-09):
+// project_no 为 NOT NULL DEFAULT ”,未关联时子查询为 NULL,须 COALESCE 归空串,
+// 否则 INSERT 报 23502 整条新建失败。自建数据即时清理。
+func TestPermitCreateUnlinked_Integration(t *testing.T) {
+	dsn := os.Getenv("BOSS_PG_TEST_DSN")
+	if dsn == "" {
+		t.Skip("BOSS_PG_TEST_DSN 未设置,跳过集成测试")
+	}
+	ctx := context.Background()
+	pool, err := database.Open(ctx, dsn)
+	if err != nil {
+		t.Fatalf("database.Open: %v", err)
+	}
+	defer pool.Close()
+	s := NewPGStore(pool)
+	st, err := s.CreatePermit(ctx, Permit{Kind: PermitKindROW, Title: "acc_unlinked_permit"}, 0)
+	if err != nil {
+		t.Fatalf("CreatePermit unlinked: %v", err)
+	}
+	if st.PermitNo == "" || st.Status != PRowNotStarted || st.ProjectNo != "" || st.ProjectID != 0 {
+		t.Fatalf("unlinked permit 字段异常: %+v", st)
+	}
+	if _, err := pool.Exec(ctx, "DELETE FROM odn_permits WHERE id=$1", st.ID); err != nil {
+		t.Fatalf("清理测试许可单: %v", err)
+	}
+}
