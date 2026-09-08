@@ -1,4 +1,5 @@
 // 停复机执行页:契约 GET /stop-resume-tasks(customerId 过滤);失败任务 POST /stop-resume-tasks/:taskId/retry。
+// 客户/LO 账号仅后端 ID(接口无姓名快照,登记汇报);过滤走客户选择器(服务端检索)。
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
@@ -10,7 +11,10 @@ import { ResourcePicker } from '../../../components/ResourcePicker'
 import { searchCustomers } from '../../../api/pickers'
 import { pageSlice, type StopResumeTaskRow } from '../types'
 import { useConfirm } from '../../../components/ConfirmDialog'
-import { TableStateRow, ErrorBanner, IdRef } from '../../../components/business'
+import { TableStateRow, ErrorBanner } from '../../../components/business'
+import { ToolbarButton } from '../../../components/business/page-head'
+import { Card, CardFooter } from '../../../components/ui/card'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../../components/ui/table'
 
 export default function StopSrvPage() {
   const t = useT()
@@ -44,7 +48,7 @@ export default function StopSrvPage() {
       toast.success(s.retryOk)
       load()
     } catch (e) {
-      setError(e instanceof Error ? e.message : s.actionFail)
+      toast.error(e instanceof Error ? e.message : s.actionFail)
     } finally {
       setBusy(false)
     }
@@ -55,7 +59,7 @@ export default function StopSrvPage() {
   return (
     <div>
       <PageHead title={s.title} desc={s.desc} />
-      <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
+      <Card>
         <div className="flex flex-wrap items-center gap-2 p-4">
           <ResourcePicker
             value={customerId}
@@ -68,39 +72,38 @@ export default function StopSrvPage() {
             errorText={s.loadFail}
           />
           <span className="spacer" />
-          <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
+          <ToolbarButton disabled={busy} onClick={load}>{t.pages.audit.refresh}</ToolbarButton>
         </div>
         {error ? <ErrorBanner message={error} /> : (
-          <div className="overflow-x-auto px-4 pb-4">
-            <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
-              <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{s.columns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
-              <tbody>
+          <div className="px-4 pb-4">
+            <Table>
+              <TableHeader><TableRow>{s.columns.map((x) => <TableHead key={x}>{x}</TableHead>)}</TableRow></TableHeader>
+              <TableBody>
                 {slice.map((r) => (
-                  <tr key={r.id}>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><IdRef value={r.id} /></td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><IdRef value={r.customerId} /></td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><IdRef value={r.loAccountId} /></td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.action === 'STOP' ? s.actionStop : s.actionResume}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><StatusTag domain="task" value={r.status} /></td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">
+                  <TableRow key={r.id}>
+                    <TableCell className="font-mono text-[var(--shell-group-title)]">#{r.id}</TableCell>
+                    <TableCell className="font-mono text-[var(--shell-group-title)]">#{r.customerId}</TableCell>
+                    <TableCell className="font-mono text-[var(--shell-group-title)]">#{r.loAccountId}</TableCell>
+                    <TableCell>{r.action === 'STOP' ? s.actionStop : s.actionResume}</TableCell>
+                    <TableCell><StatusTag domain="task" value={r.status} /></TableCell>
+                    <TableCell>
                       {r.status === 'FAILED' ? (
-                        <span className="inline-flex items-center">
-                          <button disabled={busy} onClick={() => retry(r.id)}>{s.retry}</button>
-                        </span>
+                        <button disabled={busy} onClick={() => retry(r.id)}
+                          className="px-1 text-xs text-[var(--color-text-link)] bg-none border-none cursor-pointer hover:underline disabled:cursor-not-allowed disabled:opacity-50">{s.retry}</button>
                       ) : '—'}
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
                 {!slice.length && <TableStateRow colSpan={6} loading={busy} text={s.empty} />}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         )}
-        <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
+        <CardFooter>
           <Pagination total={rows.length} page={page} pageSize={pageSize}
             onPage={setPage} onSize={setPageSize} {...pagerTexts(s)} />
-        </div>
-      </div>
+        </CardFooter>
+      </Card>
     </div>
   )
 }

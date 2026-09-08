@@ -1141,7 +1141,7 @@ const zhCN: Translations = {
     stopsrv: {
       title: '停复机执行',
       desc: '停复机任务流水 · 网络侧结果回写 · 失败任务可重试(重放 LO 账号状态迁移)',
-      filterCustomer: '按客户ID过滤(0=全部)',
+      filterCustomer: '按客户检索过滤',
       columns: ['ID', '客户ID', 'LOID', '动作', '网络侧结果', '操作'],
       retry: '重试',
       retryConfirm: '确认重试该失败任务?',

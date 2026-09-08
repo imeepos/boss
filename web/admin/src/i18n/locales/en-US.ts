@@ -1141,7 +1141,7 @@ const enUS: Translations = {
     stopsrv: {
       title: 'Stop/Resume Tasks',
       desc: 'Stop/resume task log · network-side result written back · failed tasks can retry (replay LO account transition)',
-      filterCustomer: 'Filter by customer ID (0=all)',
+      filterCustomer: 'Filter by customer search',
       columns: ['ID', 'Customer ID', 'LOID', 'Action', 'Network Result', 'Actions'],
       retry: 'Retry',
       retryConfirm: 'Retry this failed task?',

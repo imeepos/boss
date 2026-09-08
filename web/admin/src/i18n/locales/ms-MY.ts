@@ -1140,7 +1140,7 @@ const msMY: Translations = {
     stopsrv: {
       title: 'Tugasan Henti/Sambung',
       desc: 'Rekod tugasan henti/sambung · keputusan sisi rangkaian ditulis balik · tugasan gagal boleh cuba semula',
-      filterCustomer: 'Tapis ikut ID pelanggan (0=semua)',
+      filterCustomer: 'Tapis ikut carian pelanggan',
       columns: ['ID', 'ID Pelanggan', 'LOID', 'Tindakan', 'Keputusan Rangkaian', 'Tindakan'],
       retry: 'Cuba Semula',
       retryConfirm: 'Cuba semula tugasan gagal ini?',
