@@ -555,3 +555,11 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - edit 工具并发多发前逐个默念 file_path 是否目标 worktree 绝对路径;主树(main 分支)路径混进参数会直接改坏主分支文件,靠 git status 立即 checkout -- 才救回(2026-09-07 W6)。
 - 当给 SimplePicker 的 search/options 数据源做动态切换(按类型/层级联动)时,修复是给组件加 key=维度 强制重挂载:useServerPickerSearch 只在关键字提交/重试时发请求,fetcher 换闭包不重触发首拉,浮层永远停在旧数据甚至空态(2026-09-07 附件类型切换与 GIS 层级切换两处实证)。
 - 当跑 web/admin 门禁时,修复是从 docs/boss-admin-web.md 门禁节整段复制命令(TZ=Asia/Shanghai 在内),且门禁运行期间冻结同一 worktree 的一切 git 写操作(amend/add):漏 TZ 时区敏感用例假失败,边跑门禁边 amend 则该轮结果不论绿红一律作废重跑(2026-09-07 选择器轮双实证)。
+
+## 2026-09-07 W7 轮新增
+- 【已犯 1 次】python 长脚本分段落盘:草稿中途放弃时已写部分成了完整文件(py_compile 拦不住运行时 NameError)。落盘后必须 head/tail 抽查结构完整性或 ast.parse 后再交付。
+- 【已犯 1 次】SQL NULLIF($n,0) 参数类型推断:0 字面量把 TEXT/参数推成 integer,float 值报 invalid input syntax。float 可空参数一律 NULLIF($n::float8,0)。同型风险:凡是「哨兵值转 NULL」写法。
+- 【已犯 1 次】给既有表加「多代次」列时,旧外键(REFERENCES 单域表)必须同迁移松绑,否则新代次插入必 23503;00n 漏项用下一个迁移号补,禁止改已应用迁移内容。
+- 【已犯 1 次】docker build 经管道 tail 判成败再犯(SERVER_BUILD_OK 假阳性):远程构建一律显式 rc + 日志落盘后 tail。
+- 【已犯 1 次】共享主树目录下长文件多次 edit 内容/行号漂移(read 视图与磁盘不一致):重构类修改改用「python fixer 文件 + bash 执行 + grep 验证」三段式,锚定内容而非行号。
+- 经验:CI runner 宿主故障时的手动等价部署链:git archive/rsync 源码→构建机;上下文必须最小化(全仓 5-9G 上下文会令 buildkit grpc Canceled);DOCKER_BUILDKIT=0 legacy builder 免联网核对基础镜像;缺的基镜像走 daocloud 镜像源 pull 后打 tag。

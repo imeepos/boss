@@ -2189,3 +2189,9 @@
 - skill 有没有提前警告? 有:红线 10(核对 worktree 真实路径)与红线 14(必填参数自检)让漏传 workdir 被输出方括号分支名习惯兜住;红线 26 提示过 SimplePicker 系 onMouseDown,但对「地图类组件必须 CDP 可信事件」无预警,本轮已喂回 techniques。
 - 重来一次我会怎么做? ①地图/画布类交互直接上 CDP Input,不再试合成事件;②devloop_accept 跑长门禁前先估时长,超 2 分钟的门禁改用显式后台跑+日志 RC 留档并在账本 goal 里引用;③所有 bash 调用把 workdir 当必填参数自检。
 
+
+## 2026-09-07 W7 W7 勘测采集+施工进度上报
+- 最耗时坑:102 宿主网络劣化(runner DNS/buildkit/镜像源 TLS 全挂)+多会话共享主树内容漂移。手动等价部署路径(runner 不可用时):git archive/rsync 源码→102,最小上下文裁剪(上下文 5-9G 会撑爆 buildkit 报 grpc Canceled),DOCKER_BUILDKIT=0 legacy builder 绕过 buildkit 联网核对基础镜像,基镜像经 daocloud 镜像源预拉后打 tag。
+- 三次返工根因:分段草稿只落了后半段(py_compile 不拦运行时 NameError,误以为完整);此后编辑基于幻象读内容反复错位——长文件修复一律 python fixer 脚本(base64 传块)+bash grep 验证,不信任 read 缓存视图。
+- 真实代码 bug 三个:AcceptSurvey 只占位未流转 status;NULLIF($n,0) 使坐标参数被推断为 integer;000213 reported_by 外键 accounts 在 WORKER 代次下 23503(加代次列必须同步松绑旧外键)。都是 102 真环境才暴露,单测全绿的教训:SQL 参数类型/外键类缺陷必须有真库集成验收。
+- 下次开工前重读:红线11(引号穿层)+红线24(管道掩码退出码,本次 SERVER_BUILD_OK 假阳性再犯)+红线13(长任务后台跑)。
