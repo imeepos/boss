@@ -53,10 +53,10 @@
 | 维度 | 状态 | 说明 |
 |---|---|---|
 | 打开即用 | ✅ | 懒加载下钻 + 每级本地搜索 + 关键字直搜(防抖 300ms)+ 默认国家兜底 PH;列 loading/空态齐备 |
-| 回显/清除 | ✅ | 编辑值 resolvePath 反查铺开路径(N4);清除按钮回传 code='' |
+| 回显/清除 | 🔧 | **本次发现并修复编辑回显必然落空的双重缺陷**(2c9ecd0a):① countryCode 显式传参时 country 初值即命中,boot 的 setCountry 同值 bailout,回显效应永不重放(booted 由 ref 改 state);② 效应先写 expandedFor(state)再异步反查,标记写入触发重渲染,alive 清理先于 promise 兑现把在途 resolvePath 自杀(expandedFor 改 ref)。地址页实证:修复前重开回显为空,修复后 `PH / PH-1300000000` 链回显+清除可用;jsdom 三路径回归锁定。直搜点选回显链 ✅(102 DOM 断言 `PH / … / PH-0304911022`) |
 | 错误 | ✅ | role=alert + 重试(reloadTick);层列失败不缓存父码可重拉 |
 | 一致性 | ✅ | 文案 regionCascade.* 三语;shell 令牌双主题 |
-| ⚠️ 遗留 | 组件侧 | 直搜失败的「重试」重跑国家+一级加载,不单独重发直搜请求(低频,影响小);组件 249 行接近红线,后续加功能需先拆列组件 |
+| ⚠️ 遗留 | 组件侧 | 直搜失败的「重试」重跑国家+一级加载,不单独重发直搜请求(低频,影响小);组件 250 行接近红线,后续加功能需先拆列组件 |
 
 ### 6. ResourcePicker(兼容层,约 16 处直用页面)
 
@@ -82,6 +82,10 @@
 
 ## 三、本次修复的验证锚点
 
-- vitest:pickerCore.test.ts 新增 echoPinFromCache / rememberOptionLabels / pickKeysFromItems 三组回归;全量 83 文件 542 用例绿(含 i18n 三语键集一致性)。
+- vitest:pickerCore.test.ts 新增 echoPinFromCache / rememberOptionLabels / pickKeysFromItems 三组回归 + RegionCascadePicker.test.tsx jsdom 渲染回归(编辑回显显式国家/默认国家端点/空值三路径);全量 84 文件 545 用例绿(含 i18n 三语键集一致性)。
 - 门禁:`TZ=Asia/Shanghai pnpm typecheck && pnpm test && pnpm build` 全绿(worktree feat/ux-selector)。
-- 102 真实页面 DOM 断言:消费页走查记录见会话汇报(打开→搜索→键盘/Esc→清除→回显);light/dark 浮层计算样式断言 + 截图 /tmp/selector-*-*.png。
+- 真实页面 DOM 断言(本地 dev 分支构建 + 102 后端真实数据):
+  - 缴费登记页 CustomerPicker:开浮层→防抖检索 348→250 条→键盘/选中→触发器回显「OWPAL45451 · 09990000001」→重开焦点入检索框→Esc 关闭焦点归还→清除钮回占位;--logs 0 console error / 0 失败请求。
+  - 地址页 RegionCascadePicker:直搜 Cavite 7 条→点选回显五级链 `PH / … / PH-0304911022`→清除复位;修复前重开回显为空、修复后 `PH / PH-1300000000` 链回显(对照证据)。
+- 102:5180 部署态抽验(main 已并入门集 e7d1fb0d..a39efe8f 后 CI 重建):客户选择器检索/人读回显/清除钮全部在真实部署生效;cascade 修复(2c9ecd0a)待负责人二次合并后生效。
+- 双主题浮层计算样式断言(缴费页浮层):light bg rgb(255,255,255)/边 rgb(239,241,245)/文字 rgb(78,86,100);dark bg rgb(16,32,63)/边 rgba(255,255,255,0.06)/文字 rgb(166,177,195)——与 tokens.css 两主题令牌逐一对应;截图 /tmp/selector-theme-light.png、/tmp/selector-theme-dark.png 及各页过程截图 /tmp/selector-*.png。
