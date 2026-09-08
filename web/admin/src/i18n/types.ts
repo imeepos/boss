@@ -301,7 +301,7 @@ export interface Translations {
       chain: { title: string; olt: string; site: string; splitter: string; closure: string; terminal: string; coverage: string; servedCount: string; empty: string }
       relGrid: string
       relSite: string
-      drawer: { createTitle: string; editTitle: string; hintOverride: string; lifecycle: string; edit: string; missingRequired: string; kindP: string; kindMH: string; kindTW: string; kindCLS: string; kindTBX: string }
+      drawer: { createTitle: string; editTitle: string; hintOverride: string; lifecycle: string; lifecycleHint: string; edit: string; missingRequired: string; kindP: string; kindMH: string; kindTW: string; kindCLS: string; kindTBX: string }
       detail: { title: string; basic: string; relations: string; asset: string; records: string; noAsset: string; noRecords: string; regNo: string }
       rangeText: string
       prev: string

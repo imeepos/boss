@@ -565,7 +565,7 @@ const zhCN: Translations = {
       kpi: { grids: '网格总数', facilities: '设施总数', sites: '局点总数', linkedOlt: '关联 OLT', capacity: '最高网格占用' },
       chain: { title: '关联链', olt: 'OLT 设备', site: '局点', splitter: '分光器', closure: '接头盒', terminal: '终端盒', coverage: '覆盖', servedCount: '已覆盖 {served}/{total}', empty: '当前市暂无链路数据,备案局点/设施后自动成链' },
       relGrid: '所属网格', relSite: '所属局点',
-      drawer: { createTitle: '新增资源', editTitle: '编辑资源', hintOverride: '编码自动顺延,可覆盖', lifecycle: '生命周期', edit: '编辑', missingRequired: '请补全必填项', kindP: '电杆 P', kindMH: '人井 MH', kindTW: '铁塔 TW', kindCLS: '接头盒 CLS', kindTBX: '终端盒 TBX' },
+      drawer: { createTitle: '新增资源', editTitle: '编辑资源', hintOverride: '编码自动顺延,可覆盖', lifecycle: '生命周期', lifecycleHint: '新建设施默认规划态(可入施工单);登记既有在网设施选 IN_SERVICE', edit: '编辑', missingRequired: '请补全必填项', kindP: '电杆 P', kindMH: '人井 MH', kindTW: '铁塔 TW', kindCLS: '接头盒 CLS', kindTBX: '终端盒 TBX' },
       detail: { title: '详情', basic: '基本信息', relations: '关联关系', asset: '资产信息', records: '操作记录', noAsset: '未登记', noRecords: '暂无操作记录', regNo: '资产凭证' },
       rangeText: '第 {from}-{to} 条,共 {count} 条', prev: '上一页', next: '下一页', perPage: '条/页', jumpText: '跳至', pageUnit: '页',
       prvLabel: 'PRV',

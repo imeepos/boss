@@ -565,7 +565,7 @@ const enUS: Translations = {
       kpi: { grids: 'Total Grids', facilities: 'Total Facilities', sites: 'Total Sites', linkedOlt: 'Linked OLT', capacity: 'Peak grid usage' },
       chain: { title: 'Relation Chain', olt: 'OLT Device', site: 'Site', splitter: 'Splitter', closure: 'Closure', terminal: 'Terminal Box', coverage: 'Coverage', servedCount: 'Served {served}/{total}', empty: 'No chain data for this city yet — register sites/facilities to build one' },
       relGrid: 'Home Grid', relSite: 'Home Site',
-      drawer: { createTitle: 'Add Resource', editTitle: 'Edit Resource', hintOverride: 'Code auto-suggested, editable', lifecycle: 'Lifecycle', edit: 'Edit', missingRequired: 'Please complete required fields', kindP: 'Pole P', kindMH: 'Manhole MH', kindTW: 'Tower TW', kindCLS: 'Closure CLS', kindTBX: 'Terminal TBX' },
+      drawer: { createTitle: 'Add Resource', editTitle: 'Edit Resource', hintOverride: 'Code auto-suggested, editable', lifecycle: 'Lifecycle', lifecycleHint: 'New facilities default to PLANNED (eligible for construction orders); pick IN_SERVICE when registering an existing in-service asset', edit: 'Edit', missingRequired: 'Please complete required fields', kindP: 'Pole P', kindMH: 'Manhole MH', kindTW: 'Tower TW', kindCLS: 'Closure CLS', kindTBX: 'Terminal TBX' },
       detail: { title: 'Detail', basic: 'Basic Info', relations: 'Relations', asset: 'Asset Info', records: 'Activity', noAsset: 'Not registered', noRecords: 'No records yet', regNo: 'Voucher' },
       rangeText: '{from}-{to} of {count}', prev: 'Prev', next: 'Next', perPage: '/ page', jumpText: 'Jump to', pageUnit: 'page',
       prvLabel: 'PRV',
