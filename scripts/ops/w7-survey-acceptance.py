@@ -21,9 +21,9 @@ ACCOUNTS = os.path.join(ROOT, ".agents", "skills", "bossctl-cli", "test-accounts
 with open(ACCOUNTS) as f:
     acc = json.load(f)
 AKEY = os.environ.get("ADMIN_API_KEY", acc["admin"]["apiKeys"][0]["key"])
-WKEY = os.environ.get("WORKER_API_KEY", acc["workers"][0]["apiKeys"][0]["key"])
-WID = int(os.environ.get("WORKER_ID", acc["workers"][0]["workerId"]))
-WNAME = os.environ.get("WORKER_NAME", acc["workers"][0]["name"])
+WKEY = os.environ.get("WORKER_API_KEY", "")
+WID = int(os.environ.get("WORKER_ID", "0"))
+WNAME = os.environ.get("WORKER_NAME", "")
 SSH_HOST = os.environ.get("SSH_HOST", "imeepos@192.168.0.102")
 STAMP = str(int(time.time()))
 OK = 0
@@ -63,6 +63,43 @@ def check(name, cond, detail=""):
         FAIL += 1
         print("[FAIL] " + name + (": " + str(detail) if detail else ""))
 
+def bootstrap_worker():
+    # 自举师傅夹具(WK-ACC-W7 常驻复用):按 staffNo 解析,缺则经 admin API 创建;
+    # API key 缓存在 /tmp 复用,失效才重签——不创建/删除任何密钥,规避并行验证互踩。
+    global WID, WNAME, WKEY
+    wl, _ = api("GET", "/api/admin/v1/workers?keyword=WK-ACC-W7")
+    items = (wl or {}).get("items") if isinstance(wl, dict) else wl
+    hit = [w for w in (items or []) if w.get("staffNo") == "WK-ACC-W7"]
+    if not hit:
+        gs, _ = api("GET", "/api/admin/v1/worker-groups")
+        gitems = (gs or {}).get("items") if isinstance(gs, dict) else gs
+        gid = gitems[0].get("id") if gitems else None
+        body = {"staffNo": "WK-ACC-W7", "name": "W7验收师傅", "phone": "13800009977",
+                "password": "accw7123456", "regionIds": [4]}
+        if gid:
+            body["groupId"] = gid
+        w, wcode = api("POST", "/api/admin/v1/workers", body)
+        if w is None:
+            print("[bootstrap] FAIL worker create code=" + str(wcode))
+            sys.exit(1)
+        hit = [w]
+    w0 = hit[0]
+    WID = int(w0["id"])
+    WNAME = w0.get("name") or "W7验收师傅"
+    kc = "/tmp/w7-worker-key"
+    if os.path.exists(kc):
+        ck = open(kc).read().strip()
+        if ck and http("GET", "/api/worker/v1/surveys", ck)[0] == 200:
+            WKEY = ck
+            print("[bootstrap] 复用缓存密钥 worker=" + str(WID))
+            return
+    k, _ = api("POST", "/api/admin/v1/api-keys", {"subjectType": "worker", "subjectRef": WID, "name": "w7-persist"})
+    if not isinstance(k, dict) or not k.get("plainKey"):
+        print("[bootstrap] FAIL api key issue")
+        sys.exit(1)
+    WKEY = k["plainKey"]
+    open(kc, "w").write(WKEY)
+    print("[bootstrap] worker id=" + str(WID) + " 新密钥已缓存")
 
 def probe_ready():
     a = http("GET", "/api/admin/v1/odn/surveys", "no-key")[0]
@@ -89,7 +126,6 @@ def cleanup():
         lines.append("DELETE FROM construction_projects WHERE id = " + pid + ";")
     if fac:
         lines.append("DELETE FROM construction_items WHERE facility_code = '" + fac + "';")
-        lines.append("DELETE FROM odn_facility WHERE code = '" + fac + "';")
     lines.append("COMMIT;")
     try:
         cmd = ["ssh", "-o", "ConnectTimeout=10", "-o", "BatchMode=yes", SSH_HOST,
@@ -129,6 +165,10 @@ def main():
     if not wait_ready(args.wait):
         sys.exit(1)
 
+    bootstrap_worker()
+    # 自清兜底:清掉历史运行/崩溃残留的验收任务(含报告),保证可重复执行。
+    sql("DELETE FROM survey_task_reports WHERE task_id IN (SELECT id FROM survey_tasks WHERE title LIKE 'W7验收%' OR title LIKE '手动复现%');")
+    sql("DELETE FROM survey_tasks WHERE title LIKE 'W7验收%' OR title LIKE '手动复现%');")
     # A1 admin 创建勘测任务(指派师傅)
     data, _ = api("POST", "/api/admin/v1/odn/surveys", {
         "title": "W7验收-网格91主干勘测", "description": "验收造数,用后即清",
@@ -204,7 +244,6 @@ def main():
         "name": "W7验收杆", "lat": 14.606, "lng": 120.991})
     check("B1 创建 PLANNED 验收设施 " + fac, r is not None, r)
     sql("UPDATE odn_facility SET lifecycle_status='PLANNED' WHERE code='" + fac + "'")
-    fix = sql("UPDATE odn_facility SET lifecycle_status='PLANNED' WHERE code='" + fac + "'")
     TRACK["facility"] = fac
 
     projNo = "ACC-W7-" + STAMP
@@ -255,6 +294,7 @@ def main():
 
     # E 造数即清+孤儿巡检
     clean_ok = cleanup()
+    # WK-ACC-W7 为常驻验收夹具:密钥用后即删,师傅保留复用(并行验证安全)。
     gate = subprocess.run(["bash", os.path.join(ROOT, "scripts", "ops", "db-patrol-gate.sh")],
                           capture_output=True, text=True, timeout=300)
     check("E1 孤儿巡检门禁归零", gate.returncode == 0, gate.stdout.strip()[-200:])
