@@ -5,13 +5,10 @@ import { apiFetch } from '../../../api/client'
 import { Input } from '../../../components/ui/input'
 import { Badge } from '../../../components/ui/badge'
 import { AttachmentManager } from '../../../components/AttachmentManager'
+import { Card } from '../../../components/ui/card'
 import { EmptyState, ErrorBanner, ToolbarButton } from '../../../components/business/page-head'
 import { useConfirm } from '../../../components/ConfirmDialog'
 import { PERMIT_KIND_TEXT, PERMIT_STATUS_TEXT, PERMIT_STATUS_VARIANT, type PermitRow } from './permits'
-
-const CARD = 'rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]'
-const FIELD = 'flex flex-col gap-1'
-const LABEL = 'text-xs text-[var(--shell-content-text)]'
 
 interface TransitionAction { label: string; to: string; needReason?: boolean; danger?: boolean; useApproval?: boolean }
 
@@ -50,14 +47,23 @@ export function PermitDetail({ permitId, onChanged }: { permitId: number; onChan
         setEdit({ title: p.title, approvalNo: p.approvalNo, authority: p.authority, validFrom: p.validFrom ?? '', validUntil: p.validUntil ?? '', facilityCode: p.facilityCode ?? '', note: p.note })
         setAttachmentIds(p.attachmentIds ?? [])
       }
-    } catch (e) { setError(e instanceof Error ? e.message : '加载失败') }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : '加载失败'
+      setError(msg)
+      toast.error('许可单加载失败', { description: msg })
+    }
   }, [permitId])
 
   useEffect(() => { void load() }, [load])
 
   const act = async (fn: () => Promise<unknown>, okMsg: string) => {
     setBusy(true); setError('')
-    try { await fn(); toast.success(okMsg); await load(); onChanged() } catch (e) { setError(e instanceof Error ? e.message : '操作失败') } finally { setBusy(false) }
+    try { await fn(); toast.success(okMsg); await load(); onChanged() }
+    catch (e) {
+      const msg = e instanceof Error ? e.message : '操作失败'
+      setError(msg)
+      toast.error(okMsg + ' 失败', { description: msg })
+    } finally { setBusy(false) }
   }
 
   const saveArchive = () => {
@@ -86,25 +92,25 @@ export function PermitDetail({ permitId, onChanged }: { permitId: number; onChan
   if (!permit) return error ? <ErrorBanner message={error} /> : <EmptyState text='加载中…' />
   const actions = actionsFor(permit.kind, permit.status)
   const set = (k: string, v: string) => setEdit((m) => ({ ...m, [k]: v }))
-  const field = (k: string, label: string, placeholder = '') => <label className={FIELD}><span className={LABEL}>{label}</span><Input value={edit[k as keyof typeof edit] ?? ''} placeholder={placeholder} onChange={(e) => set(k, e.target.value)} /></label>
-  return <div className='mt-4 space-y-3'>
+  const field = (k: string, label: string, placeholder = '') => <label className="flex flex-col gap-1"><span className="text-xs text-[var(--shell-content-text)]">{label}</span><Input value={edit[k as keyof typeof edit] ?? ''} placeholder={placeholder} onChange={(e) => set(k, e.target.value)} /></label>
+  return <div className="mt-4 space-y-3">
     {error && <ErrorBanner message={error} />}
-    <div className={CARD + ' p-4'}>
-      <div className='mb-2 flex flex-wrap items-center gap-2'>
-        <span className='font-mono text-sm font-semibold'>{permit.permitNo}</span>
+    <Card className="p-4">
+      <div className="mb-2 flex flex-wrap items-center gap-2">
+        <span className="font-mono text-sm font-semibold">{permit.permitNo}</span>
         <Badge>{PERMIT_KIND_TEXT[permit.kind] ?? permit.kind}</Badge>
         <Badge variant={PERMIT_STATUS_VARIANT[permit.status] ?? 'default'}>{PERMIT_STATUS_TEXT[permit.status] ?? permit.status}</Badge>
-        {permit.projectNo && <span className='text-xs opacity-60'>项目 {permit.projectNo}</span>}
-        {permit.rejectReason && <span className='text-xs text-[var(--color-danger)]'>原因:{permit.rejectReason}</span>}
+        {permit.projectNo && <span className="text-xs opacity-60">项目 {permit.projectNo}</span>}
+        {permit.rejectReason && <span className="text-xs text-[var(--color-danger)]">原因:{permit.rejectReason}</span>}
       </div>
-      {actions.length > 0 && <div className='flex flex-wrap items-end gap-2'>
+      {actions.length > 0 && <div className="flex flex-wrap items-end gap-2">
         {actions.map((a) => <ToolbarButton key={a.to + a.label} disabled={busy} onClick={() => void transition(a)}>{a.label}</ToolbarButton>)}
-        {actions.some((a) => a.needReason) && <label className={FIELD}><span className={LABEL}>操作原因(驳回/退回/作废必填)</span><Input value={reason} onChange={(e) => setReason(e.target.value)} placeholder='原因' /></label>}
+        {actions.some((a) => a.needReason) && <label className="flex flex-col gap-1"><span className="text-xs text-[var(--shell-content-text)]">操作原因(驳回/退回/作废必填)</span><Input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="原因" /></label>}
       </div>}
-    </div>
-    <div className={CARD + ' p-4'}>
-      <div className='mb-2 text-sm font-semibold'>证照档案要素(任何状态可补录)</div>
-      <div className='grid grid-cols-2 gap-3 md:grid-cols-4'>
+    </Card>
+    <Card className="p-4">
+      <div className="mb-2 text-sm font-semibold">证照档案要素(任何状态可补录)</div>
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {field('title', '名称')}
         {field('approvalNo', '批复号')}
         {field('authority', '管辖机构')}
@@ -113,11 +119,11 @@ export function PermitDetail({ permitId, onChanged }: { permitId: number; onChan
         {field('facilityCode', '关联设施', '如 CLS00001')}
         {field('note', '备注')}
       </div>
-      <div className='mt-3 flex justify-end'><ToolbarButton primary disabled={busy} onClick={saveArchive}>{busy ? '保存中…' : '保存档案与附件'}</ToolbarButton></div>
-    </div>
-    <div className={CARD + ' p-4'}>
-      <div className='mb-2 text-sm font-semibold'>证照附件(勾选后随档案保存)</div>
-      <AttachmentManager uploaderType='account' selectable selectedIds={attachmentIds} onSelectionChange={setAttachmentIds} />
-    </div>
+      <div className="mt-3 flex justify-end"><ToolbarButton primary disabled={busy} onClick={saveArchive}>{busy ? '保存中…' : '保存档案与附件'}</ToolbarButton></div>
+    </Card>
+    <Card className="p-4">
+      <div className="mb-2 text-sm font-semibold">证照附件(勾选后随档案保存)</div>
+      <AttachmentManager uploaderType="account" selectable selectedIds={attachmentIds} onSelectionChange={setAttachmentIds} />
+    </Card>
   </div>
 }
