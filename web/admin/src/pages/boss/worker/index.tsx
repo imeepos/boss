@@ -6,19 +6,23 @@ import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { useQueryState } from '../../../lib/useQueryState'
 import { PageHead, pagerTexts } from '../../org/shared'
+import { ErrorBanner, ToolbarButton } from '../../../components/business'
 import { Pagination } from '../../../components/Pagination'
 import { Dropdown } from '../../../components/Dropdown'
 import { ResourcePicker } from '../../../components/ResourcePicker'
 import { fmtTime } from '../../../lib/format'
 import { pageSlice, type WorkerGroupRow, type WorkerRow } from '../types'
 import { TableStateRow } from '../../../components/business'
+import { Card } from '../../../components/ui/card'
+import { Input } from '../../../components/ui/input'
+import { Badge } from '../../../components/ui/badge'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/table'
 import { TeamDialogs, type DialogMode } from './TeamDialogs'
 import { WorkerDialogs, loadRegionOptions, type RegionOption, type WorkerDialogMode } from './WorkerDialogs'
 import { WorkerRegionsDialog } from './worker-regions-dialog'
 import { WorkerDetailDrawer } from './worker-detail-drawer'
 
 const smallBtn = 'h-7 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-3 text-[12px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]'
-const primaryBtn = 'h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]'
 
 export default function WorkerPage() {
   const t = useT()
@@ -98,12 +102,12 @@ export default function WorkerPage() {
       <PageHead title={w.title} desc={w.desc} />
       {/* 页面级操作栏:新增师傅(录入主档+登录密码) / 添加装维队 */}
       <div className="mb-4 flex items-center justify-end gap-2">
-        <button className={primaryBtn} onClick={() => setWorkerDialog({ type: 'create' })}>{w.newWorker}</button>
-        <button className={primaryBtn} onClick={() => setDialog({ type: 'create' })}>{w.newTeam}</button>
+        <ToolbarButton primary onClick={() => setWorkerDialog({ type: 'create' })}>{w.newWorker}</ToolbarButton>
+        <ToolbarButton primary onClick={() => setDialog({ type: 'create' })}>{w.newTeam}</ToolbarButton>
       </div>
       <div className="mb-4 flex flex-col gap-4 lg:flex-row">
         {/* 装维队卡片列 */}
-        <div className="w-full shrink-0 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] p-4 shadow-[var(--shell-card-shadow)] lg:w-72">
+        <Card className="w-full shrink-0 p-4 lg:w-72">
           <div className="mb-3">
             <span className="text-sm font-medium text-[var(--shell-heading)]">{w.teamTitle}</span>
           </div>
@@ -144,12 +148,12 @@ export default function WorkerPage() {
               </div>
             ))}
           </div>
-        </div>
+        </Card>
 
         {/* 成员表 */}
-        <div className="min-w-0 flex-1 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
+        <Card className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2 p-4">
-            <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" placeholder={w.searchPlaceholder}
+            <Input className="w-60" placeholder={w.searchPlaceholder}
               value={keyword} onChange={(e) => { setKeyword(e.target.value); setUrlKeyword(e.target.value); setPage(1) }} />
             <span className="text-sm text-[var(--shell-group-title)]">{selGroup ? groupName(selGroup) : w.allMembers}</span>
             <span className="spacer" />
@@ -168,45 +172,47 @@ export default function WorkerPage() {
                 minWidth={180}
               />
             )}
-            <button className={smallBtn} disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
+            <ToolbarButton disabled={busy} onClick={load}>{t.pages.audit.refresh}</ToolbarButton>
           </div>
-          {error && <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div>}
-            <div className="overflow-x-auto px-4 pb-4">
-              <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
-                <thead><tr>{w.columns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
-                <tbody>
-                  {slice.map((r) => (
-                    <tr key={r.id}>
-                      <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] hover:bg-[var(--shell-menu-hover-bg)]">{r.staffNo}</td>
-                      <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] hover:bg-[var(--shell-menu-hover-bg)]">{r.name}</td>
-                      <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] hover:bg-[var(--shell-menu-hover-bg)]">{groupName(r.groupId)}</td>
-                      <td className="h-11 px-3 border-b border-[var(--shell-side-border)] hover:bg-[var(--shell-menu-hover-bg)]">{regionNames(r)}</td>
-                      <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] hover:bg-[var(--shell-menu-hover-bg)]">{r.phone || '—'}</td>
-                      <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] hover:bg-[var(--shell-menu-hover-bg)]">{r.status === 1 ? w.active : w.left}</td>
-                      <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] hover:bg-[var(--shell-menu-hover-bg)]">{fmtTime(r.joinedAt)}</td>
-                      <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] hover:bg-[var(--shell-menu-hover-bg)]">
-                        <div className="flex gap-2">
-                          <button className={smallBtn} onClick={() => setDetailId(r.id)}>{w.detail}</button>
-                          {r.status === 1 && (
-                            <>
-                              <button className={smallBtn} onClick={() => setRegionsWorker(r)}>{w.editRegions}</button>
-                              <button className={smallBtn} onClick={() => setCaptain(r)}>{w.setCaptain}</button>
-                              <button className={smallBtn} onClick={() => setDialog({ type: 'transfer', worker: r })}>{w.transfer}</button>
-                            </>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                  {!slice.length && <TableStateRow colSpan={w.columns.length} loading={busy} text={w.empty} />}
-                </tbody>
-              </table>
-            </div>
+          {error && <ErrorBanner message={error} />}
+          <div className="px-4 pb-4">
+            <Table>
+              <TableHeader>
+                <TableRow>{w.columns.map((x) => <TableHead key={x}>{x}</TableHead>)}</TableRow>
+              </TableHeader>
+              <TableBody>
+                {slice.map((r) => (
+                  <TableRow key={r.id}>
+                    <TableCell>{r.staffNo}</TableCell>
+                    <TableCell>{r.name}</TableCell>
+                    <TableCell>{groupName(r.groupId)}</TableCell>
+                    <TableCell className="whitespace-normal">{regionNames(r)}</TableCell>
+                    <TableCell>{r.phone || '—'}</TableCell>
+                    <TableCell><Badge variant={r.status === 1 ? 'success' : 'default'}>{r.status === 1 ? w.active : w.left}</Badge></TableCell>
+                    <TableCell>{fmtTime(r.joinedAt)}</TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <button className={smallBtn} onClick={() => setDetailId(r.id)}>{w.detail}</button>
+                        {r.status === 1 && (
+                          <>
+                            <button className={smallBtn} onClick={() => setRegionsWorker(r)}>{w.editRegions}</button>
+                            <button className={smallBtn} onClick={() => setCaptain(r)}>{w.setCaptain}</button>
+                            <button className={smallBtn} onClick={() => setDialog({ type: 'transfer', worker: r })}>{w.transfer}</button>
+                          </>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {!slice.length && <TableStateRow colSpan={w.columns.length} loading={busy} text={w.empty} />}
+              </TableBody>
+            </Table>
+          </div>
           <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
             <Pagination total={filtered.length} page={page} pageSize={pageSize}
-              onPage={setPage} onSize={setPageSize} {...pagerTexts(w)} />
+              onPage={setPage} onSize={(s) => { setPageSize(s); setPage(1) }} {...pagerTexts(w)} />
           </div>
-        </div>
+        </Card>
       </div>
 
       <TeamDialogs mode={dialog} groups={groups} workers={rows} onClose={() => setDialog(null)} onDone={load} />

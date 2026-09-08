@@ -7,6 +7,8 @@ import { useT } from '../../../i18n'
 import { Drawer } from '../../../components/Drawer'
 import { StatusTag } from '../../../components/StatusTag'
 import { EmptyState, LoadingState } from '../../../components/business'
+import { Button } from '../../../components/ui/button'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/table'
 import { fmtTime } from '../../../lib/format'
 import {
   ACTIVE_TICKET_STATUSES, SECTION_LIMIT, WORKER_DETAIL_SECTIONS, WORKER_PROFILE_FIELDS,
@@ -14,8 +16,6 @@ import {
 } from './worker-detail-view'
 
 type WorkerDetail = Record<string, unknown>
-
-const cellBase = 'px-3 py-2 text-xs align-top border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)]'
 
 function renderCell(v: unknown, spec: WColSpec | undefined, d: Record<string, string>): React.ReactNode {
   if (v === null || v === undefined || v === '') return <span className="text-[var(--shell-crumb-text)]">—</span>
@@ -47,24 +47,24 @@ function SectionBlock({ section, rows, name, d, empty }: {
       {rows.length === 0 ? <EmptyState text={empty} /> : (
         <>
           <div className="overflow-x-auto rounded-sm border border-[var(--shell-card-border)]">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr>
+            <Table>
+              <TableHeader>
+                <TableRow>
                   {section.cols.map((c) => (
-                    <th key={c.key} className="h-9 bg-[var(--shell-menu-hover-bg)] px-3 text-left text-[11px] font-medium whitespace-nowrap text-[var(--shell-group-title)]">{d[c.k] ?? c.key}</th>
+                    <TableHead key={c.key} className="h-9 text-[11px]">{d[c.k] ?? c.key}</TableHead>
                   ))}
-                </tr>
-              </thead>
-              <tbody>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {visible.map((row, i) => (
-                  <tr key={i} className="hover:bg-[var(--shell-menu-hover-bg)]">
+                  <TableRow key={i}>
                     {section.cols.map((c) => (
-                      <td key={c.key} className={cellBase}>{renderCell(row[c.key], c.spec, d)}</td>
+                      <TableCell key={c.key} className="whitespace-normal">{renderCell(row[c.key], c.spec, d)}</TableCell>
                     ))}
-                  </tr>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
           {capped && (
             <button className="mt-2 cursor-pointer border-none bg-none px-0 text-xs text-[var(--color-border-focus)] hover:underline" onClick={() => setExpanded(!expanded)}>
@@ -166,10 +166,9 @@ export function WorkerDetailDrawer({ id, groupName, onClose, onResetPwd }: {
       footer={
         <div className="flex justify-end gap-2">
           {onResetPwd && status === 1 && (
-            <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]"
-              onClick={() => onResetPwd(id, name)}>{w.resetPwd}</button>
+            <Button variant="outline" size="sm" onClick={() => onResetPwd(id, name)}>{w.resetPwd}</Button>
           )}
-          <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" onClick={onClose}>{w.cancel}</button>
+          <Button size="sm" onClick={onClose}>{w.cancel}</Button>
         </div>
       }>
       {error ? (

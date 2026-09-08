@@ -8,6 +8,8 @@ import { Dropdown } from '../../../components/Dropdown'
 import { ResourcePicker } from '../../../components/ResourcePicker'
 import { Button } from '../../../components/ui/button'
 import { Input } from '../../../components/ui/input'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/table'
+import { EmptyState } from '../../../components/business'
 import type { TeamPerfRow, WorkerGroupRow, WorkerRow } from '../types'
 
 export type DialogMode =
@@ -181,22 +183,24 @@ function PerfPanel({ group }: { group: WorkerGroupRow }) {
       <label className="mb-1 block text-[13px] text-[var(--shell-group-title)]">{w.periodLabel}</label>
       <div className="mb-3"><Input type="month" value={period} onChange={(e) => setPeriod(e.target.value)} /></div>
       <Err msg={err} />
-      <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
-        <thead><tr>{w.perfCols.map((x) => <th key={x} className="h-9 px-2 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
-        <tbody>
+      <Table>
+        <TableHeader>
+          <TableRow>{w.perfCols.map((x) => <TableHead key={x}>{x}</TableHead>)}</TableRow>
+        </TableHeader>
+        <TableBody>
           {items.map((m) => (
-            <tr key={m.workerId}>
-              <td className="h-9 px-2 whitespace-nowrap border-b border-[var(--shell-side-border)]">{m.staffNo}</td>
-              <td className="h-9 px-2 whitespace-nowrap border-b border-[var(--shell-side-border)]">{m.name}</td>
-              <td className="h-9 px-2 whitespace-nowrap border-b border-[var(--shell-side-border)]">{m.finished}</td>
-              <td className="h-9 px-2 whitespace-nowrap border-b border-[var(--shell-side-border)]">{m.onTimeRate}%</td>
-              <td className="h-9 px-2 whitespace-nowrap border-b border-[var(--shell-side-border)]">{m.score}</td>
-              <td className="h-9 px-2 whitespace-nowrap border-b border-[var(--shell-side-border)]">{m.isLeader ? w.captainTag : w.memberTag}</td>
-            </tr>
+            <TableRow key={m.workerId}>
+              <TableCell>{m.staffNo}</TableCell>
+              <TableCell>{m.name}</TableCell>
+              <TableCell>{m.finished}</TableCell>
+              <TableCell>{m.onTimeRate}%</TableCell>
+              <TableCell>{m.score}</TableCell>
+              <TableCell>{m.isLeader ? w.captainTag : w.memberTag}</TableCell>
+            </TableRow>
           ))}
-          {!items.length && !err && <tr><td colSpan={6} className="h-9 px-2 text-center text-[var(--shell-group-title)]">{w.empty}</td></tr>}
-        </tbody>
-      </table>
+          {!items.length && !err && <TableRow><TableCell colSpan={6}><EmptyState text={w.empty} /></TableCell></TableRow>}
+        </TableBody>
+      </Table>
     </div>
   )
 }
