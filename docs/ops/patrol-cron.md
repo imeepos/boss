@@ -180,3 +180,10 @@ volces 云凭据刻意不含)兜底 act_runner 拉私仓 401,容器重建即丢�
   deploy-102;.runner 注册存于 runner_data 卷,重建后免重注册直接 declare;以宿主凭据文件
   为唯一凭据(DOCKER_CONFIG 指向其所在目录)docker pull 私仓镜像成功;
 - ci-keep 口径不变: docker-clean.sh 的 label!=ci-keep 豁免与 keepalive cron 均未动。
+
+## 2026-09-08 /srv/fast 磁盘满→gitea 认证全拒(处置实录与预防)
+
+- 症状:git push/fetch gitea 全量 Permission denied(publickey);boss 容器正常,极易误判为网络/凭据问题。
+- 根因:/srv/fast(234G,docker data-root 所在)100% 满——Build Cache 117.7GB 全部可回收(2335 条,CI 逐次构建累积);gitea-postgres 因 `No space left on device` PANIC 崩溃循环(failing streak 471),gitea 查公钥必读库→认证全拒。
+- 处置:`docker builder prune -f`(回收 117.6GB)→`docker image prune -f`(1.5GB)→`docker restart gitea-postgres && docker restart gitea`→postgres healthy、push 恢复。数据卷一律未动。
+- 预防建议:每周 `docker builder prune -f` 加进 crontab(与 db-patrol-gate 同机制);巡检脚本加一条 `df -h /srv/fast` 使用率>85% 告警。
