@@ -12,7 +12,7 @@ import (
 // 施工进度存储(P0-B,迁移 000213):幂等上报/列表/清单级聚合。
 
 const progressCols = "p.id, p.project_id, p.facility_code, p.done_qty, COALESCE(p.lat,0), COALESCE(p.lng,0), COALESCE(p.note,''), p.photo_ids, p.client_msg_id, p.reporter_type, COALESCE(p.reported_by,0), " +
-	"COALESCE(CASE WHEN p.reporter_type='WORKER' THEN w.name ELSE a.name END,''), to_char(p.reported_at,'YYYY-MM-DD HH24:MI:SS')"
+	"COALESCE(CASE WHEN p.reporter_type='WORKER' THEN w.name ELSE a.real_name END,''), to_char(p.reported_at,'YYYY-MM-DD HH24:MI:SS')"
 
 const progressFrom = " FROM construction_progress p " +
 	"LEFT JOIN workers w ON p.reporter_type='WORKER' AND w.id=p.reported_by " +
