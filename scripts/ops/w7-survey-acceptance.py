@@ -55,6 +55,7 @@ def api(method, path, body=None, worker=False):
 
 
 def check(name, cond, detail=""):
+    global OK, FAIL
     if cond:
         OK += 1
         print("[PASS] " + name)
