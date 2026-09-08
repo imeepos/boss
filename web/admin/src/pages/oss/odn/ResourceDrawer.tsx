@@ -133,7 +133,9 @@ export function ResourceDrawer({ target, prv, city, regions, grids, sites, devic
       onClose()
     } catch (e) {
       console.error('[odn] DRAWER SAVE FAILED', e)
-      setErr(e instanceof Error ? e.message : g.saveFail)
+      const msg = e instanceof Error ? e.message : g.saveFail
+      setErr(msg)
+      toast.error(g.saveFail, { description: msg })
     } finally { setBusy(false) }
   }
 
