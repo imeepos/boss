@@ -2251,3 +2251,8 @@
 - **skill 有没有提前预警?** 部分有:后端.md 早有「pgxmock 拦不住,靠真库验收」条目(jsonb/可空列先例),方向对但没覆盖重载推断这类语法层缺陷;worktree 收尾红线(9/24 条)全程零踩。
 - **重来一次会怎么做?** 涉及 SQL 语义的修复,第一轮就把「pgx 客户端直连真库跑新 SQL」纳入本地验证清单,不等部署后 102 实测才暴露;集成测试自清第一版就写成「显式 cleanup + Close」,不依赖 t.Cleanup 的 LIFO 时序(台账已有 lessons #58 还是踩了,下次写集成测试前先 grep 台账)。
 - **额外发现(报负责人)**:102 库 P98001/MH98001/TW98001/P98002 为存量集成测试泄漏物(t.Cleanup 时序坑,非本会话造数,未动);存量 pg_integration_test.go 同坑待修。
+
+## 2026-09-08 T2 生命周期选择器轮
+- 哪个坑浪费了最多时间?dev server 起在 5173 被**别人的应用**占用,vite 静默自增到 5174;CDP 采 5173 截到的是陌生应用页面,像"我的页面坏了"白查一轮。开工前应先看 dev job 输出确认实际端口,或 curl HTML 核对应用身份(<title>/特征串)再采。
+- git worktree remove 遇 node_modules 极慢,前台 60s 超时被 SIGTERM 杀在半路→worktree 半拆状态(557 文件显示 deleted)反而要 --force 收尾。教训:凡 worktree remove/全量删除一律直接 run_in_background。
+- Dropdown 选中值经 effect 回显,renderToStaticMarkup(SSR)下触发器恒显示 placeholder——组件默认值断言要么抽纯函数(initialFormState),要么真浏览器 CDP 断言,别用 SSR 标记硬刚。

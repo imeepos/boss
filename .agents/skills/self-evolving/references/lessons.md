@@ -575,3 +575,5 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 当用户报"某页面交互与全站不一致"时,改完 UI 必须把对应 API 真实调用一遍(或 UI E2E 全链路点保存):交互入口没人走过的功能可能后端早已静默瘫痪,UI 只是显影剂(2026-09-09 许可单抽屉轮挖出 POST /odn/permits 未关联 23502)。
 - 验证线上前端 bundle 是否含新代码:先确认目标代码所在 chunk——路由组件是 lazy 的,grep index-*.js 恒为 0,要从 index 里的 chunk 映射找 `permits-*.js` 这类路由 chunk 再 grep 特征串。
 - cdp-capture --eval 传多步断言时顶层 await 会 SyntaxError,定时等待用 `new Promise(r=>setTimeout(()=>r({...}),ms))` 形态。
+- 当 vite dev 端口被占自动 +1 而 CDP 采了旧端口时,截到的是占端口应用的页面(像"页面坏了"),修复是先 curl 目标端口 HTML 核对特征串再采集,或读 dev job 输出拿真实端口。
+- 当 git worktree remove 卡 node_modules 超时被杀时,worktree 会停在半拆状态(--force 才能收尾),修复是大 worktree 删除直接 run_in_background,不开前台。
