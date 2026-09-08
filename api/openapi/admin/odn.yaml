@@ -158,6 +158,7 @@ paths:
                 name: { type: string }
                 lat: { type: number }
                 lng: { type: number }
+                lifecycleStatus: { type: string, enum: [PLANNED, IN_BUILD, IN_SERVICE], description: '初始生命周期,留空=PLANNED(T2:新建设施默认规划态可入施工单);登记既有在网设施显式传 IN_SERVICE;RETIRED 非出生态' }
       responses: { '200': { $ref: '#/components/responses/Data' } }
 
   /odn/facilities/{code}:

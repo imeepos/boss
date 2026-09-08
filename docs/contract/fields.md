@@ -215,6 +215,7 @@
 
 > 校验：`odn.ValidateFacilityCode`（格式 + 序号 000/00000 预留禁用）；入库校验网格已备案（ErrGridMissing）与容量 999（ErrGridFull）。
 > 生命周期（P6，T8，迁移 000198）：`lifecycle_status` PLANNED/IN_BUILD/IN_SERVICE/RETIRED，存量默认 IN_SERVICE；转移 `PUT /odn/facilities/{code}/lifecycle`；RETIRED 终态与 status 双列同步；规则 internal/domain/odn/lifecycle.go（site/device 同规，见 §1.5.5）。
+> 创建初始态（T2 裁定 2026-09-08）：admin 建设施表单显式生命周期选择器，**默认 PLANNED**（可入施工单），登记既有在网设施显式选 IN_SERVICE；`POST /odn/facilities` 增 `lifecycleStatus` 入参（留空服务端补 PLANNED，与导入 §1.5.12 规则 ④ 一致），显式值限 PLANNED/IN_BUILD/IN_SERVICE（RETIRED 退役是流转结果非出生态，拒绝），服务端 `odn.NormalizeCreateLifecycle` 校验合法枚举；存量行与导入链锚路径零改动。
 
 ### 1.5.4 odn_cable_segment / odn_fiber（光缆段落与纤芯，迁移 000079，规范第 5 章/E8）
 
