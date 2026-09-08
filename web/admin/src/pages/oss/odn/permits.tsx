@@ -1,9 +1,8 @@
 // ROW 路权与 PECE 许可单列表页(P-INFRA-1 W4,000211;F3)。
 // 设施/项目关联走 pickers 选择器(2026-09-07 域改造);新增文案走 pages.odn 三语词条。
+// 新建走右侧抽屉 PermitCreateDrawer(2026-09-09):与全站表单口径统一,不再用页内内联卡片。
 import { useCallback, useEffect, useState } from 'react'
-import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
-import { Input } from '../../../components/ui/input'
 import { Badge } from '../../../components/ui/badge'
 import { Dropdown, type DropdownOption } from '../../../components/Dropdown'
 import { SimplePicker } from '../../../components/pickers/SimplePicker'
@@ -12,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 import { Card } from '../../../components/ui/card'
 import { EmptyState, ErrorBanner, ToolbarButton } from '../../../components/business/page-head'
 import { PermitDetail } from './PermitDetail'
+import { PermitCreateDrawer } from './PermitCreateDrawer'
 
 export interface PermitRow {
   id: number
@@ -56,12 +56,10 @@ export default function PermitsPage() {
   const [rows, setRows] = useState<PermitRow[]>([])
   const [error, setError] = useState('')
   const [showCreate, setShowCreate] = useState(false)
-  const [busy, setBusy] = useState(false)
   const [openId, setOpenId] = useState<number | null>(null)
   const [kind, setKind] = useState('')
   const [status, setStatus] = useState('')
   const [projectId, setProjectId] = useState('')
-  const [form, setForm] = useState({ kind: 'ROW', title: '', approvalNo: '', authority: '', validFrom: '', validUntil: '', facilityCode: '', note: '' })
   const [facOpts, setFacOpts] = useState<DropdownOption[]>([])
   const [projectOpts, setProjectOpts] = useState<DropdownOption[]>([])
 
@@ -92,24 +90,7 @@ export default function PermitsPage() {
 
   useEffect(() => { void load() }, [load])
 
-  const create = async () => {
-    setBusy(true); setError('')
-    try {
-      await apiFetch('/odn/permits', { method: 'POST', body: { ...form, projectId: 0 } })
-      toast.success('许可单已创建')
-      setForm({ kind: 'ROW', title: '', approvalNo: '', authority: '', validFrom: '', validUntil: '', facilityCode: '', note: '' })
-      setShowCreate(false)
-      await load()
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : '保存失败'
-      setError(msg)
-      toast.error('许可单创建失败', { description: msg })
-    } finally { setBusy(false) }
-  }
-
   const statusOptions = kind === 'PECE' ? PECE_STATUS_OPTIONS : kind === 'ROW' ? ROW_STATUS_OPTIONS : []
-  const set = (k: string, v: string) => setForm((m) => ({ ...m, [k]: v }))
-  const field = (k: string, label: string, placeholder = '') => <label className="flex flex-col gap-1"><span className="text-xs text-[var(--shell-content-text)]">{label}</span><Input value={form[k as keyof typeof form] ?? ''} placeholder={placeholder} onChange={(e) => set(k, e.target.value)} /></label>
 
   return <div>
     <div className="mb-3 flex items-center justify-between"><div className="flex flex-wrap items-end gap-2">
@@ -117,17 +98,8 @@ export default function PermitsPage() {
       {statusOptions.length > 0 && <Dropdown value={status} ariaLabel="状态筛选" placeholder="全部状态" options={statusOptions.map((s) => ({ value: s, label: PERMIT_STATUS_TEXT[s] }))} onChange={setStatus} />}
       <label className="flex flex-col gap-1"><span className="text-xs text-[var(--shell-content-text)]">项目 ID</span><SimplePicker value={projectId} onChange={setProjectId} options={projectOpts} ariaLabel={o.pickProject} searchPlaceholder={o.pickProjectSearch} clearable clearLabel={t.pages.pickers.common.clear} minWidth={240} /></label>
     </div>
-    <div className="flex items-center gap-2"><ToolbarButton primary onClick={() => setShowCreate(!showCreate)}>{showCreate ? '取消' : '新建许可单'}</ToolbarButton><ToolbarButton onClick={() => void load()}>刷新</ToolbarButton></div></div>
-    {showCreate && <Card className="mb-3"><div className="p-4"><div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-      <label className="flex flex-col gap-1"><span className="text-xs text-[var(--shell-content-text)]">类型</span><Dropdown value={form.kind} ariaLabel="许可类型" options={[{ value: 'ROW', label: 'ROW 路权' }, { value: 'PECE', label: 'PECE 许可' }]} onChange={(v) => set('kind', v)} /></label>
-      {field('title', '名称', '如 人民路架空段路权')}
-      {field('approvalNo', '批复号', '批准前可留空')}
-      {field('authority', '管辖机构', '如 市政公用局')}
-      {field('validFrom', '有效期起', 'YYYY-MM-DD')}
-      {field('validUntil', '有效期止', 'YYYY-MM-DD')}
-      <label className="flex flex-col gap-1"><span className="text-xs text-[var(--shell-content-text)]">关联设施</span><SimplePicker value={form.facilityCode} onChange={(v) => set('facilityCode', v)} options={facOpts} ariaLabel={o.pickFacility} searchPlaceholder={o.pickFacilitySearch} clearable clearLabel={t.pages.pickers.common.clear} minWidth={200} /></label>
-      {field('note', '备注')}
-    </div><div className="mt-3 flex justify-end"><ToolbarButton primary disabled={busy} onClick={() => void create()}>{busy ? '保存中…' : '保存'}</ToolbarButton></div></div></Card>}
+    <div className="flex items-center gap-2"><ToolbarButton primary onClick={() => setShowCreate(true)}>新建许可单</ToolbarButton><ToolbarButton onClick={() => void load()}>刷新</ToolbarButton></div></div>
+    {showCreate && <PermitCreateDrawer facilityOptions={facOpts} onClose={() => setShowCreate(false)} onCreated={() => void load()} />}
     {error && <ErrorBanner message={error} className="mb-3" />}
     <Card className="overflow-hidden">
       {rows.length === 0 ? <EmptyState text='暂无许可单' /> : <div className='overflow-x-auto'><Table>
