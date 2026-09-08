@@ -2235,3 +2235,13 @@
 - vi.mock i18n 最小 mock 会漏被渲染子组件的 common 键:ErrorBanner→CopyButton 要 common.copy/copied、ConfirmProvider 要 common.confirmDialog、TableStateRow 要 common.loading、AttachmentPickerDialog 要 pages.importer——用 Proxy 兜底键名(k in t ? t[k] : k)防 undefined 崩,再把已知键补上。
 - params 页行文案 = paramLabel(desc||key),DOM 找行按 desc 找不按 key。
 - CI 只部署 main(deploy-102.yml branches:[main]),feat 分支的新前端断言只能「本地 vite preview 生产构建 + 102 真后端」(ux-final W3 先例),102:5180 仅核对 Last-Modified/hash 说明部署态。
+
+## 2026-09-08 C1 部署通道看门狗轮
+- 哪个坑浪费了最多时间？无大坑。两点小摩擦：①edit 工具按路径精确跟踪已读状态——主树读过的文件，worktree 同名副本仍要先 read 再 edit（红线1再次生效，工具当场拦截未浪费轮次）；②session_link_talk 首次批复回复被截断（止于"批复："），补发追问拿全量批复后才动工——报批往返必须校验回复完整性，半截批复当批准是事故。
+- skill 有没有提前预警？红线1（先读再改）、红线12（printenv 探测防 set -u）、红线9（SQL 经 ssh 用 heredoc 单引号）全部提前命中，零违例。
+- 重来一次会怎么做？相同路径。新增两条可复用经验已值得沉淀：①psql -At 的字段分隔符别用 tab 当 IFS——tab 是 IFS 空白字符，read 会折叠连续 tab，NULL 字段（如 task_id）导致列串位，用 -F '|' 等非空白分隔符；②gitea 侧免 token 观测通道：宿主 docker exec gitea-postgres 直读 action_run_job/action_run（status 枚举 0-7），job 容器命名 GITEA-ACTIONS-TASK-<task_id>（strings 二进制可实证），这两条是 gitea CI 运维通用抓手，应进 references/knowledge/实施.md。
+
+## 2026-09-09 许可单新建改抽屉(顺手挖出后端全量瘫痪)
+- **哪个坑浪费了最多时间?** production bundle 验证走弯路:index-*.js 里 grep 新文案为 0,差点误判部署失败——lazy 路由代码在 permits-qKi3706K.js 独立 chunk 里。下次验证线上 bundle 先想清楚目标代码落在哪个 chunk(路由级 code-split),别只盯 index。
+- **skill 有没有提前预警?** 红线 7(模型不能读图)第三次命中,这次直接改走 DOM 断言+特征串 grep,零浪费。红线 26(Dropdown 选项 onMouseDown)命中一次,开工前 grep 了 techniques 避开。cdp --eval 顶层 await 会 SyntaxError,要用 `new Promise(r=>setTimeout(...))` 形态(本次踩了一次)。
+- **重来一次会怎么做?** 一样的顺序:先读同域同类页(ResourceDrawer/CreateLinkDrawer)定模式,再写抽屉组件。额外收获:用户报 UI 问题的任务,做完 UI 顺手必须真实点一遍 API 全链路——本次就这么挖出 POST /odn/permits 未关联项目必炸 50000(旧内联表单同样命中,只是从没人点过保存)。修后端时的标准动作全用上了:容器日志 grep 告警行 → psql BEGIN/ROLLBACK 探针验证 SQL → COALESCE 修复 → DSN 守卫集成测试(SSH 隧道 25432)→ CI 部署后 curl 实测。集成测试断言 st.PermitNo 非空还顺带揪出 RETURNING 缺 permit_no 的暗坑。
