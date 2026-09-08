@@ -44,13 +44,12 @@ def http(method, path, key, body=None):
         return e.code, None
 
 
-def api(method, path, body=None, worker=False):
-    key = WKEY if worker else AKEY
     code, env = http(method, path, key, body)
-    if code != 200 or not isinstance(env, dict) or env.get("code") not in (0, 200):
+    ok = code == 200 and isinstance(env, dict) and env.get("code") in (0, 200)
+    if not ok:
+        print("[api-err] " + method + " " + path + " -> " + str(code) + " " + json.dumps(env, ensure_ascii=False)[:200])
         return None, code
     return env.get("data"), code
-
 
 def check(name, cond, detail=""):
     global OK, FAIL
