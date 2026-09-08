@@ -34,6 +34,23 @@ const num = (v: string) => (v === '' || !/^-?\d+(\.\d+)?$/.test(v) ? undefined :
 const KIND_FAC = ['P', 'MH', 'TW', 'CLS', 'TBX']
 const KIND_DEV = ['SNW', 'OLT', 'ODF', 'OCC', 'ODB', 'OBD', 'SDB', 'SBD', 'PRT', 'TBP']
 const LIFECYCLE = ['PLANNED', 'IN_BUILD', 'IN_SERVICE', 'RETIRED']
+// 新建设施可作出生态(T2 裁定):规划(默认)/在网(登记既有在网设施);RETIRED 须走流转。
+export const CREATE_LIFECYCLE = ['PLANNED', 'IN_SERVICE']
+
+// initialFormState 抽屉表单初值(纯函数,便于回归):create 锚当前省/市,生命周期默认
+// PLANNED(T2 口径);edit 回填行值,lifecycle 缺省映射自 status(RETIRED 之外一律 IN_SERVICE)。
+export function initialFormState(e: Grid | Facility | Site | Device | null, prv: string, city: string): Record<string, string> {
+  return e ? {
+    prv: e.prvCode, city: e.cityPrefix, kind: 'kind' in e ? e.kind : '',
+    gridCode: 'gridCode' in e && e.gridCode ? String(e.gridCode) : '',
+    siteNo: 'siteNo' in e && e.siteNo ? String(e.siteNo) : '',
+    parentId: 'parentId' in e && e.parentId ? String(e.parentId) : '',
+    code: 'code' in e ? e.code : '', name: e.name ?? '',
+    lat: 'lat' in e && e.lat != null ? String(e.lat) : '', lng: 'lng' in e && e.lng != null ? String(e.lng) : '',
+    coverage: 'coverage' in e ? e.coverage ?? '' : '', status: e.status,
+    lifecycle: ('lifecycleStatus' in e ? e.lifecycleStatus : '') || (e.status === 'RETIRED' ? 'RETIRED' : 'IN_SERVICE'),
+  } : { prv, city, kind: '', gridCode: '', siteNo: '', parentId: '', code: '', name: '', lat: '', lng: '', coverage: '', status: 'ACTIVE', lifecycle: 'PLANNED' }
+}
 
 export function ResourceDrawer({ target, prv, city, regions, grids, sites, devices, g, onClose, onSaved }: DrawerProps) {
   const { tab, editing } = target
@@ -44,19 +61,9 @@ export function ResourceDrawer({ target, prv, city, regions, grids, sites, devic
   const [cities, setCities] = useState<City[]>([])
   const set = (k: string, v: string) => setF((s) => ({ ...s, [k]: v }))
 
-  // 初始化:create 锚当前省/市;edit 回填行值(lifecycle 缺省映射自 status)。
+  // 初始化见 initialFormState。
   useEffect(() => {
-    const e = editing
-    setF(e ? {
-      prv: e.prvCode, city: e.cityPrefix, kind: 'kind' in e ? e.kind : '',
-      gridCode: 'gridCode' in e && e.gridCode ? String(e.gridCode) : '',
-      siteNo: 'siteNo' in e && e.siteNo ? String(e.siteNo) : '',
-      parentId: 'parentId' in e && e.parentId ? String(e.parentId) : '',
-      code: 'code' in e ? e.code : '', name: e.name ?? '',
-      lat: 'lat' in e && e.lat != null ? String(e.lat) : '', lng: 'lng' in e && e.lng != null ? String(e.lng) : '',
-      coverage: 'coverage' in e ? e.coverage ?? '' : '', status: e.status,
-      lifecycle: ('lifecycleStatus' in e ? e.lifecycleStatus : '') || (e.status === 'RETIRED' ? 'RETIRED' : 'IN_SERVICE'),
-    } : { prv, city, kind: '', gridCode: '', siteNo: '', parentId: '', code: '', name: '', lat: '', lng: '', coverage: '', status: 'ACTIVE', lifecycle: '' })
+    setF(initialFormState(editing, prv, city))
     setErr('')
   }, [target]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -112,7 +119,7 @@ export function ResourceDrawer({ target, prv, city, regions, grids, sites, devic
           await apiFetch('/odn/grids', { method: 'POST', query: q, body: { gridCode: Number(f.gridCode), name: f.name, coverage: f.coverage, status: f.status, prvCode: f.prv, cityPrefix: f.city } })
         } else if (tab === 'facilities') {
           if (!f.code || !kind || ((kind === 'P' || kind === 'MH') && !f.gridCode)) throw new Error(g.drawer.missingRequired)
-          await apiFetch('/odn/facilities', { method: 'POST', query: q, body: { code: f.code, kind, gridCode: f.gridCode ? Number(f.gridCode) : undefined, name: f.name, lat: num(f.lat), lng: num(f.lng), prvCode: f.prv, cityPrefix: f.city } })
+          await apiFetch('/odn/facilities', { method: 'POST', query: q, body: { code: f.code, kind, gridCode: f.gridCode ? Number(f.gridCode) : undefined, name: f.name, lat: num(f.lat), lng: num(f.lng), prvCode: f.prv, cityPrefix: f.city, lifecycleStatus: f.lifecycle } })
         } else if (tab === 'sites') {
           if (!f.siteNo) throw new Error(g.drawer.missingRequired)
           await apiFetch('/odn/sites', { method: 'POST', query: q, body: { siteNo: Number(f.siteNo), name: f.name, lat: num(f.lat), lng: num(f.lng), prvCode: f.prv, cityPrefix: f.city } })
@@ -165,6 +172,7 @@ export function ResourceDrawer({ target, prv, city, regions, grids, sites, devic
         ? fld(g.status, <Dropdown value={f.status ?? ''} options={['ACTIVE', 'RESERVED', 'RETIRED'].map((s) => ({ value: s, label: s }))} onChange={(v) => set('status', v)} ariaLabel={g.status} />)
         : sel(g.status, f.status ?? '', [{ value: 'ACTIVE', label: 'ACTIVE' }, { value: 'RESERVED', label: 'RESERVED' }], (v) => set('status', v)))}
       {isEdit && tab !== 'grids' && fld(g.drawer.lifecycle, <Dropdown value={f.lifecycle ?? ''} options={LIFECYCLE.map((s) => ({ value: s, label: s }))} onChange={(v) => set('lifecycle', v)} ariaLabel={g.drawer.lifecycle} />)}
+      {!isEdit && tab === 'facilities' && fld(g.drawer.lifecycle, <Dropdown value={f.lifecycle ?? ''} options={CREATE_LIFECYCLE.map((s) => ({ value: s, label: s }))} onChange={(v) => set('lifecycle', v)} ariaLabel={g.drawer.lifecycle} />, g.drawer.lifecycleHint)}
       {tab !== 'grids' && <div className="grid grid-cols-2 gap-3">
         {fld(g.lat, <Input value={f.lat ?? ''} disabled={isEdit} onChange={(e) => set('lat', e.target.value)} placeholder="14.55" />)}
         {fld(g.lng, <Input value={f.lng ?? ''} disabled={isEdit} onChange={(e) => set('lng', e.target.value)} placeholder="120.98" />)}
