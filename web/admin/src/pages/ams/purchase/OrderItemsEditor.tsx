@@ -31,10 +31,11 @@ export function OrderItemsEditor({ items, onChange, onDelete }: {
             onChange={(e) => set(idx, { unitAmount: Number(e.target.value) })}
             className={input + ' col-span-2'} />
           {onDelete && (
-            <div className="col-span-1"><ToolbarButton
+            <ToolbarButton
+              className="col-span-1 w-full"
               onClick={() => onDelete(idx)}
               disabled={items.length <= 1}
-            >{d.delRow}</ToolbarButton></div>
+            >{d.delRow}</ToolbarButton>
           )}
         </div>
       ))}

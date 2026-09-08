@@ -21,6 +21,7 @@ export function pagerTexts(ns: {
 // EmptyState/CopyButton 统一由 feedback.tsx 提供(图标+文案/一键复制),此处 re-export 兼容既有 import 路径。
 export { CopyButton, EmptyState } from './feedback'
 import { CopyButton } from './feedback'
+import { cn } from '../../lib/cn'
 
 /** ErrorBanner: error message block + 一键复制原因(路线图规则 2:失败原因可复制)。 */
 export function ErrorBanner({ message, className = '' }: { message: string; className?: string }) {
@@ -88,18 +89,20 @@ export function SearchBar({
 
 /** Toolbar button: replaces .h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)] */
 export function ToolbarButton({
-  onClick, disabled, children, primary,
+  onClick, disabled, children, primary, className,
 }: {
   onClick?: () => void
   disabled?: boolean
   children: React.ReactNode
   primary?: boolean
+  /** 追加类(布局场景如 w-full):cn 合并,tailwind 冲突类由调用方类胜出。 */
+  className?: string
 }) {
   const base = 'h-8 px-4 text-xs rounded-sm cursor-pointer border'
   if (primary) {
     return (
       <button
-        className={`${base} text-[var(--shell-fab-icon)] bg-[var(--shell-fab-bg)] border-none hover:bg-[var(--shell-fab-bg-hover)] disabled:opacity-50 disabled:cursor-not-allowed`}
+        className={cn(`${base} text-[var(--shell-fab-icon)] bg-[var(--shell-fab-bg)] border-none hover:bg-[var(--shell-fab-bg-hover)] disabled:opacity-50 disabled:cursor-not-allowed`, className)}
         onClick={onClick}
         disabled={disabled}
       >
@@ -109,7 +112,7 @@ export function ToolbarButton({
   }
   return (
     <button
-      className={`${base} text-[var(--shell-content-text)] bg-[var(--shell-input-bg)] border-[var(--shell-input-border)] hover:border-[var(--shell-input-border-hover)] hover:text-[var(--shell-heading)] disabled:opacity-50 disabled:cursor-not-allowed`}
+      className={cn(`${base} text-[var(--shell-content-text)] bg-[var(--shell-input-bg)] border-[var(--shell-input-border)] hover:border-[var(--shell-input-border-hover)] hover:text-[var(--shell-heading)] disabled:opacity-50 disabled:cursor-not-allowed`, className)}
       onClick={onClick}
       disabled={disabled}
     >
