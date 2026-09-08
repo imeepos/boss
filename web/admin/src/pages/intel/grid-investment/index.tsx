@@ -26,50 +26,19 @@ export default function GridInvestmentPage() {
   const [capacity, setCapacity] = useState<SplitCapacityReport | null>(null)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  const [ver, setVer] = useState(0)
 
-  const load = () => {
-    setError('')
-    setBusy(true)
-    Promise.all([
-      apiFetch<{ items: GridInvestmentRow[] }>('/odn/grid-investment'),
-      apiFetch<{ items: CityInvestmentRow[] }>('/odn/city-investment'),
-      apiFetch<SplitCapacityReport>('/odn/split-capacity'),
-    ])
-      .then(([g, c, s]) => {
-        setGridRows(g?.items ?? [])
-        setCityRows(c?.items ?? [])
-        setCapacity(s ?? null)
-      })
-      .catch((e) => {
-        const msg = e instanceof Error ? e.message : a.loadFail
-        setError(msg)
-        toast.error(a.loadFail, { description: msg })
-      })
-      .finally(() => setBusy(false))
-  }
-  useEffect(load, []) // eslint-disable-line react-hooks/exhaustive-deps
-
-  const tabs: { key: ViewKey; label: string }[] = [
-    { key: 'grid', label: a.tabGrid },
-    { key: 'city', label: a.tabCity },
-    { key: 'capacity', label: a.tabCapacity },
-  ]
+  useEffect(() => { void loadAll(setGridRows, setCityRows, setCapacity, setError, setBusy, a.loadFail) }, [ver]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div>
       <PageHead title={a.title} desc={a.desc} />
       <Card>
-        <div className="mb-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            {tabs.map((tb) => (
-              <button key={tb.key} onClick={() => setView(tb.key)}
-                className={view === tb.key ? TAB_ON : TAB_OFF}>
-                {tb.label}
-              </button>
-            ))}
-          </div>
-          <ToolbarButton onClick={load} disabled={busy}>{t.pages.audit.refresh}</ToolbarButton>
-        </div>
+        <Toolbar
+          view={view} setView={setView}
+          busy={busy} onRefresh={() => setVer((v) => v + 1)}
+          labels={{ grid: a.tabGrid, city: a.tabCity, capacity: a.tabCapacity, refresh: t.pages.audit.refresh }}
+        />
         {error ? (
           <div className="px-4 pb-3"><ErrorBanner message={error} /></div>
         ) : (
@@ -80,6 +49,63 @@ export default function GridInvestmentPage() {
           </>
         )}
       </Card>
+    </div>
+  )
+}
+
+async function loadAll(
+  setGridRows: (v: GridInvestmentRow[]) => void,
+  setCityRows: (v: CityInvestmentRow[]) => void,
+  setCapacity: (v: SplitCapacityReport | null) => void,
+  setError: (v: string) => void,
+  setBusy: (v: boolean) => void,
+  loadFailText: string,
+) {
+  setError('')
+  setBusy(true)
+  try {
+    const [g, c, s] = await Promise.all([
+      apiFetch<{ items: GridInvestmentRow[] }>('/odn/grid-investment'),
+      apiFetch<{ items: CityInvestmentRow[] }>('/odn/city-investment'),
+      apiFetch<SplitCapacityReport>('/odn/split-capacity'),
+    ])
+    setGridRows(g?.items ?? [])
+    setCityRows(c?.items ?? [])
+    setCapacity(s ?? null)
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : loadFailText
+    setError(msg)
+    toast.error(loadFailText, { description: msg })
+  } finally {
+    setBusy(false)
+  }
+}
+
+function Toolbar({
+  view, setView, busy, onRefresh, labels,
+}: {
+  view: ViewKey
+  setView: (v: ViewKey) => void
+  busy: boolean
+  onRefresh: () => void
+  labels: { grid: string; city: string; capacity: string; refresh: string }
+}) {
+  const tabs: { key: ViewKey; label: string }[] = [
+    { key: 'grid', label: labels.grid },
+    { key: 'city', label: labels.city },
+    { key: 'capacity', label: labels.capacity },
+  ]
+  return (
+    <div className="mb-3 flex items-center justify-between">
+      <div className="flex items-center gap-2">
+        {tabs.map((tb) => (
+          <button key={tb.key} onClick={() => setView(tb.key)}
+            className={view === tb.key ? TAB_ON : TAB_OFF}>
+            {tb.label}
+          </button>
+        ))}
+      </div>
+      <ToolbarButton onClick={onRefresh} disabled={busy}>{labels.refresh}</ToolbarButton>
     </div>
   )
 }
