@@ -6,12 +6,9 @@ import { Badge } from '../../../components/ui/badge'
 import { Dropdown } from '../../../components/Dropdown'
 import { SimplePicker } from '../../../components/pickers/SimplePicker'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../../components/ui/table'
+import { Card } from '../../../components/ui/card'
 import { EmptyState, ErrorBanner, ToolbarButton } from '../../../components/business/page-head'
 import { fmtTime } from '../../../lib/format'
-
-const CARD = 'rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]'
-const FIELD = 'flex flex-col gap-1'
-const LABEL = 'text-xs text-[var(--shell-content-text)]'
 
 type Cov = { id: number; addressId: number; facilityCode: string; deviceId: number; status: string; note: string; addressName?: string; updatedAt: string }
 type Resolved = { status: string; facilityCode?: string; facilityName?: string; distanceM?: number }
@@ -56,7 +53,12 @@ export function CoveragePanel({ g, prv, city }: { g: any; prv: string; city: str
 
   const load = useCallback(async () => {
     setError('')
-    try { setRows(await apiFetch<Cov[]>('/odn/coverage/list', { query: { limit: 200 } }) ?? []) } catch (e) { setError(e instanceof Error ? e.message : g.loadFail) }
+    try { setRows(await apiFetch<Cov[]>('/odn/coverage/list', { query: { limit: 200 } }) ?? []) }
+    catch (e) {
+      const msg = e instanceof Error ? e.message : g.loadFail
+      setError(msg)
+      toast.error(g.loadFail, { description: msg })
+    }
   }, [g.loadFail])
   useEffect(() => { void load() }, [load])
 
@@ -70,12 +72,21 @@ export function CoveragePanel({ g, prv, city }: { g: any; prv: string; city: str
         status: form.status, note: form.note } })
       toast.success(g.saveOk)
       await load()
-    } catch (e) { setError(e instanceof Error ? e.message : g.saveFail) } finally { setBusy(false) }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : g.saveFail
+      setError(msg)
+      toast.error(g.saveFail, { description: msg })
+    } finally { setBusy(false) }
   }
 
   const resolve = async () => {
     setError(''); setResolved(null)
-    try { setResolved(await apiFetch<Resolved>('/odn/coverage/resolve', { query: { lat: ll.lat, lng: ll.lng } })) } catch (e) { setError(e instanceof Error ? e.message : g.loadFail) }
+    try { setResolved(await apiFetch<Resolved>('/odn/coverage/resolve', { query: { lat: ll.lat, lng: ll.lng } })) }
+    catch (e) {
+      const msg = e instanceof Error ? e.message : g.loadFail
+      setError(msg)
+      toast.error(g.loadFail, { description: msg })
+    }
   }
 
   const statusOptions = [
@@ -86,19 +97,19 @@ export function CoveragePanel({ g, prv, city }: { g: any; prv: string; city: str
 
   return <div>
     {error && <ErrorBanner message={error} className="mb-3" />}
-    <div className={CARD + ' p-4'}>
+    <Card className="p-4">
       <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
-        <label className={FIELD}><span className={LABEL}>{g.addressId}</span><SimplePicker value={form.addressId} onChange={(v) => set('addressId', v)} search={searchAddresses} ariaLabel={g.addressId} placeholder={g.addressId} searchPlaceholder={g.addressId} minWidth={180} /></label>
-        <label className={FIELD}><span className={LABEL}>{g.covFacility}</span><SimplePicker value={form.facilityCode} onChange={(v) => set('facilityCode', v)} options={facOpts} ariaLabel={g.covFacility} placeholder={g.covFacility} clearable clearLabel="×" minWidth={180} /></label>
-        <label className={FIELD}><span className={LABEL}>{g.covDevice}</span><SimplePicker value={form.deviceId} onChange={(v) => set('deviceId', v)} options={devOpts} ariaLabel={g.covDevice} placeholder={g.covDevice} clearable clearLabel="×" minWidth={180} /></label>
-        <label className={FIELD}><span className={LABEL}>{g.covStatus}</span><Dropdown value={form.status} options={statusOptions} ariaLabel={g.covStatus} onChange={(v) => set('status', v)} /></label>
-        <label className={FIELD}><span className={LABEL}>{g.covNote}</span><Input value={form.note} onChange={(e) => set('note', e.target.value)} /></label>
+        <label className="flex flex-col gap-1"><span className="text-xs text-[var(--shell-content-text)]">{g.addressId}</span><SimplePicker value={form.addressId} onChange={(v) => set('addressId', v)} search={searchAddresses} ariaLabel={g.addressId} placeholder={g.addressId} searchPlaceholder={g.addressId} minWidth={180} /></label>
+        <label className="flex flex-col gap-1"><span className="text-xs text-[var(--shell-content-text)]">{g.covFacility}</span><SimplePicker value={form.facilityCode} onChange={(v) => set('facilityCode', v)} options={facOpts} ariaLabel={g.covFacility} placeholder={g.covFacility} clearable clearLabel="×" minWidth={180} /></label>
+        <label className="flex flex-col gap-1"><span className="text-xs text-[var(--shell-content-text)]">{g.covDevice}</span><SimplePicker value={form.deviceId} onChange={(v) => set('deviceId', v)} options={devOpts} ariaLabel={g.covDevice} placeholder={g.covDevice} clearable clearLabel="×" minWidth={180} /></label>
+        <label className="flex flex-col gap-1"><span className="text-xs text-[var(--shell-content-text)]">{g.covStatus}</span><Dropdown value={form.status} options={statusOptions} ariaLabel={g.covStatus} onChange={(v) => set('status', v)} /></label>
+        <label className="flex flex-col gap-1"><span className="text-xs text-[var(--shell-content-text)]">{g.covNote}</span><Input value={form.note} onChange={(e) => set('note', e.target.value)} /></label>
       </div>
       <div className="mt-3 flex justify-end"><ToolbarButton primary disabled={busy || !form.addressId} onClick={save}>{busy ? g.saving : g.save}</ToolbarButton></div>
-    </div>
-    <div className={CARD + ' mt-3 flex flex-wrap items-end gap-2 p-4'}>
-      <label className={FIELD}><span className={LABEL}>{g.lat}</span><Input value={ll.lat} placeholder="14.5995" onChange={(e) => setLl((v) => ({ ...v, lat: e.target.value }))} /></label>
-      <label className={FIELD}><span className={LABEL}>{g.lng}</span><Input value={ll.lng} placeholder="120.9842" onChange={(e) => setLl((v) => ({ ...v, lng: e.target.value }))} /></label>
+    </Card>
+    <div className="mt-3 flex flex-wrap items-end gap-2 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] p-4 shadow-[var(--shell-card-shadow)]">
+      <label className="flex flex-col gap-1"><span className="text-xs text-[var(--shell-content-text)]">{g.lat}</span><Input value={ll.lat} placeholder="14.5995" onChange={(e) => setLl((v) => ({ ...v, lat: e.target.value }))} /></label>
+      <label className="flex flex-col gap-1"><span className="text-xs text-[var(--shell-content-text)]">{g.lng}</span><Input value={ll.lng} placeholder="120.9842" onChange={(e) => setLl((v) => ({ ...v, lng: e.target.value }))} /></label>
       <ToolbarButton disabled={!ll.lat || !ll.lng} onClick={resolve}>{g.resolveBtn}</ToolbarButton>
       {resolved && <span className="flex items-center gap-2 text-sm text-[var(--shell-content-text)]">
         <StatusBadge status={resolved.status} labels={badgeLabels} />
@@ -106,7 +117,7 @@ export function CoveragePanel({ g, prv, city }: { g: any; prv: string; city: str
         {resolved.distanceM != null && <span>{g.distance}: {Math.round(resolved.distanceM)}m</span>}
       </span>}
     </div>
-    <section className={CARD + ' mt-3 overflow-hidden'}>
+    <section className="mt-3 overflow-hidden rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
       {rows.length === 0 ? <EmptyState text={g.empty} /> : <div className="overflow-x-auto"><Table>
         <TableHeader><TableRow>{[g.addressId, g.addressName, g.covFacility, g.covDevice, g.covStatus, g.covNote, g.updatedAt].map((h) => <TableHead key={h}>{h}</TableHead>)}</TableRow></TableHeader>
         <TableBody>{rows.map((r) => <TableRow key={r.id}>
