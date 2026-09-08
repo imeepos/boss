@@ -17,7 +17,7 @@
 | 点击外部收起 | ✅ | document mousedown 监听,浮层内 mousedown 不误关 |
 | 搜索 | ✅ | searchable 本地过滤;remote 模式关键字上抛;loading 行 role=status;空态行;防抖 300ms(pickerCore.PICKER_DEBOUNCE_MS) |
 | 回显 | ✅ | withPinnedValue 合成钉选 + resolveOptionMatch label 同值兜底(W1 裁定,warn 留痕) |
-| ⚠️ 遗留 | 基座侧 | ① ~~无 onOpenChange 回调~~ **已修(W3,feat/ux-final)**:基座补 onOpenChange(仅开合过渡触发,mount 不触发),SimplePicker 服务端源在 open=true 且关键字非空时复位检索(清关键字+重发首屏),重开浮层不再出现「输入框为空而列表是旧检索结果」窗口;回归锁定 pickers/SimplePicker.test.tsx。② onDark 深色表面样式用 white/10、rgba 阴影等常量(非 tokens 令牌),属常青藏青表面的固有色,记债务。 |
+| ⚠️ 遗留 | 基座侧 | ① ~~无 onOpenChange 回调~~ **已修(W3,feat/ux-final)**:基座补 onOpenChange(仅开合过渡触发,mount 不触发),SimplePicker 服务端源在 open=true 且关键字非空时复位检索(清关键字+重发首屏),重开浮层不再出现「输入框为空而列表是旧检索结果」窗口;回归锁定 pickers/SimplePicker.test.tsx。② ~~onDark 深色表面样式用 white/10、rgba 阴影等常量~~ **已令牌化(W3,feat/ux-final)**:tokens.css 新增 --shell-dark-input-*/--shell-dark-pop-* 九键(常青藏青表面固有色,双主题值恒定),Dropdown 常量色全部换令牌引用,计算样式与改前逐一相同。 |
 
 ### 2. SimplePicker(小数据量基座)
 

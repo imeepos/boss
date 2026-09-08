@@ -153,7 +153,7 @@ export function Dropdown({ value, options, onChange, ariaLabel, disabled, trigge
         className={'flex h-8 w-full items-center justify-between gap-2 rounded-sm border py-0 pr-1 pl-2.5 text-[13px]' + (disabled
           ? ' cursor-not-allowed border-[var(--shell-input-border)] bg-[var(--shell-input-disabled-bg)] text-[var(--shell-input-placeholder)]'
           : onDark
-            ? ' cursor-pointer border-white/20 bg-white/5 text-white hover:border-white/40 focus-visible:border-white/60'
+            ? ' cursor-pointer border-[var(--shell-dark-input-border)] bg-[var(--shell-dark-input-bg)] text-[var(--shell-dark-input-text)] hover:border-[var(--shell-dark-input-border-hover)] focus-visible:border-[var(--shell-dark-input-border-focus)]'
             : ' cursor-pointer border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] text-[var(--shell-content-text)] hover:border-[var(--color-border-focus)] focus-visible:border-[var(--color-border-focus)]')}
         onClick={toggle}
         onKeyDown={onTriggerKey}
@@ -173,7 +173,7 @@ export function Dropdown({ value, options, onChange, ariaLabel, disabled, trigge
       {open && (
         <div
           className={'absolute left-0 top-[calc(100%+6px)] z-popover max-h-[264px] min-w-full overflow-y-auto rounded-md border p-1 ' + (onDark
-            ? 'border-white/10 bg-[var(--color-brand-navy-900)] shadow-[0_12px_32px_rgba(0,0,0,0.4)]'
+            ? 'border-[var(--shell-dark-pop-border)] bg-[var(--shell-dark-pop-bg)] shadow-[var(--shell-dark-pop-shadow)]'
             : 'border-[var(--shell-side-border)] bg-[var(--shell-card-bg)] shadow-[0_6px_16px_rgba(0,0,0,0.08)]')}
           role='listbox'
           id={lbId}
@@ -205,12 +205,12 @@ export function Dropdown({ value, options, onChange, ariaLabel, disabled, trigge
             <div className='px-2.5 py-2 text-[12px] text-[var(--shell-input-placeholder)]'>{emptyText}</div>
           )}
           {visible.map((o, i) => {
-            const activeCls = i === active && !o.disabled ? ' ' + (onDark ? 'bg-white/10' : 'bg-[var(--shell-menu-hover-bg)]') : ''
+            const activeCls = i === active && !o.disabled ? ' ' + (onDark ? 'bg-[var(--shell-dark-pop-hover-bg)]' : 'bg-[var(--shell-menu-hover-bg)]') : ''
             const optCls = 'flex w-full items-center justify-between gap-4 rounded-sm border-none bg-none px-2.5 py-1.5 text-left text-[13px] whitespace-nowrap '
               + (o.disabled
                 ? 'cursor-not-allowed text-[var(--shell-input-placeholder)]'
                 : 'cursor-pointer ' + (onDark
-                  ? 'text-white hover:bg-white/10' + (o.value === effectiveValue ? ' font-semibold text-[var(--color-brand-gold-500)]' : '')
+                  ? 'text-[var(--shell-dark-input-text)] hover:bg-[var(--shell-dark-pop-hover-bg)]' + (o.value === effectiveValue ? ' font-semibold text-[var(--color-brand-gold-500)]' : '')
                   : 'text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]' + (o.value === effectiveValue ? ' font-semibold text-[var(--shell-fab-bg)]' : '')))
               + activeCls
             return (
