@@ -1,6 +1,7 @@
 // 跨区域调配页:契约 GET /transfers、POST /transfers、POST /transfers/:transferNo/approve|reject。
 import { IdRef } from '../../../components/business'
 import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { PageHead, pagerTexts } from '../../org/shared'
@@ -9,9 +10,11 @@ import { Pagination } from '../../../components/Pagination'
 import { Drawer } from '../../../components/Drawer'
 import { Dropdown } from '../../../components/Dropdown'
 import { ResourcePicker } from '../../../components/ResourcePicker'
+import { Card, CardFooter } from '../../../components/ui/card'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/table'
 import { pageSlice, type RegionRefRow, type ResourceRow, type TransferRow } from '../types'
 import { useConfirm } from '../../../components/ConfirmDialog'
-import { TableStateRow, ErrorBanner } from '../../../components/business'
+import { TableStateRow, ErrorBanner, ToolbarButton } from '../../../components/business'
 
 export default function TransferPage() {
   const t = useT()
@@ -34,7 +37,11 @@ export default function TransferPage() {
     setBusy(true)
     apiFetch<{ items: TransferRow[] }>('/transfers')
       .then((d) => setRows(d?.items ?? []))
-      .catch((e) => setError(e instanceof Error ? e.message : r.loadFail))
+      .catch((e) => {
+        const msg = e instanceof Error ? e.message : r.loadFail
+        setError(msg)
+        toast.error(r.loadFail, { description: msg })
+      })
       .finally(() => setBusy(false))
   }
   useEffect(load, []) // eslint-disable-line react-hooks/exhaustive-deps
@@ -57,9 +64,12 @@ export default function TransferPage() {
       setResourceId('')
       setFromRegionId(0)
       setToRegionId(0)
+      toast.success(r.create)
       load()
     } catch (e) {
-      setFormError(e instanceof Error ? e.message : r.saveFail)
+      const msg = e instanceof Error ? e.message : r.saveFail
+      setFormError(msg)
+      toast.error(r.saveFail, { description: msg })
     } finally {
       setBusy(false)
     }
@@ -72,9 +82,12 @@ export default function TransferPage() {
     setBusy(true)
     try {
       await apiFetch(`/transfers/${encodeURIComponent(transferNo)}/${action}`, { method: 'POST' })
+      toast.success(act)
       load()
     } catch (e) {
-      setError(e instanceof Error ? e.message : r.actionFail)
+      const msg = e instanceof Error ? e.message : r.actionFail
+      setError(msg)
+      toast.error(r.actionFail, { description: msg })
     } finally {
       setBusy(false)
     }
@@ -88,53 +101,57 @@ export default function TransferPage() {
   return (
     <div>
       <PageHead title={r.title} desc={r.desc} />
-      <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
+      <Card className="mb-4">
         <div className="flex flex-wrap items-center gap-2 p-4">
-          <span className="spacer" />
-          <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
-          <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" onClick={() => setOpen(true)}>{r.create}</button>
+          <span className="flex-1" />
+          <ToolbarButton onClick={load} disabled={busy}>{t.pages.audit.refresh}</ToolbarButton>
+          <ToolbarButton primary onClick={() => setOpen(true)}>{r.create}</ToolbarButton>
         </div>
-        {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : (
-          <div className="overflow-x-auto px-4 pb-4">
-            <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
-              <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{r.columns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
-              <tbody>
+        {error ? <div className="px-4 pb-3"><ErrorBanner message={error} /></div> : (
+          <div className="px-4 pb-4">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  {r.columns.map((x) => <TableHead key={x}>{x}</TableHead>)}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {slice.map((x) => (
-                  <tr key={x.id}>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.transferNo || `#${x.id}`}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><IdRef value={x.resourceId} /></td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{regionName(x.fromRegionId)}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{regionName(x.toRegionId)}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><StatusTag domain="task" value={x.status} /></td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">
+                  <TableRow key={x.id}>
+                    <TableCell>{x.transferNo || `#${x.id}`}</TableCell>
+                    <TableCell><IdRef value={x.resourceId} /></TableCell>
+                    <TableCell>{regionName(x.fromRegionId)}</TableCell>
+                    <TableCell>{regionName(x.toRegionId)}</TableCell>
+                    <TableCell><StatusTag domain="task" value={x.status} /></TableCell>
+                    <TableCell>
                       {x.status === 'PENDING' ? (
-                        <span className="inline-flex items-center">
-                          <button disabled={busy} onClick={() => review(x.transferNo, 'approve')}>{r.approve}</button>
+                        <span className="inline-flex items-center gap-2">
+                          <button type="button" disabled={busy} onClick={() => review(x.transferNo, 'approve')}>{r.approve}</button>
                           <span className="text-[var(--shell-side-border)]">|</span>
-                          <button disabled={busy} onClick={() => review(x.transferNo, 'reject')}>{r.reject}</button>
+                          <button type="button" disabled={busy} onClick={() => review(x.transferNo, 'reject')}>{r.reject}</button>
                         </span>
                       ) : '—'}
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
                 {!slice.length && <TableStateRow colSpan={6} loading={busy} text={r.empty} />}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         )}
-        <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
+        <CardFooter>
           <Pagination total={rows.length} page={page} pageSize={pageSize}
             onPage={setPage} onSize={setPageSize} {...pagerTexts(r)} />
-        </div>
-      </div>
+        </CardFooter>
+      </Card>
       {open && (
         <Drawer title={r.createTitle} onClose={() => setOpen(false)}
           footer={
             <>
-              <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={() => setOpen(false)}>{t.pages.company.cancel}</button>
-              <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" disabled={busy || !resourceOk || !regionOk} onClick={submit}>
+              <ToolbarButton onClick={() => setOpen(false)}>{t.pages.company.cancel}</ToolbarButton>
+              <ToolbarButton primary disabled={busy || !resourceOk || !regionOk} onClick={submit}>
                 {busy ? t.pages.account.submitting : t.pages.company.save}
-              </button>
+              </ToolbarButton>
             </>
           }>
           <div className="flex flex-col gap-3.5">
