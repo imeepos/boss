@@ -128,10 +128,10 @@ def pick_free_grids(need):
 
 def create_facility(kind, grid_code, seq):
     code = kind + ("%02d" % grid_code) + ("%03d" % seq)
+    # T2 起 PLANNED 是创建 API 显式入参(留空亦默认 PLANNED),不再 psql 直设。
     st, body = http("POST", "/odn/facilities", {"code": code, "kind": kind, "name": TAG + "-" + code,
-        "prvCode": "PHL001", "cityPrefix": "MNL", "gridCode": grid_code})
+        "prvCode": "PHL001", "cityPrefix": "MNL", "gridCode": grid_code, "lifecycleStatus": "PLANNED"})
     if st == 200 and code_of(body) == 0:
-        psql("UPDATE odn_facility SET lifecycle_status = " + q("PLANNED") + " WHERE code = " + q(code))
         return code
     raise RuntimeError("create facility " + code + ": " + str((st, body))[:200])
 

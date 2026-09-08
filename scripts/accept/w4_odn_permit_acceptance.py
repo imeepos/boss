@@ -150,13 +150,12 @@ def create_project(name_suffix):
 
 def create_facility(suffix):
     code = "CLS9" + str(random.randint(1000, 9999))
-    st, body = http("POST", "/odn/facilities", {"code": code, "kind": "CLS", "name": FAC_PREFIX + suffix, "prvCode": "PHL001", "cityPrefix": "MNL"})
+    # T2 起 PLANNED 是创建 API 显式入参(留空亦默认 PLANNED),不再 psql 直设;
+    # 开工/竣工的 IN_BUILD/IN_SERVICE 翻转仍走真实 API。
+    st, body = http("POST", "/odn/facilities", {"code": code, "kind": "CLS", "name": FAC_PREFIX + suffix, "prvCode": "PHL001", "cityPrefix": "MNL", "lifecycleStatus": "PLANNED"})
     if st != 200 or not body or body.get("code") != 0:
         bad("create_facility", str(body))
         return None
-    # PLANNED 无 API 入口(状态机只出不进,W1 同款):验收造数经 psql 直设;
-    # 开工/竣工的 IN_BUILD/IN_SERVICE 翻转仍走真实 API。
-    psql("UPDATE odn_facility SET lifecycle_status = " + chr(39) + "PLANNED" + chr(39) + " WHERE code = " + chr(39) + code + chr(39))
     return code
 
 
