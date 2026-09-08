@@ -7,7 +7,10 @@ import { StatusTag } from '../../../components/StatusTag'
 import { Pagination } from '../../../components/Pagination'
 import { ResourcePicker } from '../../../components/ResourcePicker'
 import { pageSlice, type ScanLogRow } from '../types'
-import { TableStateRow, IdRef } from '../../../components/business'
+import { IdRef, TableStateRow, ToolbarButton } from '../../../components/business'
+import { ErrorBanner } from '../../../components/business/page-head'
+import { Card, CardContent, CardFooter } from '../../../components/ui/card'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../../components/ui/table'
 
 export default function ScanLogPage() {
   const t = useT()
@@ -34,45 +37,49 @@ export default function ScanLogPage() {
   return (
     <div>
       <PageHead title={s.title} desc={s.desc} />
-      <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
-        <div className="flex flex-wrap items-center gap-2 p-4">
-          <ResourcePicker
-            value={orderId}
-            onChange={(v) => { setOrderId(v); setPage(1) }}
-            load={() => apiFetch<{ items: { id: number; orderNo: string }[] }>('/orders').then((x) => x?.items ?? [])}
-            toOption={(o) => ({ value: String(o.id), label: o.orderNo })}
-            ariaLabel={s.filterOrder}
-            emptyLabel={t.pages.pickers.common.all}
-            searchPlaceholder={t.pages.pickers.common.placeholder}
-            errorText={s.loadFail}
-          />
-          <span className="spacer" />
-          <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
-        </div>
-        {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : (
-          <div className="overflow-x-auto px-4 pb-4">
-            <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
-              <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{s.columns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
-              <tbody>
+      <Card>
+        <CardContent>
+          <div className="flex flex-wrap items-center gap-2">
+            <ResourcePicker
+              value={orderId}
+              onChange={(v) => { setOrderId(v); setPage(1) }}
+              load={() => apiFetch<{ items: { id: number; orderNo: string }[] }>('/orders').then((x) => x?.items ?? [])}
+              toOption={(o) => ({ value: String(o.id), label: o.orderNo })}
+              ariaLabel={s.filterOrder}
+              emptyLabel={t.pages.pickers.common.all}
+              searchPlaceholder={t.pages.pickers.common.placeholder}
+              errorText={s.loadFail}
+            />
+            <span className="spacer" />
+            <ToolbarButton disabled={busy} onClick={load}>{t.pages.audit.refresh}</ToolbarButton>
+          </div>
+        </CardContent>
+        {error ? <ErrorBanner message={error} /> : (
+          <div className="px-4 pb-4">
+            <Table>
+              <TableHeader>
+                <TableRow>{s.columns.map((x) => <TableHead key={x}>{x}</TableHead>)}</TableRow>
+              </TableHeader>
+              <TableBody>
                 {slice.map((x) => (
-                  <tr key={x.id}>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">#{x.id}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><IdRef value={x.orderId} /></td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.workerName || (x.workerId ? `#${x.workerId}` : '—')}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.tagId ? `#${x.tagId}` : '—'}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><StatusTag domain="scan" value={x.result} /></td>
-                  </tr>
+                  <TableRow key={x.id}>
+                    <TableCell><IdRef value={x.id} /></TableCell>
+                    <TableCell><IdRef value={x.orderId} /></TableCell>
+                    <TableCell>{x.workerName || (x.workerId ? `#${x.workerId}` : '—')}</TableCell>
+                    <TableCell>{x.tagId ? `#${x.tagId}` : '—'}</TableCell>
+                    <TableCell><StatusTag domain="scan" value={x.result} /></TableCell>
+                  </TableRow>
                 ))}
                 {!slice.length && <TableStateRow colSpan={5} loading={busy} text={s.empty} />}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         )}
-        <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
+        <CardFooter>
           <Pagination total={rows.length} page={page} pageSize={pageSize}
             onPage={setPage} onSize={setPageSize} {...pagerTexts(s)} />
-        </div>
-      </div>
+        </CardFooter>
+      </Card>
     </div>
   )
 }

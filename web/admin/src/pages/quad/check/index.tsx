@@ -9,7 +9,10 @@ import { StatusTag } from '../../../components/StatusTag'
 import { Pagination } from '../../../components/Pagination'
 import { pageSlice, type QuadLinkRow } from '../types'
 import { useConfirm } from '../../../components/ConfirmDialog'
-import { TableStateRow, IdRef } from '../../../components/business'
+import { ActionLink, IdRef, TableStateRow, ToolbarButton } from '../../../components/business'
+import { ErrorBanner } from '../../../components/business/page-head'
+import { Card, CardContent, CardFooter } from '../../../components/ui/card'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../../components/ui/table'
 
 interface ReconReport { Total: number; Linked: number; Conflict: number; Unlinked: number }
 
@@ -72,42 +75,44 @@ export default function QuadCheckPage() {
   return (
     <div>
       <PageHead title={c.title} desc={c.desc} />
-      <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
-        <div className="flex flex-wrap items-center gap-2 p-4">
-          <span className="spacer" />
-          <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
-          <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" disabled={busy} onClick={reconcile}>{c.reconcile}</button>
-        </div>
-        {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : (
-          <div className="overflow-x-auto px-4 pb-4">
-            <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
-              <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{c.columns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
-              <tbody>
+      <Card>
+        <CardContent>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="spacer" />
+            <ToolbarButton disabled={busy} onClick={load}>{t.pages.audit.refresh}</ToolbarButton>
+            <ToolbarButton primary disabled={busy} onClick={reconcile}>{c.reconcile}</ToolbarButton>
+          </div>
+        </CardContent>
+        {error ? <ErrorBanner message={error} /> : (
+          <div className="px-4 pb-4">
+            <Table>
+              <TableHeader>
+                <TableRow>{c.columns.map((x) => <TableHead key={x}>{x}</TableHead>)}</TableRow>
+              </TableHeader>
+              <TableBody>
                 {slice.map((x) => (
-                  <tr key={x.id}>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><IdRef value={x.id} /></td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><IdRef value={x.assetId} /></td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><IdRef value={x.customerId} /></td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><IdRef value={x.portId} /></td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><IdRef value={x.addressId} /></td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><StatusTag domain="quad" value={x.status} /></td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">
-                      <span className="inline-flex items-center">
-                        <button disabled={busy} onClick={() => resolve(x.id)}>{c.resolve}</button>
-                      </span>
-                    </td>
-                  </tr>
+                  <TableRow key={x.id}>
+                    <TableCell><IdRef value={x.id} /></TableCell>
+                    <TableCell><IdRef value={x.assetId} /></TableCell>
+                    <TableCell><IdRef value={x.customerId} /></TableCell>
+                    <TableCell><IdRef value={x.portId} /></TableCell>
+                    <TableCell><IdRef value={x.addressId} /></TableCell>
+                    <TableCell><StatusTag domain="quad" value={x.status} /></TableCell>
+                    <TableCell>
+                      <ActionLink onClick={() => resolve(x.id)} label={c.resolve} testId={`quad-resolve-${x.id}`} />
+                    </TableCell>
+                  </TableRow>
                 ))}
                 {!slice.length && <TableStateRow colSpan={7} loading={busy} text={c.empty} />}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         )}
-        <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
+        <CardFooter>
           <Pagination total={rows.length} page={page} pageSize={pageSize}
             onPage={setPage} onSize={setPageSize} {...pagerTexts(c)} />
-        </div>
-      </div>
+        </CardFooter>
+      </Card>
     </div>
   )
 }
