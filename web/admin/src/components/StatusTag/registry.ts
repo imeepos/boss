@@ -16,6 +16,7 @@ export type StatusDomain =
   | 'backupStatus'
   | 'procurement' | 'receipt' | 'installLog' | 'userdata'
   | 'aaaSession'
+  | 'callbackResult'
 
 type Registry = Partial<Record<StatusDomain, Record<string, string>>>
 
@@ -104,6 +105,11 @@ export const REGISTRY: Registry = {
   aaaSession: {
     ONLINE: GREEN,
     PENDING_OFFLINE: ORANGE,
+  },
+  // 激活回调结果(orders 第 11 环节 activation_callbacks.result,§6.3 registry 收编)
+  callbackResult: {
+    SUCCESS: GREEN,
+    FAILED: RED,
   },
   ticket: {
     PENDING: ORANGE,

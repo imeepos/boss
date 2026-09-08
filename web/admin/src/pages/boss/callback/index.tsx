@@ -5,6 +5,7 @@ import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { PageHead, pagerTexts } from '../../org/shared'
 import { ErrorBanner, ToolbarButton, IdRef } from '../../../components/business'
+import { StatusTag } from '../../../components/StatusTag'
 import { Pagination } from '../../../components/Pagination'
 import { Card } from '../../../components/ui/card'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/table'
@@ -67,7 +68,7 @@ export default function CallbackPage() {
                 <TableRow key={x.id}>
                   <TableCell><IdRef value={x.id} /></TableCell>
                   <TableCell><IdRef value={x.orderId} /></TableCell>
-                  <TableCell>{x.result === 'SUCCESS' ? 'SUCCESS' : x.result}</TableCell>
+                  <TableCell><StatusTag domain="callbackResult" value={x.result} /></TableCell>
                   <TableCell>{x.retries}</TableCell>
                   <TableCell>
                     {x.result === 'FAILED' ? (
