@@ -5,6 +5,11 @@ name: deploy-102
 on:
   push:
     branches: [main]
+  # 看门狗重触发通道(2026-09-08,C1):deploy-watchdog.sh 判「任务已领取无 job 容器」
+  # 卡死后经 API dispatch 本 workflow(concurrency cancel-in-progress 自动取消卡死
+  # 旧 run);Classify 与实际部署镜像 sha 比对,docs-only 明确 no-op,语义安全。
+  # 口径见 docs/ops/deploy-watchdog.md 与 docs/ops/patrol-cron.md。
+  workflow_dispatch: {}
 
 # 线上部署操作宿主 Docker，必须串行；新提交取消尚未开始的旧部署。
 concurrency:

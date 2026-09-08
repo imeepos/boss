@@ -45,6 +45,7 @@
 
 ## CI/部署(deploy-102)
 
+- **已兜底+根治另立(2026-09-08, C1 看门狗轮)｜工具 bug｜act_runner 0.2.11 网络抖动拉到 deploy 任务却无 job 容器、无错误行,任务卡死需人工推空提交 retrigger**:runner 侧 pickup 正常但 job 容器创建前抖动即永久挂死,gitea UI 之外不可见(W4 手动等价部署/W7 阻断在案;诱因不可控,宿主重启后仍在潜伏)。**兜底已落地**:scripts/ops/deploy-watchdog.sh 102 cron 每 5 分钟只读检测「gitea 侧 deploy job waiting/running 超 900s 且宿主无 GITEA-ACTIONS-TASK-<task_id> 容器」→ 经 Gitea API workflow_dispatch 重触发(deploy-102.yml 已增 workflow_dispatch 触发器,concurrency cancel-in-progress 自动取消卡死旧 run)+ [deploy-watchdog] 可 grep 告警;六闸门防误报/防风暴;绝不 docker restart runner(W7 红线);token 未放置前纯告警态,放置后自动态(升级口径 docs/ops/patrol-cron.md,方案与批复 docs/ops/deploy-watchdog.md)。**根治另立任务**:升级 runner(0.2.13 灰度→3.x 评估;v3.4.0 起 job 收尾清理其创建容器/网络,对我们 sock 拉起 boss-* 常驻容器是生产风险,需专项灰度)。
 - **已定位+绕法(2026-08-25)｜工具 bug｜act_runner 0.2.11 丢失 job 中间步骤日志**:actions_log 的 zst 只含 Clone 首尾行与最终结论,中间步骤输出全部丢失(成功/失败 run 同样),失败无法从 run 日志定位。**绕法**:runner config level 调 debug + `docker logs gitea-runner`,能看到每步的步骤名与 exitcode(本次定位 SIGPIPE 的关键);排查完调回 info。
 - **已修复(2026-08-25, c2a2df61)｜部署怪象｜deploy-102 连续 28 个 run 5 秒内死于 Clone 后(run 1716-1743)**:根因=Classify 步骤 `deployed=$(docker images | grep -Ev ... | head -1)` 在 pipefail 下的 **SIGPIPE 竞态**——102 本地 boss/server sha tag 随部署累积增多后,head -1 提前关管道使 grep 收 141(SIGPIPE),pipefail 放大为管道失败 → set -e 杀步骤。代码/workflow/凭据全没变却从 16:53 起必现,重启 runner 无效(竞态在脚本层)。修复:管道尾 `|| true` 兜底;task 2862 debug 日志实证 exitcode 141,run 1745 起全绿。2026-09-22 会话记录的"runner 任务状态机卡死"同症状,实为此因。
 
