@@ -4,6 +4,7 @@ import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { PageHead, ErrorBanner, ToolbarButton } from '../../../components/business/page-head'
 import { FormField } from '../../../components/business/form-field'
+import { SubmitButton, type SubmitState } from '../../../components/business/submit-button'
 import { Card } from '../../../components/ui/card'
 import { Input } from '../../../components/ui/input'
 import { Badge } from '../../../components/ui/badge'
@@ -33,7 +34,10 @@ export default function StorageConfigPage() {
   const [fields, setFields] = useState<Fields>({})
   const [draft, setDraft] = useState<Draft>({})
   const [error, setError] = useState('')
+  const [saveError, setSaveError] = useState('')
   const [saving, setSaving] = useState(false)
+  const [saveState, setSaveState] = useState<SubmitState>('idle')
+  const [rotateState, setRotateState] = useState<SubmitState>('idle')
 
   const load = () => {
     setError('')
@@ -53,11 +57,21 @@ export default function StorageConfigPage() {
   const save = async () => {
     if (saving) return
     setSaving(true)
+    setSaveError('')
+    setSaveState('loading')
     try {
       await apiFetch('/storage-config', { method: 'PUT', body: { values: draft } })
       toast.success(a.saved)
+      setSaveState('success')
       load()
-    } catch (e) { toast.error(e instanceof Error ? e.message : a.saveFail) }
+      setTimeout(() => setSaveState((s) => (s === 'success' ? 'idle' : s)), 1500)
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : a.saveFail
+      setSaveError(msg)
+      setSaveState('failed')
+      toast.error(msg)
+      setTimeout(() => setSaveState((s) => (s === 'failed' ? 'idle' : s)), 2500)
+    }
     finally { setSaving(false) }
   }
 
@@ -65,16 +79,27 @@ export default function StorageConfigPage() {
   const [rotateOpen, setRotateOpen] = useState(false)
   const [newSecret, setNewSecret] = useState('')
   const [rotating, setRotating] = useState(false)
+  const [rotateError, setRotateError] = useState('')
   const doRotate = async () => {
     if (rotating || !newSecret) return
     setRotating(true)
+    setRotateError('')
+    setRotateState('loading')
     try {
       await apiFetch('/storage-config/rotate-secret', { method: 'POST', body: { secret: newSecret } })
       toast.success(a.rotated)
+      setRotateState('success')
       setRotateOpen(false)
       setNewSecret('')
       load()
-    } catch (e) { toast.error(e instanceof Error ? e.message : a.rotateFail) }
+      setTimeout(() => setRotateState((s) => (s === 'success' ? 'idle' : s)), 1500)
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : a.rotateFail
+      setRotateError(msg)
+      setRotateState('failed')
+      toast.error(msg)
+      setTimeout(() => setRotateState((s) => (s === 'failed' ? 'idle' : s)), 2500)
+    }
     finally { setRotating(false) }
   }
 
@@ -91,6 +116,7 @@ export default function StorageConfigPage() {
           </div>
           <Badge variant={fields['minio.endpoint']?.hasValue ? 'success' : 'warning'}>{fields['minio.endpoint']?.hasValue ? a.configured : a.notConfigured}</Badge>
         </div>
+        {saveError && <div className="mb-3"><ErrorBanner message={saveError} /></div>}
         <div className="grid grid-cols-2 gap-4">
           <FormField label={a.endpoint} hint={a.endpointHint}><Input className="w-72" value={draft['minio.endpoint'] ?? ''} onChange={(e) => set('minio.endpoint', e.target.value)} placeholder="192.168.0.102:29000" /></FormField>
           <FormField label={a.bucket}><Input className="w-72" value={draft['minio.bucket'] ?? ''} onChange={(e) => set('minio.bucket', e.target.value)} placeholder="boss-attachments" /></FormField>
@@ -99,7 +125,7 @@ export default function StorageConfigPage() {
           <FormField label={a.useSSL}><span className="flex items-center gap-2"><Switch checked={useSSL} onCheckedChange={(v) => set('minio.useSSL', String(v))} aria-label={a.useSSL} /><span className="text-sm">{useSSL ? a.enabled : a.disabled}</span></span></FormField>
         </div>
         <div className="mt-5 flex items-center justify-between">
-          <Dialog open={rotateOpen} onOpenChange={setRotateOpen}>
+          <Dialog open={rotateOpen} onOpenChange={(o) => { setRotateOpen(o); if (!o) setRotateError('') }}>
             <DialogTrigger asChild>
               <ToolbarButton>{a.rotateSecret}</ToolbarButton>
             </DialogTrigger>
@@ -108,6 +134,7 @@ export default function StorageConfigPage() {
                 <DialogTitle>{a.rotateSecret}</DialogTitle>
                 <DialogDescription>{a.rotateSecretDesc}</DialogDescription>
               </DialogHeader>
+              {rotateError && <div className="mb-3"><ErrorBanner message={rotateError} /></div>}
               <FormField label={a.newSecret}>
                 <Input
                   type="password"
@@ -120,13 +147,21 @@ export default function StorageConfigPage() {
               </FormField>
               <DialogFooter>
                 <DialogClose asChild><ToolbarButton>{a.cancel}</ToolbarButton></DialogClose>
-                <ToolbarButton primary disabled={rotating || newSecret.length < 8} onClick={doRotate}>
-                  {rotating ? a.rotating : a.rotate}
-                </ToolbarButton>
+                <SubmitButton
+                  state={rotateState}
+                  labels={{ idle: a.rotate, loading: a.rotating, success: a.rotated, failed: a.rotateFail }}
+                  disabled={rotating || newSecret.length < 8}
+                  onClick={doRotate}
+                />
               </DialogFooter>
             </DialogContent>
           </Dialog>
-          <ToolbarButton primary disabled={saving} onClick={save}>{saving ? a.saving : a.save}</ToolbarButton>
+          <SubmitButton
+            state={saveState}
+            labels={{ idle: a.save, loading: a.saving, success: a.saved, failed: a.saveFail }}
+            disabled={saving}
+            onClick={save}
+          />
         </div>
       </Card>
     </div>

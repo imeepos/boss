@@ -3,7 +3,8 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
-import { ErrorBanner } from '../../../components/business/page-head'
+import { ErrorBanner, ToolbarButton } from '../../../components/business/page-head'
+import { SubmitButton } from '../../../components/business/submit-button'
 import { Drawer } from '../../../components/Drawer'
 import { buildTagPayload, emptyTagForm, tagFormErr, type TagFormState } from './logic'
 import { TagFormFields } from './TagFormFields'
@@ -35,14 +36,15 @@ export function CreateTagDrawer({ onClose, onSaved }: { onClose: () => void; onS
     }
   }
 
+  const submitState = busy ? 'loading' : (apiError ? 'failed' : 'idle')
+  const submitLabels = { idle: t.pages.company.save, loading: t.pages.account.submitting, success: g.createOk, failed: g.loadFail }
+
   return (
     <Drawer title={g.createTitle} onClose={onClose}
       footer={
         <>
-          <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={onClose}>{t.pages.company.cancel}</button>
-          <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" disabled={busy} onClick={submit}>
-            {busy ? t.pages.account.submitting : t.pages.company.save}
-          </button>
+          <ToolbarButton onClick={onClose} disabled={busy}>{t.pages.company.cancel}</ToolbarButton>
+          <SubmitButton state={submitState} labels={submitLabels} disabled={busy} onClick={submit} />
         </>
       }>
       <TagFormFields form={form} error={err}

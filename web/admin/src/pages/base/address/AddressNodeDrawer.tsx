@@ -55,8 +55,9 @@ export function AddressNodeDrawer({ mode, parent, row, onDone, onCancel }: {
         })
       }
       onDone()
-    } catch {
-      setError(g.saveFail)
+    } catch (e) {
+      // 建址/重命名失败(如 path 撞 40900):透出接口原因。
+      setError(e instanceof Error ? e.message : g.saveFail)
     }
   }
 

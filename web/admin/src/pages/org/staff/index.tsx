@@ -7,6 +7,8 @@ import { useT } from '../../../i18n'
 import { useConfirm } from '../../../components/ConfirmDialog'
 import { PageHead } from '../../../components/business/page-head'
 import { EmptyState } from '../../../components/business/feedback'
+import { Card } from '../../../components/ui/card'
+import { Input } from '../../../components/ui/input'
 import { buildOrgTree, filterTree, membersOf, type DeptNode, type PostNode, type Selection } from './tree'
 import { OrgTree } from './OrgTree'
 import { MemberPanel } from './MemberPanel'
@@ -15,6 +17,7 @@ import { PostFormDrawer, emptyPostForm, type PostFormValues } from '../post/Post
 import { AccountFormDrawer } from '../../base/account/AccountForm'
 import { buildAccountPayload, validateAccount, type AccountFormValues } from '../../base/account/form'
 import type { AccountRow } from '../../base/account/list'
+import type { SubmitState } from '../../../components/business/submit-button'
 
 interface EntityRow { id: number; code: string; name: string }
 interface DeptRow { id: number; legalEntityId: number; name: string }
@@ -28,6 +31,7 @@ export default function StaffOrgPage() {
   const [accounts, setAccounts] = useState<AccountRow[]>([])
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  const [submitState, setSubmitState] = useState<SubmitState>('idle')
   const [treeKw, setTreeKw] = useState('')
   const [selection, setSelection] = useState<Selection | null>(null)
   const [deptForm, setDeptForm] = useState<DeptFormValues | null>(null)
@@ -95,14 +99,24 @@ export default function StaffOrgPage() {
     setPostForm(null)
   }, t.pages.staff.saved)
 
-  const submitMember = () => guard(async () => {
-    if (!memberForm) return
+  const submitMember = () => {
+    if (busy || !memberForm) return
     if (validateAccount(memberForm, Boolean(memberForm.id)).length) return
-    const body = buildAccountPayload(memberForm, Boolean(memberForm.id))
-    if (memberForm.id) await apiFetch(`/accounts/${memberForm.id}`, { method: 'PUT', body })
-    else await apiFetch('/accounts', { method: 'POST', body })
-    setMemberForm(null)
-  }, t.pages.staff.saved)
+    setBusy(true)
+    setFormError('')
+    setSubmitState('loading')
+    guard(async () => {
+      const body = buildAccountPayload(memberForm, Boolean(memberForm.id))
+      if (memberForm.id) await apiFetch(`/accounts/${memberForm.id}`, { method: 'PUT', body })
+      else await apiFetch('/accounts', { method: 'POST', body })
+      setMemberForm(null)
+      setSubmitState('success')
+      setTimeout(() => setSubmitState('idle'), 1500)
+    }, t.pages.staff.saved).catch(() => {
+      setSubmitState('failed')
+      setTimeout(() => setSubmitState((s) => (s === 'failed' ? 'idle' : s)), 2500)
+    })
+  }
 
   const toggleMember = async (r: AccountRow) => {
     const msg = r.status === 1
@@ -137,7 +151,7 @@ export default function StaffOrgPage() {
     setMemberForm({ ...emptyMemberForm(), ...preset })
   }
 
-  const treeBox = 'w-72 flex-none overflow-y-auto rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)] p-2'
+  const treeBox = 'w-72 flex-none overflow-y-auto p-2'
   return (
     <div>
       <PageHead title={t.pages.staff.title} desc={t.pages.staff.desc} />
@@ -150,9 +164,9 @@ export default function StaffOrgPage() {
         <div className="mb-4 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{formError}</div>
       )}
       <div className="flex items-stretch gap-4">
-        <div className={treeBox}>
-          <input
-            className="mb-2 h-8 w-full rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]"
+        <Card className={treeBox}>
+          <Input
+            className="mb-2"
             placeholder={t.pages.department.searchPlaceholder}
             value={treeKw}
             onChange={(e) => setTreeKw(e.target.value)}
@@ -168,13 +182,13 @@ export default function StaffOrgPage() {
             onEditPost={(p) => setPostForm({ id: p.id, deptId: p.deptId, code: p.code, name: p.name, roles: p.roles ?? [] })}
             onDelPost={delPost}
           />
-        </div>
+        </Card>
         {selection
           ? <MemberPanel title={title} members={members} busy={busy} onAdd={addMember} onEdit={(r) => setMemberForm(rowToForm(r))} onToggle={toggleMember} />
           : (
-            <div className="flex min-w-0 flex-1 items-center justify-center rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)] py-20">
+            <Card className="flex min-w-0 flex-1 items-center justify-center py-20">
               <EmptyState text={t.pages.staff.selectTip} />
-            </div>
+            </Card>
           )}
       </div>
 
@@ -204,6 +218,7 @@ export default function StaffOrgPage() {
         onSubmit={submitMember}
         busy={busy}
         submitError={memberForm ? formError : ''}
+        submitState={submitState}
       />
     </div>
   )

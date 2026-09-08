@@ -3,10 +3,11 @@
 import { useEffect, useState } from 'react'
 import { useT } from '../../../i18n'
 import { PageHead, pagerTexts } from '../../org/shared'
-import { ErrorBanner } from '../../../components/business/page-head'
+import { ErrorBanner, ToolbarButton } from '../../../components/business/page-head'
 import { Dropdown } from '../../../components/Dropdown'
 import { Pagination } from '../../../components/Pagination'
 import { statusTagLabel } from '../../../components/StatusTag'
+import { Card, CardContent, CardFooter } from '../../../components/ui/card'
 import { ASSET_TYPES, SCAN_STATUSES, type AssetRow } from '../types'
 import { AssetTable } from './AssetTable'
 import { AssetTrailDrawer } from './TrailDrawer'
@@ -63,26 +64,28 @@ export default function AssetPage() {
   return (
     <div>
       <PageHead title={a.title} desc={a.desc} />
-      <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
-        <div className="flex flex-wrap items-center gap-2 p-4">
-          <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" placeholder={a.searchPlaceholder}
-            value={keyword} onChange={(e) => setKeyword(e.target.value)} />
-          <Dropdown value={status} ariaLabel={a.dStatus} onChange={pickStatus} options={statusOptions} />
-          <Dropdown value={typeF} ariaLabel={a.fType} onChange={pickType} options={typeOptions} />
-          <span className="spacer" />
-          <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
-          <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={() => setModelsOpen(true)}>{a.modelsManage}</button>
-          <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={() => setBatchesOpen(true)}>{a.batchesManage}</button>
-          <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" onClick={() => setCreateOpen(true)}>{a.create}</button>
-        </div>
+      <Card>
+        <CardContent>
+          <div className="flex flex-wrap items-center gap-2">
+            <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" placeholder={a.searchPlaceholder}
+              value={keyword} onChange={(e) => setKeyword(e.target.value)} />
+            <Dropdown value={status} ariaLabel={a.dStatus} onChange={pickStatus} options={statusOptions} />
+            <Dropdown value={typeF} ariaLabel={a.fType} onChange={pickType} options={typeOptions} />
+            <span className="spacer" />
+            <ToolbarButton disabled={busy} onClick={load}>{t.pages.audit.refresh}</ToolbarButton>
+            <ToolbarButton onClick={() => setModelsOpen(true)}>{a.modelsManage}</ToolbarButton>
+            <ToolbarButton onClick={() => setBatchesOpen(true)}>{a.batchesManage}</ToolbarButton>
+            <ToolbarButton primary onClick={() => setCreateOpen(true)}>{a.create}</ToolbarButton>
+          </div>
+        </CardContent>
         {error && <ErrorBanner message={error} />}
         <AssetTable rows={rows} tagOf={tagOf} batchOf={batchOf} busy={busy}
           onTrail={setTrail} onDetail={setDetail} onEdit={setEditRow} onScrap={setScrapRow} onDelete={delRow} />
-        <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
+        <CardFooter>
           <Pagination total={total} page={page} pageSize={pageSize}
             onPage={setPage} onSize={pickSize} {...pagerTexts(a)} />
-        </div>
-      </div>
+        </CardFooter>
+      </Card>
       {trail && <AssetTrailDrawer asset={trail} tag={tagOf(trail.tagId)} onClose={() => setTrail(null)} />}
       {detail && <AssetTrailDrawer asset={detail} tag={tagOf(detail.tagId)} showMain onClose={() => setDetail(null)} />}
       {createOpen && <CreateDrawer onClose={() => setCreateOpen(false)} onSaved={load} />}

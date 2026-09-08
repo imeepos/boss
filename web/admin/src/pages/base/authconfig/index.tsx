@@ -14,6 +14,17 @@ import { CN_KEYS, MY_KEYS, FB_KEYS, initDraft, payloadFor, timeoutError, type Au
 type Draft = Record<string, string>
 type Group = 'cn' | 'my' | 'fallback'
 
+interface GroupState { state: 'idle' | 'loading' | 'success' | 'failed'; error: string }
+
+function InfoIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="shrink-0 text-[var(--shell-crumb-text)]">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 8h.01M11 12h1v5h1" />
+    </svg>
+  )
+}
+
 export default function AuthConfigPage() {
   const t = useT()
   const a = t.pages.authconfig
@@ -21,11 +32,23 @@ export default function AuthConfigPage() {
   const [loaded, setLoaded] = useState<Draft>({})
   const [secretSet, setSecretSet] = useState<Record<string, boolean>>({})
   const [error, setError] = useState('')
-  const [saving, setSaving] = useState('')
-  const [testing, setTesting] = useState('')
+  const [saveState, setSaveState] = useState<Record<Group, GroupState>>({
+    cn: { state: 'idle', error: '' },
+    my: { state: 'idle', error: '' },
+    fallback: { state: 'idle', error: '' },
+  })
+  const [testState, setTestState] = useState<Record<Group, GroupState>>({
+    cn: { state: 'idle', error: '' },
+    my: { state: 'idle', error: '' },
+    fallback: { state: 'idle', error: '' },
+  })
   const [editing, setEditing] = useState<Group | null>(null)
 
   const set = (key: string, v: string) => setDraft((d) => ({ ...d, [key]: v }))
+  const setSaveGroup = (g: Group, patch: Partial<GroupState>) =>
+    setSaveState((s) => ({ ...s, [g]: { ...s[g], ...patch } }))
+  const setTestGroup = (g: Group, patch: Partial<GroupState>) =>
+    setTestState((s) => ({ ...s, [g]: { ...s[g], ...patch } }))
 
   const load = () => {
     setError('')
@@ -48,14 +71,18 @@ export default function AuthConfigPage() {
   const groupKeys = (g: Group) => (g === 'cn' ? CN_KEYS : g === 'my' ? MY_KEYS : FB_KEYS)
 
   const save = async (group: Group) => {
-    if (saving) return
+    const cur = saveState[group]
+    if (cur.state === 'loading') return
     if (group === 'cn' && timeoutError(draft['auth.cn.preloadTimeoutMs'] ?? '')) {
-      toast.error(a.timeoutInvalid)
+      const msg = a.timeoutInvalid
+      setSaveGroup(group, { state: 'failed', error: msg })
+      toast.error(msg)
+      setTimeout(() => setSaveGroup(group, { state: cur.state === 'failed' ? 'idle' : cur.state }), 2500)
       return
     }
     const keys = groupKeys(group)
     const values = payloadFor(keys, draft, loaded)
-    setSaving(group)
+    setSaveGroup(group, { state: 'loading', error: '' })
     try {
       await apiFetch(`/auth-config/${group}`, { method: 'PUT', body: { values } })
       setLoaded((l) => ({ ...l, ...values }))
@@ -65,27 +92,40 @@ export default function AuthConfigPage() {
       setDraft((d) => ({ ...d, 'auth.cn.appSecret': '', 'auth.my.apiKey': '' }))
       setEditing(null)
       toast.success(a.saved)
+      setSaveGroup(group, { state: 'success', error: '' })
+      setTimeout(() => setSaveGroup(group, { state: 'idle' }), 1500)
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : a.saveFail)
-    } finally {
-      setSaving('')
+      const msg = e instanceof Error ? e.message : a.saveFail
+      setSaveGroup(group, { state: 'failed', error: msg })
+      toast.error(msg)
+      setTimeout(() => setSaveGroup(group, { state: 'idle' }), 2500)
     }
   }
 
   const test = async (group: Group) => {
-    if (testing) return
-    setTesting(group)
+    const cur = testState[group]
+    if (cur.state === 'loading') return
+    setTestGroup(group, { state: 'loading', error: '' })
     try {
       const values = payloadFor(groupKeys(group), draft, loaded)
       const d = await apiFetch<{ ok: boolean; message: string }>(`/auth-config/${group}/test`, {
         method: 'POST', body: { values },
       })
-      if (d?.ok) toast.success(d.message || a.testOk)
-      else toast.error(d?.message || a.testFail)
+      if (d?.ok) {
+        toast.success(d.message || a.testOk)
+        setTestGroup(group, { state: 'success', error: '' })
+        setTimeout(() => setTestGroup(group, { state: 'idle' }), 1500)
+      } else {
+        const msg = d?.message || a.testFail
+        setTestGroup(group, { state: 'failed', error: msg })
+        toast.error(msg)
+        setTimeout(() => setTestGroup(group, { state: 'idle' }), 2500)
+      }
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : a.testFail)
-    } finally {
-      setTesting('')
+      const msg = e instanceof Error ? e.message : a.testFail
+      setTestGroup(group, { state: 'failed', error: msg })
+      toast.error(msg)
+      setTimeout(() => setTestGroup(group, { state: 'idle' }), 2500)
     }
   }
 
@@ -146,11 +186,16 @@ export default function AuthConfigPage() {
           {summaryRow(a.fbAutoRegister, draft['auth.fallback.autoRegister'] === 'true' ? a.enabled : a.disabled)}
           {summaryRow(a.fbPrivacyVersion, draft['auth.compliance.privacyVersion'])}
           {summaryRow(a.fbAgreementUrl, draft['auth.compliance.agreementUrl'])}
-          <div className="mt-1 text-xs text-[var(--shell-crumb-text)]">ⓘ {a.complianceNote}</div>
+          <div className="mt-1 flex items-center gap-1 text-xs text-[var(--shell-crumb-text)]"><InfoIcon /><span>{a.complianceNote}</span></div>
         </Card>
       </div>
 
-      <AuthConfigDrawers editing={editing} draft={draft} set={set} secretSet={secretSet} saving={saving} testing={testing} a={a} t={t} setEditing={setEditing} save={save} test={test} />
+      <AuthConfigDrawers editing={editing} draft={draft} set={set} secretSet={secretSet} a={a} t={t}
+        setEditing={setEditing} save={save} test={test}
+        saveState={saveState[editing ?? 'cn']?.state ?? 'idle'}
+        testState={testState[editing ?? 'cn']?.state ?? 'idle'}
+        saveError={saveState[editing ?? 'cn']?.error ?? ''}
+        testError={testState[editing ?? 'cn']?.error ?? ''} />
     </div>
   )
 }

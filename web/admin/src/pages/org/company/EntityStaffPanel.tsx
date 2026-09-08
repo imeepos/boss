@@ -7,6 +7,8 @@ import { Drawer } from '../../../components/Drawer'
 import { toast } from 'sonner'
 import { useConfirm } from '../../../components/ConfirmDialog'
 import { Button } from '../../../components/ui/button'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/table'
+import { ErrorBanner } from '../../../components/business/page-head'
 import { EntityStaffDialogs, type EntityStaffDialogMode } from './EntityStaffDialogs'
 import { compact } from '../../boss/worker/TeamDialogs'
 
@@ -48,8 +50,6 @@ export function EntityStaffPanel({ entityId, entityName, onClose }: { entityId: 
     }
   }
 
-  const th = 'h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]'
-  const td = 'h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]'
   const linkBtn = 'cursor-pointer border-none bg-transparent p-0 text-[13px] text-[var(--color-text-link)] hover:underline'
   const cols = t.columns
 
@@ -61,36 +61,40 @@ export function EntityStaffPanel({ entityId, entityName, onClose }: { entityId: 
           <Button size="sm" className={compact} onClick={() => setDialog({ type: 'create', entityId })}>{t.add}</Button>
         </>
       }>
-      {error && <div className="mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div>}
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
-          <thead><tr>{cols.map((c) => <th key={c} className={th}>{c}</th>)}</tr></thead>
-          <tbody>
-            {rows.map((r) => (
-              <tr key={r.id}>
-                <td className={td}>{r.staffNo || '-'}</td>
-                <td className={td}>{r.username}</td>
-                <td className={td}>{r.realName}</td>
-                <td className={td}>{r.phone || '-'}</td>
-                <td className={td}>{r.roleCode === 'partner_admin' ? t.roleAdmin : t.roleStaff}</td>
-                <td className={td}>
-                  <span className={r.status === 1 ? 'text-[var(--color-success)]' : 'text-[var(--shell-group-title)]'}>
-                    {r.status === 1 ? t.statusOn : t.statusOff}
-                  </span>
-                </td>
-                <td className={td}>
-                  <span className="inline-flex items-center gap-2">
-                    <button className={linkBtn} onClick={() => setDialog({ type: 'resetPwd', entityId, accountId: r.id, name: r.realName })}>{t.resetPwd}</button>
-                    <span className="text-[var(--shell-side-border)]">|</span>
-                    <button className={linkBtn} onClick={() => toggleStatus(r)}>{r.status === 1 ? t.disable : t.enable}</button>
-                  </span>
-                </td>
-              </tr>
-            ))}
-            {!rows.length && !error && <tr><td className={`${td} text-center`} colSpan={cols.length}>{t.empty}</td></tr>}
-          </tbody>
-        </table>
-      </div>
+      {error && <ErrorBanner message={error} />}
+      <Table>
+        <TableHeader>
+          <TableRow>
+            {cols.map((c) => <TableHead key={c}>{c}</TableHead>)}
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {rows.map((r) => (
+            <TableRow key={r.id}>
+              <TableCell>{r.staffNo || '-'}</TableCell>
+              <TableCell>{r.username}</TableCell>
+              <TableCell>{r.realName}</TableCell>
+              <TableCell>{r.phone || '-'}</TableCell>
+              <TableCell>{r.roleCode === 'partner_admin' ? t.roleAdmin : t.roleStaff}</TableCell>
+              <TableCell>
+                <span className={r.status === 1 ? 'text-[var(--color-success)]' : 'text-[var(--shell-group-title)]'}>
+                  {r.status === 1 ? t.statusOn : t.statusOff}
+                </span>
+              </TableCell>
+              <TableCell>
+                <span className="inline-flex items-center gap-2">
+                  <button className={linkBtn} onClick={() => setDialog({ type: 'resetPwd', entityId, accountId: r.id, name: r.realName })}>{t.resetPwd}</button>
+                  <span className="text-[var(--shell-side-border)]">|</span>
+                  <button className={linkBtn} onClick={() => toggleStatus(r)}>{r.status === 1 ? t.disable : t.enable}</button>
+                </span>
+              </TableCell>
+            </TableRow>
+          ))}
+          {!rows.length && !error && (
+            <TableRow><TableCell colSpan={cols.length} className="text-center text-[var(--shell-group-title)]">{t.empty}</TableCell></TableRow>
+          )}
+        </TableBody>
+      </Table>
       <EntityStaffDialogs mode={dialog} onClose={() => setDialog(null)} onDone={load} />
     </Drawer>
   )

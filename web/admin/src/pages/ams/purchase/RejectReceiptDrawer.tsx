@@ -4,10 +4,12 @@ import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { Drawer } from '../../../components/Drawer'
+import { FormField } from '../../../components/business/form-field'
+import { ErrorBanner, ToolbarButton } from '../../../components/business/page-head'
+import { SubmitButton } from '../../../components/business/submit-button'
 import { buildRejectPayload, rejectReasonErr, type RejectFormState } from './purchaseLogic'
 
 const input = 'h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]'
-const errBanner = 'rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]'
 
 export function RejectReceiptDrawer({ receipt, onClose, onSaved }: {
   receipt: { id: number; receiptNo: string }
@@ -40,23 +42,23 @@ export function RejectReceiptDrawer({ receipt, onClose, onSaved }: {
     }
   }
 
+  const submitState = busy ? 'loading' : (err ? 'failed' : 'idle')
+  const submitLabels = { idle: d.reject, loading: d.submitting, success: d.rejectOk, failed: d.opFail }
+
   return (
     <Drawer title={d.rejectTitle.replace('{no}', receipt.receiptNo || '#' + receipt.id)} onClose={onClose} width={440}
       footer={
         <>
-          <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={onClose}>{d.cancel}</button>
-          <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--color-danger)] px-4 text-[13px] text-white hover:opacity-90" disabled={busy} onClick={submit}>
-            {busy ? d.submitting : d.reject}
-          </button>
+          <ToolbarButton onClick={onClose} disabled={busy}>{d.cancel}</ToolbarButton>
+          <SubmitButton state={submitState} labels={submitLabels} disabled={busy} onClick={submit} />
         </>
       }>
       <div className="flex flex-col gap-3.5">
-        <div className="flex flex-col gap-1.5">
-          <label><span className="mr-0.5 text-[var(--color-danger)]">*</span>{d.fRejectReason}</label>
+        <FormField label={d.fRejectReason} required>
           <input className={input} value={form.reason} placeholder={d.pRejectReason}
             onChange={(e) => setForm({ reason: e.target.value })} />
-        </div>
-        {err && <div className={errBanner}>{d[err as 'eRejectReason']}</div>}
+        </FormField>
+        {err && <ErrorBanner message={d[err as 'eRejectReason']} />}
       </div>
     </Drawer>
   )

@@ -6,15 +6,15 @@ import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { useConfirm } from '../../../components/ConfirmDialog'
 import { Drawer } from '../../../components/Drawer'
-import { TableStateRow } from '../../../components/business'
+import { ActionLink, ActionLinks, ActionSep, TableStateRow } from '../../../components/business'
 import { FormField } from '../../../components/business/form-field'
-import { ErrorBanner } from '../../../components/business/page-head'
+import { ErrorBanner, ToolbarButton } from '../../../components/business/page-head'
+import { SubmitButton } from '../../../components/business/submit-button'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../../components/ui/table'
 import type { AssetModelRow } from '../types'
 import { buildModelPayload, emptyModelForm, modelFormErr, type ModelFormState } from './dictLogic'
 
 const input = 'h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]'
-const smallBtn = 'h-7 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2 text-[12px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)] disabled:cursor-not-allowed disabled:opacity-50'
-const td = 'h-9 px-2 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)]'
 
 export function ModelDictDrawer({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
   const t = useT()
@@ -85,10 +85,17 @@ export function ModelDictDrawer({ onClose, onSaved }: { onClose: () => void; onS
     }
   }
 
+  const submitState = busy ? 'loading' : (error ? 'failed' : 'idle')
+  const submitLabels = { idle: editing ? t.pages.company.save : a.modelCreate, loading: t.pages.account.submitting, success: editing ? t.pages.company.save : a.modelCreate, failed: a.loadFail }
   const cols = a.modelCols
   return (
     <Drawer title={a.modelsTitle} onClose={onClose} width={720}
-      footer={<button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={onClose}>{t.pages.company.cancel}</button>}>
+      footer={
+        <>
+          <ToolbarButton onClick={onClose} disabled={busy}>{t.pages.company.cancel}</ToolbarButton>
+          <SubmitButton state={submitState} labels={submitLabels} disabled={busy} onClick={submit} />
+        </>
+      }>
       <div className="flex flex-col gap-3">
         <div className="rounded-sm border border-[var(--shell-side-border)] p-3">
           <div className="mb-2 text-[13px] font-medium text-[var(--shell-heading)]">{editing ? a.modelEdit : a.modelCreate}</div>
@@ -99,42 +106,41 @@ export function ModelDictDrawer({ onClose, onSaved }: { onClose: () => void; onS
             <FormField label={a.modelPart}><input className={input} placeholder={a.modelPart} value={form.partNumber} onChange={(e) => setForm({ ...form, partNumber: e.target.value })} /></FormField>
           </div>
           <div className="mt-2 flex items-center gap-2">
-            <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)] disabled:cursor-not-allowed disabled:opacity-50" disabled={busy} onClick={submit}>{editing ? t.pages.company.save : a.modelCreate}</button>
-            {editing && <button className={smallBtn} onClick={resetForm}>{t.pages.company.cancel}</button>}
+            {editing && <ToolbarButton onClick={resetForm} disabled={busy}>{t.pages.company.cancel}</ToolbarButton>}
           </div>
           {formErr && <ErrorBanner message={a[formErr as 'eModelRequired']} />}
         </div>
         {error && <ErrorBanner message={error} />}
-        <div className="overflow-x-auto">
-            <table className="w-full border-collapse text-[13px]">
-              <thead>
-                <tr>{cols.map((x) => <th key={x} className="h-9 px-2 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr>
-              </thead>
-              <tbody>
-                {rows.map((m) => (
-                  <tr key={m.id}>
-                    <td className={td}>{m.vendor || '—'}</td>
-                    <td className={td}>{m.model}</td>
-                    <td className={td}>{m.category}</td>
-                    <td className={td}>{m.partNumber || '—'}</td>
-                    <td className={td}>
-                      <span className={m.isActive ? 'text-[var(--color-success)]' : 'text-[var(--shell-group-title)]'}>
-                        {m.isActive ? a.modelEnabled : a.modelDisabled}
-                      </span>
-                    </td>
-                    <td className={td}>
-                      <span className="inline-flex items-center gap-2">
-                        <button className={smallBtn} disabled={busy} onClick={() => startEdit(m)}>{t.pages.assetPage.edit}</button>
-                        {m.isActive && <button className={smallBtn} disabled={busy} onClick={() => toggle(m)}>{a.modelDisable}</button>}
-                        {!m.isActive && <button className={smallBtn} disabled={busy} onClick={() => toggle(m)}>{a.modelEnable}</button>}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-                {!rows.length && <TableStateRow colSpan={cols.length} loading={!loaded} text={a.empty} />}
-              </tbody>
-            </table>
-          </div>
+        <Table>
+          <TableHeader>
+            <TableRow>{cols.map((x) => <TableHead key={x}>{x}</TableHead>)}</TableRow>
+          </TableHeader>
+          <TableBody>
+            {rows.map((m) => (
+              <TableRow key={m.id}>
+                <TableCell>{m.vendor || '—'}</TableCell>
+                <TableCell>{m.model}</TableCell>
+                <TableCell>{m.category}</TableCell>
+                <TableCell>{m.partNumber || '—'}</TableCell>
+                <TableCell>
+                  <span className={m.isActive ? 'text-[var(--color-success)]' : 'text-[var(--shell-group-title)]'}>
+                    {m.isActive ? a.modelEnabled : a.modelDisabled}
+                  </span>
+                </TableCell>
+                <TableCell>
+                  <ActionLinks>
+                    <ActionLink onClick={() => startEdit(m)} label={t.pages.assetPage.edit} testId={`model-edit-${m.id}`} />
+                    <ActionSep />
+                    {m.isActive
+                      ? <ActionLink onClick={() => toggle(m)} label={a.modelDisable} testId={`model-disable-${m.id}`} />
+                      : <ActionLink onClick={() => toggle(m)} label={a.modelEnable} testId={`model-enable-${m.id}`} />}
+                  </ActionLinks>
+                </TableCell>
+              </TableRow>
+            ))}
+            {!rows.length && <TableStateRow colSpan={cols.length} loading={!loaded} text={a.empty} />}
+          </TableBody>
+        </Table>
       </div>
     </Drawer>
   )

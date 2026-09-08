@@ -5,6 +5,8 @@ import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { Drawer } from '../../../components/Drawer'
 import { MultiSelect, type MultiOption } from '../../../components/MultiSelect'
+import { Input } from '../../../components/ui/input'
+import { ErrorBanner } from '../../../components/business/page-head'
 
 interface SubFormProps {
   appId: number
@@ -45,7 +47,6 @@ export function SubForm({ appId, onClose, onCreated }: SubFormProps) {
     }
   }
 
-  const inputCls = 'h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]'
   return (
     <Drawer title={t.pages.openplat.addSub} onClose={onClose}
       footer={
@@ -70,9 +71,11 @@ export function SubForm({ appId, onClose, onCreated }: SubFormProps) {
         </label>
         <label className="text-xs text-[var(--shell-crumb-text)]">
           {t.pages.openplat.pEndpoint}
-          <input className={inputCls + ' mt-1 w-full'} value={endpoint} placeholder={t.pages.openplat.pEndpoint} onChange={(e) => setEndpoint(e.target.value)} />
+          <span className="mt-1 block">
+            <Input value={endpoint} placeholder={t.pages.openplat.pEndpoint} onChange={(e) => setEndpoint(e.target.value)} />
+          </span>
         </label>
-        {formError && <div className="rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{formError}</div>}
+        {formError && <ErrorBanner message={formError} />}
       </div>
     </Drawer>
   )

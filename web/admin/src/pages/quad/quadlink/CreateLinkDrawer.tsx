@@ -5,7 +5,9 @@ import { apiFetch } from '../../../api/client'
 import { searchCustomers } from '../../../api/pickers'
 import { Drawer } from '../../../components/Drawer'
 import { SimplePicker } from '../../../components/pickers/SimplePicker'
-import { ErrorBanner } from '../../../components/business/page-head'
+import { FormField } from '../../../components/business/form-field'
+import { ErrorBanner, ToolbarButton } from '../../../components/business/page-head'
+import { SubmitButton } from '../../../components/business/submit-button'
 import { useT } from '../../../i18n'
 import type { LegalEntityRow } from '../../org/company/filter'
 
@@ -50,30 +52,34 @@ export function CreateLinkDrawer({ onDone, onClose }: { onDone: () => void; onCl
       setError(e instanceof Error ? e.message : q.loadFail)
       setBusy(false)
     }
-  };
+  }
 
-  const pick = (label: string, value: string, onChange: (v: string) => void, props: Record<string, unknown>) => (
-    <label className="flex flex-col gap-1.5"><span className="text-xs text-[var(--shell-content-text)]">{label}</span>
+  const allFilled = Boolean(asset && customer && port && address && entity)
+  const submitState = busy ? 'loading' : (error ? 'failed' : 'idle')
+  const submitLabels = { idle: q.save, loading: t.pages.account.submitting, success: q.createOk, failed: q.loadFail }
+
+  const pick = (label: string, value: string, onChange: (v: string) => void, required: boolean, props: Record<string, unknown>) => (
+    <FormField label={label} required={required}>
       <SimplePicker value={value} onChange={onChange} ariaLabel={label} placeholder={label} searchPlaceholder={label} minWidth={260} {...props} />
-    </label>
-  );
+    </FormField>
+  )
 
   return (
     <Drawer title={q.createTitle} onClose={onClose}
       footer={
         <>
-          <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={onClose}>{t.pages.company.cancel}</button>
-          <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" disabled={busy || !asset || !customer || !port || !address || !entity} onClick={save}>{busy ? t.pages.account.submitting : q.save}</button>
+          <ToolbarButton onClick={onClose} disabled={busy}>{t.pages.company.cancel}</ToolbarButton>
+          <SubmitButton state={submitState} labels={submitLabels} disabled={busy || !allFilled} onClick={save} />
         </>
       }>
       <div className="flex flex-col gap-3.5">
         {error && <ErrorBanner message={error} />}
-        {pick(q.columns[0] ?? 'Asset', asset, setAsset, { options: assets })}
-        {pick(q.columns[1] ?? 'Customer', customer, setCustomer, { search: searchCustomers, toOption: (c: { id: number; name: string; phone?: string | null; customerCode?: string | null }) => ({ value: String(c.id), label: `${c.name} · ${c.phone || c.customerCode || ''}` }) })}
-        {pick(q.columns[2] ?? 'Port', port, setPort, { options: ports })}
-        {pick(q.columns[3] ?? 'Address', address, setAddress, { search: searchAddresses })}
-        {pick(q.legalEntityLabel, entity, setEntity, { options: entities.map((x) => ({ value: String(x.id), label: x.name })) })}
+        {pick(q.columns[0] ?? 'Asset', asset, setAsset, true, { options: assets })}
+        {pick(q.columns[1] ?? 'Customer', customer, setCustomer, true, { search: searchCustomers, toOption: (c: { id: number; name: string; phone?: string | null; customerCode?: string | null }) => ({ value: String(c.id), label: `${c.name} · ${c.phone || c.customerCode || ''}` }) })}
+        {pick(q.columns[2] ?? 'Port', port, setPort, true, { options: ports })}
+        {pick(q.columns[3] ?? 'Address', address, setAddress, true, { search: searchAddresses })}
+        {pick(q.legalEntityLabel, entity, setEntity, true, { options: entities.map((x) => ({ value: String(x.id), label: x.name })) })}
       </div>
     </Drawer>
-  );
+  )
 }

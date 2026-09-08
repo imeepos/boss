@@ -43,7 +43,7 @@ export function AddressGeoDrawer({ row, onDone, onCancel }: {
       onDone()
     } catch (err) {
       console.warn('[address-drawer] attach geo save failed:', err)
-      setError(g.saveFail)
+      setError(err instanceof Error ? err.message : g.saveFail)
     }
   }
 

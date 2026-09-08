@@ -59,8 +59,8 @@ export function CountryForm({ initial, editing, onDone, onCancel }: {
     try {
       await apiFetch(path, { method: editing ? 'PUT' : 'POST', body: { ...form } })
       onDone()
-    } catch {
-      setError(g.saveFail)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : g.saveFail)
     }
   }
 

@@ -12,7 +12,9 @@ import { StatusTag } from '../../../components/StatusTag'
 import { Pagination } from '../../../components/Pagination'
 import { Dropdown } from '../../../components/Dropdown'
 import { useConfirm } from '../../../components/ConfirmDialog'
-import { TableStateRow } from '../../../components/business'
+import { ActionLink, ActionLinks, ActionSep, TableStateRow, ToolbarButton } from '../../../components/business'
+import { Card, CardContent, CardFooter } from '../../../components/ui/card'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../../components/ui/table'
 import { pageSlice, type OrderRow, type SupplierRow } from '../types'
 import { CreateOrderDrawer } from './CreateOrderDrawer'
 import { OrderEditDrawer } from './OrderEditDrawer'
@@ -96,85 +98,81 @@ export default function PurchasePage() {
     <div>
       <PageHead title={d.title} desc={d.subtitle} />
 
-      <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
-        <div className="flex flex-wrap items-center gap-2 p-4">
-          <Dropdown
-            value={statusFilter}
-            options={statusOpts}
-            onChange={setStatusFilter}
-            ariaLabel={d.statusFilter}
-          />
-          <span className="spacer" />
-          <button
-            type="button"
-            onClick={load}
-            className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]"
-          >
-            {t.pages.audit.refresh}
-          </button>
-          <button
-            type="button"
-            onClick={() => setSupOpen(true)}
-            className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]"
-          >
-            {d.suppliersManage}
-          </button>
-          <button
-            type="button"
-            onClick={() => setCreateOpen(true)}
-            className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]"
-          >
-            {d.newOrder}
-          </button>
-        </div>
-        {error && <ErrorBanner message={error} />}
-        <div className="overflow-x-auto px-4 pb-4">
-            <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
-              <thead>
-                <tr>
-                  <th className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{d.colNo}</th>
-                  <th className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{d.colSupplier}</th>
-                  <th className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{d.colEntity}</th>
-                  <th className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{d.colStatus}</th>
-                  <th className="h-11 px-3 text-right text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{d.colTotal}</th>
-                  <th className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{d.colActions}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {slice.map((o) => (
-                  <tr key={o.id} className="hover:bg-[var(--shell-menu-hover-bg)]">
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] font-mono">{o.procurementNo}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)]">{o.supplierName}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)]">{o.legalEntityName}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)]"><StatusTag domain="procurement" value={o.status} /></td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-right">{fmtAmount(o.totalAmount)}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)]">
-                      <span className="inline-flex items-center gap-2">
-                        <button type="button" disabled={busy} onClick={() => setDetailId(o.id)} className="h-7 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2 text-[12px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]">{d.orderDetail}</button>
-                        {canEditOrder(o.status) && (
-                          <button type="button" disabled={busy} onClick={() => setEditing(o)} className="h-7 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2 text-[12px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]">{d.orderEdit}</button>
-                        )}
-                        {o.status === 'DRAFT' && (
-                          <button type="button" disabled={busy} onClick={() => submitOrder(o.id)} className="h-7 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2 text-[12px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]">{d.submit}</button>
-                        )}
-                        {(o.status === 'SUBMITTED' || o.status === 'PARTIAL') && (
-                          <button type="button" disabled={busy} onClick={() => setConfirming(o)} className="h-7 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2 text-[12px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]">{d.confirmReceipt}</button>
-                        )}
-                        {(o.status === 'DRAFT' || o.status === 'SUBMITTED' || o.status === 'PARTIAL') && (
-                          <button type="button" disabled={busy} onClick={() => cancelOrder(o)} className="h-7 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2 text-[12px] text-[var(--color-danger)] hover:border-[var(--color-border-hover)]">{d.cancelOrder}</button>
-                        )}
-                        {(o.status === 'RECEIVED' || o.status === 'CANCELLED') && (
-                          <span className="text-[var(--shell-group-title)]">—</span>
-                        )}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-                {!slice.length && <TableStateRow colSpan={6} loading={busy} text={d.empty} />}
-              </tbody>
-            </table>
+      <Card>
+        <CardContent>
+          <div className="flex flex-wrap items-center gap-2">
+            <Dropdown
+              value={statusFilter}
+              options={statusOpts}
+              onChange={setStatusFilter}
+              ariaLabel={d.statusFilter}
+            />
+            <span className="spacer" />
+            <ToolbarButton disabled={busy} onClick={load}>{t.pages.audit.refresh}</ToolbarButton>
+            <ToolbarButton onClick={() => setSupOpen(true)}>{d.suppliersManage}</ToolbarButton>
+            <ToolbarButton primary onClick={() => setCreateOpen(true)}>{d.newOrder}</ToolbarButton>
           </div>
-        <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
+        </CardContent>
+        {error && <ErrorBanner message={error} />}
+        <div className="px-4 pb-4">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{d.colNo}</TableHead>
+                <TableHead>{d.colSupplier}</TableHead>
+                <TableHead>{d.colEntity}</TableHead>
+                <TableHead>{d.colStatus}</TableHead>
+                <TableHead className="text-right">{d.colTotal}</TableHead>
+                <TableHead>{d.colActions}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {slice.map((o) => (
+                <TableRow key={o.id}>
+                  <TableCell className="font-mono">{o.procurementNo}</TableCell>
+                  <TableCell>{o.supplierName}</TableCell>
+                  <TableCell>{o.legalEntityName}</TableCell>
+                  <TableCell><StatusTag domain="procurement" value={o.status} /></TableCell>
+                  <TableCell className="text-right">{fmtAmount(o.totalAmount)}</TableCell>
+                  <TableCell>
+                    <ActionLinks>
+                      <ActionLink onClick={() => setDetailId(o.id)} label={d.orderDetail} testId={`purchase-detail-${o.id}`} />
+                      {canEditOrder(o.status) && (
+                        <>
+                          <ActionSep />
+                          <ActionLink onClick={() => setEditing(o)} label={d.orderEdit} testId={`purchase-edit-${o.id}`} />
+                        </>
+                      )}
+                      {o.status === 'DRAFT' && (
+                        <>
+                          <ActionSep />
+                          <ActionLink onClick={() => submitOrder(o.id)} label={d.submit} testId={`purchase-submit-${o.id}`} />
+                        </>
+                      )}
+                      {(o.status === 'SUBMITTED' || o.status === 'PARTIAL') && (
+                        <>
+                          <ActionSep />
+                          <ActionLink onClick={() => setConfirming(o)} label={d.confirmReceipt} testId={`purchase-confirm-${o.id}`} />
+                        </>
+                      )}
+                      {(o.status === 'DRAFT' || o.status === 'SUBMITTED' || o.status === 'PARTIAL') && (
+                        <>
+                          <ActionSep />
+                          <ActionLink onClick={() => cancelOrder(o)} label={d.cancelOrder} testId={`purchase-cancel-${o.id}`} />
+                        </>
+                      )}
+                      {(o.status === 'RECEIVED' || o.status === 'CANCELLED') && (
+                        <span className="text-[var(--shell-group-title)]">—</span>
+                      )}
+                    </ActionLinks>
+                  </TableCell>
+                </TableRow>
+              ))}
+              {!slice.length && <TableStateRow colSpan={6} loading={busy} text={d.empty} />}
+            </TableBody>
+          </Table>
+        </div>
+        <CardFooter>
           <Pagination
             total={filtered.length}
             page={page}
@@ -183,8 +181,8 @@ export default function PurchasePage() {
             onSize={setPageSize}
             {...pagerTexts(t.pages.company)}
           />
-        </div>
-      </div>
+        </CardFooter>
+      </Card>
 
       {createOpen && (
         <CreateOrderDrawer

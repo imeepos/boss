@@ -12,6 +12,9 @@ import { BatchImportEntry } from '../../base/importer/BatchImportEntry'
 import { Pagination } from '../../../components/Pagination'
 import { TableStateRow } from '../../../components/business'
 import { ErrorBanner } from '../../../components/business/page-head'
+import { Card } from '../../../components/ui/card'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/table'
+import { Input } from '../../../components/ui/input'
 
 export default function DepartmentPage() {
   const t = useT()
@@ -67,13 +70,15 @@ export default function DepartmentPage() {
 
   const filtered = useMemo(() => filterDepartments(rows, keyword), [rows, keyword])
   const slice = pageSlice(filtered, page, pageSize)
+  const act = 'cursor-pointer border-none bg-none p-0 text-[13px] text-[var(--shell-content-text)] underline-offset-2 hover:text-[var(--shell-heading)] hover:underline'
+  const actDanger = 'cursor-pointer border-none bg-none p-0 text-[13px] text-[var(--color-danger)] underline-offset-2 hover:underline'
 
   return (
     <div>
       <PageHead title={t.pages.department.title} desc={t.pages.department.desc} />
-      <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
+      <Card>
         <div className="flex flex-wrap items-center gap-2 p-4">
-          <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" placeholder={t.pages.department.searchPlaceholder}
+          <Input className="w-56" placeholder={t.pages.department.searchPlaceholder}
             value={keyword} onChange={(e) => { setKeyword(e.target.value); setPage(1) }} />
           <span className="spacer" />
           <BatchImportEntry kind="department" onImported={load} />
@@ -83,34 +88,38 @@ export default function DepartmentPage() {
           </button>
         </div>
         {error && <ErrorBanner message={error} />}
-        <div className="overflow-x-auto px-4 pb-4">
-            <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
-              <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{t.pages.department.columns.map((c) => <th key={c} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{c}</th>)}</tr></thead>
-              <tbody>
-                {slice.map((r) => (
-                  <tr key={r.id}>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.name}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.legalEntity}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">
-                      <span className="inline-flex items-center">
-                        <button onClick={() => setDetail(r)}>{t.pages.department.detail}</button>
-                        <span className="text-[var(--shell-side-border)]">|</span>
-                        <button onClick={() => setForm(rowToDeptForm(r))}>{t.pages.account.edit}</button>
-                        <span className="text-[var(--shell-side-border)]">|</span>
-                        <button className="text-[var(--color-danger)]" onClick={() => del(r)}>{t.pages.staff.del}</button>
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-                {!slice.length && <TableStateRow colSpan={3} loading={busy} text={t.pages.department.empty} />}
-              </tbody>
-            </table>
-          </div>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              {t.pages.department.columns.map((c) => (
+                <TableHead key={c}>{c}</TableHead>
+              ))}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {slice.map((r) => (
+              <TableRow key={r.id}>
+                <TableCell>{r.name}</TableCell>
+                <TableCell>{r.legalEntity}</TableCell>
+                <TableCell>
+                  <span className="inline-flex items-center gap-1.5">
+                    <button className={act} onClick={() => setDetail(r)}>{t.pages.department.detail}</button>
+                    <span className="text-[var(--shell-side-border)]">|</span>
+                    <button className={act} onClick={() => setForm(rowToDeptForm(r))}>{t.pages.account.edit}</button>
+                    <span className="text-[var(--shell-side-border)]">|</span>
+                    <button className={actDanger} onClick={() => del(r)}>{t.pages.staff.del}</button>
+                  </span>
+                </TableCell>
+              </TableRow>
+            ))}
+            {!slice.length && <TableStateRow colSpan={3} loading={busy} text={t.pages.department.empty} />}
+          </TableBody>
+        </Table>
         <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
           <Pagination total={filtered.length} page={page} pageSize={pageSize}
             onPage={setPage} onSize={setPageSize} {...pagerTexts(t.pages.department)} />
         </div>
-      </div>
+      </Card>
       {detail && (
         <DetailDrawer
           title={t.pages.department.detail}

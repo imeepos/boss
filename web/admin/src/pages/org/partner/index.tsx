@@ -11,6 +11,7 @@ import { useQueryState } from '../../../lib/useQueryState'
 import { Badge } from '../../../components/ui/badge'
 import { Card } from '../../../components/ui/card'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/table'
+import { Input } from '../../../components/ui/input'
 import { PageHead, ErrorBanner, EmptyState, ToolbarButton } from '../../../components/business/page-head'
 import { Drawer } from '../../../components/Drawer'
 import { Pagination } from '../../../components/Pagination'
@@ -108,8 +109,8 @@ export default function PartnerReviewPage() {
           </button>
         ))}
         <div className="flex-1" />
-        <input
-          className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]"
+        <Input
+          className="w-56"
           placeholder={t.pages.partnerReview.colCompany}
           value={keyword}
           onChange={(e) => { setKeyword(e.target.value); setPage(1) }}

@@ -4,6 +4,9 @@
 import { useState } from 'react'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../../components/ui/dialog'
 import { useT } from '../../../i18n'
+import { FormField } from '../../../components/business/form-field'
+import { ToolbarButton } from '../../../components/business/page-head'
+import { SubmitButton } from '../../../components/business/submit-button'
 import type { TagRow } from '../types'
 import { canConfirmUnbind } from '../opsRules'
 
@@ -33,6 +36,10 @@ export function UnbindDialog({ tag, busy, onClose, onConfirm }: { tag: TagRow; b
   const g = t.pages.eventOps
   const [reason, setReason] = useState('')
   const ok = canConfirmUnbind(reason)
+
+  const submitState = busy ? 'loading' : (!ok ? 'failed' : 'idle')
+  const submitLabels = { idle: g.confirm, loading: t.pages.account.submitting, success: g.confirm, failed: g.confirm }
+
   return (
     <Dialog open onOpenChange={(open) => { if (!open) onClose() }}>
       <DialogContent className="max-w-md border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] p-0">
@@ -49,15 +56,13 @@ export function UnbindDialog({ tag, busy, onClose, onConfirm }: { tag: TagRow; b
             ]} />
           </DialogDescription>
           <p className="mb-3 text-[13px] text-[var(--color-warning)]">{g.unbindRecover}</p>
-          <label className="mb-3 block">
-            <span className="mb-1 block text-xs text-[var(--shell-group-title)]">{g.unbindReason}</span>
+          <FormField label={g.unbindReason} required error={!ok && reason.length > 0 ? g.eReason : undefined}>
             <textarea className={fieldCls} rows={2} value={reason} onChange={(ev) => setReason(ev.target.value)} />
-            {!ok && reason.length > 0 && <span className="mt-1 block text-xs text-[var(--color-danger)]">{g.eReason}</span>}
-          </label>
+          </FormField>
         </div>
         <DialogFooter className="gap-2 border-t border-[var(--shell-side-border)] px-5 py-3 sm:space-x-0">
-          <button className="h-8 min-w-20 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={onClose}>{t.pages.company.cancel}</button>
-          <button className="h-8 min-w-20 rounded-sm border-none bg-[var(--color-danger)] px-4 text-[13px] text-white disabled:cursor-not-allowed disabled:opacity-45" disabled={!ok || busy} onClick={() => onConfirm(reason.trim())}>{g.confirm}</button>
+          <ToolbarButton onClick={onClose} disabled={busy}>{t.pages.company.cancel}</ToolbarButton>
+          <SubmitButton state={submitState} labels={submitLabels} disabled={!ok || busy} onClick={() => onConfirm(reason.trim())} />
         </DialogFooter>
       </DialogContent>
     </Dialog>

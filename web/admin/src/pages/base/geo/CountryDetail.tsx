@@ -1,9 +1,11 @@
 // CountryDetail:国家详情抽屉,antd Descriptions 惯例(键值分区:译名列表 + 关联属性编辑)。
 import { useState } from 'react'
+import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { Drawer } from '../../../components/Drawer'
 import { ToolbarButton } from '../../../components/business/page-head'
+import { ErrorBanner } from '../../../components/business/page-head'
 import { Input } from '../../../components/ui/input'
 import type { CountryRow } from './CountryForm'
 import { FORM, FIELD, FIELD_FULL, LABEL } from './styles'
@@ -34,19 +36,33 @@ export function CountryDetail({ data, onChanged, onClose }: {
   const [cc, setCc] = useState(data.attrs.callingCodes.join(', '))
   const [cur, setCur] = useState(
     data.attrs.currencies.map((c) => `${c.currency}:${c.minorUnit}:${c.isPrimary}`).join(', '))
+  const [error, setError] = useState('')
 
   const addName = async () => {
     if (!name.trim()) return
-    await apiFetch(`/geo/countries/${data.alpha2}/names`, {
-      method: 'POST', body: { locale, name, nameType: 'STANDARD' },
-    }).catch(() => undefined)
-    setName('')
-    onChanged()
+    try {
+      await apiFetch(`/geo/countries/${data.alpha2}/names`, {
+        method: 'POST', body: { locale, name, nameType: 'STANDARD' },
+      })
+      setName('')
+      onChanged()
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : g.saveFail
+      setError(msg)
+      toast.error(msg)
+    }
   }
 
   const removeName = async (loc: string, nameType: string) => {
     if (!(await confirmDialog(g.deleteNameConfirm, { danger: true }))) return
-    await apiFetch(`/geo/countries/${data.alpha2}/names/${loc}/${nameType}`, { method: 'DELETE' })
+    try {
+      await apiFetch(`/geo/countries/${data.alpha2}/names/${loc}/${nameType}`, { method: 'DELETE' })
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : g.saveFail
+      setError(msg)
+      toast.error(msg)
+      return
+    }
     onChanged()
   }
 
@@ -59,19 +75,26 @@ export function CountryDetail({ data, onChanged, onClose }: {
         isPrimary: (primary ?? 'true').trim() !== 'false',
       }
     })
-    await apiFetch(`/geo/countries/${data.alpha2}/attrs`, {
-      method: 'PUT',
-      body: {
-        timeZones: tz.split(',').map((s) => s.trim()).filter(Boolean),
-        callingCodes: cc.split(',').map((s) => s.trim()).filter(Boolean),
-        currencies,
-      },
-    }).catch(() => undefined)
-    onChanged()
+    try {
+      await apiFetch(`/geo/countries/${data.alpha2}/attrs`, {
+        method: 'PUT',
+        body: {
+          timeZones: tz.split(',').map((s) => s.trim()).filter(Boolean),
+          callingCodes: cc.split(',').map((s) => s.trim()).filter(Boolean),
+          currencies,
+        },
+      })
+      onChanged()
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : g.saveFail
+      setError(msg)
+      toast.error(msg)
+    }
   }
 
   return (
     <Drawer title={`${g.detail} · ${data.alpha2} ${data.displayName}`} onClose={onClose}>
+      {error && <div className="mb-3"><ErrorBanner message={error} /></div>}
       <DescGrid data={data} />
       <NamesSection names={data.names} locale={locale} name={name}
         setLocale={setLocale} setName={setName} onAdd={addName} onRemove={removeName} />

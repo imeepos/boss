@@ -8,12 +8,16 @@ import { useT } from '../../../i18n'
 import { Dropdown } from '../../../components/Dropdown'
 import { ResourcePicker } from '../../../components/ResourcePicker'
 import { PageHead, pagerTexts } from '../../org/shared'
-import { ErrorBanner } from '../../../components/business/page-head'
+import { ErrorBanner, ToolbarButton } from '../../../components/business/page-head'
 import { StatusTag } from '../../../components/StatusTag'
 import { Pagination } from '../../../components/Pagination'
 import { Drawer } from '../../../components/Drawer'
 import { pageSlice, PRIORITIES, type AssetRow, type ReplacementRow } from '../types'
-import { TableStateRow } from '../../../components/business'
+import { ActionLink, ActionLinks, ActionSep, TableStateRow } from '../../../components/business'
+import { FormField } from '../../../components/business/form-field'
+import { SubmitButton } from '../../../components/business/submit-button'
+import { Card, CardContent, CardFooter } from '../../../components/ui/card'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../../components/ui/table'
 import { WorkerPicker, type PickedWorker } from '../../boss/dispatch/WorkerPicker'
 import { canCancelReplacement, cancelPath } from './logic'
 
@@ -61,7 +65,6 @@ export default function ReplacePage() {
       load()
     } catch (e) {
       setFormError(e instanceof Error ? e.message : r.saveFail)
-    } finally {
       setBusy(false)
     }
   }
@@ -81,7 +84,6 @@ export default function ReplacePage() {
       load()
     } catch (e) {
       setDispatchError(e instanceof Error ? e.message : r.dispatchFail)
-    } finally {
       setBusy(false)
     }
   }
@@ -105,64 +107,71 @@ export default function ReplacePage() {
   const priorityLabel = (v: string) => r.priorities[PRIORITIES.indexOf(v as typeof PRIORITIES[number])] ?? v
   const assetOk = /^\d+$/.test(assetId) && Number(assetId) > 0
 
+  const createState = busy ? 'loading' : (formError ? 'failed' : 'idle')
+  const createLabels = { idle: t.pages.company.save, loading: t.pages.account.submitting, success: r.createOk, failed: r.saveFail }
+  const dispatchState = busy ? 'loading' : (dispatchError ? 'failed' : 'idle')
+  const dispatchLabels = { idle: r.dispatchConfirm, loading: t.pages.account.submitting, success: r.dispatchOk, failed: r.dispatchFail }
+
   return (
     <div>
       <PageHead title={r.title} desc={r.desc} />
-      <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
-        <div className="flex flex-wrap items-center gap-2 p-4">
-          <span className="spacer" />
-          <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
-          <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" onClick={() => setOpen(true)}>{r.create}</button>
-        </div>
-        {error && <ErrorBanner message={error} />}
-        <div className="overflow-x-auto px-4 pb-4">
-            <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
-              <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{r.columns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
-              <tbody>
-                {slice.map((x) => (
-                  <tr key={x.id}>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.replacementNo || `#${x.id}`}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">#{x.assetId}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.reason || '—'}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{priorityLabel(x.priority)}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><StatusTag domain="task" value={x.status} /></td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">
-                      {x.status === 'PENDING' && (
-                        <>
-                          <button className="h-7 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-3 text-xs text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]"
-                            onClick={() => { setDispatchRow(x); setPicked(null); setDispatchError('') }}>{r.dispatch}</button>
-                          {canCancelReplacement(x.status) && (
-                            <button className="h-7 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-3 text-xs text-[var(--color-danger)] hover:border-[var(--color-border-hover)]"
-                              disabled={busy} onClick={() => cancelRow(x)}>{r.cancel}</button>
-                          )}
-                        </>
-                      )}
-                      {x.status !== 'PENDING' && <span>—</span>}
-                    </td>
-                  </tr>
-                ))}
-                {!slice.length && <TableStateRow colSpan={6} loading={busy} text={r.empty} />}
-              </tbody>
-            </table>
+      <Card>
+        <CardContent>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="spacer" />
+            <ToolbarButton disabled={busy} onClick={load}>{t.pages.audit.refresh}</ToolbarButton>
+            <ToolbarButton primary onClick={() => setOpen(true)}>{r.create}</ToolbarButton>
           </div>
-        <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
+        </CardContent>
+        {error && <ErrorBanner message={error} />}
+        <div className="px-4 pb-4">
+          <Table>
+            <TableHeader>
+              <TableRow>{r.columns.map((x) => <TableHead key={x}>{x}</TableHead>)}</TableRow>
+            </TableHeader>
+            <TableBody>
+              {slice.map((x) => (
+                <TableRow key={x.id}>
+                  <TableCell className="font-mono">{x.replacementNo || `#${x.id}`}</TableCell>
+                  <TableCell className="font-mono">#{x.assetId}</TableCell>
+                  <TableCell>{x.reason || '—'}</TableCell>
+                  <TableCell>{priorityLabel(x.priority)}</TableCell>
+                  <TableCell><StatusTag domain="task" value={x.status} /></TableCell>
+                  <TableCell>
+                    {x.status === 'PENDING' && (
+                      <ActionLinks>
+                        <ActionLink onClick={() => { setDispatchRow(x); setPicked(null); setDispatchError('') }} label={r.dispatch} testId={`replace-dispatch-${x.id}`} />
+                        {canCancelReplacement(x.status) && (
+                          <>
+                            <ActionSep />
+                            <ActionLink onClick={() => cancelRow(x)} label={r.cancel} testId={`replace-cancel-${x.id}`} />
+                          </>
+                        )}
+                      </ActionLinks>
+                    )}
+                    {x.status !== 'PENDING' && <span>—</span>}
+                  </TableCell>
+                </TableRow>
+              ))}
+              {!slice.length && <TableStateRow colSpan={6} loading={busy} text={r.empty} />}
+            </TableBody>
+          </Table>
+        </div>
+        <CardFooter>
           <Pagination total={rows.length} page={page} pageSize={pageSize}
             onPage={setPage} onSize={setPageSize} {...pagerTexts(r)} />
-        </div>
-      </div>
+        </CardFooter>
+      </Card>
       {open && (
         <Drawer title={r.createTitle} onClose={() => setOpen(false)}
           footer={
             <>
-              <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={() => setOpen(false)}>{t.pages.company.cancel}</button>
-              <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" disabled={busy || !assetOk} onClick={submit}>
-                {busy ? t.pages.account.submitting : t.pages.company.save}
-              </button>
+              <ToolbarButton onClick={() => setOpen(false)} disabled={busy}>{t.pages.company.cancel}</ToolbarButton>
+              <SubmitButton state={createState} labels={createLabels} disabled={busy || !assetOk} onClick={submit} />
             </>
           }>
           <div className="flex flex-col gap-3.5">
-            <div className="flex flex-col gap-1.5">
-              <label><span className="mr-0.5 text-[var(--color-danger)]">*</span>{r.fAsset}</label>
+            <FormField label={r.fAsset} required>
               <ResourcePicker
                 value={assetId}
                 onChange={setAssetId}
@@ -172,22 +181,20 @@ export default function ReplacePage() {
                 searchPlaceholder={r.pickSearch}
                 errorText={r.loadFail}
               />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label>{r.fReason}</label>
+            </FormField>
+            <FormField label={r.fReason}>
               <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" value={reason} placeholder={r.pReason}
                 onChange={(e) => setReason(e.target.value)} />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label>{r.fPriority}</label>
+            </FormField>
+            <FormField label={r.fPriority}>
               <Dropdown
                 value={priority}
                 options={PRIORITIES.map((p, i) => ({ value: p, label: r.priorities[i] }))}
                 onChange={(v) => setPriority(v)}
                 ariaLabel={r.fPriority}
               />
-            </div>
-            {formError && <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]" style={{ margin: 0 }}>{formError}</div>}
+            </FormField>
+            {formError && <ErrorBanner message={formError} />}
           </div>
         </Drawer>
       )}
@@ -195,15 +202,13 @@ export default function ReplacePage() {
         <Drawer title={r.dispatchTitle.replace('{no}', dispatchRow.replacementNo || `#${dispatchRow.id}`)} onClose={() => setDispatchRow(null)}
           footer={
             <>
-              <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={() => setDispatchRow(null)}>{t.pages.company.cancel}</button>
-              <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)] disabled:cursor-not-allowed disabled:opacity-50" disabled={busy || !picked} onClick={submitDispatch}>
-                {busy ? t.pages.account.submitting : r.dispatchConfirm}
-              </button>
+              <ToolbarButton onClick={() => setDispatchRow(null)} disabled={busy}>{t.pages.company.cancel}</ToolbarButton>
+              <SubmitButton state={dispatchState} labels={dispatchLabels} disabled={busy || !picked} onClick={submitDispatch} />
             </>
           }>
           <div className="flex flex-col gap-3.5">
             <WorkerPicker selectedId={picked ? String(picked.id) : ''} onSelect={setPicked} />
-            {dispatchError && <div className="rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{dispatchError}</div>}
+            {dispatchError && <ErrorBanner message={dispatchError} />}
           </div>
         </Drawer>
       )}

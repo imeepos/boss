@@ -7,7 +7,10 @@ import { StatusTag } from '../../../components/StatusTag'
 import { Pagination } from '../../../components/Pagination'
 import { Dropdown } from '../../../components/Dropdown'
 import { pageSlice, type QuadLinkRow } from '../types'
-import { TableStateRow, ErrorBanner } from '../../../components/business'
+import { IdRef, TableStateRow, ToolbarButton } from '../../../components/business'
+import { ErrorBanner } from '../../../components/business/page-head'
+import { Card, CardContent, CardFooter } from '../../../components/ui/card'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../../components/ui/table'
 import { CreateLinkDrawer } from './CreateLinkDrawer'
 
 // 反查维度:by-asset/by-customer/by-port/by-address(后端四反查路由)。
@@ -60,44 +63,48 @@ export default function QuadLinkPage() {
   return (
     <div>
       <PageHead title={q.title} desc={q.desc} />
-      <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
-        <div className="flex flex-wrap items-center gap-2 p-4">
-          <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" onClick={() => setCreateOpen(true)}>{q.createBtn}</button>
-          <span className="flex-1" />
-          <div className="w-36">
-            <Dropdown value={reverseBy} ariaLabel={q.reverseLabel} onChange={setReverseBy} options={REVERSE_KEYS.map((k) => ({ value: k, label: q.columns[REVERSE_KEYS.indexOf(k)] ?? k }))} />
+      <Card>
+        <CardContent>
+          <div className="flex flex-wrap items-center gap-2">
+            <ToolbarButton primary onClick={() => setCreateOpen(true)}>{q.createBtn}</ToolbarButton>
+            <span className="flex-1" />
+            <div className="w-36">
+              <Dropdown value={reverseBy} ariaLabel={q.reverseLabel} onChange={setReverseBy} options={REVERSE_KEYS.map((k) => ({ value: k, label: q.columns[REVERSE_KEYS.indexOf(k)] ?? k }))} />
+            </div>
+            <input className="h-8 w-32 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" type="number" placeholder={q.reverseIdPh} value={reverseId} onChange={(e) => setReverseId(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') reverse() }} />
+            <ToolbarButton disabled={busy} onClick={reverse}>{q.reverseLabel}</ToolbarButton>
+            <ToolbarButton disabled={busy} onClick={load}>{t.pages.audit.refresh}</ToolbarButton>
           </div>
-          <input className="h-8 w-32 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" type="number" placeholder={q.reverseIdPh} value={reverseId} onChange={(e) => setReverseId(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') reverse() }} />
-          <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-3 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={reverse}>{q.reverseLabel}</button>
-          <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
-        </div>
+        </CardContent>
         {error ? <ErrorBanner message={error} /> : (
-          <div className="overflow-x-auto px-4 pb-4">
-            <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
-              <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{q.columns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
-              <tbody>
+          <div className="px-4 pb-4">
+            <Table>
+              <TableHeader>
+                <TableRow>{q.columns.map((x) => <TableHead key={x}>{x}</TableHead>)}</TableRow>
+              </TableHeader>
+              <TableBody>
                 {slice.map((x) => (
-                  <tr key={x.id}>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><span className="font-mono text-xs text-[var(--shell-group-title)]">#{x.id}</span></td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><span className="font-mono text-xs text-[var(--shell-group-title)]">#{x.assetId}</span></td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><span className="font-mono text-xs text-[var(--shell-group-title)]">#{x.customerId}</span></td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><span className="font-mono text-xs text-[var(--shell-group-title)]">#{x.portId}</span></td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><span className="font-mono text-xs text-[var(--shell-group-title)]">#{x.addressId}</span></td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.legalEntityName || `#${x.legalEntityId}`}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><StatusTag domain="quad" value={x.status} /></td>
-                  </tr>
+                  <TableRow key={x.id}>
+                    <TableCell><IdRef value={x.id} /></TableCell>
+                    <TableCell><IdRef value={x.assetId} /></TableCell>
+                    <TableCell><IdRef value={x.customerId} /></TableCell>
+                    <TableCell><IdRef value={x.portId} /></TableCell>
+                    <TableCell><IdRef value={x.addressId} /></TableCell>
+                    <TableCell>{x.legalEntityName || `#${x.legalEntityId}`}</TableCell>
+                    <TableCell><StatusTag domain="quad" value={x.status} /></TableCell>
+                  </TableRow>
                 ))}
                 {!slice.length && <TableStateRow colSpan={7} loading={busy} text={q.empty} />}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         )}
         {reverseNote && <p className="mx-4 mb-3 text-[13px] text-[var(--shell-group-title)]">{reverseNote}</p>}
-        <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
+        <CardFooter>
           <Pagination total={rows.length} page={page} pageSize={pageSize}
             onPage={setPage} onSize={setPageSize} {...pagerTexts(q)} />
-        </div>
-      </div>
+        </CardFooter>
+      </Card>
       {createOpen && <CreateLinkDrawer onDone={() => { setCreateOpen(false); load() }} onClose={() => setCreateOpen(false)} />}
     </div>
   )

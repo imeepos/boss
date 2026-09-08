@@ -6,6 +6,7 @@ import { Drawer } from '../../../components/Drawer'
 import { Dropdown } from '../../../components/Dropdown'
 import { FormField } from '../../../components/business/form-field'
 import { ErrorBanner } from '../../../components/business/page-head'
+import { Input } from '../../../components/ui/input'
 import {
   applyTemplate, rolePayload, splitPerms,
   type PermissionRow, type RoleDetail,
@@ -92,7 +93,7 @@ export function RoleFormDrawer({ open, state, builtinTemplates, onChange, onClos
       }>
       <div className="flex flex-col gap-3.5">
         <FormField label={tr.roleName} required>
-          <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" value={state.name} placeholder={tr.roleNamePh} maxLength={64}
+          <Input value={state.name} placeholder={tr.roleNamePh} maxLength={64}
             onChange={(e) => onChange({ ...state, name: e.target.value })} />
         </FormField>
         {!state.id && (
@@ -106,8 +107,7 @@ export function RoleFormDrawer({ open, state, builtinTemplates, onChange, onClos
         </FormField>
         )}
         <FormField label={tr.permSearch}>
-          <input
-            className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]"
+          <Input
             value={permKw}
             placeholder={tr.permSearch}
             onChange={(e) => setPermKw(e.target.value)}

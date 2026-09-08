@@ -10,7 +10,11 @@ import { buildCreatePayload } from './payload'
 import { formatTime } from '../../base/audit/logic'
 import { useConfirm } from '../../../components/ConfirmDialog'
 import { EmptyState, CopyButton } from '../../../components/business'
+import { ErrorBanner } from '../../../components/business/page-head'
 import { Pagination } from '../../../components/Pagination'
+import { Card } from '../../../components/ui/card'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/table'
+import { Input } from '../../../components/ui/input'
 
 export interface ApiKeyRow {
   id: number
@@ -106,43 +110,51 @@ export default function ApiKeyPage() {
   const cols = t.pages.apikey.columns
 
   return (
-    <div className="">
+    <div>
       <PageHead title={t.pages.apikey.title} desc={t.pages.apikey.desc} />
-      <div className="flex flex-wrap items-center gap-2 p-4">
-        <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" value={keyword}
-          placeholder={t.pages.apikey.searchPlaceholder} onChange={(e) => { setKeyword(e.target.value); setPage(1) }} />
-        <span className="spacer" />
-        <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)] disabled:cursor-not-allowed disabled:opacity-50" disabled={loading} onClick={load}>{t.pages.audit.refresh}</button>
-        <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" onClick={() => { setPlainKey(''); setForm({ accountId: 0, name: '' }) }}>
-          {t.pages.apikey.create}
-        </button>
-      </div>
-      <div className="overflow-x-auto px-4 pb-4">
-        <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
-          <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{cols.map((c) => <th key={c} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{c}</th>)}</tr></thead>
-          <tbody>
-            {slice.map((r) => (
-              <tr key={r.id}>
-                <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.name}</td>
-                <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{subjectCell(r)}</td>
-                <td className="break-all rounded-sm bg-black/5 px-2 py-1.5 font-mono text-xs">{r.keyPrefix ? `${r.keyPrefix}…` : '—'}</td>
-                <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.status === 1 ? t.pages.apikey.active : t.pages.apikey.revoked}</td>
-                <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.lastUsedAt ? formatTime(r.lastUsedAt) : t.pages.apikey.neverUsed}</td>
-                <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{formatTime(r.createdAt)}</td>
-                <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">
-                  {r.status === 1 && (
-                    <span className="inline-flex items-center">
-                      <button disabled={busy} onClick={() => revoke(r.id)}>{t.pages.apikey.revoke}</button>
-                    </span>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {shown.length === 0 && !error && <EmptyState text={t.pages.company.empty} />}
-        {error && <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div>}
-        <div className="flex justify-end px-4 pb-4 text-xs text-[var(--shell-group-title)]">
+      <Card>
+        <div className="flex flex-wrap items-center gap-2 p-4">
+          <Input className="w-56" value={keyword}
+            placeholder={t.pages.apikey.searchPlaceholder} onChange={(e) => { setKeyword(e.target.value); setPage(1) }} />
+          <span className="spacer" />
+          <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)] disabled:cursor-not-allowed disabled:opacity-50" disabled={loading} onClick={load}>{t.pages.audit.refresh}</button>
+          <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" onClick={() => { setPlainKey(''); setForm({ accountId: 0, name: '' }) }}>
+            {t.pages.apikey.create}
+          </button>
+        </div>
+        {error && <div className="mx-4 mb-3"><ErrorBanner message={error} /></div>}
+        {shown.length || !error ? (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                {cols.map((c) => <TableHead key={c}>{c}</TableHead>)}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {slice.map((r) => (
+                <TableRow key={r.id}>
+                  <TableCell>{r.name}</TableCell>
+                  <TableCell>{subjectCell(r)}</TableCell>
+                  <TableCell className="break-all"><code className="rounded-sm bg-[var(--shell-menu-hover-bg)] px-2 py-1.5 font-mono text-xs">{r.keyPrefix ? `${r.keyPrefix}…` : '—'}</code></TableCell>
+                  <TableCell>{r.status === 1 ? t.pages.apikey.active : t.pages.apikey.revoked}</TableCell>
+                  <TableCell>{r.lastUsedAt ? formatTime(r.lastUsedAt) : t.pages.apikey.neverUsed}</TableCell>
+                  <TableCell>{formatTime(r.createdAt)}</TableCell>
+                  <TableCell>
+                    {r.status === 1 && (
+                      <span className="inline-flex items-center">
+                        <button className="cursor-pointer border-none bg-none p-0 text-[13px] text-[var(--color-danger)] underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:opacity-60" disabled={busy} onClick={() => revoke(r.id)}>{t.pages.apikey.revoke}</button>
+                      </span>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+              {!slice.length && !error && (
+                <TableRow><TableCell colSpan={cols.length}><EmptyState text={t.pages.company.empty} /></TableCell></TableRow>
+              )}
+            </TableBody>
+          </Table>
+        ) : null}
+        <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
           <Pagination
             total={shown.length} page={page} pageSize={pageSize}
             onPage={setPage} onSize={(s) => { setPageSize(s); setPage(1) }}
@@ -151,7 +163,7 @@ export default function ApiKeyPage() {
             jumpText={t.pages.company.jumpText} pageUnitText={t.pages.company.pageUnit}
           />
         </div>
-      </div>
+      </Card>
 
       <ApiKeyFormDrawer
         open={form !== null}
@@ -166,7 +178,7 @@ export default function ApiKeyPage() {
       {plainKey && (
         <div className="fixed bottom-6 right-6 z-fab flex max-w-[420px] flex-col gap-2 rounded-md border border-[var(--shell-fab-bg)] bg-[var(--shell-card-bg)] p-4 text-[13px] text-[var(--shell-content-text)] shadow-[0_6px_24px_rgba(0,0,0,0.18)]">
           <div>{t.pages.apikey.plainOnce}</div>
-          <code className="break-all rounded-sm bg-black/5 px-2 py-1.5 font-mono text-xs">{plainKey}</code>
+          <code className="break-all rounded-sm bg-[var(--shell-menu-hover-bg)] px-2 py-1.5 font-mono text-xs">{plainKey}</code>
           <div className="flex gap-2">
             <CopyButton text={plainKey} />
             <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={() => setPlainKey('')}>{t.pages.company.cancel}</button>

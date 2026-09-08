@@ -1,18 +1,17 @@
 // 业务实体批量导入面板:模板下载(Excel/JSON)+ 文件/附件选择 + 预览 + 逐行调用既有创建端点。
 // 与 addr/geo 面板差异:执行为客户端逐行 POST,进度与失败行逐条反馈;401 中止剩余行。
 // 视图层:拖放/工具栏/预览表/进度与失败清单,逻辑见 useEntityImport.ts。
-import { ToolbarButton } from '../../../components/business/page-head'
+import { ToolbarButton, ErrorBanner } from '../../../components/business/page-head'
 import { Badge } from '../../../components/ui/badge'
+import { Textarea } from '../../../components/ui/textarea'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/table'
 import type { Translations } from '../../../i18n/types'
 import { PREVIEW_ROWS } from './preview'
 import { AttachmentPickerDialog } from './AttachmentPickerDialog'
 import { useEntityImport } from './useEntityImport'
 import type { EntityDef } from './entities'
 
-const AREA_CLS = 'min-h-35 resize-y rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-3 py-2 font-mono text-xs text-[var(--shell-input-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--shell-input-border-focus)]'
 const DROP_CLS = 'cursor-pointer rounded-sm border border-dashed border-[var(--shell-input-border)] bg-[var(--shell-menu-hover-bg)] px-4 py-6 text-center text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-focus)]'
-const TH = 'h-9 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]'
-const TD = 'h-9 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)]'
 
 export function EntityImportPanel({ def, noPerm, text, onImported }: {
   def: EntityDef
@@ -61,8 +60,8 @@ export function EntityImportPanel({ def, noPerm, text, onImported }: {
       </div>
       <AttachmentPickerDialog open={pickerOpen} onClose={() => setPickerOpen(false)} onPick={(f) => readFile(f)} />
       {advanced && (
-        <textarea
-          className={AREA_CLS}
+        <Textarea
+          className="min-h-35 font-mono text-xs"
           value={payload}
           placeholder={text.pastePlaceholder}
           onChange={(e) => setPayload(e.target.value)}
@@ -97,22 +96,22 @@ export function EntityImportPanel({ def, noPerm, text, onImported }: {
             </p>
           )}
           <div className="mt-2 overflow-x-auto">
-            <table className="w-full border-collapse text-[13px]">
-              <thead>
-                <tr><th key="__no" className={TH}>#</th>{def.columns.map((c) => <th key={c.key} className={TH}>{c.key}</th>)}</tr>
-              </thead>
-              <tbody>
+            <Table>
+              <TableHeader>
+                <TableRow><TableHead>#</TableHead>{def.columns.map((c) => <TableHead key={c.key}>{c.key}</TableHead>)}</TableRow>
+              </TableHeader>
+              <TableBody>
                 {rows.slice(0, PREVIEW_ROWS).map((r, i) => (
-                  <tr key={i}>
-                    <td key="__no" className={TD}>{i + 1}</td>
+                  <TableRow key={i}>
+                    <TableCell>{i + 1}</TableCell>
                     {def.columns.map((c) => {
                       const v = r[c.key]
-                      return <td key={c.key} className={TD}>{v === undefined ? '' : String(v)}</td>
+                      return <TableCell key={c.key}>{v === undefined ? '' : String(v)}</TableCell>
                     })}
-                  </tr>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
           {rows.length > PREVIEW_ROWS && (
             <p className="m-0 px-3 pb-2.5 text-[11px] text-[var(--shell-group-title)]">
@@ -135,8 +134,8 @@ export function EntityImportPanel({ def, noPerm, text, onImported }: {
             {text.entityProgress.replace('{done}', String(progress.done)).replace('{total}', String(progress.total))}
           </span>
         )}
-        {error && <span className="text-xs text-[var(--color-danger)]">{error}</span>}
       </div>
+      {error && <div className="mt-2"><ErrorBanner message={error} /></div>}
       {failures.length > 0 && (
         <div className="mt-1 flex flex-col gap-1.5">
           <ul className="m-0 max-h-40 list-none overflow-y-auto rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] px-3 py-2 text-xs text-[var(--color-danger)]">

@@ -7,6 +7,7 @@ import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { Drawer } from '../../../components/Drawer'
 import { PageHead, ErrorBanner, ToolbarButton } from '../../../components/business/page-head'
+import { SubmitButton, type SubmitState } from '../../../components/business/submit-button'
 import { FormField } from '../../../components/business/form-field'
 import { Card } from '../../../components/ui/card'
 import { Input } from '../../../components/ui/input'
@@ -45,6 +46,15 @@ function SecretInput({ value, onChange, placeholder, hasValue }: {
   )
 }
 
+function InfoIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="shrink-0 text-[var(--shell-crumb-text)]">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 8h.01M11 12h1v5h1" />
+    </svg>
+  )
+}
+
 export default function RealIDConfigPage() {
   const t = useT()
   const a = t.pages.realidconfig
@@ -53,7 +63,11 @@ export default function RealIDConfigPage() {
   const [secretSet, setSecretSet] = useState(false)
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
+  const [saveState, setSaveState] = useState<SubmitState>('idle')
+  const [saveError, setSaveError] = useState('')
   const [testing, setTesting] = useState(false)
+  const [testState, setTestState] = useState<SubmitState>('idle')
+  const [testError, setTestError] = useState('')
   const [testName, setTestName] = useState('')
   const [testIdNo, setTestIdNo] = useState('')
   const [editing, setEditing] = useState(false)
@@ -79,6 +93,8 @@ export default function RealIDConfigPage() {
     if (saving) return
     const values = payloadFor(CH_KEYS, draft, loaded)
     setSaving(true)
+    setSaveError('')
+    setSaveState('loading')
     try {
       await apiFetch('/realid-config/channel', { method: 'PUT', body: { values } })
       setLoaded((l) => ({ ...l, ...values }))
@@ -86,8 +102,14 @@ export default function RealIDConfigPage() {
       setDraft((d) => ({ ...d, 'realid.accessKeySecret': '' }))
       setEditing(false)
       toast.success(a.saved)
+      setSaveState('success')
+      setTimeout(() => setSaveState((s) => (s === 'success' ? 'idle' : s)), 1500)
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : a.saveFail)
+      const msg = e instanceof Error ? e.message : a.saveFail
+      setSaveError(msg)
+      toast.error(msg)
+      setSaveState('failed')
+      setTimeout(() => setSaveState((s) => (s === 'failed' ? 'idle' : s)), 2500)
     } finally {
       setSaving(false)
     }
@@ -97,20 +119,38 @@ export default function RealIDConfigPage() {
     if (testing) return
     const pairErr = idPairError(testName, testIdNo)
     if (pairErr) {
-      toast.error(pairErr === 'bad-name' ? a.nameInvalid : a.idNoInvalid)
+      const msg = pairErr === 'bad-name' ? a.nameInvalid : a.idNoInvalid
+      setTestError(msg)
+      toast.error(msg)
       return
     }
     setTesting(true)
+    setTestError('')
+    setTestState('loading')
     try {
       const values = payloadFor(CH_KEYS, draft, loaded)
       const d = await apiFetch<{ ok: boolean; message: string }>('/realid-config/channel/test', {
         method: 'POST',
         body: { values, name: testName || undefined, idNo: testIdNo || undefined },
       })
-      if (d?.ok) toast.success(d.message || a.testOk)
-      else toast.error(d?.message || a.testFail)
+      if (d?.ok) {
+        toast.success(d.message || a.testOk)
+        setTestState('success')
+        setTestError('')
+        setTimeout(() => setTestState((s) => (s === 'success' ? 'idle' : s)), 1500)
+      } else {
+        const msg = d?.message || a.testFail
+        setTestError(msg)
+        toast.error(msg)
+        setTestState('failed')
+        setTimeout(() => setTestState((s) => (s === 'failed' ? 'idle' : s)), 2500)
+      }
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : a.testFail)
+      const msg = e instanceof Error ? e.message : a.testFail
+      setTestError(msg)
+      toast.error(msg)
+      setTestState('failed')
+      setTimeout(() => setTestState((s) => (s === 'failed' ? 'idle' : s)), 2500)
     } finally {
       setTesting(false)
     }
@@ -154,7 +194,7 @@ export default function RealIDConfigPage() {
           {summaryRow(a.endpoint, draft['realid.endpoint'])}
           {summaryRow(a.accessKeyId, draft['realid.accessKeyId'])}
           {summaryRow(a.accessKeySecret, secretSet ? a.secretSet : '')}
-          <div className="mt-1 text-xs text-[var(--shell-crumb-text)]">ⓘ {a.envNote}</div>
+          <div className="mt-1 flex items-center gap-1 text-xs text-[var(--shell-crumb-text)]"><InfoIcon /><span>{a.envNote}</span></div>
         </Card>
       </div>
 
@@ -162,14 +202,16 @@ export default function RealIDConfigPage() {
         <Drawer title={a.chTitle} onClose={() => setEditing(false)}
           footer={
             <>
-              <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={() => setEditing(false)}>
-                {t.common.confirmDialog.cancel}
-              </button>
-              <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" disabled={saving} onClick={save}>
-                {saving ? a.saving : a.save}
-              </button>
+              <ToolbarButton onClick={() => setEditing(false)} disabled={saving}>{t.common.confirmDialog.cancel}</ToolbarButton>
+              <SubmitButton
+                state={saveState}
+                labels={{ idle: a.save, loading: a.saving, success: a.saved, failed: a.saveFail }}
+                disabled={saving}
+                onClick={save}
+              />
             </>
           }>
+          {saveError && <div className="mb-3"><ErrorBanner message={saveError} /></div>}
           <div className="mb-4 flex items-center gap-2">
             <Switch checked={enabled} onCheckedChange={(v) => set('realid.enabled', String(v))} aria-label={a.chTitle} />
             {enabled ? a.enabledReady : a.disabled}
@@ -211,10 +253,14 @@ export default function RealIDConfigPage() {
               value={testIdNo}
               onChange={(e) => setTestIdNo(e.target.value)}
             />
-            <ToolbarButton disabled={testing} onClick={test}>
-              {testing ? a.testing : a.testBtn}
-            </ToolbarButton>
+            <SubmitButton
+              state={testState}
+              labels={{ idle: a.testBtn, loading: a.testing, success: a.testOk, failed: a.testFail }}
+              disabled={testing}
+              onClick={test}
+            />
           </div>
+          {testError && <div className="mt-3"><ErrorBanner message={testError} /></div>}
         </Drawer>
       )}
     </div>

@@ -17,6 +17,8 @@ export interface Translations {
     confirmDialog: { title: string; ok: string; cancel: string }
     copy: string
     copied: string
+    saveOk: string
+    saveFail: string
   }
   auth: {
     login: {
@@ -3317,7 +3319,9 @@ export interface Translations {
       title: string
       desc: string
       refresh: string
+      searchPlaceholder: string
       empty: string
+      noMatch: string
       loadFail: string
       colTime: string
       colApp: string
@@ -3410,6 +3414,7 @@ export interface Translations {
       columns: string[]
       detail: string
       detailTitle: string
+      detailJson: string
       logId: string
       empty: string
       close: string

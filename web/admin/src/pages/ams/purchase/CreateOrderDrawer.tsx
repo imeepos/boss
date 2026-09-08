@@ -6,7 +6,9 @@ import { useT } from '../../../i18n'
 import { Drawer } from '../../../components/Drawer'
 import { Dropdown } from '../../../components/Dropdown'
 import { SimplePicker } from '../../../components/pickers/SimplePicker'
-import { ErrorBanner } from '../../../components/business/page-head'
+import { FormField } from '../../../components/business/form-field'
+import { ErrorBanner, ToolbarButton } from '../../../components/business/page-head'
+import { SubmitButton } from '../../../components/business/submit-button'
 import type { OrderItemRow, SupplierRow } from '../types'
 import { OrderItemsEditor } from './OrderItemsEditor'
 
@@ -53,20 +55,20 @@ export function CreateOrderDrawer({
     }
   }
 
+  const submitState = busy ? 'loading' : (err ? 'failed' : 'idle')
+  const submitLabels = { idle: d.save, loading: d.submitting, success: d.createOk, failed: d.opFail }
+
   return (
     <Drawer title={d.newOrder} onClose={onClose}
       footer={
         <>
-          <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={onClose}>{d.cancel}</button>
-          <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" disabled={busy} onClick={submit}>
-            {busy ? d.submitting : d.save}
-          </button>
+          <ToolbarButton onClick={onClose} disabled={busy}>{d.cancel}</ToolbarButton>
+          <SubmitButton state={submitState} labels={submitLabels} disabled={busy} onClick={submit} />
         </>
       }>
       <div className="flex flex-col gap-3.5">
         {err && <ErrorBanner message={err} />}
-        <div className="flex flex-col gap-1.5">
-          <label><span className="mr-0.5 text-[var(--color-danger)]">*</span>{d.colSupplier}</label>
+        <FormField label={d.colSupplier} required>
           <Dropdown
             value={supplierId ? String(supplierId) : ''}
             options={[{ value: '', label: d.errSupplier }, ...suppliers.map((s) => ({ value: String(s.id), label: s.name }))]}
@@ -74,23 +76,21 @@ export function CreateOrderDrawer({
             ariaLabel={d.colSupplier}
             placeholder={d.errSupplier}
           />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <label><span className="mr-0.5 text-[var(--color-danger)]">*</span>{d.colEntity}</label>
+        </FormField>
+        <FormField label={d.colEntity} required>
           <SimplePicker value={legalEntityId ? String(legalEntityId) : ''}
             onChange={(v) => setLegalEntityId(Number(v) || 0)}
             options={entities.map((e) => ({ value: String(e.id), label: e.name }))}
             placeholder={d.pEntitySelect} ariaLabel={d.colEntity} minWidth={260} />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <label>{d.remark}</label>
+        </FormField>
+        <FormField label={d.remark}>
           <input
             type="text"
             value={remark}
             onChange={(e) => setRemark(e.target.value)}
             className={input}
           />
-        </div>
+        </FormField>
         <OrderItemsEditor items={items} onChange={setItems} onDelete={(idx) => setItems(items.filter((_, i) => i !== idx))} />
       </div>
     </Drawer>

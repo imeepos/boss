@@ -27,8 +27,8 @@ export function AddressGeomDrawer({ row, onDone, onCancel }: {
         method: 'PUT', body: { lat: value.lat, lng: value.lng },
       })
       onDone()
-    } catch {
-      setError(g.saveFail)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : g.saveFail)
     }
   }
 

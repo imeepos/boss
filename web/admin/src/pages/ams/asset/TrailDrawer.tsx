@@ -7,12 +7,13 @@ import { Drawer } from '../../../components/Drawer'
 import { StatusTag } from '../../../components/StatusTag'
 import { TabBar } from '../../../components/business/tab-bar'
 import { useT } from '../../../i18n'
-import { ErrorBanner } from '../../../components/business/page-head'
+import { ErrorBanner, ToolbarButton } from '../../../components/business/page-head'
 import { MainRecordSection } from './MainRecordSection'
 import { batchLabel } from './logic'
 import { fmtTime } from '../../../lib/format'
 import type { AssetModelRow, AssetRow, AssignmentRow, LifecycleRow, TagRow } from '../types'
-import { EmptyState } from '../../../components/business'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../../components/ui/table'
+import { TableStateRow } from '../../../components/business'
 
 type BatchRow = { id: number; code: string; name: string }
 type ReceiptLite = { id: number; receiptNo: string; orderNo: string; batchId: number; status: string }
@@ -73,7 +74,7 @@ export function AssetTrailDrawer({
 
   return (
     <Drawer title={`${showMain ? a.detailTitle : a.lifecycleTitle} · ${asset.assetCode}`} onClose={onClose} width={680}
-      footer={<button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" onClick={onClose}>{t.pages.company.cancel}</button>}>
+      footer={<ToolbarButton onClick={onClose}>{t.pages.company.cancel}</ToolbarButton>}>
       {/* 关联区块:批次 → 采购入库单 → 采购订单;标签经 /tags 联表传入。 */}
       <div className="mx-4 mt-4 mb-3 rounded-sm border border-[var(--shell-side-border)] p-3">
         <div className="mb-2 text-xs font-medium text-[var(--shell-group-title)]">{a.relTitle}</div>
@@ -87,46 +88,44 @@ export function AssetTrailDrawer({
       {showMain && <MainRecordSection main={main} tag={tag} model={model} batch={batch} />}
       <TabBar tabs={tabs} value={tab} onChange={setTab} />
       {error && <ErrorBanner message={error} />}
-      {tab === 'lifecycle' ? (
-        <div className="overflow-x-auto px-4 pb-4">
-          <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
-            <thead><tr>{a.lifecycleColumns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
-            <tbody>
+      <div className="px-4 pb-4">
+        {tab === 'lifecycle' ? (
+          <Table>
+            <TableHeader>
+              <TableRow>{a.lifecycleColumns.map((x) => <TableHead key={x}>{x}</TableHead>)}</TableRow>
+            </TableHeader>
+            <TableBody>
               {(lifecycle ?? []).map((r) => (
-                <tr key={r.id}>
-                  <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{fmtTime(r.changedAt)}</td>
-                  <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><StatusTag domain="asset" value={r.status} /></td>
-                  <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.addressName || (r.addressId ? '#' + r.addressId : '—')}</td>
-                  <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.workerName || (r.workerId ? '#' + r.workerId : '—')}</td>
-                </tr>
+                <TableRow key={r.id}>
+                  <TableCell>{fmtTime(r.changedAt)}</TableCell>
+                  <TableCell><StatusTag domain="asset" value={r.status} /></TableCell>
+                  <TableCell>{r.addressName || (r.addressId ? '#' + r.addressId : '—')}</TableCell>
+                  <TableCell>{r.workerName || (r.workerId ? '#' + r.workerId : '—')}</TableCell>
+                </TableRow>
               ))}
-              {lifecycle !== null && !lifecycle.length && (
-                <tr><td colSpan={4} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><EmptyState text={a.empty} /></td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      ) : (
-        <div className="overflow-x-auto px-4 pb-4">
-          <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
-            <thead><tr>{a.assignmentColumns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
-            <tbody>
+              <TableStateRow colSpan={4} loading={lifecycle === null} text={a.empty} />
+            </TableBody>
+          </Table>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>{a.assignmentColumns.map((x) => <TableHead key={x}>{x}</TableHead>)}</TableRow>
+            </TableHeader>
+            <TableBody>
               {(assignments ?? []).map((r) => (
-                <tr key={r.id}>
-                  <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.workerName || (r.workerId ? '#' + r.workerId : '—')}</td>
-                  <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.addressName || (r.addressId ? '#' + r.addressId : '—')}</td>
-                  <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.reason || '—'}</td>
-                  <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{fmtTime(r.effectiveFrom)}</td>
-                  <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.effectiveTo ? fmtTime(r.effectiveTo) : '至今'}</td>
-                </tr>
+                <TableRow key={r.id}>
+                  <TableCell>{r.workerName || (r.workerId ? '#' + r.workerId : '—')}</TableCell>
+                  <TableCell>{r.addressName || (r.addressId ? '#' + r.addressId : '—')}</TableCell>
+                  <TableCell>{r.reason || '—'}</TableCell>
+                  <TableCell>{fmtTime(r.effectiveFrom)}</TableCell>
+                  <TableCell>{r.effectiveTo ? fmtTime(r.effectiveTo) : '至今'}</TableCell>
+                </TableRow>
               ))}
-              {assignments !== null && !assignments.length && (
-                <tr><td colSpan={5} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><EmptyState text={a.empty} /></td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
+              <TableStateRow colSpan={5} loading={assignments === null} text={a.empty} />
+            </TableBody>
+          </Table>
+        )}
+      </div>
     </Drawer>
   )
 }
