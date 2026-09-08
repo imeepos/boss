@@ -1,17 +1,16 @@
 // ODN 资产化转固面板(P-INFRA-1 W8):凭证列表/登记/冲销 + 出库台账入口。
 // 关联实体一律 pickers 选择器(2026-09-07 域改造);新增文案走 pages.odn 三语词条。
-// 登记走右侧抽屉 AssetRegisterDrawer(2026-09-09):与全站表单口径统一,不再用页内内联网格。
+// 登记/冲销走右侧抽屉(2026-09-09):与全站表单口径统一,不再有页内内联写入表单。
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
-import { Input } from '../../../components/ui/input'
 import { Badge } from '../../../components/ui/badge'
 import { Dropdown } from '../../../components/Dropdown'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../../components/ui/table'
 import { Card } from '../../../components/ui/card'
 import { EmptyState, ErrorBanner, ToolbarButton } from '../../../components/business/page-head'
-import { useConfirm } from '../../../components/ConfirmDialog'
 import { AssetRegisterDrawer } from './AssetRegisterDrawer'
+import { AssetReverseDrawer } from './AssetReverseDrawer'
 
 interface Registration {
   id: number; registrationNo: string; entityKind: string; facilityCode: string; deviceId: number
@@ -30,14 +29,11 @@ function entityLabel(r: Registration): string {
 }
 
 export function AssetsPanel() {
-  const confirmDialog = useConfirm()
   const [rows, setRows] = useState<Registration[]>([])
   const [status, setStatus] = useState('ACTIVE')
   const [error, setError] = useState('')
-  const [busy, setBusy] = useState(false)
   const [showCreate, setShowCreate] = useState(false)
-  const [reverseId, setReverseId] = useState('')
-  const [reverseReason, setReverseReason] = useState('')
+  const [reverseTarget, setReverseTarget] = useState<Registration | null>(null)
 
   const load = useCallback(async () => {
     setError('')
@@ -53,22 +49,6 @@ export function AssetsPanel() {
   }, [status])
   useEffect(() => { void load() }, [load])
 
-  const reverse = async (id: number) => {
-    if (!reverseReason.trim() || Number(reverseId) !== id) { setError('冲销须填写原因并对应凭证'); return }
-    if (!(await confirmDialog('确认冲销该凭证?冲销后资产回 IN_STOCK,凭证保留历史。', { danger: true }))) return
-    setBusy(true); setError('')
-    try {
-      await apiFetch('/odn/assets/registrations/' + id + '/reverse', { method: 'POST', body: { reason: reverseReason.trim() } })
-      toast.success('凭证已冲销')
-      setReverseId(''); setReverseReason('')
-      await load()
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : '冲销失败'
-      setError(msg)
-      toast.error('凭证冲销失败', { description: msg })
-    } finally { setBusy(false) }
-  }
-
   return <section className="mt-4"><Card className="p-4">
     {error && <ErrorBanner message={error} className="mb-3" />}
     <div className="mb-3 flex flex-wrap items-center gap-2">
@@ -80,10 +60,8 @@ export function AssetsPanel() {
       </div>
     </div>
     {showCreate && <AssetRegisterDrawer onClose={() => setShowCreate(false)} onCreated={() => void load()} />}
-    <div className="mb-2 flex flex-wrap items-center gap-2">
-      <Input className="w-40" value={reverseId} onChange={(e) => setReverseId(e.target.value)} placeholder="冲销凭证 ID" inputMode="numeric" />
-      <Input value={reverseReason} onChange={(e) => setReverseReason(e.target.value)} placeholder="冲销原因(必填)" />
-    </div>
+    {reverseTarget && <AssetReverseDrawer id={reverseTarget.id} registrationNo={reverseTarget.registrationNo}
+      onClose={() => setReverseTarget(null)} onReversed={() => void load()} />}
     {rows.length === 0 ? <EmptyState text="暂无凭证" /> : <div className="overflow-x-auto"><Table>
       <TableHeader><TableRow><TableHead>凭证号</TableHead><TableHead>对象</TableHead><TableHead>资产 ID</TableHead><TableHead>来源</TableHead><TableHead>项目</TableHead><TableHead>批次</TableHead><TableHead>价值</TableHead><TableHead>状态</TableHead><TableHead>操作</TableHead></TableRow></TableHeader>
       <TableBody>
@@ -97,7 +75,7 @@ export function AssetsPanel() {
           <TableCell>{r.valueAmount.toFixed(2)}</TableCell>
           <TableCell><Badge variant={STATUS_VARIANT[r.status] ?? 'default'}>{STATUS_TEXT[r.status] ?? r.status}</Badge></TableCell>
           <TableCell>{r.status === 'ACTIVE'
-            ? <ToolbarButton disabled={busy} onClick={() => void reverse(r.id)}>冲销</ToolbarButton>
+            ? <ToolbarButton onClick={() => setReverseTarget(r)}>冲销</ToolbarButton>
             : <span className="text-xs opacity-60">{r.reverseReason || '-'}</span>}</TableCell>
         </TableRow>)}
       </TableBody>
