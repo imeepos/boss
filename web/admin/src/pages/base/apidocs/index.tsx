@@ -6,7 +6,8 @@ import SwaggerUI from 'swagger-ui-react'
 import 'swagger-ui-react/swagger-ui.css'
 import './apidocs.css'
 import { useT } from '../../../i18n'
-import { PageHead, ToolbarButton } from '../../../components/business/page-head'
+import { PageHead, ErrorBanner } from '../../../components/business/page-head'
+import { Card } from '../../../components/ui/card'
 import { Tabs, TabsList, TabsTrigger } from '../../../components/ui/tabs'
 import { apiFetch, apiBaseUrl, getAuthToken } from '../../../api/client'
 
@@ -29,28 +30,29 @@ export default function ApiDocsPage() {
   const [portal, setPortal] = useState<Portal>('admin')
   const [spec, setSpec] = useState<Record<string, unknown> | null>(null)
   const [loading, setLoading] = useState(false)
-  const [failed, setFailed] = useState(false)
+  const [error, setError] = useState('')
   const cache = useRef(new Map<Portal, Record<string, unknown>>())
 
   const load = useCallback(async (p: Portal) => {
     const hit = cache.current.get(p)
     if (hit) {
       setSpec(hit)
+      setError('')
       return
     }
     setLoading(true)
-    setFailed(false)
+    setError('')
     try {
       const data = await apiFetch<Record<string, unknown>>('/docs/openapi', { query: { portal: p } })
       if (!data) throw new Error('empty spec')
       cache.current.set(p, data)
       setSpec(data)
-    } catch {
-      setFailed(true)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : t.pages.apidocs.loadFailed)
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [t])
 
   useEffect(() => {
     void load(portal)
@@ -75,15 +77,10 @@ export default function ApiDocsPage() {
         </Tabs>
         <span className="text-xs text-[var(--shell-crumb-text)]">{t.pages.apidocs.tryHint}</span>
       </div>
-      <div className="min-h-100 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] p-4 shadow-[var(--shell-card-shadow)]">
+      {error && <div className="mb-3"><ErrorBanner message={error} /></div>}
+      <Card className="p-4">
         {loading && <div className="flex min-h-100 items-center justify-center text-sm text-[var(--shell-crumb-text)]">{t.common.loading}</div>}
-        {!loading && failed && (
-          <div className="flex min-h-100 flex-col items-center justify-center gap-4">
-            <span className="text-sm text-[var(--color-danger)]">{t.pages.apidocs.loadFailed}</span>
-            <ToolbarButton primary onClick={() => void load(portal)}>{t.pages.apidocs.retry}</ToolbarButton>
-          </div>
-        )}
-        {!loading && !failed && spec && (
+        {!loading && !error && spec && (
           <SwaggerUI
             spec={spec as never}
             docExpansion="none"
@@ -94,7 +91,7 @@ export default function ApiDocsPage() {
             requestInterceptor={rewriteRequest as never}
           />
         )}
-      </div>
+      </Card>
     </div>
   )
 }
