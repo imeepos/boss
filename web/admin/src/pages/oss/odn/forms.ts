@@ -1,8 +1,6 @@
-// ODN 页共享类型与样式常量。内联表单已移除(oss-odn v2 spec §0.1):
+// ODN 页共享类型。内联表单已移除(oss-odn v2 spec §0.1):
 // 新增/编辑一律经 ResourceDrawer 抽屉,详情经 DetailDrawer。
 
-export const CARD = 'rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]'
-export const FIELD = 'flex flex-col gap-1'
 export const LABEL = 'text-xs text-[var(--shell-content-text)]'
 
 export type Tab = 'grids' | 'facilities' | 'sites' | 'devices' | 'coverage' | 'constructions' | 'surveys' | 'assets'
