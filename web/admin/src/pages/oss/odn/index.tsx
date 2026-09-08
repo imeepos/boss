@@ -3,10 +3,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { ChevronRight, X } from 'lucide-react'
+import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { Badge } from '../../../components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../../components/ui/table'
+import { Card } from '../../../components/ui/card'
 import { EmptyState, ErrorBanner, ToolbarButton } from '../../../components/business/page-head'
 import { Pagination } from '../../../components/Pagination'
 import { pagerTexts } from '../../org/shared'
@@ -19,7 +21,7 @@ import SurveysPanel from './SurveysPanel'
 import { ResourceTree, type GroupKey, type LeafFocus, type ConstructionLite } from './ResourceTree'
 import { KpiCards } from './KpiCards'
 import { RelationChain, type ChainCoverage } from './RelationChain'
-import { CARD, LABEL, type Tab, type Grid, type Facility, type Site, type Device, type Region, type City } from './forms'
+import { LABEL, type Tab, type Grid, type Facility, type Site, type Device, type Region, type City } from './forms'
 import { ResourceDrawer, type DrawerTarget } from './ResourceDrawer'
 import { DetailDrawer, type DetailTarget } from './DetailDrawer'
 import type { ResourceRow } from '../types'
@@ -99,7 +101,10 @@ export default function ODNPage() {
     setFacilities(r1.status === 'fulfilled' ? r1.value ?? [] : [])
     setSites(r2.status === 'fulfilled' ? r2.value ?? [] : [])
     setDevices(r3.status === 'fulfilled' ? r3.value ?? [] : [])
-    if (rs.some((r) => r.status === 'rejected')) setError(g.loadFail)
+    if (rs.some((r) => r.status === 'rejected')) {
+      setError(g.loadFail)
+      toast.error(g.loadFail)
+    }
   }, [city, g.loadFail, prv])
   useEffect(() => { void loadCity() }, [loadCity])
 
@@ -147,7 +152,11 @@ export default function ODNPage() {
     if (!(await confirmDialog(g.retireConfirm, { danger: true }))) return
     setError('')
     try { await apiFetch(path, { method: 'DELETE', query: { prvCode: prv, cityPrefix: city } }); await load() }
-    catch (e) { setError(e instanceof Error ? e.message : g.saveFail) }
+    catch (e) {
+      const msg = e instanceof Error ? e.message : g.saveFail
+      setError(msg)
+      toast.error(g.saveFail, { description: msg })
+    }
   }
 
   const region = regions.find((r) => r.prvCode === prv)
@@ -191,7 +200,7 @@ export default function ODNPage() {
       <DependencyHint show={tab === 'devices' && sites.length === 0} variant="info" message={g.hintNeedSite} action={g.tabs.sites} onAction={() => patch({ tab: 'sites' })} />
       {error && <ErrorBanner message={error} className="mt-3" />}
       {tab === 'devices' && <div className="mt-4"><RelationChain olts={olts} sites={sites} devices={devices} facilities={facilities} coverages={coverages} city={city} g={g.chain} /></div>}
-      <section className={CARD + ' mt-4 overflow-hidden'}>
+      <Card className="mt-4 overflow-hidden">
         {tab === 'grids' && paged}
         {tab === 'facilities' && paged}
         {tab === 'sites' && paged}
@@ -200,7 +209,7 @@ export default function ODNPage() {
         {tab === 'constructions' && <ConstructionsPanel />}
         {tab === 'surveys' && <SurveysPanel />}
         {tab === 'assets' && <AssetsPanel />}
-      </section>
+      </Card>
       {countOf > 0 && tab !== 'coverage' && tab !== 'constructions' && tab !== 'surveys' && tab !== 'assets' && (
         <Pagination page={page} pageSize={pageSize} total={countOf} onPage={setPage} onSize={(n) => { setPageSize(n); setPage(1) }} {...pagerTexts(g)} />
       )}
