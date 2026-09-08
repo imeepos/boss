@@ -1085,7 +1085,9 @@ const msMY: Translations = {
       empty: 'Tiada aliran tunai pada tarikh ini',
       loadFail: 'Gagal memuatkan',
       detailTitle: 'Butiran Tunai Harian',
-      detailColumns: ['No Bayaran', 'ID Bil', 'Jumlah', 'Status', 'Sebab Bayaran Balik', 'Lokasi', 'Operator'],
+      detailColumns: ['No Bayaran', 'No Bil', 'Jumlah', 'Status', 'Sebab Bayaran Balik', 'Lokasi', 'Operator'],
+      total: 'Jumlah',
+      countedInvalid: 'Amaun dikira mesti nombor tidak kurang daripada 0',
       noCounted: 'Belum diisi',
     },
     arrearsPage: {

@@ -886,6 +886,9 @@ export interface Translations {
       detailTitle: string
       detailColumns: string[]
       noCounted: string
+      /** 明细合计行 + 实点校验提示。 */
+      total: string
+      countedInvalid: string
     }
     arrearsPage: {
       title: string

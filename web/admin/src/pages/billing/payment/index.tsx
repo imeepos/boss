@@ -12,24 +12,13 @@ import { Pagination } from '../../../components/Pagination'
 import { Card, CardFooter } from '../../../components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../../components/ui/table'
 import { pageSlice, type BillRow, type PaymentRow } from '../types'
+import { BillRef } from '../BillRef'
 import { SimplePicker } from '../../../components/pickers/SimplePicker'
 import { fmtFee } from '../../../lib/format'
-import { TableStateRow, ErrorBanner, IdRef, ActionLink, ToolbarButton } from '../../../components/business'
+import { TableStateRow, ErrorBanner, ActionLink, ToolbarButton } from '../../../components/business'
 import { useProfile } from '../../../layouts/profile'
 import { CounterPaymentForm } from './CounterPaymentForm'
 import { RefundDialog } from './RefundDialog'
-
-function BillRef({ billId, map, noBillText }: { billId: number; map: Map<number, BillRow>; noBillText: string }) {
-  if (!billId) return <span className="text-[var(--shell-group-title)]">{noBillText}</span>
-  const b = map.get(billId)
-  if (!b) return <IdRef value={billId} />
-  return (
-    <span>
-      {b.billNo}
-      <span className="ml-1 text-[var(--shell-group-title)]">{b.customerName}</span>
-    </span>
-  )
-}
 
 export default function PaymentPage() {
   const t = useT()

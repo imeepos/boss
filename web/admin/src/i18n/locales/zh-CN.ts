@@ -1086,7 +1086,9 @@ const zhCN: Translations = {
       empty: '当日暂无现金流水',
       loadFail: '加载失败',
       detailTitle: '当日现金流水明细',
-      detailColumns: ['缴费单号', '账单ID', '金额', '状态', '退款原因', '网点', '操作员'],
+      detailColumns: ['缴费单号', '账单号', '金额', '状态', '退款原因', '网点', '操作员'],
+      total: '合计',
+      countedInvalid: '实点金额须为不小于 0 的数字',
       noCounted: '未回填',
     },
     arrearsPage: {

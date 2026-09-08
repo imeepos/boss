@@ -1086,7 +1086,9 @@ const enUS: Translations = {
       empty: 'No cash flow for this date',
       loadFail: 'Load failed',
       detailTitle: 'Daily Cash Items',
-      detailColumns: ['Pay No', 'Bill ID', 'Amount', 'Status', 'Refund Reason', 'Site', 'Operator'],
+      detailColumns: ['Pay No', 'Bill No', 'Amount', 'Status', 'Refund Reason', 'Site', 'Operator'],
+      total: 'Total',
+      countedInvalid: 'Counted amount must be a number not less than 0',
       noCounted: 'Not filled',
     },
     arrearsPage: {
