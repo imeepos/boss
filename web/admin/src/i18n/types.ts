@@ -1665,6 +1665,9 @@ export interface Translations {
       badgeNoCoordsHint: string
       badgeFail: string
       badgeRetry: string
+      actToday: string
+      locLat: string
+      locLng: string
     }
     onboardingPage: {
       title: string

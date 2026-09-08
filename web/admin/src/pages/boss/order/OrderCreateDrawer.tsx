@@ -9,6 +9,8 @@ import { Dropdown } from '../../../components/Dropdown'
 import { ResourcePicker } from '../../../components/ResourcePicker'
 import { CustomerPicker } from '../../../components/pickers/CustomerPicker'
 import { FormField } from '../../../components/business/form-field'
+import { Button } from '../../../components/ui/button'
+import { Input } from '../../../components/ui/input'
 import { useT } from '../../../i18n'
 import { AddressChainDrawer, type ChainPickResult } from './AddressChainDrawer'
 import { OrderServabilityBadge } from './OrderServabilityBadge'
@@ -105,9 +107,8 @@ export function OrderCreateDrawer({
     <Drawer title={o.createTitle} onClose={() => { reset(); onClose() }}
       footer={
         <>
-          <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)]" onClick={() => { reset(); onClose() }}>{t.pages.company.cancel}</button>
-          <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)] disabled:opacity-50"
-            disabled={busy || !ok} onClick={submit}>{busy ? t.pages.account.submitting : t.pages.company.save}</button>
+          <Button variant="outline" size="sm" onClick={() => { reset(); onClose() }}>{t.pages.company.cancel}</Button>
+          <Button size="sm" disabled={busy || !ok} onClick={submit}>{busy ? t.pages.account.submitting : t.pages.company.save}</Button>
         </>
       }>
       <div className="flex flex-col gap-3.5">
@@ -160,7 +161,7 @@ export function OrderCreateDrawer({
         </div>
         {billingMode === 'PREPAID' && (
           <FormField label={o.fBuyMonths} required hint={o.fBuyMonthsHint} error={monthsOk ? undefined : o.eBuyMonths}>
-            <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" value={buyMonths} placeholder="1" onChange={(e) => setBuyMonths(e.target.value)} />
+            <Input value={buyMonths} placeholder="1" inputMode="numeric" onChange={(e) => setBuyMonths(e.target.value)} />
           </FormField>
         )}
         {error && <div className="rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div>}
