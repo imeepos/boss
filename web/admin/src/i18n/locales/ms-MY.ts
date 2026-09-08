@@ -1169,6 +1169,7 @@ const msMY: Translations = {
       statementRef: 'No rujukan saluran',
       statementAmount: 'Amaun',
       statementOk: 'Penyata direkod',
+      statementRefPh: 'Rujukan saluran / no. baucar',
       actionFail: 'Tindakan gagal',
       ledgerPeriod: 'Tempoh (YYYY-MM)',
       ledgerQuery: 'Query',

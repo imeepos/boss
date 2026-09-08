@@ -1170,6 +1170,7 @@ const enUS: Translations = {
       statementRef: 'Channel ref no',
       statementAmount: 'Amount',
       statementOk: 'Statement recorded',
+      statementRefPh: 'Channel ref / voucher no.',
       actionFail: 'Action failed',
       ledgerPeriod: 'Period (YYYY-MM)',
       ledgerQuery: 'Query',

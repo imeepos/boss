@@ -1170,6 +1170,7 @@ const zhCN: Translations = {
       statementRef: '渠道流水号',
       statementAmount: '金额',
       statementOk: '流水已录入',
+      statementRefPh: '渠道流水号/凭证号',
       actionFail: '操作失败',
       ledgerPeriod: '账期(YYYY-MM)',
       ledgerQuery: '查询',

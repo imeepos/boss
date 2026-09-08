@@ -970,6 +970,7 @@ export interface Translations {
       statementRef: string
       statementAmount: string
       statementOk: string
+      statementRefPh: string
       actionFail: string
       ledgerPeriod: string
       ledgerQuery: string
