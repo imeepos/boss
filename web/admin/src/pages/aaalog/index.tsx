@@ -1,4 +1,5 @@
 // 话单与认证日志页:契约 GET /cdrs?loid + GET /auth-logs?loid(双页签)。
+// W3 收尾:裸卡片壳/裸 table 收口为 Card/ui-table,工具钮/错误横幅走标准组件。
 import { useEffect, useState } from 'react'
 import { apiFetch } from '../../api/client'
 import { useT } from '../../i18n'
@@ -8,7 +9,9 @@ import { fmtTime } from '../../lib/format'
 import { useDebouncedValue } from '../../lib/useDebouncedValue'
 import { type AuthLogRow, type CdrRow } from '../quad/types'
 import { failReasonText } from './failReason'
-import { TableStateRow, TabBar } from '../../components/business'
+import { ErrorBanner, TableStateRow, TabBar, ToolbarButton } from '../../components/business'
+import { Card, CardFooter } from '../../components/ui/card'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table'
 
 export default function AaaLogPage() {
   const t = useT()
@@ -48,7 +51,7 @@ export default function AaaLogPage() {
   return (
     <div>
       <PageHead title={a.title} desc={a.desc} />
-      <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
+      <Card>
         <div className="px-4 pt-3">
           <TabBar
             tabs={[{ key: 'cdr' as const, label: a.tabCdr }, { key: 'auth' as const, label: a.tabAuth }]}
@@ -56,55 +59,65 @@ export default function AaaLogPage() {
             onChange={(key) => { setTab(key); setPage(1) }}
           />
         </div>
-        <div className="flex items-center gap-1 mb-3">
-          <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)] w-[180px]" placeholder={a.filterLoid}
+        <div className="mb-3 flex items-center gap-1 px-4">
+          <input className="h-8 w-[180px] rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" placeholder={a.filterLoid}
             value={loid} onChange={(e) => { setLoid(e.target.value); setPage(1) }} />
           <span className="spacer" />
-          <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={() => load(tab)}>{t.pages.audit.refresh}</button>
+          <ToolbarButton disabled={busy} onClick={() => load(tab)}>{t.pages.audit.refresh}</ToolbarButton>
         </div>
-        {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : tab === 'cdr' ? (
-          <div className="overflow-x-auto px-4 pb-4">
-            <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
-              <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{a.cdrColumns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
-              <tbody>
+        {error && <ErrorBanner message={error} />}
+        {!error && tab === 'cdr' && (
+          <div className="px-4 pb-4">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  {a.cdrColumns.map((x) => <TableHead key={x}>{x}</TableHead>)}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {(slice as CdrRow[]).map((x) => (
-                  <tr key={x.id}>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.loid}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{a.acctStatus[x.acctStatus - 1] ?? x.acctStatus}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.sessionTime}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{fmtOct(x.inputOctets)}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{fmtOct(x.outputOctets)}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.billingStatus === 'BILLED' ? a.billed : a.unbilled}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{fmtTime(x.startedAt)}</td>
-                  </tr>
+                  <TableRow key={x.id}>
+                    <TableCell>{x.loid}</TableCell>
+                    <TableCell>{a.acctStatus[x.acctStatus - 1] ?? x.acctStatus}</TableCell>
+                    <TableCell>{x.sessionTime}</TableCell>
+                    <TableCell>{fmtOct(x.inputOctets)}</TableCell>
+                    <TableCell>{fmtOct(x.outputOctets)}</TableCell>
+                    <TableCell>{x.billingStatus === 'BILLED' ? a.billed : a.unbilled}</TableCell>
+                    <TableCell>{fmtTime(x.startedAt)}</TableCell>
+                  </TableRow>
                 ))}
                 {!slice.length && <TableStateRow colSpan={7} loading={busy} text={a.empty} />}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div className="overflow-x-auto px-4 pb-4">
-            <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
-              <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{a.authColumns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
-              <tbody>
-                {(slice as AuthLogRow[]).map((x) => (
-                  <tr key={x.id}>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.loid}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.result === 'SUCCESS' ? a.success : a.failed}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]" data-testid="auth-fail-reason">{failReasonText(x, a)}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{fmtTime(x.createdAt)}</td>
-                  </tr>
-                ))}
-                {!slice.length && <TableStateRow colSpan={4} loading={busy} text={a.empty} />}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         )}
-        <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
+        {!error && tab === 'auth' && (
+          <div className="px-4 pb-4">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  {a.authColumns.map((x) => <TableHead key={x}>{x}</TableHead>)}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {(slice as AuthLogRow[]).map((x) => (
+                  <TableRow key={x.id}>
+                    <TableCell>{x.loid}</TableCell>
+                    <TableCell>{x.result === 'SUCCESS' ? a.success : a.failed}</TableCell>
+                    <TableCell data-testid="auth-fail-reason">{failReasonText(x, a)}</TableCell>
+                    <TableCell>{fmtTime(x.createdAt)}</TableCell>
+                  </TableRow>
+                ))}
+                {!slice.length && <TableStateRow colSpan={4} loading={busy} text={a.empty} />}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+        <CardFooter>
           <Pagination total={total} page={page} pageSize={pageSize}
             onPage={setPage} onSize={setPageSize} {...pagerTexts(a)} />
-        </div>
-      </div>
+        </CardFooter>
+      </Card>
     </div>
   )
 }
