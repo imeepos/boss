@@ -1602,6 +1602,12 @@ const zhCN: Translations = {
       colQty: '在库数量',
       empty: '暂无库存',
       loadFail: '加载失败',
+      prev: '上一页',
+      next: '下一页',
+      perPage: '条/页',
+      rangeText: '第 {from}-{to} 条,共 {count} 条',
+      jumpText: '跳至',
+      pageUnit: '页',
     },
     replacePage: {
       title: '设备更换单',

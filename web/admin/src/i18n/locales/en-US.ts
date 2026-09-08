@@ -1602,6 +1602,12 @@ const enUS: Translations = {
       colQty: 'Qty',
       empty: 'Empty',
       loadFail: 'Load failed',
+      prev: 'Prev',
+      next: 'Next',
+      perPage: '/ page',
+      rangeText: '{from}-{to} of {count}',
+      jumpText: 'Jump to',
+      pageUnit: 'page',
     },
     replacePage: {
       title: 'Device Replacements',

@@ -1601,6 +1601,12 @@ const msMY: Translations = {
       colQty: 'Kuantiti',
       empty: 'Kosong',
       loadFail: 'Gagal muat',
+      prev: 'Sebelum',
+      next: 'Seterusnya',
+      perPage: '/ halaman',
+      rangeText: '{from}-{to} daripada {count}',
+      jumpText: 'Lompat ke',
+      pageUnit: 'halaman',
     },
     replacePage: {
       title: 'Pesanan Gantian Peranti',

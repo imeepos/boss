@@ -109,7 +109,7 @@ export default function InventoryPage() {
             pageSize={pageSize}
             onPage={setPage}
             onSize={setPageSize}
-            {...pagerTexts(t.pages.company)}
+            {...pagerTexts(d)}
           />
         </CardFooter>
       </Card>

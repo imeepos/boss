@@ -1407,6 +1407,12 @@ export interface Translations {
       colQty: string
       empty: string
       loadFail: string
+      prev: string
+      next: string
+      perPage: string
+      rangeText: string
+      jumpText: string
+      pageUnit: string
     }
     replacePage: {
       title: string
