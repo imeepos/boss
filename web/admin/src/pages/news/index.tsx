@@ -94,7 +94,7 @@ export default function NewsDetailPage() {
             <Link className="mt-4 inline-block text-sm text-[var(--home-gold-fg)] underline underline-offset-2" to="/home">{h.newsBack}</Link>
           </div>
         ) : (
-          <div className="py-24 text-center text-sm text-[var(--shell-group-title)]">Loading…</div>
+          <div className="py-24 text-center text-sm text-[var(--shell-group-title)]">{t.common.loading}</div>
         )}
       </main>
       <Footer

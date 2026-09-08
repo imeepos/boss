@@ -12,6 +12,8 @@ import { Pagination } from '../../components/Pagination'
 import { StatusTag } from '../../components/StatusTag'
 import { useConfirm } from '../../components/ConfirmDialog'
 import { DataTable } from '../../components/business/data-table'
+import { PageHead } from '../org/shared'
+import { CopyButton } from '../../components/business/feedback'
 import { BackupCreateDrawer, RestoreDrawer } from './BackupDrawers'
 import { downloadArchive, formatBytes, formatTime, toJob, type BackupJobEntry } from './logic'
 import { BTN, BTN_PRIMARY, BTN_LINK } from './styles'
@@ -76,10 +78,7 @@ export default function BackupPage() {
   const b = t.pages.backup
   return (
     <div>
-      <div className="mb-4">
-        <h2 className="m-0 text-xl font-bold text-[var(--shell-heading)]">{b.title}</h2>
-        <p className="mt-1 text-xs text-[var(--shell-crumb-text)]">{b.desc}</p>
-      </div>
+      <PageHead title={b.title} desc={b.desc} />
       <div className="rounded-lg border border-[var(--shell-side-border)] bg-[var(--shell-card-bg)] p-4 shadow-[var(--shell-card-shadow)]">
         <div className="flex flex-wrap items-center gap-2">
           <Dropdown
@@ -109,7 +108,12 @@ export default function BackupPage() {
           <button className={BTN_PRIMARY} onClick={() => setShowCreate(true)}>{b.newBackup}</button>
           <button className={BTN} onClick={() => setShowRestore(true)}>{b.restore}</button>
         </div>
-        {error && <p className="m-0 mt-3 text-[13px] text-[var(--color-danger)]">{error}</p>}
+        {error && (
+          <div className="mt-3 flex items-center justify-between gap-3" role="alert">
+            <p className="m-0 min-w-0 flex-1 break-all text-[13px] text-[var(--color-danger)]">{error}</p>
+            <CopyButton text={error} />
+          </div>
+        )}
         <div className="mt-3">
           <DataTable
             emptyText={b.empty}

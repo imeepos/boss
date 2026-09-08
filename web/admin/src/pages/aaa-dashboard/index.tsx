@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { apiFetch } from '../../api/client'
 import { useT } from '../../i18n'
+import { fmtTime } from '../../lib/format'
 import { PageHead, ToolbarButton } from '../../components/business/page-head'
+import { CopyButton } from '../../components/business/feedback'
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
 import { Badge } from '../../components/ui/badge'
 type Summary = {
@@ -61,9 +63,14 @@ export default function AaaDashboardPage() {
       <PageHead title={a.title} desc={a.desc} />
       <div className="mb-4 flex items-center gap-2">
         <ToolbarButton disabled={busy} onClick={load}>{busy ? a.refreshing : a.refresh}</ToolbarButton>
-        {loadedAt && <span className="text-xs text-[var(--shell-crumb-text)]">{a.updatedAt}: {new Date(loadedAt).toLocaleString()}</span>}
+        {loadedAt && <span className="text-xs text-[var(--shell-crumb-text)]">{a.updatedAt}: {fmtTime(loadedAt)}</span>}
       </div>
-      {error && <div className="mb-4 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-xs text-[var(--color-danger)]">{error}</div>}
+      {error && (
+        <div role="alert" className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-xs text-[var(--color-danger)]">
+          <span className="min-w-0 flex-1 break-all">{error}</span>
+          <CopyButton text={error} />
+        </div>
+      )}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
         {cards.map(([label, value, hint]) => (
           <Card key={label} className="mb-0">

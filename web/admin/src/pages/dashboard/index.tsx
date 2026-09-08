@@ -11,6 +11,7 @@ import { CopyButton, EmptyState, LoadingState, Spinner } from '../../components/
 import { CardShell, OrderTrend, StatCard, type Trend } from '../../components/business/charts'
 import { Dropdown } from '../../components/Dropdown'
 import { Button } from '../../components/ui/button'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table'
 import { StatusTag } from '../../components/StatusTag'
 import { fmtTime } from '../../lib/format'
 import { todoTarget } from './todoTarget'
@@ -141,20 +142,20 @@ export default function DashboardPage({ profile }: { profile: Profile }) {
           <section className="mb-6 grid grid-cols-1 gap-4 xl:grid-cols-2">
             <CardShell title={d.distTitle}>
               <div className="overflow-x-auto">
-                <table className="w-full border-collapse text-[13px]">
-                  <thead>
-                    <tr>
-                      <th className="border-b border-border px-3 py-2 text-left font-medium text-muted-foreground">{d.colStatus}</th>
-                      <th className="border-b border-border px-3 py-2 text-left font-medium text-muted-foreground">{d.colCount}</th>
-                      <th className="border-b border-border px-3 py-2 text-left font-medium text-muted-foreground" title={d.percentHint}>{d.colPercent}</th>
-                      <th className="border-b border-border px-3 py-2 text-left font-medium text-muted-foreground">{d.colProgress}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{d.colStatus}</TableHead>
+                      <TableHead>{d.colCount}</TableHead>
+                      <TableHead title={d.percentHint}>{d.colPercent}</TableHead>
+                      <TableHead>{d.colProgress}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                     {data.orderStatusDist.map((r) => (
-                      <tr
+                      <TableRow
                         key={r.status}
-                        className="cursor-pointer hover:bg-muted/50"
+                        className="cursor-pointer"
                         title={d.distRowHint}
                         onClick={() => navigate('/boss/order?status=' + encodeURIComponent(r.status))}
                         onKeyDown={(e) => {
@@ -166,23 +167,23 @@ export default function DashboardPage({ profile }: { profile: Profile }) {
                         tabIndex={0}
                         role="link"
                       >
-                        <td className="border-b border-border px-3 py-2.5 text-[var(--shell-content-text)]">
+                        <TableCell>
                           <StatusTag domain="order" value={r.status} />
-                        </td>
-                        <td className="border-b border-border px-3 py-2.5 text-[var(--shell-content-text)]">{r.count}</td>
-                        <td className="border-b border-border px-3 py-2.5 text-[var(--shell-content-text)]">{r.percent}</td>
-                        <td className="border-b border-border px-3 py-2.5">
+                        </TableCell>
+                        <TableCell>{r.count}</TableCell>
+                        <TableCell>{r.percent}</TableCell>
+                        <TableCell>
                           <div className="h-1.5 min-w-[100px] overflow-hidden rounded-sm bg-muted">
                             <div
                               className="h-full rounded-sm bg-primary transition-[width] duration-300"
                               style={{ width: maxDistCount > 0 ? Math.round((r.count / maxDistCount) * 100) + '%' : '0%' }}
                             />
                           </div>
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
             </CardShell>
 
