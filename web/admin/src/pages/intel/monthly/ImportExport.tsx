@@ -2,6 +2,7 @@
 // 已导入计数照常展示(不清空),错误按「行号+原因」逐行列出。导出为裸 CSV(非 envelope),
 // 按 Content-Disposition filename 落盘。
 import { useRef, useState } from 'react'
+import { toast } from 'sonner'
 import { useT } from '../../../i18n'
 import { ToolbarButton } from '../../../components/business'
 import { exportMonthlyCsv, importMonthlyCsv } from './api'
@@ -37,8 +38,19 @@ export function ImportExport({ table, month, onImported }: ImportExportProps) {
       setResult(out.result)
       setPartial(out.code === 42200)
       onImported()
+      if (out.code === 42200) {
+        toast.warning(m.importPartial, {
+          description: fmt(m.importSummary, { total: out.result.total, imported: out.result.imported, failed: out.result.failed }),
+        })
+      } else {
+        toast.success(fmt(m.importSummary, {
+          total: out.result.total, imported: out.result.imported, failed: out.result.failed,
+        }))
+      }
     } catch (e) {
-      setError(e instanceof Error ? e.message : m.importFail)
+      const msg = e instanceof Error ? e.message : m.importFail
+      setError(msg)
+      toast.error(m.importFail, { description: msg })
     } finally {
       setBusy('')
     }
@@ -49,9 +61,13 @@ export function ImportExport({ table, month, onImported }: ImportExportProps) {
     setError('')
     setExported('')
     try {
-      setExported(await exportMonthlyCsv(table, month))
+      const filename = await exportMonthlyCsv(table, month)
+      setExported(filename)
+      toast.success(fmt(m.exportSaved, { file: filename }))
     } catch (e) {
-      setError(e instanceof Error ? e.message : m.exportFail)
+      const msg = e instanceof Error ? e.message : m.exportFail
+      setError(msg)
+      toast.error(m.exportFail, { description: msg })
     } finally {
       setBusy('')
     }
