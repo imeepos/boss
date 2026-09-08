@@ -2195,3 +2195,8 @@
 - 三次返工根因:分段草稿只落了后半段(py_compile 不拦运行时 NameError,误以为完整);此后编辑基于幻象读内容反复错位——长文件修复一律 python fixer 脚本(base64 传块)+bash grep 验证,不信任 read 缓存视图。
 - 真实代码 bug 三个:AcceptSurvey 只占位未流转 status;NULLIF($n,0) 使坐标参数被推断为 integer;000213 reported_by 外键 accounts 在 WORKER 代次下 23503(加代次列必须同步松绑旧外键)。都是 102 真环境才暴露,单测全绿的教训:SQL 参数类型/外键类缺陷必须有真库集成验收。
 - 下次开工前重读:红线11(引号穿层)+红线24(管道掩码退出码,本次 SERVER_BUILD_OK 假阳性再犯)+红线13(长任务后台跑)。
+
+## 2026-09-08 Wave1 bss 域体验打磨(feat/ux-bss)
+- 最坑:无。本轮全程零返工;唯一小错是 recon-points.tsx 的 edit 把两行 import 挤成一行(typecheck 当场拦截,一轮修复)。
+- skill 预警生效:红线 4(edit 对称)让每个 edit 后立刻跑 typecheck;红线 5/6 让每页都有 DOM 断言与独立提交;红线 8a 新建 RuleStatus.tsx 前先 check-ignore。
+- 重来一次:提前把「新增 i18n key」的完整清单列好(占位符+回执+徽标)一次性加进键集提交,避免 savedOk 落在 product 页提交里需要人工登记例外。
