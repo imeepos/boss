@@ -2224,3 +2224,14 @@
 - 技术收获:React 18「effect 内 setState 标记 + alive 清理」自杀模式——effect 先写标记 state 再异步反查,写入触发重渲染,cleanup 先于 promise 兑现,回显必然落空;同类:booted 用 ref 时同值 bailout 不重放效应。jsdom+act+createRoot 组件回归(仓库已有 drawerDialogLayer 先例)可直接锁死此类缺陷。
 - 生产 bundle grep 陷阱:标识符被 minify、CJK 字符串被 esbuild 转义成 unicode 序列,grep 源码字面量恒 0——验证部署版本用行为断言或 ASCII 标记串。
 - skill 预警生效:红线 26(按组件源码事件绑定派发,Dropdown 选项 onMouseDown/触发器 onClick)一次命中;红线 10(worktree 是兄弟目录)规避;红线 13(两段式建 worktree)顺畅。
+
+## 2026-09-08 Phase B 前端整改批次(FK人读名消费/registry收编/UserPicker删除/JSON blur校验)
+- 哪个坑浪费了最多时间?vitest 首跑冷transform 60s 前台超时杀进程;改后台跑后全部顺畅。
+- skill 有没有提前警告?红线13 已写「长耗时命令必须后台跑」,对 vitest 单跑同样适用,当初只当 build/test 全量套件理解。
+- 重来一次怎么做?开工先把「跑测试=后台任务」固化为默认;每个新 DOM 测试写完立刻后台单跑,不等批次末尾。
+
+其他教训:
+- React onBlur 在 jsdom 里要 dispatch `new FocusEvent('focusout', {bubbles:true})`(React 18 映射 focusout);原生 blur 不冒泡不触发——本次线上 CDP eval 与 vitest 同法。
+- vi.mock i18n 最小 mock 会漏被渲染子组件的 common 键:ErrorBanner→CopyButton 要 common.copy/copied、ConfirmProvider 要 common.confirmDialog、TableStateRow 要 common.loading、AttachmentPickerDialog 要 pages.importer——用 Proxy 兜底键名(k in t ? t[k] : k)防 undefined 崩,再把已知键补上。
+- params 页行文案 = paramLabel(desc||key),DOM 找行按 desc 找不按 key。
+- CI 只部署 main(deploy-102.yml branches:[main]),feat 分支的新前端断言只能「本地 vite preview 生产构建 + 102 真后端」(ux-final W3 先例),102:5180 仅核对 Last-Modified/hash 说明部署态。
