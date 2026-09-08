@@ -3,10 +3,13 @@ import { describe, expect, it } from 'vitest'
 import {
   buildPickerQuery,
   canClearValue,
+  echoPinFromCache,
   initialPickerSearchState,
   mergeOptions,
   moveActive,
   pickerSearchReducer,
+  pickKeysFromItems,
+  rememberOptionLabels,
   resolveOptionMatch,
   pickSingleKey,
   toSelectionChips,
@@ -229,5 +232,54 @@ describe('resolveOptionMatch 文案当 value 的兜底解析(W1 裁定)', () => 
 
   it('空值不参与匹配', () => {
     expect(resolveOptionMatch(opts, '')).toEqual({ effectiveValue: '' })
+  })
+})
+
+describe('echoPinFromCache 已选人类可读回显(W0-R3)', () => {
+  const labels = new Map([['213', '采购经理·王 · 13800000001']])
+
+  it('缓存命中返回 value+label 钉选', () => {
+    expect(echoPinFromCache(labels, '213')).toEqual({ value: '213', label: '采购经理·王 · 13800000001' })
+  })
+
+  it('缓存未命中返回 undefined,由组件走详情兜底', () => {
+    expect(echoPinFromCache(labels, '999')).toBeUndefined()
+  })
+
+  it('空值不产生钉选', () => {
+    expect(echoPinFromCache(labels, '')).toBeUndefined()
+  })
+})
+
+describe('rememberOptionLabels label 缓存增量喂入(W0-R3)', () => {
+  it('按 value 记录并可覆盖', () => {
+    const labels = new Map<string, string>()
+    rememberOptionLabels(labels, [opt('1', '甲'), opt('2', '乙')])
+    rememberOptionLabels(labels, [opt('2', '乙二')])
+    expect(labels.get('1')).toBe('甲')
+    expect(labels.get('2')).toBe('乙二')
+  })
+
+  it('空 value 与空 label 不入缓存', () => {
+    const labels = new Map<string, string>()
+    rememberOptionLabels(labels, [opt('', '全部'), { value: 'x', label: '' }])
+    expect(labels.size).toBe(0)
+  })
+})
+
+describe('pickKeysFromItems 实体数组转选中序列(W0-R4 DialogPicker 重开预选)', () => {
+  const keyOf = (it: { id: string }) => it.id
+
+  it('保持传入顺序并去重', () => {
+    const items = [{ id: 'b' }, { id: 'a' }, { id: 'b' }]
+    expect(pickKeysFromItems(items, keyOf)).toEqual(['b', 'a'])
+  })
+
+  it('剔除空 key(空值占位实体)', () => {
+    expect(pickKeysFromItems([{ id: '' }, { id: 'a' }], keyOf)).toEqual(['a'])
+  })
+
+  it('空数组返回空序列', () => {
+    expect(pickKeysFromItems([], keyOf)).toEqual([])
   })
 })
