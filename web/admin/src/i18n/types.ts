@@ -921,6 +921,8 @@ export interface Translations {
       desc: string
       /** 状态过滤按钮文案;key = CollectionTaskRow.status(PENDING/DOING/DONE/FAILED)。 */
       statuses: Record<string, string>
+      /** 优先级文案;key = ar_collection_tasks.priority(URGENT/HIGH/其他=普通)。 */
+      priorityTexts: Record<string, string>
       columns: string[]
       actionStart: string
       actionDone: string

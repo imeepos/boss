@@ -1120,6 +1120,7 @@ const msMY: Translations = {
       title: 'Barisan Kutipan',
       desc: 'Barisan kutipan manual domain AR ar_collection_tasks · tapis ikut status · ambil alih manusia PENDING→DOING→DONE/FAILED · rujuk docs/contract/fields.md §8B',
       statuses: { PENDING: 'Tertunda', DOING: 'Sedang', DONE: 'Selesai', FAILED: 'Gagal' },
+      priorityTexts: { URGENT: 'Segera', HIGH: 'Tinggi', NORMAL: 'Biasa' },
       columns: ['ID', 'Pelanggan', 'Tunggakan / Hari', 'Keutamaan', 'Status', 'Tamat', 'Tindakan'],
       actionStart: 'Mula',
       actionDone: 'Selesai',

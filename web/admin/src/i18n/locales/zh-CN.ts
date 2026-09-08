@@ -1121,6 +1121,7 @@ const zhCN: Translations = {
       title: '催收任务队列',
       desc: 'AR 域 ar_collection_tasks 人工催收队列 · 按状态过滤 · PENDING→DOING→DONE/FAILED 接管 · 详见 docs/contract/fields.md §8B',
       statuses: { PENDING: '待处理', DOING: '处理中', DONE: '已完成', FAILED: '失败' },
+      priorityTexts: { URGENT: '紧急', HIGH: '高', NORMAL: '普通' },
       columns: ['ID', '客户', '欠费/账龄', '优先级', '状态', '到期', '操作'],
       actionStart: '开始',
       actionDone: '完成',

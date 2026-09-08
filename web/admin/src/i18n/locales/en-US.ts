@@ -1121,6 +1121,7 @@ const enUS: Translations = {
       title: 'Collection Queue',
       desc: 'AR domain ar_collection_tasks manual collection queue · filter by status · human takeover PENDING→DOING→DONE/FAILED · see docs/contract/fields.md §8B',
       statuses: { PENDING: 'Pending', DOING: 'In Progress', DONE: 'Done', FAILED: 'Failed' },
+      priorityTexts: { URGENT: 'Urgent', HIGH: 'High', NORMAL: 'Normal' },
       columns: ['ID', 'Customer', 'Arrears / Days', 'Priority', 'Status', 'Due', 'Actions'],
       actionStart: 'Start',
       actionDone: 'Done',
