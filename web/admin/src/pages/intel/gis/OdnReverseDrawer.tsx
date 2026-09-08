@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Drawer } from '../../../components/Drawer'
 import { Badge } from '../../../components/ui/badge'
+import { ErrorBanner, ToolbarButton } from '../../../components/business/page-head'
 import { CopyButton, Spinner } from '../../../components/business/feedback'
 import { useT } from '../../../i18n'
 import type { GisPoint } from '../../../components/business/maps'
@@ -94,15 +95,10 @@ export function OdnReverseDrawer({ point, onClose }: { point: GisPoint | null; o
       )}
       {phase.s === 'fail' && (
         <div>
-          <div className="mb-2 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">
-            {g.revLoadFail}: {phase.msg}
-          </div>
+          <ErrorBanner message={g.revLoadFail + ': ' + phase.msg} />
           <div className="flex items-center gap-2">
             <CopyButton text={phase.msg} />
-            <button
-              className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)]"
-              onClick={retry}
-            >{g.revRetry}</button>
+            <ToolbarButton onClick={retry}>{g.revRetry}</ToolbarButton>
           </div>
         </div>
       )}
