@@ -1,15 +1,12 @@
 import { toast } from 'sonner'
 import { useCallback, useEffect, useState } from 'react'
 import { apiFetch } from '../../../api/client'
-import { useT } from '../../../i18n'
 import { Input } from '../../../components/ui/input'
 import { Badge } from '../../../components/ui/badge'
-import { Dropdown } from '../../../components/Dropdown'
-import { SimplePicker } from '../../../components/pickers/SimplePicker'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../../components/ui/table'
-import { Card } from '../../../components/ui/card'
 import { EmptyState, ErrorBanner, ToolbarButton } from '../../../components/business/page-head'
 import { fmtTime } from '../../../lib/format'
+import { CoverageRegisterDrawer } from './CoverageRegisterDrawer'
 
 type Cov = { id: number; addressId: number; facilityCode: string; deviceId: number; status: string; note: string; addressName?: string; updatedAt: string }
 type Resolved = { status: string; facilityCode?: string; facilityName?: string; distanceM?: number }
@@ -24,16 +21,13 @@ function StatusBadge({ status, labels }: { status: string; labels: Record<string
 // CoveragePanel 覆盖关联页签(可查可判;后端 /odn/coverage*)。
 // 关联对象一律选择器:地址=服务端检索,设施/设备=本城市主数据静态源(路线图规则 3)。
 export function CoveragePanel({ g, prv, city }: { g: any; prv: string; city: string }) {
-  const t = useT()
   const [rows, setRows] = useState<Cov[]>([])
   const [error, setError] = useState('')
-  const [busy, setBusy] = useState(false)
-  const [form, setForm] = useState({ addressId: '', facilityCode: '', deviceId: '', status: 'SERVED', note: '' })
+  const [showRegister, setShowRegister] = useState(false)
   const [ll, setLl] = useState({ lat: '', lng: '' })
   const [resolved, setResolved] = useState<Resolved | null>(null)
   const [facOpts, setFacOpts] = useState<Opt[]>([])
   const [devOpts, setDevOpts] = useState<Opt[]>([])
-  const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }))
   const badgeLabels: Record<string, string> = { SERVED: g.covServed, PENDING: g.covPending, UNSERVED: g.covUnserved }
 
   // 本城市设施/设备主数据:覆盖表单选择器数据源(空城市不拉)。
@@ -64,23 +58,6 @@ export function CoveragePanel({ g, prv, city }: { g: any; prv: string; city: str
   }, [g.loadFail])
   useEffect(() => { void load() }, [load])
 
-  const save = async () => {
-    setBusy(true); setError('')
-    try {
-      await apiFetch('/odn/coverage', { method: 'POST', body: {
-        addressId: Number(form.addressId),
-        facilityCode: form.facilityCode || undefined,
-        deviceId: form.deviceId ? Number(form.deviceId) : undefined,
-        status: form.status, note: form.note } })
-      toast.success(g.saveOk)
-      await load()
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : g.saveFail
-      setError(msg)
-      toast.error(g.saveFail, { description: msg })
-    } finally { setBusy(false) }
-  }
-
   const resolve = async () => {
     setError(''); setResolved(null)
     try { setResolved(await apiFetch<Resolved>('/odn/coverage/resolve', { query: { lat: ll.lat, lng: ll.lng } })) }
@@ -91,25 +68,14 @@ export function CoveragePanel({ g, prv, city }: { g: any; prv: string; city: str
     }
   }
 
-  const statusOptions = [
-    { value: 'SERVED', label: g.covServed },
-    { value: 'PENDING', label: g.covPending },
-    { value: 'UNSERVED', label: g.covUnserved },
-  ]
-
   return <div>
     {error && <ErrorBanner message={error} className="mb-3" />}
-    <Card className="p-4">
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
-        <label className="flex flex-col gap-1"><span className="text-xs text-[var(--shell-content-text)]">{g.addressId}</span><SimplePicker value={form.addressId} onChange={(v) => set('addressId', v)} search={searchAddresses} ariaLabel={g.addressId} placeholder={g.addressId} searchPlaceholder={g.addressId} minWidth={180} /></label>
-        <label className="flex flex-col gap-1"><span className="text-xs text-[var(--shell-content-text)]">{g.covFacility}</span><SimplePicker value={form.facilityCode} onChange={(v) => set('facilityCode', v)} options={facOpts} ariaLabel={g.covFacility} placeholder={g.covFacility} clearable clearLabel={t.pages.pickers.common.clear} minWidth={180} /></label>
-        <label className="flex flex-col gap-1"><span className="text-xs text-[var(--shell-content-text)]">{g.covDevice}</span><SimplePicker value={form.deviceId} onChange={(v) => set('deviceId', v)} options={devOpts} ariaLabel={g.covDevice} placeholder={g.covDevice} clearable clearLabel={t.pages.pickers.common.clear} minWidth={180} /></label>
-        <label className="flex flex-col gap-1"><span className="text-xs text-[var(--shell-content-text)]">{g.covStatus}</span><Dropdown value={form.status} options={statusOptions} ariaLabel={g.covStatus} onChange={(v) => set('status', v)} /></label>
-        <label className="flex flex-col gap-1"><span className="text-xs text-[var(--shell-content-text)]">{g.covNote}</span><Input value={form.note} onChange={(e) => set('note', e.target.value)} /></label>
-      </div>
-      <div className="mt-3 flex justify-end"><ToolbarButton primary disabled={busy || !form.addressId} onClick={save}>{busy ? g.saving : g.save}</ToolbarButton></div>
-    </Card>
-    <div className="mt-3 flex flex-wrap items-end gap-2 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] p-4 shadow-[var(--shell-card-shadow)]">
+    <div className="mb-3 flex justify-end">
+      <ToolbarButton primary onClick={() => setShowRegister(true)}>登记覆盖关联</ToolbarButton>
+    </div>
+    {showRegister && <CoverageRegisterDrawer facOpts={facOpts} devOpts={devOpts} searchAddresses={searchAddresses}
+      onClose={() => setShowRegister(false)} onCreated={() => void load()} />}
+    <div className="flex flex-wrap items-end gap-2 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] p-4 shadow-[var(--shell-card-shadow)]">
       <label className="flex flex-col gap-1"><span className="text-xs text-[var(--shell-content-text)]">{g.lat}</span><Input value={ll.lat} placeholder="14.5995" onChange={(e) => setLl((v) => ({ ...v, lat: e.target.value }))} /></label>
       <label className="flex flex-col gap-1"><span className="text-xs text-[var(--shell-content-text)]">{g.lng}</span><Input value={ll.lng} placeholder="120.9842" onChange={(e) => setLl((v) => ({ ...v, lng: e.target.value }))} /></label>
       <ToolbarButton disabled={!ll.lat || !ll.lng} onClick={resolve}>{g.resolveBtn}</ToolbarButton>
