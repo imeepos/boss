@@ -10,6 +10,7 @@ import { Pagination } from '../../../components/Pagination'
 import { pageSlice } from '../types'
 import type { AnalyticsMaintRow, HeatCellRow, IndicatorRow, RegionRoiRow } from '../types'
 import { TableStateRow } from '../../../components/business'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/table'
 import { CardShell, Donut, HorizontalBar, StatCard, VerticalBars } from '../../../components/business/charts'
 import { formatCurrency, formatSegmentValue } from '../../../components/business/charts/format-value'
 
@@ -97,25 +98,27 @@ export default function AnalyticsPage() {
           <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
         </div>
         {error ? <div className="mx-2 mb-2 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : (
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
-              <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{a.maintColumns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
-              <tbody>
-                {maintSlice.map((x) => (
-                  <tr key={x.deviceNo}>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.deviceNo}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.deviceType || '—'}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.healthScore}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.faultCount}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.ageYears}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><StatusTag domain="maintPriority" value={x.priority} /></td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.reason || '—'}</td>
-                  </tr>
-                ))}
-                {!maintSlice.length && <TableStateRow colSpan={7} loading={busy} text={a.empty} />}
-              </tbody>
-            </table>
-          </div>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                {a.maintColumns.map((x) => <TableHead key={x}>{x}</TableHead>)}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {maintSlice.map((x) => (
+                <TableRow key={x.deviceNo}>
+                  <TableCell>{x.deviceNo}</TableCell>
+                  <TableCell>{x.deviceType || '—'}</TableCell>
+                  <TableCell>{x.healthScore}</TableCell>
+                  <TableCell>{x.faultCount}</TableCell>
+                  <TableCell>{x.ageYears}</TableCell>
+                  <TableCell><StatusTag domain="maintPriority" value={x.priority} /></TableCell>
+                  <TableCell>{x.reason || '—'}</TableCell>
+                </TableRow>
+              ))}
+              {!maintSlice.length && <TableStateRow colSpan={7} loading={busy} text={a.empty} />}
+            </TableBody>
+          </Table>
         )}
         <div className="flex justify-end pt-3 text-xs text-[var(--shell-group-title)]">
           <Pagination total={maints.length} page={page} pageSize={pageSize}

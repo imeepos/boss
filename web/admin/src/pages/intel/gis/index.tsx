@@ -12,6 +12,7 @@ import { fmtTime } from '../../../lib/format'
 import { useLocalStorage } from '../../../lib/useLocalStorage'
 import { pageSlice, type GisNode, type GisPointRow, type GisResourceDetail } from '../types'
 import { TableStateRow, IdRef } from '../../../components/business'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/table'
 import { CardShell, StatCard } from '../../../components/business/charts'
 import { PgisMap, type GisPoint, type Theme } from '../../../components/business/maps'
 import { OdnReverseDrawer } from './OdnReverseDrawer'
@@ -205,22 +206,24 @@ export default function GisPage() {
 
       <CardShell>
         {error ? <div className="mx-2 mb-2 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : (
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
-              <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{g.drillColumns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
-              <tbody>
-                {slice.map((n) => (
-                  <tr key={n.id}>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><IdRef value={n.id} /></td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{n.name}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{n.level}. {g.levels[n.level - 1] ?? n.level}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{n.count}</td>
-                  </tr>
-                ))}
-                {!slice.length && <TableStateRow colSpan={4} loading={busy} text={g.empty} />}
-              </tbody>
-            </table>
-          </div>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                {g.drillColumns.map((x) => <TableHead key={x}>{x}</TableHead>)}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {slice.map((n) => (
+                <TableRow key={n.id}>
+                  <TableCell><IdRef value={n.id} /></TableCell>
+                  <TableCell>{n.name}</TableCell>
+                  <TableCell>{n.level}. {g.levels[n.level - 1] ?? n.level}</TableCell>
+                  <TableCell>{n.count}</TableCell>
+                </TableRow>
+              ))}
+              {!slice.length && <TableStateRow colSpan={4} loading={busy} text={g.empty} />}
+            </TableBody>
+          </Table>
         )}
         <div className="flex justify-end pt-3 text-xs text-[var(--shell-group-title)]">
           <Pagination total={nodes.length} page={page} pageSize={pageSize}

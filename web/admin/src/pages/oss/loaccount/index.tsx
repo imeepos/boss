@@ -1,13 +1,17 @@
 // 认证账号页(AAA 域,挂 oss 分组):契约 GET /lo-accounts。
 import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { PageHead, pagerTexts } from '../../org/shared'
 import { StatusTag } from '../../../components/StatusTag'
 import { Dropdown } from '../../../components/Dropdown'
 import { Pagination } from '../../../components/Pagination'
+import { Card, CardFooter } from '../../../components/ui/card'
+import { Input } from '../../../components/ui/input'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/table'
 import { type LoAccountRow } from '../types'
-import { TableStateRow, IdRef } from '../../../components/business'
+import { TableStateRow, IdRef, ErrorBanner, ToolbarButton } from '../../../components/business'
 import { useConfirm } from '../../../components/ConfirmDialog'
 import { useDebouncedValue } from '../../../lib/useDebouncedValue'
 import { ResetPasswordDialog } from './ResetPasswordDialog'
@@ -49,8 +53,11 @@ export default function LoAccountPage() {
       const d = await apiFetch<{ loid: string; password: string }>('/lo-accounts/' + encodeURIComponent(loid) + '/reset-password', { method: 'POST' })
       if (!d?.password) throw new Error(l.resetFail)
       setResetResult({ loid, password: d.password })
+      toast.success(l.resetPwd)
     } catch (e) {
-      setError(e instanceof Error ? e.message : l.resetFail)
+      const msg = e instanceof Error ? e.message : l.resetFail
+      setError(msg)
+      toast.error(l.resetPwd, { description: msg })
     } finally {
       setResetBusyLoid('')
     }
@@ -61,9 +68,9 @@ export default function LoAccountPage() {
   return (
     <div>
       <PageHead title={l.title} desc={l.desc} />
-      <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
+      <Card className="mb-4">
         <div className="flex flex-wrap items-center gap-2 p-4">
-          <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" placeholder={l.searchPlaceholder}
+          <Input className="w-56" placeholder={l.searchPlaceholder}
             value={keyword} onChange={(e) => { setKeyword(e.target.value); setPage(1) }} />
           <Dropdown
             value={status}
@@ -76,41 +83,45 @@ export default function LoAccountPage() {
             onChange={(value) => { setStatus(value); setPage(1) }}
             ariaLabel={l.allStatus}
           />
-          <span className="spacer" />
-          <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
+          <span className="flex-1" />
+          <ToolbarButton onClick={load} disabled={busy}>{t.pages.audit.refresh}</ToolbarButton>
         </div>
-        {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : (
-          <div className="overflow-x-auto px-4 pb-4">
-            <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
-              <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{[...l.columns, l.colActions].map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
-              <tbody>
+        {error ? <div className="px-4 pb-3"><ErrorBanner message={error} /></div> : (
+          <div className="px-4 pb-4">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  {[...l.columns, l.colActions].map((x) => <TableHead key={x}>{x}</TableHead>)}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {slice.map((r) => (
-                  <tr key={r.id}>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.loid}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><IdRef value={r.customerId} /></td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.legalEntityName || `#${r.legalEntityId}`}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.regionName || r.regionPath || '—'}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.qosTemplateId ? `#${r.qosTemplateId}` : '—'}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.billingMode === 'PREPAID' ? l.prepaid : l.postpaid}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><StatusTag domain="loAccount" value={r.status} /></td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">
+                  <TableRow key={r.id}>
+                    <TableCell>{r.loid}</TableCell>
+                    <TableCell><IdRef value={r.customerId} /></TableCell>
+                    <TableCell>{r.legalEntityName || `#${r.legalEntityId}`}</TableCell>
+                    <TableCell>{r.regionName || r.regionPath || '—'}</TableCell>
+                    <TableCell>{r.qosTemplateId ? `#${r.qosTemplateId}` : '—'}</TableCell>
+                    <TableCell>{r.billingMode === 'PREPAID' ? l.prepaid : l.postpaid}</TableCell>
+                    <TableCell><StatusTag domain="loAccount" value={r.status} /></TableCell>
+                    <TableCell>
                       <button type="button" data-testid={'reset-pwd-' + r.loid}
                         className="h-7 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[12px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)] disabled:cursor-not-allowed disabled:opacity-60"
                         disabled={resetBusyLoid === r.loid}
-                        onClick={() => handleReset(r.loid)}>{l.resetPwd}</button>
-                    </td>
-                  </tr>
+                        onClick={() => handleReset(r.loid)}>{resetBusyLoid === r.loid ? t.common.loading : l.resetPwd}</button>
+                    </TableCell>
+                  </TableRow>
                 ))}
                 {!slice.length && <TableStateRow colSpan={8} loading={busy} text={l.empty} />}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         )}
-        <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
+        <CardFooter>
           <Pagination total={total} page={page} pageSize={pageSize}
             onPage={setPage} onSize={setPageSize} {...pagerTexts(l)} />
-        </div>
-      </div>
+        </CardFooter>
+      </Card>
       {resetResult && <ResetPasswordDialog loid={resetResult.loid} password={resetResult.password} onClose={() => setResetResult(null)} />}
     </div>
   )
