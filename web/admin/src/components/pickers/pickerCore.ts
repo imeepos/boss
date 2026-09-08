@@ -149,3 +149,32 @@ export function resolveOptionMatch(options: DropdownOption[], value: string): { 
   if (byLabel) return { effectiveValue: byLabel.value, hit: byLabel }
   return { effectiveValue: value }
 }
+
+/**
+ * 已选人类可读回显(W0-R3):检索结果 label 增量缓存按 value 命中;
+ * 空值或未命中返回 undefined(组件再走详情接口兜底),避免触发器跌回裸内部编号。
+ */
+export function echoPinFromCache(labels: Map<string, string>, value: string): DropdownOption | undefined {
+  if (value === '') return undefined
+  const label = labels.get(value)
+  return label === undefined ? undefined : { value, label }
+}
+
+/** 增量记录检索结果 label(按 value 覆盖,空值不入缓存),供 echoPinFromCache 与详情兜底复用。 */
+export function rememberOptionLabels(labels: Map<string, string>, options: DropdownOption[]): void {
+  for (const o of options) {
+    if (o.value === '' || !o.label) continue
+    labels.set(o.value, o.label)
+  }
+}
+
+/** 实体数组转选中 key 序列:保持传入顺序,去重并剔除空 key(DialogPicker 重开预选用)。 */
+export function pickKeysFromItems<T>(items: T[], rowKey: (item: T) => string): string[] {
+  const out: string[] = []
+  for (const item of items) {
+    const key = rowKey(item)
+    if (key === '' || out.includes(key)) continue
+    out.push(key)
+  }
+  return out
+}

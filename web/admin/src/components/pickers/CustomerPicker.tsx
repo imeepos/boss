@@ -18,6 +18,8 @@ export function CustomerPicker({ value, onChange, disabled }: {
       search={searchCustomers}
       toOption={(c) => ({ value: String(c.id), label: `${c.name} · ${c.phone || c.customerCode}` })}
       fetchDetail={() => getCustomerDetail(value)}
+      clearable
+      clearLabel={p.common.clear}
       detailItems={(c) => customerDetailItems(c, p.customer)}
       detailTitle={p.customer.title}
       listPath="/bss/customer"

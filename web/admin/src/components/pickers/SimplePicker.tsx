@@ -89,6 +89,7 @@ export function SimplePicker(props: SimplePickerProps) {
       </svg>
     </button>
   )
+  // 错误行渲染在触发器上方:浮层向下展开不会遮挡,失败时原因与重试按钮始终可点(W0-R2)。
   const errRow = (showError: boolean, retry?: () => void) => showError && (
     <div role='alert' className='flex items-center gap-2 text-[11px] text-[var(--color-danger)]'>
       <span>{errorText ?? ariaLabel}</span>
@@ -98,6 +99,7 @@ export function SimplePicker(props: SimplePickerProps) {
   if (search) {
     return (
       <div className='inline-flex flex-col gap-1' data-testid='simple-picker'>
+        {errRow(srv.error, srv.retry)}
         <div className='inline-flex items-center gap-1'>
           <Dropdown
             value={value}
@@ -122,12 +124,12 @@ export function SimplePicker(props: SimplePickerProps) {
           />
           {clearBtn}
         </div>
-        {errRow(srv.error, srv.retry)}
       </div>
     )
   }
   return (
     <div className='inline-flex flex-col gap-1' data-testid='simple-picker'>
+      {errRow(!!error, onRetry)}
       <div className='inline-flex items-center gap-1'>
         <Dropdown
           value={value}
@@ -146,7 +148,6 @@ export function SimplePicker(props: SimplePickerProps) {
         />
         {clearBtn}
       </div>
-      {errRow(!!error, onRetry)}
     </div>
   )
 }
