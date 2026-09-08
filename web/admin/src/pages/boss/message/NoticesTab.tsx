@@ -4,15 +4,20 @@ import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { StatusTag } from '../../../components/StatusTag'
 import { Pagination } from '../../../components/Pagination'
-import { DataTable } from '../../../components/business/data-table'
+import { DataTable, CopyButton } from '../../../components/business'
 import { ActionLink } from '../../../components/business/page-head'
 import { Drawer } from '../../../components/Drawer'
+import { Card } from '../../../components/ui/card'
+import { Input } from '../../../components/ui/input'
+import { Checkbox } from '../../../components/ui/checkbox'
+import { Button } from '../../../components/ui/button'
+import { ToolbarButton } from '../../../components/business'
 import { useT } from '../../../i18n'
 import type { Translations } from '../../../i18n/types'
 import { filterNotices, fmtTime, type NoticeEntry } from './logic'
-import { ctl, primaryBtn } from './WorkerMessagesTab'
 
 type Ns = Translations['pages']['message']
+const errBanner = 'mb-3 flex items-start justify-between gap-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]'
 
 export function NoticesTab({ t }: { t: Ns }) {
   const cancelText = useT().common.confirmDialog.cancel
@@ -65,19 +70,18 @@ export function NoticesTab({ t }: { t: Ns }) {
   }
 
   return (
-    <div className="rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] p-4 shadow-[var(--shell-card-shadow)]">
+    <Card className="p-4">
       <div className="mb-3 flex flex-wrap items-center gap-2">
-        <input className={ctl + ' w-[200px]'} placeholder={t.searchPlaceholder} value={keyword}
+        <Input className="w-50" placeholder={t.searchPlaceholder} value={keyword}
           onChange={(e) => { setKeyword(e.target.value); setPage(1) }} />
         <label className="flex items-center gap-1 text-[13px] text-[var(--shell-group-title)]">
-          <input type="checkbox" checked={activeOnly}
-            onChange={(e) => { setActiveOnly(e.target.checked); setPage(1) }} />
+          <Checkbox checked={activeOnly} onCheckedChange={(v) => { setActiveOnly(v === true); setPage(1) }} />
           {t.onShelf}
         </label>
         <span className="spacer" />
-        <button className={primaryBtn} onClick={() => setOpen(true)}>+ {t.publish}</button>
+        <ToolbarButton primary onClick={() => setOpen(true)}>+ {t.publish}</ToolbarButton>
       </div>
-      {error ? <div className="mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : (
+      {error ? <div className={errBanner}><span className="break-all">{error}</span><CopyButton text={error} className="h-6 shrink-0 border-none bg-none px-1 text-[11px]" /></div> : (
         <>
           <DataTable
             emptyText={t.empty}
@@ -94,7 +98,8 @@ export function NoticesTab({ t }: { t: Ns }) {
               ) },
             ]}
           />
-          <Pagination total={filtered.length} page={page} pageSize={pageSize} onPage={setPage} onSize={setPageSize}
+          <Pagination total={filtered.length} page={page} pageSize={pageSize}
+            onPage={setPage} onSize={(s) => { setPageSize(s); setPage(1) }}
             rangeText={t.rangeText} prevText={t.prev} nextText={t.next} perPageText={t.perPage}
             jumpText={t.jump} pageUnitText={t.pageUnit} />
         </>
@@ -103,29 +108,29 @@ export function NoticesTab({ t }: { t: Ns }) {
         <Drawer title={t.publish} onClose={closeForm}
           footer={
             <>
-              <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={closeForm}>
+              <Button variant="outline" size="sm" onClick={closeForm}>
                 {cancelText}
-              </button>
-              <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" disabled={busy} onClick={publish}>
+              </Button>
+              <Button size="sm" disabled={busy} onClick={publish}>
                 {t.publish}
-              </button>
+              </Button>
             </>
           }>
           <div className="grid gap-3">
-            <label className="text-[13px] text-[var(--shell-group-title)]">
-              {t.noticeColumns[0]}
-              <input className={ctl + ' mt-1 w-full'} placeholder={t.noticeTitlePlaceholder} value={title}
+            <label>
+              <span className="text-[13px] text-[var(--shell-group-title)]">{t.noticeColumns[0]}</span>
+              <Input className="mt-1" placeholder={t.noticeTitlePlaceholder} value={title}
                 onChange={(e) => setTitle(e.target.value)} />
             </label>
-            <label className="text-[13px] text-[var(--shell-group-title)]">
-              {t.noticeColumns[1]}
-              <input className={ctl + ' mt-1 w-full'} placeholder={t.noticeCategoryPlaceholder} value={category}
+            <label>
+              <span className="text-[13px] text-[var(--shell-group-title)]">{t.noticeColumns[1]}</span>
+              <Input className="mt-1" placeholder={t.noticeCategoryPlaceholder} value={category}
                 onChange={(e) => setCategory(e.target.value)} />
             </label>
             {hint && <span className="text-xs text-[var(--color-danger)]">{hint}</span>}
           </div>
         </Drawer>
       )}
-    </div>
+    </Card>
   )
 }

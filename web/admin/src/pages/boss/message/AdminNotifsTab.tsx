@@ -6,7 +6,9 @@ import { apiFetch } from '../../../api/client'
 import { Dropdown } from '../../../components/Dropdown'
 import { Pagination } from '../../../components/Pagination'
 import { StatusTag } from '../../../components/StatusTag'
-import { DataTable } from '../../../components/business/data-table'
+import { DataTable, CopyButton, ToolbarButton } from '../../../components/business'
+import { ActionLink } from '../../../components/business/page-head'
+import { Card } from '../../../components/ui/card'
 import { useT } from '../../../i18n'
 import { fmtTime } from '../../../lib/format'
 import { useQueryInt, useQueryState } from '../../../lib/useQueryState'
@@ -24,8 +26,7 @@ export interface NotifItem {
   read: boolean
 }
 
-const CARD = 'rounded-lg border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] p-4 shadow-[var(--shell-card-shadow)]'
-const CTL = 'h-[30px] rounded-md border border-[var(--shell-side-border)] bg-[var(--shell-card-bg)] px-2 text-[13px] text-[var(--shell-content-text)] outline-none focus:border-[var(--color-border-focus)]'
+const errBanner = 'flex items-start justify-between gap-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]'
 
 export function AdminNotifsTab() {
   const t = useT()
@@ -67,7 +68,7 @@ export function AdminNotifsTab() {
   }
 
   return (
-    <div className={CARD}>
+    <Card className="p-4">
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <Dropdown
           value={catUrl}
@@ -97,8 +98,8 @@ export function AdminNotifsTab() {
           ariaLabel={n.unreadOnly}
         />
         <span className="flex-1" />
-        <button className={`${CTL} cursor-pointer px-3`} onClick={() => void load()}>{n.refresh}</button>
-        <button className={`${CTL} cursor-pointer px-3`} onClick={markAll}>{n.markAllRead}</button>
+        <ToolbarButton onClick={() => void load()}>{n.refresh}</ToolbarButton>
+        <ToolbarButton onClick={markAll}>{n.markAllRead}</ToolbarButton>
       </div>
       <div className="mb-3 font-semibold text-[var(--shell-heading)]">
         {n.cardTitle}
@@ -106,7 +107,7 @@ export function AdminNotifsTab() {
           {total ? n.rangeText.replace('{from}', String((page - 1) * pageSize + 1)).replace('{to}', String(Math.min(page * pageSize, total))).replace('{count}', String(total)) : ''}
         </span>
       </div>
-      {error ? <div className="py-3 text-[13px] text-[var(--color-danger)]">{error}</div> : (
+      {error ? <div className={errBanner}><span className="break-all">{error}</span><CopyButton text={error} className="h-6 shrink-0 border-none bg-none px-1 text-[11px]" /></div> : (
         <>
           <DataTable
             emptyText={n.empty}
@@ -120,17 +121,16 @@ export function AdminNotifsTab() {
               { key: 'createdAt', label: n.columns[3], render: (r) => fmtTime(String(r.createdAt)) },
               { key: 'status', label: n.columns[4], render: (r) => (r.resolved ? n.resolved : (r.read ? t.pages.message.read : t.pages.message.unread)) },
               { key: 'op', label: n.columns[5], render: (r) => (r.link ? (
-                <button className="cursor-pointer border-0 bg-none p-0 text-[13px] text-[var(--color-brand-gold-500)] hover:underline" onClick={() => open(r as unknown as NotifItem)}>
-                  {r.category === 'todo' && !r.resolved ? n.goHandle : n.viewAll}
-                </button>
+                <ActionLink onClick={() => open(r as unknown as NotifItem)} label={r.category === 'todo' && !r.resolved ? n.goHandle : n.viewAll} />
               ) : null) },
             ]}
           />
-          <Pagination total={total} page={page} pageSize={pageSize} onPage={setPage} onSize={setPageSize}
+          <Pagination total={total} page={page} pageSize={pageSize} onPage={setPage}
+            onSize={(s) => { setPageSize(s); setPage(1) }}
             rangeText={n.rangeText} prevText={n.prev} nextText={n.next} perPageText={n.perPage}
             jumpText={n.jump} pageUnitText={n.pageUnit} />
         </>
       )}
-    </div>
+    </Card>
   )
 }

@@ -6,22 +6,20 @@ import { Dropdown } from '../../../components/Dropdown'
 import { Pagination } from '../../../components/Pagination'
 import { ResourcePicker } from '../../../components/ResourcePicker'
 import { StatusTag } from '../../../components/StatusTag'
-import { DataTable } from '../../../components/business/data-table'
+import { DataTable, CopyButton } from '../../../components/business'
 import { Drawer } from '../../../components/Drawer'
+import { Card } from '../../../components/ui/card'
+import { Input } from '../../../components/ui/input'
+import { Textarea } from '../../../components/ui/textarea'
+import { Button } from '../../../components/ui/button'
+import { ToolbarButton } from '../../../components/business'
 import { searchWorkers } from '../../../api/pickers'
 import { useT } from '../../../i18n'
 import type { Translations } from '../../../i18n/types'
 import { fmtTime, filterMessages, toId, MESSAGE_LEVELS, type WorkerMessageEntry } from './logic'
 
 type Ns = Translations['pages']['message']
-
-// 筛选控件/按钮统一令牌化 className(收敛原内联 style,禁裸色值);NoticesTab 复用 ctl/primaryBtn。
-export const ctl = 'h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]'
-export const ctlBtn = 'h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]'
-export const primaryBtn = 'h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]'
-const formLabel = 'text-[13px] text-[var(--shell-group-title)]'
-const fieldInput = ctl + ' mt-1 w-full'
-const errBanner = 'mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]'
+const errBanner = 'mb-3 flex items-start justify-between gap-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]'
 
 export function WorkerMessagesTab({ t }: { t: Ns }) {
   const p = useT().pages.pickers
@@ -34,6 +32,7 @@ export function WorkerMessagesTab({ t }: { t: Ns }) {
   const [workerId, setWorkerId] = useState('')
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
+  const [workerNames, setWorkerNames] = useState<Map<number, string>>(new Map())
   // 下发表单(抽屉)
   const [sendOpen, setSendOpen] = useState(false)
   const [sendWorker, setSendWorker] = useState('')
@@ -60,6 +59,13 @@ export function WorkerMessagesTab({ t }: { t: Ns }) {
     load()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workerId])
+
+  // 师傅 id → 姓名映射:列表只回 workerId,失败降级 #id(不空转)。
+  useEffect(() => {
+    apiFetch<{ items: { id: number; name: string; staffNo: string }[] }>('/workers')
+      .then((d) => setWorkerNames(new Map((d?.items ?? []).map((w) => [w.id, `${w.name}(${w.staffNo})`]))))
+      .catch(() => setWorkerNames(new Map()))
+  }, [])
 
   const filtered = filterMessages(rows, keyword, level, read)
   const slice = filtered.slice((page - 1) * pageSize, page * pageSize)
@@ -91,10 +97,15 @@ export function WorkerMessagesTab({ t }: { t: Ns }) {
       .catch((e) => { setSending(false); setHint(e instanceof Error ? e.message : t.sendFail) })
   }
 
+  const workerCell = (id: number) => {
+    const name = workerNames.get(id)
+    return <span title={'workerId=' + String(id)}>{name ?? `#${id}`}</span>
+  }
+
   return (
-    <div className="rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] p-4 shadow-[var(--shell-card-shadow)]">
+    <Card className="p-4">
       <div className="mb-3 flex flex-wrap gap-2">
-        <input className={ctl} placeholder={t.searchPlaceholder} value={keyword}
+        <Input className="w-55" placeholder={t.searchPlaceholder} value={keyword}
           onChange={(e) => { setKeyword(e.target.value); setPage(1) }} />
         <Dropdown
           value={level}
@@ -123,10 +134,10 @@ export function WorkerMessagesTab({ t }: { t: Ns }) {
           errorText={t.loadFail}
         />
         <span className="spacer" />
-        <button className={ctlBtn} onClick={load}>{t.refresh}</button>
+        <ToolbarButton onClick={load}>{t.refresh}</ToolbarButton>
       </div>
       <div className="mb-3 flex flex-wrap items-center gap-2">
-        <button className={primaryBtn} onClick={() => setSendOpen(true)}>+ {t.send}</button>
+        <ToolbarButton primary onClick={() => setSendOpen(true)}>+ {t.send}</ToolbarButton>
       </div>
       <div className="mb-3 text-sm font-semibold text-[var(--shell-heading)]">
         {t.cardTitle}
@@ -134,21 +145,22 @@ export function WorkerMessagesTab({ t }: { t: Ns }) {
           {filtered.length ? t.matched.replace('{count}', String(filtered.length)) : ''}
         </span>
       </div>
-      {error ? <div className={errBanner}>{error}</div> : (
+      {error ? <div className={errBanner}><span className="break-all">{error}</span><CopyButton text={error} className="h-6 shrink-0 border-none bg-none px-1 text-[11px]" /></div> : (
         <>
           <DataTable
             emptyText={t.empty}
             rows={slice as unknown as Record<string, unknown>[]}
             columns={[
               { key: 'level', label: t.msgColumns[0], render: (r) => <StatusTag domain="message" value={String(r.level)} /> },
-              { key: 'workerId', label: t.msgColumns[1], render: (r) => <span title={'workerId=' + String(r.workerId)}>#{String(r.workerId)}</span> },
+              { key: 'workerId', label: t.msgColumns[1], render: (r) => workerCell(Number(r.workerId)) },
               { key: 'title', label: t.msgColumns[2], render: (r) => String(r.title ?? '') },
               { key: 'content', label: t.msgColumns[3], render: (r) => <span className="text-[var(--shell-group-title)]">{String(r.content ?? '')}</span> },
               { key: 'sentAt', label: t.msgColumns[4], render: (r) => fmtTime(String(r.sentAt)) },
               { key: 'read', label: t.msgColumns[5], render: (r) => (r.read ? t.read : t.unread) },
             ]}
           />
-          <Pagination total={filtered.length} page={page} pageSize={pageSize} onPage={setPage} onSize={setPageSize}
+          <Pagination total={filtered.length} page={page} pageSize={pageSize}
+            onPage={setPage} onSize={(s) => { setPageSize(s); setPage(1) }}
             rangeText={t.rangeText} prevText={t.prev} nextText={t.next} perPageText={t.perPage}
             jumpText={t.jump} pageUnitText={t.pageUnit} />
         </>
@@ -157,17 +169,17 @@ export function WorkerMessagesTab({ t }: { t: Ns }) {
         <Drawer title={t.send} onClose={closeSend}
           footer={
             <>
-              <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={closeSend}>
+              <Button variant="outline" size="sm" onClick={closeSend}>
                 {cancelText}
-              </button>
-              <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" disabled={sending} onClick={send}>
+              </Button>
+              <Button size="sm" disabled={sending} onClick={send}>
                 {sending ? t.sending : t.send}
-              </button>
+              </Button>
             </>
           }>
           <div className="grid gap-3">
-            <label className={formLabel}>
-              {t.msgColumns[1]}
+            <label>
+              <span className="text-[13px] text-[var(--shell-group-title)]">{t.msgColumns[1]}</span>
               <div className="mt-1">
                 <ResourcePicker
                   value={sendWorker}
@@ -181,8 +193,8 @@ export function WorkerMessagesTab({ t }: { t: Ns }) {
                 />
               </div>
             </label>
-            <label className={formLabel}>
-              {t.sendLevel}
+            <label>
+              <span className="text-[13px] text-[var(--shell-group-title)]">{t.sendLevel}</span>
               <div className="mt-1">
                 <Dropdown
                   value={sendLevel}
@@ -192,20 +204,20 @@ export function WorkerMessagesTab({ t }: { t: Ns }) {
                 />
               </div>
             </label>
-            <label className={formLabel}>
-              {t.msgColumns[2]}
-              <input className={fieldInput} placeholder={t.sendTitlePlaceholder} value={sendTitle}
+            <label>
+              <span className="text-[13px] text-[var(--shell-group-title)]">{t.msgColumns[2]}</span>
+              <Input className="mt-1" placeholder={t.sendTitlePlaceholder} value={sendTitle}
                 onChange={(e) => setSendTitle(e.target.value)} />
             </label>
-            <label className={formLabel}>
-              {t.msgColumns[3]}
-              <textarea className={fieldInput} rows={3} placeholder={t.sendContentPlaceholder} value={sendContent}
+            <label>
+              <span className="text-[13px] text-[var(--shell-group-title)]">{t.msgColumns[3]}</span>
+              <Textarea className="mt-1" rows={3} placeholder={t.sendContentPlaceholder} value={sendContent}
                 onChange={(e) => setSendContent(e.target.value)} />
             </label>
             {hint && <span className="text-xs text-[var(--color-danger)]">{hint}</span>}
           </div>
         </Drawer>
       )}
-    </div>
+    </Card>
   )
 }
