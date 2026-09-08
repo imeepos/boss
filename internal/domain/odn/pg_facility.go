@@ -6,7 +6,7 @@ import (
 )
 
 // CreateFacility 新建基础设施:校验编码格式(红线 3)+ 网格归属(红线 2:须已备案)
-// + 网格容量(规范 4.7:单网格 999)。
+// + 网格容量(规范 4.7:单网格 999)+ 初始生命周期(留空 PLANNED,见 NormalizeCreateLifecycle)。
 func (s *PGStore) CreateFacility(ctx context.Context, f Facility) error {
 	kind, grid, _, err := ValidateFacilityCode(f.Code)
 	if err != nil {
@@ -15,6 +15,11 @@ func (s *PGStore) CreateFacility(ctx context.Context, f Facility) error {
 	if kind != f.Kind {
 		return fmt.Errorf("%w: kind %s 与编码前缀不符", ErrInvalidCode, f.Kind)
 	}
+	lc, err := NormalizeCreateLifecycle(f.LifecycleStatus)
+	if err != nil {
+		return err
+	}
+	f.LifecycleStatus = lc
 	if kind == KindPole || kind == KindManhole {
 		if grid != f.GridCode {
 			return fmt.Errorf("%w: 编码网格段 %02d 与所属网格 %02d 不符", ErrInvalidCode, grid, f.GridCode)
@@ -30,9 +35,9 @@ func (s *PGStore) insertGridFacility(ctx context.Context, f Facility) error {
 		return err
 	}
 	_, err := s.db.Exec(ctx, `INSERT INTO odn_facility
-			(code, kind, prv_code, city_prefix, grid_code, name, lat, lng)
-		VALUES ($1,$2,$3,$4,$5,$6,NULLIF($7,0.0),NULLIF($8,0.0))`,
-		f.Code, f.Kind, f.PrvCode, f.CityPrefix, f.GridCode, f.Name, f.Lat, f.Lng)
+			(code, kind, prv_code, city_prefix, grid_code, name, lat, lng, lifecycle_status)
+		VALUES ($1,$2,$3,$4,$5,$6,NULLIF($7,0.0),NULLIF($8,0.0),$9)`,
+		f.Code, f.Kind, f.PrvCode, f.CityPrefix, f.GridCode, f.Name, f.Lat, f.Lng, f.LifecycleStatus)
 	if err != nil {
 		return mapErr(fmt.Errorf("odn: create facility: %w", err), ErrNotFound)
 	}
@@ -62,9 +67,9 @@ func (s *PGStore) checkGridForInsert(ctx context.Context, f Facility) error {
 // insertSeqFacility 铁塔/接头盒/终端盒入库(市域顺序,无网格)。
 func (s *PGStore) insertSeqFacility(ctx context.Context, f Facility) error {
 	_, err := s.db.Exec(ctx, `INSERT INTO odn_facility
-			(code, kind, prv_code, city_prefix, grid_code, name, lat, lng)
-		VALUES ($1,$2,$3,$4,NULL,$5,NULLIF($6,0.0),NULLIF($7,0.0))`,
-		f.Code, f.Kind, f.PrvCode, f.CityPrefix, f.Name, f.Lat, f.Lng)
+			(code, kind, prv_code, city_prefix, grid_code, name, lat, lng, lifecycle_status)
+		VALUES ($1,$2,$3,$4,NULL,$5,NULLIF($6,0.0),NULLIF($7,0.0),$8)`,
+		f.Code, f.Kind, f.PrvCode, f.CityPrefix, f.Name, f.Lat, f.Lng, f.LifecycleStatus)
 	if err != nil {
 		return mapErr(fmt.Errorf("odn: create facility: %w", err), ErrNotFound)
 	}

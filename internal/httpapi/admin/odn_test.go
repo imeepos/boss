@@ -135,6 +135,43 @@ func TestODNFacilityHandlers(t *testing.T) {
 			t.Fatalf("期望绑定错误,body=%s", w.Body.String())
 		}
 	})
+	t.Run("不传 lifecycleStatus 补 PLANNED(T2 规划新建默认口径)", func(t *testing.T) {
+		f := &fakeODN{}
+		w := doJSON(odnRouter(f), http.MethodPost, "/api/admin/v1/odn/facilities",
+			`{"code":"P01001","kind":"P","prvCode":"PHL001","cityPrefix":"MNL","gridCode":1}`)
+		var body struct {
+			Data struct {
+				LifecycleStatus string `json:"lifecycleStatus"`
+			} `json:"data"`
+		}
+		json.Unmarshal(w.Body.Bytes(), &body)
+		if f.created == nil || f.created.LifecycleStatus != odn.LCPlanned {
+			t.Fatalf("入库态 created=%+v", f.created)
+		}
+		if body.Data.LifecycleStatus != odn.LCPlanned {
+			t.Fatalf("回显态 body=%s", w.Body.String())
+		}
+	})
+	t.Run("显式 IN_SERVICE 透传(登记既有在网设施)", func(t *testing.T) {
+		f := &fakeODN{}
+		w := doJSON(odnRouter(f), http.MethodPost, "/api/admin/v1/odn/facilities",
+			`{"code":"P01001","kind":"P","prvCode":"PHL001","cityPrefix":"MNL","gridCode":1,"lifecycleStatus":"IN_SERVICE"}`)
+		if f.created == nil || f.created.LifecycleStatus != odn.LCInService {
+			t.Fatalf("HTTP=%d created=%+v body=%s", w.Code, f.created, w.Body.String())
+		}
+	})
+	t.Run("lifecycleStatus=RETIRED 绑定拒绝(退役非出生态)", func(t *testing.T) {
+		f := &fakeODN{}
+		w := doJSON(odnRouter(f), http.MethodPost, "/api/admin/v1/odn/facilities",
+			`{"code":"P01001","kind":"P","prvCode":"PHL001","cityPrefix":"MNL","gridCode":1,"lifecycleStatus":"RETIRED"}`)
+		var body struct {
+			Code int `json:"code"`
+		}
+		json.Unmarshal(w.Body.Bytes(), &body)
+		if body.Code == 0 || f.created != nil {
+			t.Fatalf("期望拒绝且不入库,code=%d created=%+v", body.Code, f.created)
+		}
+	})
 }
 
 func TestODNSegmentHandlers(t *testing.T) {

@@ -20,6 +20,22 @@ const (
 // ErrInvalidLifecycle 非法生命周期转移(未知状态/终态逆转/并发改写 CAS 失败)。
 var ErrInvalidLifecycle = errors.New("odn: invalid lifecycle transition")
 
+// createLifecycles 新建实体可显式声明的初始态:规划/施工中/在网(登记既有在网设施)。
+// RETIRED 不在其列——退役是流转结果而非出生态,新建即退役无业务语义。
+var createLifecycles = map[string]bool{LCPlanned: true, LCInBuild: true, LCInService: true}
+
+// NormalizeCreateLifecycle 新建实体初始生命周期口径:留空=PLANNED(与导入规则 ④、
+// 生命周期流转起点一致,fields.md 1.5.3);显式值须落在 createLifecycles 合法枚举内。
+func NormalizeCreateLifecycle(v string) (string, error) {
+	if v == "" {
+		return LCPlanned, nil
+	}
+	if !createLifecycles[v] {
+		return "", fmt.Errorf("%w: 新建生命周期 %q 非法(仅 PLANNED/IN_BUILD/IN_SERVICE)", ErrInvalidLifecycle, v)
+	}
+	return v, nil
+}
+
 // lifecycleTransitions 允许的转移:线性推进 + 各态可径直退役;RETIRED 终态不可逆。
 var lifecycleTransitions = map[string][]string{
 	LCPlanned:   {LCInBuild, LCInService, LCRetired},

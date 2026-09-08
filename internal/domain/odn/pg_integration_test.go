@@ -2,6 +2,7 @@ package odn
 
 import (
 	"context"
+	"errors"
 	"os"
 	"testing"
 
@@ -29,7 +30,7 @@ func TestODNPassive_Integration(t *testing.T) {
 	}
 	s := NewPGStore(pool)
 	cleanup := func() {
-		pool.Exec(ctx, `DELETE FROM odn_facility WHERE code IN ('P98001','MH98001','TW98001')
+		pool.Exec(ctx, `DELETE FROM odn_facility WHERE code IN ('P98001','P98002','MH98001','TW98001')
 			AND prv_code='PHL001' AND city_prefix='MNL'`)
 		pool.Exec(ctx, `DELETE FROM odn_grid WHERE prv_code='PHL001' AND city_prefix='MNL' AND grid_code=98`)
 	}
@@ -77,6 +78,21 @@ func TestODNPassive_Integration(t *testing.T) {
 	if tws[0].Lat != 14.6 || tws[0].Lng != 120.99 {
 		t.Fatalf("设施坐标回读失败: lat=%v lng=%v", tws[0].Lat, tws[0].Lng)
 	}
+	// 生命周期默认口径(T2):CreateFacility 留空补 PLANNED,显式 IN_SERVICE 透传,RETIRED 拒绝。
+	if tws[0].LifecycleStatus != LCPlanned {
+		t.Fatalf("新建设施期望默认 PLANNED,实际 %s", tws[0].LifecycleStatus)
+	}
+	if err := s.CreateFacility(ctx, Facility{Code: "P98002", Kind: KindPole,
+		PrvCode: "PHL001", CityPrefix: "MNL", GridCode: 98, LifecycleStatus: LCInService}); err != nil {
+		t.Fatalf("CreateFacility P98002 IN_SERVICE: %v", err)
+	}
+	if gf, err := s.GetFacility(ctx, "P98002"); err != nil || gf.LifecycleStatus != LCInService {
+		t.Fatalf("显式 IN_SERVICE 回读: %v %+v", err, gf)
+	}
+	if err := s.CreateFacility(ctx, Facility{Code: "P98003", Kind: KindPole,
+		PrvCode: "PHL001", CityPrefix: "MNL", GridCode: 98, LifecycleStatus: LCRetired}); !errors.Is(err, ErrInvalidLifecycle) {
+		t.Fatalf("RETIRED 出生态期望 ErrInvalidLifecycle,实际 %v", err)
+	}
 
 	// 列表与占用统计。
 	grids, err := s.ListGrids(ctx, "PHL001", "MNL")
@@ -87,8 +103,8 @@ func TestODNPassive_Integration(t *testing.T) {
 	for _, g := range grids {
 		if g.GridCode == 98 {
 			found = true
-			if g.Facilities != 2 {
-				t.Fatalf("网格 98 占用期望 2(P+MH),实际 %d", g.Facilities)
+			if g.Facilities != 3 {
+				t.Fatalf("网格 98 占用期望 3(P98001+P98002+MH),实际 %d", g.Facilities)
 			}
 		}
 	}
@@ -96,7 +112,7 @@ func TestODNPassive_Integration(t *testing.T) {
 		t.Fatal("ListGrids 未返回网格 98")
 	}
 	facs, err := s.ListFacilities(ctx, KindPole, GridRef{PrvCode: "PHL001", CityPrefix: "MNL", GridCode: 98})
-	if err != nil || len(facs) != 1 || facs[0].Code != "P98001" {
+	if err != nil || len(facs) != 2 || facs[0].Code != "P98001" {
 		t.Fatalf("ListFacilities: %v %d", err, len(facs))
 	}
 

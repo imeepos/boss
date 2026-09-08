@@ -21,15 +21,18 @@ type odnGridReq struct {
 }
 
 // odnFacilityReq 设施新建请求体。
+// lifecycleStatus 留空=PLANNED(规划新建默认口径);登记既有在网设施显式传 IN_SERVICE,
+// 服务端仍按 odn.NormalizeCreateLifecycle 校验合法枚举(RETIRED 不可作出生态)。
 type odnFacilityReq struct {
-	Code       string  `json:"code" binding:"required"`
-	Kind       string  `json:"kind" binding:"required,oneof=P MH TW CLS TBX"`
-	PrvCode    string  `json:"prvCode" binding:"required,len=6"`
-	CityPrefix string  `json:"cityPrefix" binding:"required,min=3,max=5"`
-	GridCode   int16   `json:"gridCode" binding:"min=0,max=99"`
-	Name       string  `json:"name"`
-	Lat        float64 `json:"lat"`
-	Lng        float64 `json:"lng"`
+	Code            string  `json:"code" binding:"required"`
+	Kind            string  `json:"kind" binding:"required,oneof=P MH TW CLS TBX"`
+	PrvCode         string  `json:"prvCode" binding:"required,len=6"`
+	CityPrefix      string  `json:"cityPrefix" binding:"required,min=3,max=5"`
+	GridCode        int16   `json:"gridCode" binding:"min=0,max=99"`
+	Name            string  `json:"name"`
+	Lat             float64 `json:"lat"`
+	Lng             float64 `json:"lng"`
+	LifecycleStatus string  `json:"lifecycleStatus" binding:"omitempty,oneof=PLANNED IN_BUILD IN_SERVICE"`
 }
 
 // odnSegmentReq 光缆段落新建请求体(端点顺序任意,服务端按规范 5.2 定向)。

@@ -46,21 +46,26 @@ func odnGetFacilityHandler(a *app.Application) gin.HandlerFunc {
 	}
 }
 
-// odnCreateFacilityHandler POST /odn/facilities:新建设施。
+// odnCreateFacilityHandler POST /odn/facilities:新建设施(lifecycleStatus 留空由域层补 PLANNED)。
 func odnCreateFacilityHandler(a *app.Application) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var req odnFacilityReq
 		if !httpx.BindAndValidate(c, &req) {
 			return
 		}
+		lc, err := odn.NormalizeCreateLifecycle(req.LifecycleStatus)
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
 		f := odn.Facility{Code: req.Code, Kind: req.Kind, PrvCode: req.PrvCode,
 			CityPrefix: req.CityPrefix, GridCode: req.GridCode, Name: req.Name,
-			Lat: req.Lat, Lng: req.Lng}
+			Lat: req.Lat, Lng: req.Lng, LifecycleStatus: lc}
 		if err := a.ODN.CreateFacility(c.Request.Context(), f); err != nil {
 			respondErr(c, err)
 			return
 		}
-		respond(c, apitypes.CodeOK, gin.H{"code": f.Code})
+		respond(c, apitypes.CodeOK, gin.H{"code": f.Code, "lifecycleStatus": lc})
 	}
 }
 
