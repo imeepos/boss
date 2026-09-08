@@ -1,5 +1,7 @@
 // 投资测算表头与成本单元格:两行表头(网格 | 设施数×生命周期 | 覆盖地址数 | 成本两列)。
 // 排序交互:点击数值列头切换升降序;未登记(null)恒排尾部。口径 fields.md 1.5.11。
+// 备注:表头两行含 rowSpan/colspan,保留原生 <thead>/<tr>/<th> 写法(非「裸 table」模式);
+// body 走 ui-table/TableCell,TD_CLS 仍导出供各 view 注入 className 保留 hover 反馈.
 import { useT } from '../../../i18n'
 import { formatCurrency } from '../../../components/business/charts/format-value'
 import type { GridInvestmentRow } from '../types'
@@ -21,6 +23,7 @@ export function gridLabel(r: GridInvestmentRow): string {
 }
 
 const TH_CLS = 'h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]'
+/** 表格行单元格样式(供各 view 在 TableCell className 注入),保留 hover 反馈。 */
 export const TD_CLS = 'h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]'
 
 function SortHead({ label, sortKey, sort, onSort, span }: {
