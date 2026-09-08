@@ -4,7 +4,7 @@ import { useT } from '../../../i18n'
 import { apiFetch } from '../../../api/client'
 import { PageHead } from '../../org/shared'
 import { ErrorBanner, ToolbarButton } from '../../../components/business'
-import { CardShell } from '../../../components/business/charts'
+import { CardShell, StatCard } from '../../../components/business/charts'
 import type { CSMetrics } from '../types'
 import type { ARMetrics } from '../../billing/types'
 
@@ -44,10 +44,7 @@ export default function ServiceMetricsPage() {
       {error && <ErrorBanner message={error} />}
       <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-4">
         {csCards?.map(([label, value]) => (
-          <div key={label} className="rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] p-4">
-            <div className="text-xs text-[var(--shell-group-title)]">{label}</div>
-            <div className="mt-2 text-2xl font-semibold text-[var(--shell-heading)]">{value}</div>
-          </div>
+          <StatCard key={label} label={label} value={value} />
         ))}
       </div>
       <div className="grid gap-4 xl:grid-cols-2">

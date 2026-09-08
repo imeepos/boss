@@ -15,6 +15,7 @@ import { fmtTime } from '../../../lib/format'
 import { pageSlice, type ComplaintRow, type CSMetrics } from '../types'
 import { useConfirm } from '../../../components/ConfirmDialog'
 import { TableStateRow, LoadingState, EmptyState } from '../../../components/business'
+import { StatCard } from '../../../components/business/charts'
 
 interface TicketEvent {
   id: number
@@ -107,7 +108,7 @@ export default function ComplaintPage() {
         {[
           [c.columns[1], metrics.openCount], [c.columns[4], metrics.processingCount],
           [c.columns[3], metrics.slaBreachedOpen], [c.columns[5], metrics.avgCloseHours.toFixed(1) + 'h'],
-        ].map(([label, value]) => <div key={String(label)} className="rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] p-3"><div className="text-xs text-[var(--shell-group-title)]">{label}</div><div className="mt-1 text-xl font-semibold text-[var(--shell-heading)]">{value}</div></div>)}
+        ].map(([label, value]) => <StatCard key={String(label)} label={String(label)} value={value} />)}
       </div>}
       <Card>
         <div className="flex flex-wrap items-center gap-2 p-4">
