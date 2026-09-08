@@ -93,6 +93,7 @@ ssh imeepos@192.168.0.102 'crontab -l 2>/dev/null | grep -v "deploy-guard-alert"
 | ETL 逾期自动派单 | 服务端循环 | 周期轮询 | `internal/app/etl_autodispatch_loop.go` | 已内建 |
 | 孤儿巡检门禁 | 102 cron | 每日 08:10 | `db-patrol-gate.sh`(见上) | 已装 |
 | 部署静默停摆巡检 | 102 cron | 每日 08:25 | `deploy-guard-alert.sh`(见下,新 2026-09) | 本批安装 |
+| **部署卡死看门狗** | 102 cron | 每 5 分钟 | `deploy-watchdog.sh`(见下,新 2026-09-08) | 已装(token 缺先纯告警态,自动 retrigger 待 token) |
 | 备份 | 102 cron | 每日 03:30 | `/backup/jobs` | 已装 |
 | Stripe 隧道守卫+告警 | 102 cron | 每 3 分钟 | `stripe-tunnel-url.sh`(refType=stripe_tunnel) | 已装 |
 | **SLO 巡航采集+告警** | 102 cron | 每日 03:40 | `slo-cruise.sh`(refType=slo_cruise,新 2026-09) | 本批安装 |
@@ -187,3 +188,49 @@ volces 云凭据刻意不含)兜底 act_runner 拉私仓 401,容器重建即丢�
 - 根因:/srv/fast(234G,docker data-root 所在)100% 满——Build Cache 117.7GB 全部可回收(2335 条,CI 逐次构建累积);gitea-postgres 因 `No space left on device` PANIC 崩溃循环(failing streak 471),gitea 查公钥必读库→认证全拒。
 - 处置:`docker builder prune -f`(回收 117.6GB)→`docker image prune -f`(1.5GB)→`docker restart gitea-postgres && docker restart gitea`→postgres healthy、push 恢复。数据卷一律未动。
 - 预防建议:每周 `docker builder prune -f` 加进 crontab(与 db-patrol-gate 同机制);巡检脚本加一条 `df -h /srv/fast` 使用率>85% 告警。
+
+## 部署卡死看门狗(deploy-watchdog,2026-09-08 追加)
+
+来源:C1 缺陷——act_runner 0.2.11 网络抖动时拉到 deploy 任务却无 job 容器、无错误行,
+任务卡死需人工 retrigger(W4/W7 两次阻断在案,ISSUE.md CI/deploy-102)。方案与批复
+全文见 docs/ops/deploy-watchdog.md。机制:
+
+- 检测(只读):gitea 库直查(`docker exec gitea-postgres psql`,免 API token)
+  deploy job waiting/running 且 run 同态、age>阈值(默认 900s,DEPLOY_WATCHDOG_THRESHOLD_SEC
+  可调),且宿主无 `GITEA-ACTIONS-TASK-<task_id>` 容器 → 判「已领取无容器」卡死;
+- 动作白名单(红线:绝不 docker restart/stop runner):①token 就位时经 Gitea API
+  workflow_dispatch 对 main 重触发(deploy-102.yml 已增 workflow_dispatch 触发器,
+  concurrency cancel-in-progress 自动取消卡死旧 run);②`[deploy-watchdog]` 可 grep
+  告警(行内含 task_id 与 action)。token 缺失自动降级纯告警态;
+- 防误报/防风暴六闸门:task_id>0 才动手、同 job 幂等一次、30min 冷却
+  (DEPLOY_WATCHDOG_COOLDOWN_SEC)、24h 上限 4 次(DEPLOY_WATCHDOG_DAILY_CAP)、
+  run 终态残留不触发、正常时输出 `[deploy-watchdog] OK` 零动作;
+- 状态目录:/home/imeepos/boss-deploy-state/watchdog-handled/ 与 watchdog-retriggers/。
+
+### 安装(102,~/boss 为导出树,口径同 db-patrol-gate)
+
+```bash
+scp scripts/ops/deploy-watchdog.sh imeepos@192.168.0.102:~/boss/scripts/ops/
+ssh imeepos@192.168.0.102 '(crontab -l 2>/dev/null | grep -v deploy-watchdog; \
+  echo "*/5 * * * * cd /home/imeepos/boss && ./scripts/ops/deploy-watchdog.sh >> /tmp/deploy-watchdog.log 2>&1 # deploy-watchdog") | crontab -'
+```
+
+### 升级到自动 retrigger 态(待负责人放置 token 后)
+
+```bash
+# 负责人在 Gitea 后台生成 token(scope: repo 读写 sker/boss)后:
+ssh imeepos@192.168.0.102 'install -m 600 /dev/null /home/imeepos/gitea/runner/watchdog-token && echo "<token>" > /home/imeepos/gitea/runner/watchdog-token'
+# 验证:构造卡死场景走 --selftest;真实通道手工 dispatch 一次:
+#   curl -s -o /dev/null -w '%{http_code}\n' -X POST \
+#     -H "Authorization: token $(cat .../watchdog-token)" -H 'Content-Type: application/json' \
+#     -d '{"ref":"main"}' http://192.168.0.102:3001/api/v1/repos/sker/boss/actions/workflows/deploy-102.yml/dispatches
+#   2xx 即通道通(gitea UI 出现新 run)。
+```
+
+### 自检与卸载
+
+- 自检(离线零副作用): `./scripts/ops/deploy-watchdog.sh --selftest`(八断言:
+  降级告警/幂等抑制/容器在跑/终态残留过滤/未领取告警/dispatch 路径/状态落盘/冷却抑制);
+- 真实环境只读巡检: `--dry-run`(psql+docker 全走,只打印不动作);
+- 卸载: 删 crontab 行 + 删 ~/boss/scripts/ops/deploy-watchdog.sh 即全下线,仓库 revert
+  单提交;对 runner/部署链零耦合。
