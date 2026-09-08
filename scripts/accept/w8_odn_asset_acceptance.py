@@ -143,13 +143,12 @@ def create_asset(batch_id, tag):
 
 def create_facility(suffix):
     code = "CLS9" + str(random.randint(1000, 9999))
-    st, body = http("POST", "/odn/facilities", {"code": code, "kind": "CLS", "name": "W8ACC-" + suffix, "prvCode": "PHL001", "cityPrefix": "MNL"})
+    # T2 起 PLANNED 是创建 API 显式入参,不再 psql 直设;入施工单须 PLANNED(1.5.8 前置),
+    # 开工/竣工翻转仍走真实 API(W4 同款)。
+    st, body = http("POST", "/odn/facilities", {"code": code, "kind": "CLS", "name": "W8ACC-" + suffix, "prvCode": "PHL001", "cityPrefix": "MNL", "lifecycleStatus": "PLANNED"})
     if st != 200 or not body or body.get("code") != 0:
         bad("create facility " + suffix, str(body))
         return None
-    # 新建设施缺省 IN_SERVICE,入施工单须 PLANNED(1.5.8 前置);验收造数经 psql 直设,
-    # 开工/竣工翻转仍走真实 API(W4 同款)。
-    psql("UPDATE odn_facility SET lifecycle_status = " + q("PLANNED") + " WHERE code = " + q(code))
     return code
 
 

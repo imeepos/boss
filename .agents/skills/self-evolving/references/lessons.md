@@ -33,6 +33,8 @@
 - 当本机没有 psql 却要查/改远端 PG 时，修复是 /tmp 临时 go 程序 + pgx 直连 DSN（configs/config.example.yaml 有现成连接串），迁移文件是纯 SQL 可整文件 Exec。skill 没提前警告我。
 - 当在 --no-checkout 的 worktree 里提交时，修复是先 git status --porcelain 确认 index 完整（满屏 D = index 为空，commit 会删整树），或放弃 --no-checkout 用完整检出。skill 没提前警告我。
 - 当 DSH 零参工具（get_goal/session_link_list 等）报 binding arguments must be lossless JSON 时，修复是显式传空对象 {} 而不是不传参。skill 没提前警告我。
+- 当 PG 报 SQLSTATE 58P01（could not access file $libdir/xxx）时，修复是查容器文件系统里扩展 .so 是否存在（docker exec find /usr -name postgis*）——pg_extension 元数据在 ≠ 库文件在，postgis 懒加载使故障潜伏到首个空间函数调用才炸；compose override 钉私有镜像时必须逐项核对权威定义的能力前提（0012 事故）。skill 没提前警告我。
+- 当 compose 多文件叠加（-f infra.yml -f 102.yml）且同名服务都定义 image 时，修复是以 docker inspect 的 com.docker.compose.project.config_files 标签查实际生效组合——override 的 image 赢，权威文件写了也会被覆盖。skill 没提前警告我。
 - 当新增数据库迁移文件时,修复是先 `ls migrations/*.up.sql | tail -5` 确认真实最大编号——`ls | head` 截断列表曾让我险些撞号 000031(已被 order_no_seq 占用);代码注释里的迁移号(internal/domain/order/pg.go)也要 grep 交叉验证。
 - 当 CI 全新 clone 后 compose up 报 env file not found 时,修复是 workflow 里从 example 生成 env 文件、密钥从 gitea repo secret 注入、缺失即 fail fast——被 .gitignore 的文件在无人值守环境必然缺失。
 - 当验证 CI 部署结果时,修复是看 actions 日志或比对镜像 tag(GITHUB_SHA),curl healthz 只证明"有容器活着"——部署在 compose up 前失败时旧容器照常应答 ok。
@@ -575,3 +577,5 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 当用户报"某页面交互与全站不一致"时,改完 UI 必须把对应 API 真实调用一遍(或 UI E2E 全链路点保存):交互入口没人走过的功能可能后端早已静默瘫痪,UI 只是显影剂(2026-09-09 许可单抽屉轮挖出 POST /odn/permits 未关联 23502)。
 - 验证线上前端 bundle 是否含新代码:先确认目标代码所在 chunk——路由组件是 lazy 的,grep index-*.js 恒为 0,要从 index 里的 chunk 映射找 `permits-*.js` 这类路由 chunk 再 grep 特征串。
 - cdp-capture --eval 传多步断言时顶层 await 会 SyntaxError,定时等待用 `new Promise(r=>setTimeout(()=>r({...}),ms))` 形态。
+- 当 vite dev 端口被占自动 +1 而 CDP 采了旧端口时,截到的是占端口应用的页面(像"页面坏了"),修复是先 curl 目标端口 HTML 核对特征串再采集,或读 dev job 输出拿真实端口。
+- 当 git worktree remove 卡 node_modules 超时被杀时,worktree 会停在半拆状态(--force 才能收尾),修复是大 worktree 删除直接 run_in_background,不开前台。
