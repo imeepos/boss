@@ -854,6 +854,13 @@ export interface Translations {
       refundConfirm: string
       refundOk: string
       confirmText: string
+      /** 全额退款弹层(000112;后端 reason 必填)。 */
+      refundTitle: string
+      refundReason: string
+      refundReasonPh: string
+      refundReasonRequired: string
+      refundReasonHint: string
+      refundSubmit: string
     }
     /** 柜台日结(纪要 2026-08-28:T+0 只读汇总+实点回填)。 */
     dailyClose: {
