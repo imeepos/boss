@@ -103,20 +103,8 @@ func chainAnchorName(rec *ChainRecord) string {
 	return "链锚"
 }
 
-// nextFacilityCodeTx 事务内下一设施编码(与 NextFacilityCode 同口径:现存 MAX+1)。
+// nextFacilityCodeTx 事务内下一设施编码(与 NextFacilityCode 同口径:现存 MAX+1,
+// 序号段按 facilitySeq.offset/digits 精确切片,共用 nextFacilityCode 免口径分叉)。
 func nextFacilityCodeTx(ctx context.Context, tx pgx.Tx, kind string, gridCode int16) (string, error) {
-	pattern, _, limit, err := facilitySeqSpec(kind, gridCode)
-	if err != nil {
-		return "", err
-	}
-	var maxSeq int
-	if err := tx.QueryRow(ctx,
-		`SELECT COALESCE(MAX(SUBSTRING(code FROM '[0-9]+$')::int),0) FROM odn_facility WHERE code ~ $1`,
-		pattern).Scan(&maxSeq); err != nil {
-		return "", fmt.Errorf("odn: next tx facility code: %w", err)
-	}
-	if maxSeq+1 > limit {
-		return "", fmt.Errorf("%w: %s 编号已用尽", ErrGridFull, kind)
-	}
-	return FormatFacilityCode(kind, gridCode, maxSeq+1), nil
+	return nextFacilityCode(ctx, tx, kind, gridCode)
 }

@@ -2235,3 +2235,19 @@
 - vi.mock i18n 最小 mock 会漏被渲染子组件的 common 键:ErrorBanner→CopyButton 要 common.copy/copied、ConfirmProvider 要 common.confirmDialog、TableStateRow 要 common.loading、AttachmentPickerDialog 要 pages.importer——用 Proxy 兜底键名(k in t ? t[k] : k)防 undefined 崩,再把已知键补上。
 - params 页行文案 = paramLabel(desc||key),DOM 找行按 desc 找不按 key。
 - CI 只部署 main(deploy-102.yml branches:[main]),feat 分支的新前端断言只能「本地 vite preview 生产构建 + 102 真后端」(ux-final W3 先例),102:5180 仅核对 Last-Modified/hash 说明部署态。
+
+## 2026-09-08 C1 部署通道看门狗轮
+- 哪个坑浪费了最多时间？无大坑。两点小摩擦：①edit 工具按路径精确跟踪已读状态——主树读过的文件，worktree 同名副本仍要先 read 再 edit（红线1再次生效，工具当场拦截未浪费轮次）；②session_link_talk 首次批复回复被截断（止于"批复："），补发追问拿全量批复后才动工——报批往返必须校验回复完整性，半截批复当批准是事故。
+- skill 有没有提前预警？红线1（先读再改）、红线12（printenv 探测防 set -u）、红线9（SQL 经 ssh 用 heredoc 单引号）全部提前命中，零违例。
+- 重来一次会怎么做？相同路径。新增两条可复用经验已值得沉淀：①psql -At 的字段分隔符别用 tab 当 IFS——tab 是 IFS 空白字符，read 会折叠连续 tab，NULL 字段（如 task_id）导致列串位，用 -F '|' 等非空白分隔符；②gitea 侧免 token 观测通道：宿主 docker exec gitea-postgres 直读 action_run_job/action_run（status 枚举 0-7），job 容器命名 GITEA-ACTIONS-TASK-<task_id>（strings 二进制可实证），这两条是 gitea CI 运维通用抓手，应进 references/knowledge/实施.md。
+
+## 2026-09-09 许可单新建改抽屉(顺手挖出后端全量瘫痪)
+- **哪个坑浪费了最多时间?** production bundle 验证走弯路:index-*.js 里 grep 新文案为 0,差点误判部署失败——lazy 路由代码在 permits-qKi3706K.js 独立 chunk 里。下次验证线上 bundle 先想清楚目标代码落在哪个 chunk(路由级 code-split),别只盯 index。
+- **skill 有没有提前预警?** 红线 7(模型不能读图)第三次命中,这次直接改走 DOM 断言+特征串 grep,零浪费。红线 26(Dropdown 选项 onMouseDown)命中一次,开工前 grep 了 techniques 避开。cdp --eval 顶层 await 会 SyntaxError,要用 `new Promise(r=>setTimeout(...))` 形态(本次踩了一次)。
+- **重来一次会怎么做?** 一样的顺序:先读同域同类页(ResourceDrawer/CreateLinkDrawer)定模式,再写抽屉组件。额外收获:用户报 UI 问题的任务,做完 UI 顺手必须真实点一遍 API 全链路——本次就这么挖出 POST /odn/permits 未关联项目必炸 50000(旧内联表单同样命中,只是从没人点过保存)。修后端时的标准动作全用上了:容器日志 grep 告警行 → psql BEGIN/ROLLBACK 探针验证 SQL → COALESCE 修复 → DSN 守卫集成测试(SSH 隧道 25432)→ CI 部署后 curl 实测。集成测试断言 st.PermitNo 非空还顺带揪出 RETURNING 缺 permit_no 的暗坑。
+
+## 2026-09-09 T1 取号端点修复(SUBSTRING 序号口径两段缺陷)
+- **哪个坑浪费了最多时间?** 二段缺陷的发现-定位闭环:第一段(网格位并入序号)修完单测全绿、102 部署后端点却对一切网格返回 001——第二段是 PG 对 SUBSTRING 裸位置参数的重载推断(text→POSIX 正则变体→切片恒 NULL),pgxmock 只校验 SQL 文本和参数个数根本拦不住。浪费约 20 分钟的误区是先怀疑「部署了旧镜像/连错库」,其实首轮 psql PREPARE 显式 (text,int,int) 复核通过就是假阳性伏笔。正解闭环=用与服务器同驱动的 pgx 客户端直发 SQL 复现 → ::int 显式定型 → DSN 门控集成测试守真实驱动路径。
+- **skill 有没有提前预警?** 部分有:后端.md 早有「pgxmock 拦不住,靠真库验收」条目(jsonb/可空列先例),方向对但没覆盖重载推断这类语法层缺陷;worktree 收尾红线(9/24 条)全程零踩。
+- **重来一次会怎么做?** 涉及 SQL 语义的修复,第一轮就把「pgx 客户端直连真库跑新 SQL」纳入本地验证清单,不等部署后 102 实测才暴露;集成测试自清第一版就写成「显式 cleanup + Close」,不依赖 t.Cleanup 的 LIFO 时序(台账已有 lessons #58 还是踩了,下次写集成测试前先 grep 台账)。
+- **额外发现(报负责人)**:102 库 P98001/MH98001/TW98001/P98002 为存量集成测试泄漏物(t.Cleanup 时序坑,非本会话造数,未动);存量 pg_integration_test.go 同坑待修。
