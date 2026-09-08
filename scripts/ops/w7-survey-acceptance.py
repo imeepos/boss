@@ -64,8 +64,8 @@ def check(name, cond, detail=""):
         print("[FAIL] " + name + (": " + str(detail) if detail else ""))
 
 def bootstrap_worker():
-    # 自举师傅夹具(WK-ACC-W7 常驻复用):按 staffNo 解析,缺则经 admin API 创建;
-    # API key 缓存在 /tmp 复用,失效才重签——不创建/删除任何密钥,规避并行验证互踩。
+    # 自举师傅夹具(WK-ACC-W7,自举+用后即清):按 staffNo 解析既有,缺则经 admin API 创建;
+    # key 现签一次用于本轮,收尾吊销;师傅行收尾清理(自举+用后即清)。
     global WID, WNAME, WKEY
     wl, _ = api("GET", "/api/admin/v1/workers?keyword=WK-ACC-W7")
     items = (wl or {}).get("items") if isinstance(wl, dict) else wl
@@ -86,20 +86,13 @@ def bootstrap_worker():
     w0 = hit[0]
     WID = int(w0["id"])
     WNAME = w0.get("name") or "W7验收师傅"
-    kc = "/tmp/w7-worker-key"
-    if os.path.exists(kc):
-        ck = open(kc).read().strip()
-        if ck and http("GET", "/api/worker/v1/surveys", ck)[0] == 200:
-            WKEY = ck
-            print("[bootstrap] 复用缓存密钥 worker=" + str(WID))
-            return
-    k, _ = api("POST", "/api/admin/v1/api-keys", {"subjectType": "worker", "subjectRef": WID, "name": "w7-persist"})
+
+    k, _ = api("POST", "/api/admin/v1/api-keys", {"subjectType": "worker", "subjectRef": WID, "name": "w7-acc-" + STAMP})
     if not isinstance(k, dict) or not k.get("plainKey"):
         print("[bootstrap] FAIL api key issue")
         sys.exit(1)
     WKEY = k["plainKey"]
-    open(kc, "w").write(WKEY)
-    print("[bootstrap] worker id=" + str(WID) + " 新密钥已缓存")
+    print("[bootstrap] worker id=" + str(WID) + " key 现签")
 
 def probe_ready():
     a = http("GET", "/api/admin/v1/odn/surveys", "no-key")[0]
