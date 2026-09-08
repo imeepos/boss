@@ -1,10 +1,11 @@
 // W7 施工进度卡(F5a):进度上报留痕列表+清单级聚合(挂施工单详情)。
 import { useCallback, useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { Badge } from '../../../components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../../components/ui/table'
+import { Card } from '../../../components/ui/card'
 import { EmptyState, ErrorBanner } from '../../../components/business/page-head'
-import { CARD } from './forms'
 
 interface ProgressEntry {
   id: number
@@ -35,14 +36,18 @@ export function ProgressCard({ projectId }: { projectId: number }) {
       const d = await apiFetch<{ entries: ProgressEntry[]; items: ItemProgress[] }>('/odn/constructions/' + projectId + '/progress')
       setEntries(d?.entries ?? []);
       setItems(d?.items ?? []);
-    } catch (e) { setError(e instanceof Error ? e.message : '加载失败') }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : '加载失败'
+      setError(msg)
+      toast.error('进度上报加载失败', { description: msg })
+    }
   }, [projectId])
   useEffect(() => { void load() }, [load])
 
-  return <div className={CARD + ' p-4'}>
-    <div className='mb-2 flex items-center justify-between'>
-      <div className='text-sm font-semibold'>施工进度上报<span className='ml-2 text-xs font-normal opacity-60'>只增不改留痕;上报人限管理账号或师傅(W7)</span></div>
-      <button className='text-xs text-[var(--color-text-link)]' onClick={() => void load()}>刷新</button>
+  return <Card className="p-4">
+    <div className="mb-2 flex items-center justify-between">
+      <div className="text-sm font-semibold">施工进度上报<span className="ml-2 text-xs font-normal opacity-60">只增不改留痕;上报人限管理账号或师傅(W7)</span></div>
+      <button className="text-xs text-[var(--color-text-link)]" onClick={() => void load()}>刷新</button>
     </div>
     {error && <ErrorBanner message={error} className='mb-2' />}
     {items.length > 0 && <div className='mb-3 flex flex-wrap gap-2'>
@@ -64,5 +69,5 @@ export function ProgressCard({ projectId }: { projectId: number }) {
         </TableRow>)}
       </TableBody>
     </Table></div>}
-  </div>
+  </Card>
 }
