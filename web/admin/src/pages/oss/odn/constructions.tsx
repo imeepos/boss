@@ -6,12 +6,9 @@ import { apiFetch } from '../../../api/client'
 import { Input } from '../../../components/ui/input'
 import { Badge } from '../../../components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../../components/ui/table'
+import { Card } from '../../../components/ui/card'
 import { EmptyState, ErrorBanner, ToolbarButton } from '../../../components/business/page-head'
 import { ConstructionDetail } from './ConstructionDetail'
-
-const CARD = 'rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]'
-const FIELD = 'flex flex-col gap-1'
-const LABEL = 'text-xs text-[var(--shell-content-text)]'
 
 export interface Project {
   id: number
@@ -69,7 +66,11 @@ export default function ConstructionsPanel() {
       toast.success('施工单已创建')
       setProjNo(''); setName(''); setShowCreate(false)
       await load()
-    } catch (e) { setError(e instanceof Error ? e.message : '保存失败') } finally { setBusy(false) }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : '保存失败'
+      setError(msg)
+      toast.error('施工单创建失败', { description: msg })
+    } finally { setBusy(false) }
   }
 
   return <div>
@@ -77,15 +78,17 @@ export default function ConstructionsPanel() {
       <ToolbarButton primary onClick={() => setShowCreate(!showCreate)}>{showCreate ? '取消' : '新建施工单'}</ToolbarButton>
       <ToolbarButton onClick={() => void load()}>刷新</ToolbarButton>
     </div>
-    {showCreate && <div className={CARD + ' mb-3 p-4'}>
-      <div className='grid grid-cols-2 gap-3 md:grid-cols-4'>
-        <label className={FIELD}><span className={LABEL}>施工单号</span><Input value={projNo} onChange={(e) => setProjNo(e.target.value)} placeholder='C-20260907-001' /></label>
-        <label className={FIELD}><span className={LABEL}>名称</span><Input value={name} onChange={(e) => setName(e.target.value)} /></label>
+    {showCreate && <Card className="mb-3">
+      <div className="p-4">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <label className="flex flex-col gap-1"><span className="text-xs text-[var(--shell-content-text)]">施工单号</span><Input value={projNo} onChange={(e) => setProjNo(e.target.value)} placeholder="C-20260907-001" /></label>
+          <label className="flex flex-col gap-1"><span className="text-xs text-[var(--shell-content-text)]">名称</span><Input value={name} onChange={(e) => setName(e.target.value)} /></label>
+        </div>
+        <div className="mt-3 flex justify-end"><ToolbarButton primary disabled={busy} onClick={() => void create()}>{busy ? '保存中…' : '保存'}</ToolbarButton></div>
       </div>
-      <div className='mt-3 flex justify-end'><ToolbarButton primary disabled={busy} onClick={() => void create()}>{busy ? '保存中…' : '保存'}</ToolbarButton></div>
-    </div>}
-    {error && <ErrorBanner message={error} className='mb-3' />}
-    <section className={CARD + ' overflow-hidden'}>
+    </Card>}
+    {error && <ErrorBanner message={error} className="mb-3" />}
+    <Card className="overflow-hidden">
       {rows.length === 0 ? <EmptyState text='暂无施工单' /> : <div className='overflow-x-auto'><Table>
         <TableHeader><TableRow><TableHead>施工单号</TableHead><TableHead>名称</TableHead><TableHead>状态</TableHead><TableHead>承包商</TableHead><TableHead>明细数</TableHead><TableHead>清单金额</TableHead><TableHead>预算执行(已结算/预算)</TableHead><TableHead>操作</TableHead></TableRow></TableHeader>
         <TableBody>
@@ -100,8 +103,8 @@ export default function ConstructionsPanel() {
             <TableCell><button className='text-[var(--color-text-link)]' onClick={() => setOpenId(openId === r.id ? null : r.id)}>{openId === r.id ? '收起' : '详情'}</button></TableCell>
           </TableRow>)}
         </TableBody>
-      </Table></div>}
-    </section>
+      </Table>
+    </Card>
     {openId != null && <ConstructionDetail projectId={openId} onChanged={() => void load()} />}
   </div>
 }
