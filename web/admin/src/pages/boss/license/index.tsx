@@ -3,7 +3,10 @@
 import { useEffect, useState } from 'react'
 import { useT } from '../../../i18n'
 import { PageHead } from '../../org/shared'
-import { ToolbarButton } from '../../../components/business'
+import { ToolbarButton, CopyButton } from '../../../components/business'
+import { Card } from '../../../components/ui/card'
+import { Input } from '../../../components/ui/input'
+import { fmtTime } from '../../../lib/format'
 import { fetchLicenseStatus, activateLicense, type LicenseStatus } from '../../../api/license'
 
 export default function LicensePage() {
@@ -50,9 +53,9 @@ export default function LicensePage() {
   return (
     <div>
       <PageHead title={s.title} desc={s.desc} />
-      <div className="mt-6 max-w-3xl rounded-lg border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] p-6">
+      <Card className="mt-6 max-w-3xl p-6">
         <div className="flex items-center gap-3">
-          <span className={`inline-flex h-2.5 w-2.5 rounded-full ${status?.activated ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+          <span className={`inline-flex h-2.5 w-2.5 rounded-full ${status?.activated ? 'bg-[var(--color-success)]' : 'bg-[var(--color-warning)]'}`} />
           <span className="text-sm font-medium text-[var(--shell-input-text)]">
             {status?.activated ? s.activeState : s.inactiveState}
           </span>
@@ -66,24 +69,29 @@ export default function LicensePage() {
           <Row label={s.fGrace} value={status?.inGrace ? s.inGraceYes : s.inGraceNo} />
         </dl>
         {status?.activated && status?.reason && (
-          <p className="mt-4 text-sm text-red-600">{status.reason}</p>
+          <p className="mt-4 text-sm text-[var(--color-warning)]">{status.reason}</p>
         )}
-      </div>
-      <div className="mt-6 max-w-3xl rounded-lg border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] p-6">
+      </Card>
+      <Card className="mt-6 max-w-3xl p-6">
         <h3 className="text-sm font-medium text-[var(--shell-input-text)]">{s.activateTitle}</h3>
         <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center">
-          <input
+          <Input
             value={code}
             onChange={(e) => setCode(e.target.value)}
             placeholder={s.codePlaceholder}
-            className="h-10 flex-1 rounded-md border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-3 text-sm text-[var(--shell-input-text)] outline-none"
+            className="flex-1"
           />
           <ToolbarButton primary onClick={submit} disabled={activating || busy}>
             {activating ? s.activating : s.activateBtn}
           </ToolbarButton>
         </div>
-        {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
-      </div>
+        {error && (
+          <div className="mt-3 flex items-center justify-between gap-3">
+            <p className="text-sm break-all text-[var(--color-danger)]">{error}</p>
+            <CopyButton text={error} className="h-6 shrink-0 border-none bg-none px-1 text-[11px]" />
+          </div>
+        )}
+      </Card>
     </div>
   )
 }
@@ -95,10 +103,4 @@ function Row({ label, value }: { label: string; value: string }) {
       <dd className="text-right text-[var(--shell-input-text)]">{value}</dd>
     </div>
   )
-}
-
-function fmtTime(v: string): string {
-  const d = new Date(v)
-  if (Number.isNaN(d.getTime())) return v
-  return d.toLocaleString()
 }
