@@ -920,8 +920,9 @@ App 本地留痕后启动补传；服务端入库即视为成功，App 端成功
 | — | `PasswordHash` | password_hash | TEXT，客户 App 密码哈希；空值不可密码登录 |
 | 登录状态 | `AuthStatus` | auth_status | 1允许登录 / 0禁止登录 |
 | 用户码 | `CustomerCode` | customer_code | VARCHAR(32) UNIQUE,前缀 `C-` 后 8 位 = `id` 左零;四码 `quad.customerCode` 展示字段,对账/扫码/外键仍以 `CustomerID` 为权威(adopted 2026-08-21) |
+| 归属公司名 | `LegalEntityName` | —(读路径 JOIN) | `legalEntityName` 接口回显现值非落库列:列表/详情读路径 LEFT JOIN legal_entities(2026-09-08,data-relations §6.1 销账) |
 
-> 区域锚点（TS 实体）：`region_id`/`region_name`（地址所在经营区域），`legal_entity_id`（归属公司），按地区/企业统计客户；客户搬家/转品牌经 `customer_histories` 台账快照事发区域。
+> 区域锚点（TS 实体）：`region_id`/`region_name`（地址所在经营区域），`legal_entity_id` + `legal_entity_name`（归属公司,id 落库、名称读路径 JOIN 现值,2026-09-08 起），按地区/企业统计客户；客户搬家/转品牌经 `customer_histories` 台账快照事发区域。
 
 #### 2.1.1 用户详情聚合口径（admin `GET /users/{customerId}`，bss/user 详情抽屉，2026-09 收口）
 

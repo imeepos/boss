@@ -48,13 +48,16 @@ type rowScanner interface {
 	Scan(dest ...any) error
 }
 
+// customerFrom 读路径统一 FROM:LEFT JOIN legal_entities 取归属名现值(§6.1,列名随 JOIN 需全限定)。
+const customerFrom = `customers LEFT JOIN legal_entities le ON le.id = customers.legal_entity_id`
+
 // address_id 000176 起可空(先建档后补地址),读取统一 COALESCE 归零,扫描侧无感知。
-const customerCols = `id, customer_code, name, phone, id_type, id_no, real_name_status, service_status, COALESCE(address_id, 0) AS address_id, legal_entity_id, region_id, region_name, created_at`
+const customerCols = `customers.id, customers.customer_code, customers.name, customers.phone, customers.id_type, customers.id_no, customers.real_name_status, customers.service_status, COALESCE(customers.address_id, 0) AS address_id, customers.legal_entity_id, COALESCE(le.name, '') AS legal_entity_name, customers.region_id, customers.region_name, customers.created_at`
 
 func scanCustomer(r rowScanner) (*Customer, error) {
 	var c Customer
 	if err := r.Scan(&c.ID, &c.CustomerCode, &c.Name, &c.Phone, &c.IdType, &c.IdNo, &c.RealNameStatus,
-		&c.ServiceStatus, &c.AddressID, &c.LegalEntityID, &c.RegionID, &c.RegionName, &c.CreatedAt); err != nil {
+		&c.ServiceStatus, &c.AddressID, &c.LegalEntityID, &c.LegalEntityName, &c.RegionID, &c.RegionName, &c.CreatedAt); err != nil {
 		return nil, err
 	}
 	return &c, nil
@@ -115,7 +118,7 @@ func (s *PGStore) Create(ctx context.Context, c Customer) (int64, error) {
 // Get 按 id 查客户;未命中返回 ErrCustomerNotFound。
 func (s *PGStore) Get(ctx context.Context, id int64) (*Customer, error) {
 	c, err := scanCustomer(s.db.QueryRow(ctx,
-		`SELECT `+customerCols+` FROM customers WHERE id = $1`, id))
+		`SELECT `+customerCols+` FROM `+customerFrom+` WHERE customers.id = $1`, id))
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, ErrCustomerNotFound
 	}
@@ -130,10 +133,10 @@ func (s *PGStore) Get(ctx context.Context, id int64) (*Customer, error) {
 func (s *PGStore) GetInScope(ctx context.Context, id int64, legalEntityID int64, regionScope string) (*Customer, error) {
 	c, err := scanCustomer(s.db.QueryRow(ctx, `
 		SELECT `+customerCols+`
-		FROM customers
-		WHERE id = $1
-		  AND ($2 = 0 OR legal_entity_id = $2)
-		  AND ($3 = '' OR region_id IN (
+		FROM `+customerFrom+`
+		WHERE customers.id = $1
+		  AND ($2 = 0 OR customers.legal_entity_id = $2)
+		  AND ($3 = '' OR customers.region_id IN (
 			SELECT r.id FROM regions r
 			WHERE r.path <@ text2ltree($3)
 		  ))`, id, legalEntityID, regionScope))
@@ -154,16 +157,16 @@ func (s *PGStore) List(ctx context.Context, q CustomerQuery) ([]Customer, error)
 	}
 	rows, err := s.db.Query(ctx, `
 		SELECT `+customerCols+`
-		FROM customers
-		WHERE ($1 = '' OR name ILIKE '%' || $1 || '%')
-		  AND ($2 = '' OR phone = $2)
-		  AND ($3 = '' OR service_status = $3)
-		  AND ($4 = 0 OR legal_entity_id = $4)
-		  AND ($5 = '' OR region_id IN (
+		FROM `+customerFrom+`
+		WHERE ($1 = '' OR customers.name ILIKE '%' || $1 || '%')
+		  AND ($2 = '' OR customers.phone = $2)
+		  AND ($3 = '' OR customers.service_status = $3)
+		  AND ($4 = 0 OR customers.legal_entity_id = $4)
+		  AND ($5 = '' OR customers.region_id IN (
 			SELECT r.id FROM regions r
 			WHERE r.path <@ text2ltree($5)
 		  ))
-		ORDER BY id
+		ORDER BY customers.id
 		LIMIT $6 OFFSET $7`,
 		q.NameKeyword, q.Phone, q.Status, q.LegalEntityID, q.RegionScope, limit, q.Offset)
 	if err != nil {
