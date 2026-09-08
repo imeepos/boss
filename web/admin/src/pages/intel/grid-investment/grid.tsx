@@ -1,8 +1,11 @@
 // 网格视图:W2 全列 + W5 规划/材料成本(W5 口径 fields.md 1.5.11 口径 5/6)。
+// 表头走 InvestTableHead(两行 rowSpan/colspan,保留自定义),body 走 ui-table/TableCell.
 import { useMemo, useState } from 'react'
 import { useT } from '../../../i18n'
 import { Pagination } from '../../../components/Pagination'
 import { TableStateRow } from '../../../components/business'
+import { Table, TableBody, TableCell, TableRow } from '../../../components/ui/table'
+import { CardFooter } from '../../../components/ui/card'
 import { pagerTexts } from '../../org/shared'
 import { pageSlice } from '../types'
 import type { GridInvestmentRow } from '../types'
@@ -36,34 +39,32 @@ export default function GridView({ rows, busy }: { rows: GridInvestmentRow[]; bu
 
   return (
     <>
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
-          <InvestTableHead sort={sort} onSort={onSort} />
-          <tbody>
-            {slice.map((r) => (
-              <tr key={`${r.prvCode}-${r.cityPrefix}-${r.gridCode}`}>
-                <td className={TD_CLS}>{gridLabel(r)}</td>
-                <td className={TD_CLS}>{r.facilitiesPlanned}</td>
-                <td className={TD_CLS}>{r.facilitiesInBuild}</td>
-                <td className={TD_CLS}>{r.facilitiesInService}</td>
-                <td className={TD_CLS}>{r.facilitiesRetired}</td>
-                <td className={TD_CLS}>{r.coverageServed}</td>
-                <td className={TD_CLS}>{r.coveragePending}</td>
-                <td className={TD_CLS}>{r.coverageUnserved}</td>
-                <td className={TD_CLS}><CostCell v={r.settledCost} /></td>
-                <td className={TD_CLS}><CostCell v={r.plannedCost} /></td>
-                <td className={TD_CLS}><CostCell v={r.materialCost} /></td>
-                <td className={TD_CLS}><CostCell v={r.costPerServed} /></td>
-              </tr>
-            ))}
-            {!slice.length && <TableStateRow colSpan={12} loading={busy} text={a.empty} />}
-          </tbody>
-        </table>
-      </div>
-      <div className="flex justify-end pt-3 text-xs text-[var(--shell-group-title)]">
+      <Table>
+        <InvestTableHead sort={sort} onSort={onSort} />
+        <TableBody>
+          {slice.map((r) => (
+            <TableRow key={`${r.prvCode}-${r.cityPrefix}-${r.gridCode}`}>
+              <TableCell className={TD_CLS}>{gridLabel(r)}</TableCell>
+              <TableCell className={TD_CLS}>{r.facilitiesPlanned}</TableCell>
+              <TableCell className={TD_CLS}>{r.facilitiesInBuild}</TableCell>
+              <TableCell className={TD_CLS}>{r.facilitiesInService}</TableCell>
+              <TableCell className={TD_CLS}>{r.facilitiesRetired}</TableCell>
+              <TableCell className={TD_CLS}>{r.coverageServed}</TableCell>
+              <TableCell className={TD_CLS}>{r.coveragePending}</TableCell>
+              <TableCell className={TD_CLS}>{r.coverageUnserved}</TableCell>
+              <TableCell className={TD_CLS}><CostCell v={r.settledCost} /></TableCell>
+              <TableCell className={TD_CLS}><CostCell v={r.plannedCost} /></TableCell>
+              <TableCell className={TD_CLS}><CostCell v={r.materialCost} /></TableCell>
+              <TableCell className={TD_CLS}><CostCell v={r.costPerServed} /></TableCell>
+            </TableRow>
+          ))}
+          {!slice.length && <TableStateRow colSpan={12} loading={busy} text={a.empty} />}
+        </TableBody>
+      </Table>
+      <CardFooter>
         <Pagination total={sorted.length} page={page} pageSize={pageSize}
           onPage={setPage} onSize={setPageSize} {...pagerTexts(a)} />
-      </div>
+      </CardFooter>
     </>
   )
 }
