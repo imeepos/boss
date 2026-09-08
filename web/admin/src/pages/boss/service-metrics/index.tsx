@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { useT } from '../../../i18n'
 import { apiFetch } from '../../../api/client'
 import { PageHead } from '../../org/shared'
+import { ErrorBanner, ToolbarButton } from '../../../components/business'
 import { CardShell } from '../../../components/business/charts'
 import type { CSMetrics } from '../types'
 import type { ARMetrics } from '../../billing/types'
@@ -38,11 +39,9 @@ export default function ServiceMetricsPage() {
     <div>
       <PageHead title={c.title} desc={c.desc} />
       <div className="mb-4 flex justify-end">
-        <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
+        <ToolbarButton disabled={busy} onClick={load}>{t.pages.audit.refresh}</ToolbarButton>
       </div>
-      {error && (
-        <div className="mb-4 text-sm text-[var(--color-danger)]">{error}</div>
-      )}
+      {error && <ErrorBanner message={error} />}
       <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-4">
         {csCards?.map(([label, value]) => (
           <div key={label} className="rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] p-4">

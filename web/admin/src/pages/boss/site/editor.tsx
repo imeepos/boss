@@ -9,6 +9,7 @@ import { apiFetch } from '../../../api/client'
 import { AttachmentPickerDialog } from '../../../components/AttachmentManager/PickerDialog'
 import { useT, useLocale, localeOptions, type Locale } from '../../../i18n'
 import { PageHead } from '../../org/shared'
+import { CopyButton } from '../../../components/business'
 import { Dropdown } from '../../../components/Dropdown'
 import { Button } from '../../../components/ui/button'
 import { Card } from '../../../components/ui/card'
@@ -66,7 +67,12 @@ export default function SitePostEditorPage() {
   return <div>
     <PageHead title={editing ? s.editTitle : s.newTitle} desc={s.desc} />
     <Card className="p-4">
-      {error && <div className="mb-3 text-sm text-[var(--color-danger)]">{error}</div>}
+      {error && (
+        <div className="mb-3 flex items-start justify-between gap-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">
+          <span className="break-all">{error}</span>
+          <CopyButton text={error} className="h-6 shrink-0 border-none bg-none px-1 text-[11px]" />
+        </div>
+      )}
       <div className="grid gap-3 md:grid-cols-2">
         <label className="text-xs">{s.fTitle}<Input className="mt-1" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></label>
         <label className="text-xs">{s.fSlug}<Input className="mt-1" value={form.slug} placeholder="hello-world" onChange={(e) => setForm({ ...form, slug: e.target.value })} /></label>

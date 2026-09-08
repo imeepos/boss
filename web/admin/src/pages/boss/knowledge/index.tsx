@@ -5,10 +5,15 @@ import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { PageHead, pagerTexts } from '../../org/shared'
+import { ErrorBanner, ToolbarButton } from '../../../components/business'
 import { Pagination } from '../../../components/Pagination'
-import { TableStateRow, ToolbarButton } from '../../../components/business'
+import { TableStateRow } from '../../../components/business'
 import { useConfirm } from '../../../components/ConfirmDialog'
 import { Dropdown } from '../../../components/Dropdown'
+import { Card } from '../../../components/ui/card'
+import { Input } from '../../../components/ui/input'
+import { Textarea } from '../../../components/ui/textarea'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/table'
 
 type Article = {
   id: number; code: string; title: string; content: string
@@ -16,8 +21,6 @@ type Article = {
 }
 
 const emptyForm = { code: '', title: '', content: '', status: 'DRAFT' }
-const inputCls = 'block w-full rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-3 py-2 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--shell-input-border-focus)]'
-const td = 'border-b border-[var(--shell-side-border)] px-3 py-2'
 
 export default function KnowledgePage() {
   const t = useT(); const k = t.pages.knowledgePage; const confirm = useConfirm()
@@ -70,41 +73,42 @@ export default function KnowledgePage() {
     <div className="mb-4 flex justify-end">
       <ToolbarButton primary onClick={() => open()}>{k.create}</ToolbarButton>
     </div>
-    <div className="rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] p-4">
-      {error && <div className="mb-3 text-sm text-[var(--color-danger)]">{error}</div>}
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
-          <thead><tr>{k.columns.map((x) => <th key={x} className="border-b border-[var(--shell-side-border)] px-3 py-2 text-left text-xs">{x}</th>)}</tr></thead>
-          <tbody>
-            {slice.map((a) => <tr key={a.id}>
-              <td className={td}>{a.code}</td>
-              <td className={td}>{a.title}</td>
-              <td className={`${td} max-w-md truncate`}>{a.content}</td>
-              <td className={td}>{stLabel(a.status)}</td>
-              <td className={td}>v{a.version}</td>
-              <td className={td}>
-                <button className="cursor-pointer border-none bg-none text-[13px] text-[var(--shell-content-text)] underline-offset-2 hover:text-[var(--shell-heading)] hover:underline" onClick={() => open(a)}>{k.edit}</button>
-                <button className="ml-3 cursor-pointer border-none bg-none text-[13px] text-[var(--color-danger)] underline-offset-2 hover:underline" onClick={() => remove(a)}>{k.delete}</button>
-              </td>
-            </tr>)}
-            {!slice.length && <TableStateRow colSpan={6} loading={busy} text={k.empty} />}
-          </tbody>
-        </table>
-      </div>
+    <Card className="p-4">
+      {error && <ErrorBanner message={error} />}
+      <Table>
+        <TableHeader>
+          <TableRow>{k.columns.map((x) => <TableHead key={x}>{x}</TableHead>)}</TableRow>
+        </TableHeader>
+        <TableBody>
+          {slice.map((a) => <TableRow key={a.id}>
+            <TableCell>{a.code}</TableCell>
+            <TableCell>{a.title}</TableCell>
+            <TableCell className="max-w-md truncate">{a.content}</TableCell>
+            <TableCell>{stLabel(a.status)}</TableCell>
+            <TableCell>v{a.version}</TableCell>
+            <TableCell>
+              <button className="cursor-pointer border-none bg-none text-[13px] text-[var(--shell-content-text)] underline-offset-2 hover:text-[var(--shell-heading)] hover:underline" onClick={() => open(a)}>{k.edit}</button>
+              <button className="ml-3 cursor-pointer border-none bg-none text-[13px] text-[var(--color-danger)] underline-offset-2 hover:underline" onClick={() => remove(a)}>{k.delete}</button>
+            </TableCell>
+          </TableRow>)}
+          {!slice.length && <TableStateRow colSpan={6} loading={busy} text={k.empty} />}
+        </TableBody>
+      </Table>
       <div className="flex justify-end pt-3">
-        <Pagination total={rows.length} page={page} pageSize={pageSize} onPage={setPage} onSize={setPageSize} {...pagerTexts(k)} />
+        <Pagination total={rows.length} page={page} pageSize={pageSize}
+          onPage={setPage} onSize={(s) => { setPageSize(s); setPage(1) }} {...pagerTexts(k)} />
       </div>
-    </div>
-    {editing !== undefined ? <div className="mt-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] p-4">
+    </Card>
+    {editing !== undefined ? <Card className="p-4">
       <div className="grid gap-3 md:grid-cols-2">
-        <label className="text-xs">{k.fCode}<input className={`mt-1 ${inputCls}`} value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} /></label>
-        <label className="text-xs">{k.fTitle}<input className={`mt-1 ${inputCls}`} value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></label>
-        <label className="text-xs md:col-span-2">{k.fContent}<textarea className={`mt-1 min-h-32 ${inputCls}`} value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} /></label>
+        <label className="text-xs">{k.fCode}<Input className="mt-1" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} /></label>
+        <label className="text-xs">{k.fTitle}<Input className="mt-1" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></label>
+        <label className="text-xs md:col-span-2">{k.fContent}<Textarea className="mt-1 min-h-32" value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} /></label>
         <label className="text-xs">{k.fStatus}
           <div className="mt-1"><Dropdown value={form.status} options={statusOptions} onChange={(value) => setForm({ ...form, status: value })} ariaLabel={k.fStatus} /></div>
         </label>
       </div>
-      <div className="mt-4"><ToolbarButton primary disabled={busy} onClick={save}>{k.save}</ToolbarButton></div>
-    </div> : null}
+      <div className="mt-4"><ToolbarButton primary disabled={busy} onClick={save}>{busy ? t.pages.account.submitting : k.save}</ToolbarButton></div>
+    </Card> : null}
   </div>
 }

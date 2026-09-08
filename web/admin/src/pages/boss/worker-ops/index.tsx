@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { PageHead, pagerTexts } from '../../org/shared'
+import { ErrorBanner, IdRef } from '../../../components/business'
 import { StatusTag } from '../../../components/StatusTag'
 import { Pagination } from '../../../components/Pagination'
 import { NoticesTab } from '../message/NoticesTab'
@@ -11,6 +12,8 @@ import type { DispatchTicketRow } from '../types'
 import type { MaintenanceRow } from '../../oss/types'
 import { TableStateRow } from '../../../components/business'
 import { TabBar } from '../../../components/business/tab-bar'
+import { Card } from '../../../components/ui/card'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/table'
 
 export default function WorkerOpsPage() {
   const t = useT()
@@ -38,6 +41,7 @@ export default function WorkerOpsPage() {
 
   const maintSlice = pageSlice(maints, page, pageSize)
   const hallSlice = pageSlice(pool, page, pageSize)
+  const resetPage = (s: number) => { setPageSize(s); setPage(1) }
 
   return (
     <div>
@@ -47,63 +51,62 @@ export default function WorkerOpsPage() {
         value={tab}
         onChange={(k) => { setTab(k); setPage(1) }}
       />
-      {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : tab === 'notice' ? (
+      {error ? <ErrorBanner message={error} /> : tab === 'notice' ? (
         <NoticesTab t={t.pages.message} />
       ) : tab === 'maint' ? (
-        <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
-          <div className="overflow-x-auto px-4 pb-4">
-            <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
-              <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>
-                <th className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{t.pages.devicePage.maintColumns[0]}</th><th className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{t.pages.devicePage.maintColumns[1]}</th>
-                <th className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{t.pages.devicePage.maintColumns[2]}</th><th className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{t.pages.devicePage.maintColumns[3]}</th>
-                <th className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{t.pages.devicePage.maintColumns[4]}</th><th className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{t.pages.devicePage.maintColumns[5]}</th>
-                <th className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{t.pages.devicePage.maintColumns[6]}</th>
-              </tr></thead>
-              <tbody>
+        <Card>
+          <div className="px-4 pb-4">
+            <Table>
+              <TableHeader>
+                <TableRow>{t.pages.devicePage.maintColumns.map((x: string) => <TableHead key={x}>{x}</TableHead>)}</TableRow>
+              </TableHeader>
+              <TableBody>
                 {maintSlice.map((m) => (
-                  <tr key={m.id}>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{m.deviceNo}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{m.deviceType || '—'}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{m.healthScore}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{m.faultCount}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{m.ageYears ?? '—'}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><StatusTag domain="maintPriority" value={m.priority} /></td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{m.reason || '—'}</td>
-                  </tr>
+                  <TableRow key={m.id}>
+                    <TableCell>{m.deviceNo}</TableCell>
+                    <TableCell>{m.deviceType || '—'}</TableCell>
+                    <TableCell>{m.healthScore}</TableCell>
+                    <TableCell>{m.faultCount}</TableCell>
+                    <TableCell>{m.ageYears ?? '—'}</TableCell>
+                    <TableCell><StatusTag domain="maintPriority" value={m.priority} /></TableCell>
+                    <TableCell className="whitespace-normal">{m.reason || '—'}</TableCell>
+                  </TableRow>
                 ))}
                 {!maintSlice.length && <TableStateRow colSpan={7} text={w.empty} />}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
           <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
             <Pagination total={maints.length} page={page} pageSize={pageSize}
-              onPage={setPage} onSize={setPageSize} {...pagerTexts(w)} />
+              onPage={setPage} onSize={resetPage} {...pagerTexts(w)} />
           </div>
-        </div>
+        </Card>
       ) : (
-        <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
-          <div className="overflow-x-auto px-4 pb-4">
-            <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
-              <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{w.hallColumns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
-              <tbody>
+        <Card>
+          <div className="px-4 pb-4">
+            <Table>
+              <TableHeader>
+                <TableRow>{w.hallColumns.map((x) => <TableHead key={x}>{x}</TableHead>)}</TableRow>
+              </TableHeader>
+              <TableBody>
                 {hallSlice.map((x) => (
-                  <tr key={x.ticketId}>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.ticketNo}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]" title={'orderId=' + x.orderId}>#{x.orderId}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.regionName || `#${x.regionId}`}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.legalEntityName || `#${x.legalEntityId}`}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><StatusTag domain="ticket" value={x.status} /></td>
-                  </tr>
+                  <TableRow key={x.ticketId}>
+                    <TableCell>{x.ticketNo}</TableCell>
+                    <TableCell><IdRef value={x.orderId} /></TableCell>
+                    <TableCell>{x.regionName || `#${x.regionId}`}</TableCell>
+                    <TableCell>{x.legalEntityName || `#${x.legalEntityId}`}</TableCell>
+                    <TableCell><StatusTag domain="ticket" value={x.status} /></TableCell>
+                  </TableRow>
                 ))}
                 {!hallSlice.length && <TableStateRow colSpan={5} text={w.empty} />}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
           <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
             <Pagination total={pool.length} page={page} pageSize={pageSize}
-              onPage={setPage} onSize={setPageSize} {...pagerTexts(w)} />
+              onPage={setPage} onSize={resetPage} {...pagerTexts(w)} />
           </div>
-        </div>
+        </Card>
       )}
     </div>
   )

@@ -6,9 +6,12 @@ import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { useT, useLocale } from '../../../i18n'
 import { PageHead } from '../../org/shared'
-import { TableStateRow } from '../../../components/business'
+import { ErrorBanner, ToolbarButton, TableStateRow } from '../../../components/business'
 import { useConfirm } from '../../../components/ConfirmDialog'
 import { Dropdown } from '../../../components/Dropdown'
+import { Card } from '../../../components/ui/card'
+import { Input } from '../../../components/ui/input'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/table'
 
 type Cat = {
   id: number; code: string; name: string; names?: Record<string, string>
@@ -18,7 +21,6 @@ type Cat = {
 type Form = Pick<Cat, 'code' | 'name' | 'sortNo' | 'enabled'> & { names: Record<string, string> }
 
 const emptyForm: Form = { code: '', name: '', names: {}, sortNo: 0, enabled: true }
-const inputCls = 'h-8 w-full rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]'
 
 const isConflict = (e: unknown) => e instanceof Error && e.message.includes('40900')
 
@@ -71,52 +73,51 @@ export default function SiteCategoriesPage() {
     }
   }
 
-  const td = 'border-b border-[var(--shell-side-border)] px-3 py-2'
   // 名称列按界面语言展示本地化名(缺覆盖回退默认名)。
   const localName = (c: Cat) => c.names?.[locale] || c.name
   return <div>
     <PageHead title={s.title} desc={s.desc} />
     <div className="mb-4 flex justify-end">
-      <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)]" onClick={() => open()}>{s.create}</button>
+      <ToolbarButton primary onClick={() => open()}>{s.create}</ToolbarButton>
     </div>
-    <div className="rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] p-4">
-      {error && <div className="mb-3 text-sm text-[var(--color-danger)]">{error}</div>}
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
-          <thead><tr>{s.columns.map((x) => <th key={x} className="border-b border-[var(--shell-side-border)] px-3 py-2 text-left text-xs">{x}</th>)}</tr></thead>
-          <tbody>
-            {rows.map((c) => <tr key={c.id}>
-              <td className={td}>{c.code}</td>
-              <td className={td}>{localName(c)}</td>
-              <td className={td}>{c.sortNo}</td>
-              <td className={td}>{c.enabled ? s.enabledOn : s.enabledOff}</td>
-              <td className={td}>
-                <button className="cursor-pointer border-none bg-none text-[13px] text-[var(--shell-content-text)] underline-offset-2 hover:text-[var(--shell-heading)] hover:underline" onClick={() => open(c)}>{s.edit}</button>
-                <button className="ml-3 cursor-pointer border-none bg-none text-[13px] text-[var(--color-danger)] underline-offset-2 hover:underline" onClick={() => remove(c)}>{s.delete}</button>
-              </td>
-            </tr>)}
-            {!rows.length && <TableStateRow colSpan={5} loading={busy} text={s.empty} />}
-          </tbody>
-        </table>
-      </div>
-    </div>
+    <Card className="p-4">
+      {error && <ErrorBanner message={error} />}
+      <Table>
+        <TableHeader>
+          <TableRow>{s.columns.map((x) => <TableHead key={x}>{x}</TableHead>)}</TableRow>
+        </TableHeader>
+        <TableBody>
+          {rows.map((c) => <TableRow key={c.id}>
+            <TableCell>{c.code}</TableCell>
+            <TableCell>{localName(c)}</TableCell>
+            <TableCell>{c.sortNo}</TableCell>
+            <TableCell>{c.enabled ? s.enabledOn : s.enabledOff}</TableCell>
+            <TableCell>
+              <button className="cursor-pointer border-none bg-none text-[13px] text-[var(--shell-content-text)] underline-offset-2 hover:text-[var(--shell-heading)] hover:underline" onClick={() => open(c)}>{s.edit}</button>
+              <button className="ml-3 cursor-pointer border-none bg-none text-[13px] text-[var(--color-danger)] underline-offset-2 hover:underline" onClick={() => remove(c)}>{s.delete}</button>
+            </TableCell>
+          </TableRow>)}
+          {!rows.length && <TableStateRow colSpan={5} loading={busy} text={s.empty} />}
+        </TableBody>
+      </Table>
+    </Card>
 
-    {editing !== undefined && <div className="mt-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] p-4">
+    {editing !== undefined && <Card className="mt-0 p-4">
       <div className="grid max-w-2xl gap-3 md:grid-cols-2">
-        <label className="text-xs">{s.fCode}<input className={inputCls + ' mt-1'} value={form.code} placeholder={s.fCodePh} onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })} /></label>
-        <label className="text-xs">{s.fName}<input className={inputCls + ' mt-1'} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></label>
-        <label className="text-xs">{s.fNameZh}<input className={inputCls + ' mt-1'} value={form.names['zh-CN'] ?? ''} onChange={(e) => setForm({ ...form, names: { ...form.names, 'zh-CN': e.target.value } })} /></label>
-        <label className="text-xs">{s.fNameEn}<input className={inputCls + ' mt-1'} value={form.names['en-US'] ?? ''} onChange={(e) => setForm({ ...form, names: { ...form.names, 'en-US': e.target.value } })} /></label>
-        <label className="text-xs">{s.fNameMy}<input className={inputCls + ' mt-1'} value={form.names['ms-MY'] ?? ''} onChange={(e) => setForm({ ...form, names: { ...form.names, 'ms-MY': e.target.value } })} /></label>
-        <label className="text-xs">{s.fSort}<input className={inputCls + ' mt-1'} type="number" value={form.sortNo} onChange={(e) => setForm({ ...form, sortNo: Number(e.target.value) })} /></label>
+        <label className="text-xs">{s.fCode}<Input className="mt-1" value={form.code} placeholder={s.fCodePh} onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })} /></label>
+        <label className="text-xs">{s.fName}<Input className="mt-1" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></label>
+        <label className="text-xs">{s.fNameZh}<Input className="mt-1" value={form.names['zh-CN'] ?? ''} onChange={(e) => setForm({ ...form, names: { ...form.names, 'zh-CN': e.target.value } })} /></label>
+        <label className="text-xs">{s.fNameEn}<Input className="mt-1" value={form.names['en-US'] ?? ''} onChange={(e) => setForm({ ...form, names: { ...form.names, 'en-US': e.target.value } })} /></label>
+        <label className="text-xs">{s.fNameMy}<Input className="mt-1" value={form.names['ms-MY'] ?? ''} onChange={(e) => setForm({ ...form, names: { ...form.names, 'ms-MY': e.target.value } })} /></label>
+        <label className="text-xs">{s.fSort}<Input className="mt-1" type="number" value={form.sortNo} onChange={(e) => setForm({ ...form, sortNo: Number(e.target.value) })} /></label>
         <label className="text-xs">{s.fEnabled}
           <div className="mt-1"><Dropdown options={[{ value: 'on', label: s.enabledOn }, { value: 'off', label: s.enabledOff }]} value={form.enabled ? 'on' : 'off'} onChange={(v) => setForm({ ...form, enabled: v === 'on' })} ariaLabel={s.fEnabled} /></div>
         </label>
       </div>
       <div className="mt-4 flex gap-3">
-        <button className="primary h-8 cursor-pointer rounded-sm px-4 text-[13px]" disabled={busy} onClick={save}>{s.save}</button>
-        <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)]" onClick={() => setEditing(undefined)}>{t.pages.company.cancel}</button>
+        <ToolbarButton primary disabled={busy} onClick={save}>{busy ? t.pages.account.submitting : s.save}</ToolbarButton>
+        <ToolbarButton onClick={() => setEditing(undefined)}>{t.pages.company.cancel}</ToolbarButton>
       </div>
-    </div>}
+    </Card>}
   </div>
 }

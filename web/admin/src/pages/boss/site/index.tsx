@@ -7,10 +7,13 @@ import { useNavigate } from 'react-router-dom'
 import { apiFetch } from '../../../api/client'
 import { useT, useLocale, localeOptions } from '../../../i18n'
 import { PageHead, pagerTexts } from '../../org/shared'
+import { ErrorBanner, ToolbarButton } from '../../../components/business'
 import { Pagination } from '../../../components/Pagination'
 import { TableStateRow } from '../../../components/business'
 import { useConfirm } from '../../../components/ConfirmDialog'
 import { Dropdown } from '../../../components/Dropdown'
+import { Card } from '../../../components/ui/card'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/table'
 import { fmtTime } from '../../../lib/format'
 
 type Post = {
@@ -29,7 +32,7 @@ export default function SitePostsPage() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [page, setPage] = useState(1)
-  const pageSize = 10
+  const [pageSize, setPageSize] = useState(10)
   const [fCat, setFCat] = useState('')
   const [fSt, setFSt] = useState('')
   const [fLang, setFLang] = useState('')
@@ -67,16 +70,15 @@ export default function SitePostsPage() {
   const langLabel = (v: string) => localeOptions().find((o) => o.value === v)?.label ?? v
   const filtered = rows.filter((p) => (!fCat || p.category === fCat) && (!fSt || p.status === fSt) && (!fLang || p.lang === fLang))
   const slice = filtered.slice((page - 1) * pageSize, page * pageSize)
-  const td = 'border-b border-[var(--shell-side-border)] px-3 py-2'
 
   return <div>
     <PageHead title={s.title} desc={s.desc} />
     <div className="mb-4 flex justify-end gap-3">
-      <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)]" onClick={() => nav('/boss/site/cats')}>{s.manageCats}</button>
-      <button className="primary h-8 cursor-pointer rounded-sm px-4 text-[13px]" onClick={() => nav('/boss/site/new')}>{s.create}</button>
+      <ToolbarButton onClick={() => nav('/boss/site/cats')}>{s.manageCats}</ToolbarButton>
+      <ToolbarButton primary onClick={() => nav('/boss/site/new')}>{s.create}</ToolbarButton>
     </div>
-    <div className="rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] p-4">
-      {error && <div className="mb-3 text-sm text-[var(--color-danger)]">{error}</div>}
+    <Card className="p-4">
+      {error && <ErrorBanner message={error} />}
       <div className="mb-3 flex items-center gap-3">
         <Dropdown ariaLabel={s.fCategory} value={fCat}
           onChange={(v) => { setFCat(v); setPage(1) }}
@@ -88,30 +90,31 @@ export default function SitePostsPage() {
           onChange={(v) => { setFLang(v); setPage(1) }}
           options={[{ value: '', label: s.filterAll }, ...localeOptions()]} />
       </div>
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
-          <thead><tr>{s.columns.map((x) => <th key={x} className="border-b border-[var(--shell-side-border)] px-3 py-2 text-left text-xs">{x}</th>)}</tr></thead>
-          <tbody>
-            {slice.map((p) => <tr key={p.id}>
-              <td className={td}>{p.title}</td>
-              <td className={td}>{p.slug}</td>
-              <td className={td}>{langLabel(p.lang)}</td>
-              <td className={td}>{catLabel(p.category)}</td>
-              <td className={td}>{stLabel(p.status)}</td>
-              <td className={td}>{fmtTime(p.publishedAt)}</td>
-              <td className={td}>v{p.version}</td>
-              <td className={td}>
-                <button className="cursor-pointer border-none bg-none text-[13px] text-[var(--shell-content-text)] underline-offset-2 hover:text-[var(--shell-heading)] hover:underline" onClick={() => nav(`/boss/site/${p.id}`)}>{s.edit}</button>
-                <button className="ml-3 cursor-pointer border-none bg-none text-[13px] text-[var(--color-danger)] underline-offset-2 hover:underline" onClick={() => remove(p)}>{s.delete}</button>
-              </td>
-            </tr>)}
-            {!slice.length && <TableStateRow colSpan={8} loading={busy} text={s.empty} />}
-          </tbody>
-        </table>
-      </div>
+      <Table>
+        <TableHeader>
+          <TableRow>{s.columns.map((x) => <TableHead key={x}>{x}</TableHead>)}</TableRow>
+        </TableHeader>
+        <TableBody>
+          {slice.map((p) => <TableRow key={p.id}>
+            <TableCell>{p.title}</TableCell>
+            <TableCell>{p.slug}</TableCell>
+            <TableCell>{langLabel(p.lang)}</TableCell>
+            <TableCell>{catLabel(p.category)}</TableCell>
+            <TableCell>{stLabel(p.status)}</TableCell>
+            <TableCell>{fmtTime(p.publishedAt)}</TableCell>
+            <TableCell>v{p.version}</TableCell>
+            <TableCell>
+              <button className="cursor-pointer border-none bg-none text-[13px] text-[var(--shell-content-text)] underline-offset-2 hover:text-[var(--shell-heading)] hover:underline" onClick={() => nav(`/boss/site/${p.id}`)}>{s.edit}</button>
+              <button className="ml-3 cursor-pointer border-none bg-none text-[13px] text-[var(--color-danger)] underline-offset-2 hover:underline" onClick={() => remove(p)}>{s.delete}</button>
+            </TableCell>
+          </TableRow>)}
+          {!slice.length && <TableStateRow colSpan={8} loading={busy} text={s.empty} />}
+        </TableBody>
+      </Table>
       <div className="flex justify-end pt-3">
-        <Pagination total={filtered.length} page={page} pageSize={pageSize} onPage={setPage} onSize={() => {}} {...pagerTexts(t.pages.company)} />
+        <Pagination total={filtered.length} page={page} pageSize={pageSize}
+          onPage={setPage} onSize={(sz) => { setPageSize(sz); setPage(1) }} {...pagerTexts(t.pages.company)} />
       </div>
-    </div>
+    </Card>
   </div>
 }
