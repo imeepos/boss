@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-07T20:46:18.064Z",
+  "updatedAt": "2026-09-08T04:36:19.948Z",
   "project": "boss",
-  "phase": "PP2 收官轮:T14 rider(GIS 反查弹窗+下单可装性徽标)进行中,专属会话执行",
+  "phase": "PP2 前端体验打磨全量收口:U0-U6+O1-O5+T14-1/2/3 全 done,102 已部署 cabf68b2",
   "tasks": [
     {
       "id": "U0",
@@ -97,25 +97,25 @@
     {
       "id": "T14-1",
       "title": "T14-1 GIS 点位点击反查弹窗(intel/gis:ODN 图层点位点击→绑定关系+可装性反查抽屉)",
-      "goal": "专属会话交付;负责人机械验收+走查证据文档",
+      "goal": "已交付合并 fe9ad047;负责人主树 pp2-gate(intel) RC=0;走查证据 docs/acceptance/2026-09-08-t14-1-gis-reverse.md",
       "priority": "P2",
-      "status": "todo",
+      "status": "done",
       "acceptanceCommand": "bash scripts/accept/pp2-gate.sh web/admin/src/pages/intel && test -f docs/acceptance/2026-09-08-t14-1-gis-reverse.md"
     },
     {
       "id": "T14-2",
       "title": "T14-2 代客下单可装性实时徽标(boss/order:选地址自动判定,零额外操作)",
-      "goal": "专属会话交付;负责人机械验收+走查证据文档",
+      "goal": "已交付合并 540fbc2b;负责人主树 pp2-gate(boss) RC=0;走查证据 docs/acceptance/2026-09-08-t14-2-order-badge.md 含失败态真实提单实测",
       "priority": "P2",
-      "status": "todo",
+      "status": "done",
       "acceptanceCommand": "bash scripts/accept/pp2-gate.sh web/admin/src/pages/boss && test -f docs/acceptance/2026-09-08-t14-2-order-badge.md"
     },
     {
       "id": "T14-3",
       "title": "T14-3 收尾:主树合并+102 部署冒烟+专属会话归档",
-      "goal": "负责人执行;双门禁+走查+归档",
+      "goal": "手动等效部署 cabf68b2 上 102:五容器 running+healthz 200+bundle BC3CUOSA 含 T14 特征串;证据 docs/acceptance/2026-09-08-t14-3-closeout.md;rider 会话已归档",
       "priority": "P2",
-      "status": "todo",
+      "status": "done",
       "acceptanceCommand": "make web-admin-check && test -f docs/acceptance/2026-09-08-t14-3-closeout.md"
     }
   ]
