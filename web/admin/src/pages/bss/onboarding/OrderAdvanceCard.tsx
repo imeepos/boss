@@ -1,9 +1,11 @@
 // 订单推进卡:所选客户订单(GET /orders?customerId=)逐单推进
 // (核查→预占→收费→激活;取消需二次确认),并可发起新订单。
 import { useState } from 'react'
+import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { useConfirm } from '../../../components/ConfirmDialog'
 import { StatusTag } from '../../../components/StatusTag'
+import { Card } from '../../../components/ui/card'
 import { DataTable, type ColumnDef } from '../../../components/business/data-table'
 import { OrderCreateDrawer } from '../../boss/order/OrderCreateDrawer'
 import type { OrderListRow } from '../../boss/types'
@@ -34,7 +36,9 @@ export function OrderAdvanceCard({
         const ok = d?.available === true
         setMsg({ no: row.orderNo, ok, text: ok ? o.checkPass.replace('{count}', String(d?.idlePorts?.length ?? 0)) : o.checkFail })
       } else {
-        setMsg({ no: row.orderNo, ok: true, text: `${row.orderNo} → ${w.stageUnit.replace('{n}', String(d?.stage ?? row.stage))}` })
+        const text = `${row.orderNo} → ${w.stageUnit.replace('{n}', String(d?.stage ?? row.stage))}`
+        setMsg({ no: row.orderNo, ok: true, text })
+        toast.success(text)
       }
       onChanged()
     } catch (e) {
@@ -81,7 +85,7 @@ export function OrderAdvanceCard({
   ]
 
   return (
-    <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
+    <Card>
       <div className="flex flex-wrap items-center gap-2 p-4">
         <span className="text-[13px] font-medium text-[var(--shell-heading)]">4. {w.orderTitle}</span>
         <span className="spacer" />
@@ -100,6 +104,6 @@ export function OrderAdvanceCard({
       {createOpen && (
         <OrderCreateDrawer open fixedCustomerId={customerId} onClose={() => setCreateOpen(false)} onCreated={onChanged} />
       )}
-    </div>
+    </Card>
   )
 }
