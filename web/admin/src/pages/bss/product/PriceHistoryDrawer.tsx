@@ -3,9 +3,10 @@ import { useEffect, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { Drawer } from '../../../components/Drawer'
 import { useT } from '../../../i18n'
+import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from '../../../components/ui/table'
+import { EmptyState, ErrorBanner } from '../../../components/business'
 import type { PriceHistoryRow } from './types'
 import { fmtFee, fmtTime } from '../../../lib/format'
-import { EmptyState } from '../../../components/business'
 
 export function PriceHistoryDrawer({
   productId, productName, onClose,
@@ -18,34 +19,35 @@ export function PriceHistoryDrawer({
   useEffect(() => {
     apiFetch<{ items: PriceHistoryRow[] }>(`/products/${productId}/price-history`)
       .then((d) => setRows(d?.items ?? []))
-      .catch(() => setError(p.loadFail))
+      .catch((e) => setError(e instanceof Error ? e.message : p.loadFail))
   }, [productId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <Drawer title={`${p.historyTitle} · ${productName}`} onClose={onClose}
       footer={<button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" onClick={onClose}>{t.pages.company.cancel}</button>}>
-      {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : (
-        <div className="overflow-x-auto px-4 pb-4">
-          <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
-            <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{p.historyColumns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
-            <tbody>
+      {error ? <ErrorBanner message={error} /> : (
+        <div className="px-4 pb-4">
+          <Table>
+            <TableHeader>
+              <TableRow>{p.historyColumns.map((x) => <TableHead key={x}>{x}</TableHead>)}</TableRow>
+            </TableHeader>
+            <TableBody>
               {(rows ?? []).map((r) => (
-                <tr key={r.id}>
-                  <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{fmtFee(r.oldMonthlyFee)}</td>
-                  <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{fmtFee(r.newMonthlyFee)}</td>
-                  <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{fmtTime(r.effectiveAt)}</td>
-                  <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.reason || '—'}</td>
-                  <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.operatorAccountId ? `#${r.operatorAccountId}` : '—'}</td>
-                </tr>
+                <TableRow key={r.id}>
+                  <TableCell>{fmtFee(r.oldMonthlyFee)}</TableCell>
+                  <TableCell>{fmtFee(r.newMonthlyFee)}</TableCell>
+                  <TableCell>{fmtTime(r.effectiveAt)}</TableCell>
+                  <TableCell>{r.reason || '—'}</TableCell>
+                  <TableCell>{r.operatorAccountId ? `#${r.operatorAccountId}` : '—'}</TableCell>
+                </TableRow>
               ))}
               {rows !== null && !rows.length && (
-                <tr><td colSpan={5} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><EmptyState text={p.noHistory} /></td></tr>
+                <TableRow><TableCell colSpan={5}><EmptyState text={p.noHistory} /></TableCell></TableRow>
               )}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       )}
     </Drawer>
   )
 }
-

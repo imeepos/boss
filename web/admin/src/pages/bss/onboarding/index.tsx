@@ -7,6 +7,7 @@ import { useQueryState } from '../../../lib/useQueryState'
 import { useT } from '../../../i18n'
 import { PageHead, ErrorBanner } from '../../../components/business/page-head'
 import { StatusTag } from '../../../components/StatusTag'
+import { Card } from '../../../components/ui/card'
 import { CustomerPicker } from '../../../components/pickers/CustomerPicker'
 import { fmtTime } from '../../../lib/format'
 import type { CustomerRow } from '../customer/types'
@@ -16,8 +17,6 @@ import { RegistrationQueueDrawer } from '../customer/RegistrationQueueDrawer'
 import { RealNameCard } from './RealNameCard'
 import { OrderAdvanceCard } from './OrderAdvanceCard'
 import { DispatchCard } from './DispatchCard'
-
-const CARD = 'mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]'
 
 export default function OnboardingPage() {
   const t = useT()
@@ -62,7 +61,7 @@ export default function OnboardingPage() {
   return (
     <div>
       <PageHead title={w.title} desc={w.desc} />
-      <div className={CARD}>
+      <Card>
         <div className="flex flex-wrap items-center gap-2 p-4">
           <div className="min-w-[260px] flex-1">
             <CustomerPicker value={customerId} onChange={(v) => { setError(''); setCustomerId(v) }} />
@@ -90,7 +89,7 @@ export default function OnboardingPage() {
             <ProfileItem k={w.profileCreatedAt} v={fmtTime(customer.createdAt)} />
           </div>
         )}
-      </div>
+      </Card>
 
       <RealNameCard customer={customer} onChanged={refreshCustomer} />
       <OrderAdvanceCard customerId={customerId} orders={orders} onChanged={refreshOrders} />

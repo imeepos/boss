@@ -566,3 +566,8 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 当 import 报 TS2305「module has no exported member」时,修复是:grep 该模块的全部 export 行,再 grep 全域同款 import 一次改完;不要按记忆猜 re-export 清单(pages/org/shared 只兼容导出 PageHead/pagerTexts/DetailDrawer/Empty,ErrorBanner/ToolbarButton/IdRef 在 components/business)。
 - 当 cdp-capture 的 --eval 打印 {} 而非预期 JSON 时,修复是:探针表达式一律包 try/catch 返回 'ERR:'+e.message——异常会被宿主打印成 {},像空数据;另外每次 cdp-admin-capture 都是新浏览器实例,跨 eval 依赖页面状态的流程必须压进同一次 invoke 的连续 --eval。
 - 当验收要求「组件采用」批量迁移时,修复是:先盘点共享组件真实公开接口(components/business/index.ts 的 export 全表),写一页锚定后,后续页面按同一 import 模板抄,不再即兴组 import。
+- 当「一个页面」实际包含多条路由(如 /bss/marketing 与 /bss/marketing-recon 共用一目录)时,逐路由 DOM 走查缺一即证据链有洞——负责人问「是否全部走查完毕」时靠复核证据表才发现 marketing-recon 未单独断言(2026-09-08 bss 批)。
+- 【已犯 1 次】多会话并行环境:每批 commit 后立即 push gitea,远端 ref 才是防误清理的唯一保险;commit 输出的短 SHA 是对象库恢复锚点(git branch <名> <SHA> 即可原地复活)。
+- 【已犯 1 次】验证「dev server 服务的是哪棵树」:curl 一个本分支独有标记串(vite transform 后函数名仍在)+ lsof 查进程 cwd;端口冲突必须显式 rc,禁止管道掩码。
+- 【已犯 1 次】生产 bundle 验证版本:标识符已 minify、CJK 字符串被 esbuild unicode 转义,grep 源码字面量恒 0;改用行为断言(DOM/接口)或纯 ASCII 标记串。
+- 【已犯 1 次】React 18 效应接线:标记写 state 会重放效应并触发 alive 清理自杀在途 promise——标记用 ref、就绪信号用 state、配 jsdom 渲染回归。

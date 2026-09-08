@@ -2,8 +2,10 @@
 // 未指派→WorkerPicker 检索指派;已指派且环节9(扫码后)→激活(POST /tickets/:no/activate,
 // 自动推进 11-12 → DONE);环节8 未扫码提示等待装维。扫码绑定本身归装维现场作业。
 import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { useConfirm } from '../../../components/ConfirmDialog'
+import { Card } from '../../../components/ui/card'
 import { WorkerPicker, type PickedWorker } from '../../boss/dispatch/WorkerPicker'
 import { ErrorBanner } from '../../../components/business/page-head'
 import type { OrderListRow } from '../../boss/types'
@@ -56,10 +58,14 @@ export function DispatchCard({
         await apiFetch(`/dispatch/pool/${encodeURIComponent(tk.ticketNo)}/assign`, {
           method: 'POST', body: { masterId: worker!.id },
         })
-        setMsg({ no: tk.ticketNo, ok: true, text: w.assignedTo.replace('{name}', worker!.name) })
+        const text = w.assignedTo.replace('{name}', worker!.name)
+        setMsg({ no: tk.ticketNo, ok: true, text })
+        toast.success(text)
       } else {
         const d = await apiFetch<{ stage?: number }>(`/tickets/${encodeURIComponent(tk.ticketNo)}/activate`, { method: 'POST' })
-        setMsg({ no: tk.ticketNo, ok: true, text: `${row.order.orderNo} → ${w.stageUnit.replace('{n}', String(d?.stage ?? 12))}` })
+        const text = `${row.order.orderNo} → ${w.stageUnit.replace('{n}', String(d?.stage ?? 12))}`
+        setMsg({ no: tk.ticketNo, ok: true, text })
+        toast.success(text)
       }
       setPicked((p) => { const n = { ...p }; delete n[tk.ticketNo]; return n })
       onChanged()
@@ -70,7 +76,7 @@ export function DispatchCard({
 
   if (!orders.length) return null
   return (
-    <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
+    <Card>
       <div className="flex flex-wrap items-center gap-2 p-4">
         <span className="text-[13px] font-medium text-[var(--shell-heading)]">5. {w.dispatchTitle}</span>
         <span className="spacer" />
@@ -118,6 +124,6 @@ export function DispatchCard({
       ) : (
         <div className="px-4 pb-4 text-[13px] text-[var(--shell-group-title)]">{w.noActiveTicket}</div>
       )}
-    </div>
+    </Card>
   )
 }

@@ -5,6 +5,9 @@ import { useT } from '../../../i18n'
 import { useQueryState } from '../../../lib/useQueryState'
 import { PageHead } from '../../org/shared'
 import { Pagination } from '../../../components/Pagination'
+import { Card } from '../../../components/ui/card'
+import { Input } from '../../../components/ui/input'
+import { ActionLink, ErrorBanner, ToolbarButton } from '../../../components/business'
 import { DataTable } from '../../../components/business/data-table'
 import { filterUsers, pageSlice, createdAtCell, loginNameCell, type UserRow } from './filter'
 import { UserDetailDrawer } from './detail-drawer'
@@ -38,14 +41,14 @@ export default function UserListPage() {
   return (
     <div>
       <PageHead title={u.title} desc={u.desc} />
-      <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
+      <Card>
         <div className="flex flex-wrap items-center gap-2 p-4">
-          <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" placeholder={u.searchPlaceholder}
+          <Input className="w-48" placeholder={u.searchPlaceholder}
             value={keyword} onChange={(e) => { setKeyword(e.target.value); setUrlKeyword(e.target.value); setPage(1) }} />
           <span className="spacer" />
-          <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
+          <ToolbarButton disabled={busy} onClick={load}>{t.pages.audit.refresh}</ToolbarButton>
         </div>
-        {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : (
+        {error ? <ErrorBanner message={error} /> : (
           <div className="px-4 pb-4">
             <DataTable
               emptyText={u.empty}
@@ -58,7 +61,7 @@ export default function UserListPage() {
                 { key: 'planName', label: u.columns[4], render: (r) => String(r.planName || '—') },
                 { key: 'createdAt', label: u.columns[5], render: (r) => createdAtCell(r as UserRow) },
                 { key: 'op', label: u.columns[6], render: (r) => (
-                  <button onClick={() => setDetailId(Number(r.customerId))}>{u.detail}</button>
+                  <ActionLink onClick={() => setDetailId(Number(r.customerId))} label={u.detail} testId={'user-detail-' + r.customerId} />
                 ) },
               ]}
             />
@@ -68,7 +71,7 @@ export default function UserListPage() {
           onPage={setPage} onSize={setPageSize}
           rangeText={u.rangeText} prevText={u.prev} nextText={u.next}
           perPageText={u.perPage} jumpText={u.jumpText} pageUnitText={u.pageUnit} />
-      </div>
+      </Card>
       {detailId !== null && <UserDetailDrawer id={detailId} summary={activeRow} onClose={() => setDetailId(null)} />}
     </div>
   )

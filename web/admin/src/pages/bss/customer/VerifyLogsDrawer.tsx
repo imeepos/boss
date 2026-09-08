@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { Drawer } from '../../../components/Drawer'
 import { useT } from '../../../i18n'
+import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from '../../../components/ui/table'
+import { ErrorBanner } from '../../../components/business'
 import type { VerifyLogRow } from './types'
 import { fmtTime } from '../../../lib/format'
 import { EmptyState } from '../../../components/business'
@@ -18,31 +20,36 @@ export function VerifyLogsDrawer({
   useEffect(() => {
     apiFetch<{ items: VerifyLogRow[] }>(`/customers/${customerId}/verify-logs`)
       .then((d) => setRows(d?.items ?? []))
-      .catch(() => setError(c.verifyFail))
+      .catch((e) => setError(e instanceof Error ? e.message : c.verifyFail))
   }, [customerId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <Drawer title={`${c.verifyTitle} · ${customerName}`} onClose={onClose}
       footer={<button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" onClick={onClose}>{t.pages.company.cancel}</button>}>
-      {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : (
-        <div className="overflow-x-auto px-4 pb-4">
-          <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
-            <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr><th className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">#</th>{c.verifyColumns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
-            <tbody>
+      {error ? <ErrorBanner message={error} /> : (
+        <div className="px-4 pb-4">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>#</TableHead>
+                {c.verifyColumns.map((x) => <TableHead key={x}>{x}</TableHead>)}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {(rows ?? []).map((r, i) => (
-                <tr key={r.id}>
-                  <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{i + 1}</td>
-                  <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.method}</td>
-                  <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{fmtTime(r.verifiedAt)}</td>
-                  <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><VerifyResultBadge result={r.result} labels={c.verifyResultLabels} /></td>
-                  <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.operatorName || `#${r.operatorAccountId}` || '—'}</td>
-                </tr>
+                <TableRow key={r.id}>
+                  <TableCell>{i + 1}</TableCell>
+                  <TableCell>{r.method}</TableCell>
+                  <TableCell>{fmtTime(r.verifiedAt)}</TableCell>
+                  <TableCell><VerifyResultBadge result={r.result} labels={c.verifyResultLabels} /></TableCell>
+                  <TableCell>{r.operatorName || `#${r.operatorAccountId}` || '—'}</TableCell>
+                </TableRow>
               ))}
               {rows !== null && !rows.length && (
-                <tr><td colSpan={5} className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><EmptyState text={c.empty} /></td></tr>
+                <TableRow><TableCell colSpan={5}><EmptyState text={c.empty} /></TableCell></TableRow>
               )}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       )}
     </Drawer>

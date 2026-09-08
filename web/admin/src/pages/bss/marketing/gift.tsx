@@ -1,9 +1,10 @@
 // 赠送时长阶梯规则 Tab:列表 + 抽屉式新建 + 停用(6送1/12送3/24送6 类规则)。
 import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import { listGiftRules, createGiftRule, disableGiftRule, type GiftRule } from '../../../api/marketing'
 import { useT } from '../../../i18n'
-import { Badge } from '../../../components/ui/badge'
 import { Card } from '../../../components/ui/card'
+import { RuleStatus } from './RuleStatus'
 import {
   PageHead, pagerTexts, ErrorBanner, ToolbarButton, FormField, ActionLink,
   DataTable, type ColumnDef,
@@ -52,6 +53,7 @@ export default function GiftRulesTab() {
     setCreating(true)
     try {
       await createGiftRule({ legalEntityId: 1, name: form.name.trim(), buyMonths: buy, giftMonths: gift })
+      toast.success(m.createdOk)
       closeForm()
       load()
     } catch (e) {
@@ -73,7 +75,7 @@ export default function GiftRulesTab() {
     { key: 'buyMonths', label: m.giftBuyMonths, render: (r) => String(r.buyMonths ?? '—') },
     { key: 'giftMonths', label: m.giftGiftMonths, render: (r) => String(r.giftMonths ?? '—') },
     { key: 'status', label: m.colStatus, render: (r) => (
-      <Badge variant={r.status === 'ENABLED' ? 'success' : 'default'}>{String(r.status)}</Badge>
+      <RuleStatus status={String(r.status)} />
     ) },
     { key: 'op', label: m.colOp, render: (r) => (r.status === 'ENABLED'
       ? <ActionLink onClick={() => disable(Number(r.ruleId), String(r.name))} label={m.disable} />
@@ -113,15 +115,15 @@ export default function GiftRulesTab() {
           }>
           <div className="grid gap-3">
             <FormField label={m.colName} required>
-              <Input value={form.name}
+              <Input value={form.name} placeholder={m.giftNamePh}
                 onChange={(e) => setForm({ ...form, name: e.target.value })} />
             </FormField>
             <FormField label={m.giftBuyMonths} required>
-              <Input inputMode="numeric" value={form.buyMonths}
+              <Input inputMode="numeric" value={form.buyMonths} placeholder={m.giftBuyPh}
                 onChange={(e) => setForm({ ...form, buyMonths: e.target.value })} />
             </FormField>
             <FormField label={m.giftGiftMonths} required>
-              <Input inputMode="numeric" value={form.giftMonths}
+              <Input inputMode="numeric" value={form.giftMonths} placeholder={m.giftGiftPh}
                 onChange={(e) => setForm({ ...form, giftMonths: e.target.value })} />
             </FormField>
           </div>

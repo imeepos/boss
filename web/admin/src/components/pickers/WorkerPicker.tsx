@@ -18,6 +18,8 @@ export function WorkerPicker({ value, onChange, disabled }: {
       search={searchWorkers}
       toOption={(w) => ({ value: String(w.id), label: `${w.name} · ${w.staffNo}` })}
       fetchDetail={() => getWorkerDetail(value)}
+      clearable
+      clearLabel={p.common.clear}
       detailItems={(w) => workerDetailItems(w, p.worker)}
       detailTitle={p.worker.title}
       listPath="/boss/worker"
