@@ -1,9 +1,11 @@
 // 投资测算页:网格/城市/分光容量三视图(P-INFRA-1 W2 基础 + W5 深化,只读读模型)。
 // 口径 docs/contract/fields.md 1.5.11/1.5.15;成本 null 显示「未登记」,禁止显示 0。
 import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
-import { CardShell } from '../../../components/business/charts'
+import { Card } from '../../../components/ui/card'
+import { ErrorBanner, ToolbarButton } from '../../../components/business/page-head'
 import { PageHead } from '../../org/shared'
 import type { CityInvestmentRow, GridInvestmentRow, SplitCapacityReport } from '../types'
 import GridView from './grid'
@@ -38,7 +40,11 @@ export default function GridInvestmentPage() {
         setCityRows(c?.items ?? [])
         setCapacity(s ?? null)
       })
-      .catch((e) => setError(e instanceof Error ? e.message : a.loadFail))
+      .catch((e) => {
+        const msg = e instanceof Error ? e.message : a.loadFail
+        setError(msg)
+        toast.error(a.loadFail, { description: msg })
+      })
       .finally(() => setBusy(false))
   }
   useEffect(load, []) // eslint-disable-line react-hooks/exhaustive-deps
@@ -52,7 +58,7 @@ export default function GridInvestmentPage() {
   return (
     <div>
       <PageHead title={a.title} desc={a.desc} />
-      <CardShell>
+      <Card>
         <div className="mb-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             {tabs.map((tb) => (
@@ -62,15 +68,10 @@ export default function GridInvestmentPage() {
               </button>
             ))}
           </div>
-          <button disabled={busy} onClick={load}
-            className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]">
-            {t.pages.audit.refresh}
-          </button>
+          <ToolbarButton onClick={load} disabled={busy}>{t.pages.audit.refresh}</ToolbarButton>
         </div>
         {error ? (
-          <div className="mx-2 mb-2 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">
-            {error}
-          </div>
+          <div className="px-4 pb-3"><ErrorBanner message={error} /></div>
         ) : (
           <>
             {view === 'grid' && <GridView rows={gridRows} busy={busy} />}
@@ -78,7 +79,7 @@ export default function GridInvestmentPage() {
             {view === 'capacity' && <CapacityView report={capacity} busy={busy} />}
           </>
         )}
-      </CardShell>
+      </Card>
     </div>
   )
 }
