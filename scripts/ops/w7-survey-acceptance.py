@@ -196,6 +196,7 @@ def main():
         if c.startswith("P91") and c[3:].isdigit():
             mx = max(mx, int(c[3:]))
     fac = "P91" + str(mx + 1).zfill(3)
+    r, _ = api("POST", "/api/admin/v1/odn/facilities", {"code": fac,
         "prvCode": "PHL001", "cityPrefix": "MNL", "gridCode": 91,
         "name": "W7验收杆", "lat": 14.606, "lng": 120.991})
     check("B1 创建 PLANNED 验收设施 " + fac, r is not None, r)
