@@ -39,5 +39,13 @@ export function useServerPickerSearch<T>({ fetcher, debounceMs }: UseServerPicke
   }, [committed, retryTick])
 
   const retry = useCallback(() => setRetryTick((n) => n + 1), [])
-  return { keyword, setKeyword, retry, items: state.items, loading: state.loading, error: state.error }
+  // 重开浮层复位(修「重开残留旧检索结果」窗口):Dropdown 重开只清内部输入,本 hook 仍持
+  // 旧关键字/旧结果;open=true 时调用——关键字与 committed 清零并强制重发首屏检索,
+  // 浮层首屏与空输入框即时一致(retryTick 兜底 committed 已为 '' 的重放)。
+  const reopen = useCallback(() => {
+    setKeyword('')
+    setCommitted('')
+    setRetryTick((n) => n + 1)
+  }, [])
+  return { keyword, setKeyword, retry, reopen, items: state.items, loading: state.loading, error: state.error }
 }

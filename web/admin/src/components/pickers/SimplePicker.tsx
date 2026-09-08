@@ -121,6 +121,9 @@ export function SimplePicker(props: SimplePickerProps) {
             loadingText={loadingText}
             emptyText={srv.error ? (errorText ?? ariaLabel) : emptyText}
             triggerStyle={{ minWidth }}
+            // 重开浮层时复位服务端检索:否则内部输入已清而 hook 仍持旧关键字/旧结果,
+            // 首屏出现「输入框为空而列表是旧检索结果」的窗口(selector-audit §一.1 ①)。
+            onOpenChange={(next) => { if (next && srv.keyword !== '') srv.reopen() }}
           />
           {clearBtn}
         </div>

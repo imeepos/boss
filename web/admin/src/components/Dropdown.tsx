@@ -41,9 +41,11 @@ interface DropdownProps {
   onDark?: boolean
   /** 值为空或无匹配项时触发器的占位文案;缺省回退 ariaLabel。 */
   placeholder?: string
+  /** 浮层开合回调:仅在开合过渡时触发(mount 不触发)。服务端源调用方在 open=true 时复位检索状态。 */
+  onOpenChange?: (open: boolean) => void
 }
 
-export function Dropdown({ value, options, onChange, ariaLabel, disabled, triggerStyle, searchable, searchPlaceholder, searchAriaLabel, remote, onKeywordChange, loading, loadingText, emptyText, onDark, placeholder }: DropdownProps) {
+export function Dropdown({ value, options, onChange, ariaLabel, disabled, triggerStyle, searchable, searchPlaceholder, searchAriaLabel, remote, onKeywordChange, loading, loadingText, emptyText, onDark, placeholder, onOpenChange }: DropdownProps) {
   const [open, setOpen] = useState(false)
   const [keyword, setKeyword] = useState('')
   const [active, setActive] = useState(-1)
@@ -51,11 +53,14 @@ export function Dropdown({ value, options, onChange, ariaLabel, disabled, trigge
   const triggerRef = useRef<HTMLButtonElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const lbId = useId()
+  // onOpenChange 经 ref 转发:回调身份变化不重挂监听,开合通知始终取最新闭包。
+  const onOpenChangeRef = useRef(onOpenChange)
+  onOpenChangeRef.current = onOpenChange
 
   useEffect(() => {
     if (!open || disabled) return
     const onDocClick = (e: MouseEvent) => {
-      if (!rootRef.current?.contains(e.target as Node)) setOpen(false)
+      if (!rootRef.current?.contains(e.target as Node)) { setOpen(false); onOpenChangeRef.current?.(false) }
     }
     document.addEventListener('mousedown', onDocClick)
     return () => document.removeEventListener('mousedown', onDocClick)
@@ -99,13 +104,18 @@ export function Dropdown({ value, options, onChange, ariaLabel, disabled, trigge
 
   const close = (focusBack: boolean) => {
     setOpen(false)
+    onOpenChangeRef.current?.(false)
     if (focusBack) triggerRef.current?.focus()
+  }
+  const openPanel = () => {
+    setKeyword('')
+    setOpen(true)
+    onOpenChangeRef.current?.(true)
   }
   const toggle = () => {
     if (disabled) return
     if (open) { close(false); return }
-    setKeyword('')
-    setOpen(true)
+    openPanel()
   }
   const step = (delta: 1 | -1) => setActive((prev) => moveActive(visible.length, prev, delta, (i) => !!visible[i]?.disabled))
   const commitActive = () => {
@@ -127,8 +137,7 @@ export function Dropdown({ value, options, onChange, ariaLabel, disabled, trigge
     if (!open) {
       if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Enter' || e.key === ' ') {
         e.preventDefault()
-        setKeyword('')
-        setOpen(true)
+        openPanel()
       }
       return
     }

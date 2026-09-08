@@ -13,6 +13,7 @@
 6. 已选值不在当前结果集时回显不丢失:withPinnedValue 自动钉选合成选项(value 兼作 label);调用方可用 pinnedOptions 提供人类可读钉选(按 value 去重,先到先得)。
 7. 禁用态语义清晰:触发器原生 disabled + 置灰 + cursor-not-allowed;禁用项 aria-disabled;禁用时清空按钮与 chips 移除钮隐藏。
 8. 三语文案齐备:结构性词条归 pages.pickers 命名空间(common/dialog),append-only 独立小提交;组件内不硬编码文案。
+9. 开合通知(W3):Dropdown 提供 onOpenChange(仅开合过渡触发,mount 不触发);SimplePicker 服务端源在 open=true 且关键字非空时自动复位检索(清关键字+重发首屏),重开浮层首屏与空输入框即时一致,不再出现「输入框已清而列表残留旧检索结果」窗口。
 
 ## 分界建议
 
@@ -100,5 +101,6 @@ W1 域审计发现至少 9 处调用点把显示文案当 value 传给 Dropdown(
 ## 关键词回归锚点
 
 - pickers/pickerCore.test.ts:双数据源合并、单/多选边界、键盘 moveActive、钉选回显、清空口径、服务端检索状态机(seq 防竞态/失败重试)、已选人类可读回显缓存(echoPinFromCache/rememberOptionLabels)、重开预选序列(pickKeysFromItems)。
+- pickers/SimplePicker.test.tsx:Dropdown onOpenChange 开合过渡矩阵(点击/键盘开、Esc/外点关,mount 静默)+ 服务端源重开复位回归(重开即重发首屏检索且输入框已清)。
 - i18n/locales/keys.test.ts:三语键集一致性(pickers.common.loading/empty/retry 等)。
 - 选择器族全景审计(现状/修复/遗留矩阵 + 页面侧问题清单):docs/admin/selector-audit.md。

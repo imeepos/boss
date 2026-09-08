@@ -9,13 +9,15 @@
 
 ### 1. 通用下拉基座 Dropdown(components/Dropdown.tsx,参照基座,本波未改)
 
+> W3 收尾(feat/ux-final)已补 ①onOpenChange 基座回调并令牌化 ②onDark;下表保留审计时点原文,修复结论以划线标注。
+
 | 维度 | 状态 | 说明 |
 |---|---|---|
 | 键盘/焦点 | ✅ | 箭头/Enter/Space 开合、上下移动跳禁用并回绕、Esc 关闭焦点归还触发器、Tab 自然离开;listbox/option/aria-activedescendant 齐全(vitest pickerCore.moveActive + 102 DOM 断言) |
 | 点击外部收起 | ✅ | document mousedown 监听,浮层内 mousedown 不误关 |
 | 搜索 | ✅ | searchable 本地过滤;remote 模式关键字上抛;loading 行 role=status;空态行;防抖 300ms(pickerCore.PICKER_DEBOUNCE_MS) |
 | 回显 | ✅ | withPinnedValue 合成钉选 + resolveOptionMatch label 同值兜底(W1 裁定,warn 留痕) |
-| ⚠️ 遗留 | 基座侧 | ① 无 onOpenChange 回调:SimplePicker 服务端源重开浮层时,内部关键字已清但远端 hook 仍持旧关键字/旧结果,首屏出现「输入框为空而列表是旧检索结果」的窗口(输一个字即恢复一致);修复需基座加 onOpenChange,建议随下一轮基座批次。② onDark 深色表面样式用 white/10、rgba 阴影等常量(非 tokens 令牌),属常青藏青表面的固有色,记债务。 |
+| ⚠️ 遗留 | 基座侧 | ① ~~无 onOpenChange 回调~~ **已修(W3,feat/ux-final)**:基座补 onOpenChange(仅开合过渡触发,mount 不触发),SimplePicker 服务端源在 open=true 且关键字非空时复位检索(清关键字+重发首屏),重开浮层不再出现「输入框为空而列表是旧检索结果」窗口;回归锁定 pickers/SimplePicker.test.tsx。② onDark 深色表面样式用 white/10、rgba 阴影等常量(非 tokens 令牌),属常青藏青表面的固有色,记债务。 |
 
 ### 2. SimplePicker(小数据量基座)
 
@@ -26,7 +28,7 @@
 | 已选回显 | ✅ | 调用方 pinnedOptions 优先,基座 withPinnedValue 兜底 |
 | 清空 | ✅ | clearable+clearLabel 口径(canClearValue):值非空且未禁用才出钮 |
 | 一致性 | ✅ | 结构性文案缺省取 pages.pickers.common(三语 keys.test 锁键集);tokens.css 双主题令牌 |
-| ⚠️ 遗留 | 基座侧 | 重开浮层残留旧检索结果窗口(见 Dropdown ①);服务端源 rehydrate 回显裸编号需调用方传 pinnedOptions(见 ResourcePicker 行) |
+| ⚠️ 遗留 | 基座侧 | ~~重开浮层残留旧检索结果窗口~~ **已随 Dropdown ① 修复(W3,feat/ux-final)**;服务端源 rehydrate 回显裸编号需调用方传 pinnedOptions(见 ResourcePicker 行) |
 
 ### 3. DialogPicker(大数据量弹框基座)
 
