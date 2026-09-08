@@ -8,6 +8,7 @@ import { Pagination } from '../../../components/Pagination'
 import { ResourcePicker } from '../../../components/ResourcePicker'
 import { searchCustomers } from '../../../api/pickers'
 import { pageSlice, type BillRow } from '../types'
+import { useCustomerPin } from '../useCustomerPin'
 import { InvoicePanel } from './invoices'
 import { BillingRunModal, INVOICES_REFRESH } from './run-modal'
 import { fmtFee } from '../../../lib/format'
@@ -42,6 +43,8 @@ export default function BillPage() {
 
   const slice = pageSlice(rows, page, pageSize)
   const statusText = (s: string) => t.common.statusTags['bill.' + s] ?? s
+  // 钉选回显(W0 基线交接项):已选客户名经详情接口取,保证触发器不回显裸编号。
+  const pinnedCustomer = useCustomerPin(customerId)
 
   return (
     <div>
@@ -57,6 +60,7 @@ export default function BillPage() {
             emptyLabel={t.pages.pickers.common.all}
             searchPlaceholder={t.pages.pickers.common.placeholder}
             errorText={b.loadFail}
+            pinnedOptions={pinnedCustomer}
           />
           <span className="spacer" />
           <ToolbarButton primary onClick={() => setRunOpen(true)}>{b.run.btn}</ToolbarButton>

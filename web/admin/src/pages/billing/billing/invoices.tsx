@@ -21,6 +21,7 @@ import { ActionLink, ErrorBanner, ToolbarButton } from '../../../components/busi
 import { Card, CardFooter } from '../../../components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../../components/ui/table'
 import type { InvoiceRow } from '../types'
+import { useCustomerPin } from '../useCustomerPin'
 import { INVOICES_REFRESH } from './run-modal'
 import { pageSlice } from '../types'
 
@@ -99,6 +100,8 @@ export function InvoicePanel() {
   const slice = pageSlice(rows, page, pageSize)
   const actText = act?.kind === 'void' ? v.voidConfirm : act?.kind === 'reissue' ? v.reissueConfirm : v.backfillTip
   const statusText = (s: string) => v.statusTexts[s] ?? s
+  // 钉选回显(W0 基线交接项):已选客户名经详情接口取,保证触发器不回显裸编号。
+  const pinnedCustomer = useCustomerPin(customerId)
   const taxStatusText = (s: string) => v.taxStatusTexts[s] ?? s
   const jurisdictionText = (s: string) => v.jurisdictionTexts[s] ?? s
 
@@ -115,6 +118,7 @@ export function InvoicePanel() {
           emptyLabel={t.pages.pickers.common.all}
           searchPlaceholder={t.pages.pickers.common.placeholder}
           errorText={v.loadFail}
+          pinnedOptions={pinnedCustomer}
         />
         <span className="spacer" />
         <ToolbarButton disabled={busy} onClick={load}>{t.pages.audit.refresh}</ToolbarButton>

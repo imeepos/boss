@@ -10,6 +10,7 @@ import { Pagination } from '../../../components/Pagination'
 import { ResourcePicker } from '../../../components/ResourcePicker'
 import { searchCustomers } from '../../../api/pickers'
 import { pageSlice, type StopResumeTaskRow } from '../types'
+import { useCustomerPin } from '../useCustomerPin'
 import { useConfirm } from '../../../components/ConfirmDialog'
 import { TableStateRow, ErrorBanner } from '../../../components/business'
 import { ToolbarButton } from '../../../components/business/page-head'
@@ -55,6 +56,8 @@ export default function StopSrvPage() {
   }
 
   const slice = pageSlice(rows, page, pageSize)
+  // 钉选回显(W0 基线交接项):已选客户名经详情接口取,保证触发器不回显裸编号。
+  const pinnedCustomer = useCustomerPin(customerId)
 
   return (
     <div>
@@ -70,6 +73,7 @@ export default function StopSrvPage() {
             emptyLabel={t.pages.pickers.common.all}
             searchPlaceholder={t.pages.pickers.common.placeholder}
             errorText={s.loadFail}
+            pinnedOptions={pinnedCustomer}
           />
           <span className="spacer" />
           <ToolbarButton disabled={busy} onClick={load}>{t.pages.audit.refresh}</ToolbarButton>
