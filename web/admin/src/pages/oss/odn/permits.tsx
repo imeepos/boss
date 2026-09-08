@@ -9,12 +9,9 @@ import { Dropdown, type DropdownOption } from '../../../components/Dropdown'
 import { SimplePicker } from '../../../components/pickers/SimplePicker'
 import { useT } from '../../../i18n'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../../components/ui/table'
+import { Card } from '../../../components/ui/card'
 import { EmptyState, ErrorBanner, ToolbarButton } from '../../../components/business/page-head'
 import { PermitDetail } from './PermitDetail'
-
-const CARD = 'rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]'
-const FIELD = 'flex flex-col gap-1'
-const LABEL = 'text-xs text-[var(--shell-content-text)]'
 
 export interface PermitRow {
   id: number
@@ -103,7 +100,11 @@ export default function PermitsPage() {
       setForm({ kind: 'ROW', title: '', approvalNo: '', authority: '', validFrom: '', validUntil: '', facilityCode: '', note: '' })
       setShowCreate(false)
       await load()
-    } catch (e) { setError(e instanceof Error ? e.message : '保存失败') } finally { setBusy(false) }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : '保存失败'
+      setError(msg)
+      toast.error('许可单创建失败', { description: msg })
+    } finally { setBusy(false) }
   }
 
   const statusOptions = kind === 'PECE' ? PECE_STATUS_OPTIONS : kind === 'ROW' ? ROW_STATUS_OPTIONS : []
@@ -111,24 +112,24 @@ export default function PermitsPage() {
   const field = (k: string, label: string, placeholder = '') => <label className={FIELD}><span className={LABEL}>{label}</span><Input value={form[k as keyof typeof form] ?? ''} placeholder={placeholder} onChange={(e) => set(k, e.target.value)} /></label>
 
   return <div>
-    <div className='mb-3 flex items-center justify-between'><div className='flex flex-wrap items-end gap-2'>
-      <Dropdown value={kind} ariaLabel='类型筛选' placeholder='全部类型' options={[{ value: 'ROW', label: 'ROW 路权' }, { value: 'PECE', label: 'PECE 许可' }]} onChange={(v) => { setKind(v); setStatus('') }} />
-      {statusOptions.length > 0 && <Dropdown value={status} ariaLabel='状态筛选' placeholder='全部状态' options={statusOptions.map((s) => ({ value: s, label: PERMIT_STATUS_TEXT[s] }))} onChange={setStatus} />}
-      <label className={FIELD}><span className={LABEL}>项目 ID</span><SimplePicker value={projectId} onChange={setProjectId} options={projectOpts} ariaLabel={o.pickProject} searchPlaceholder={o.pickProjectSearch} clearable clearLabel={t.pages.pickers.common.clear} minWidth={240} /></label>
+    <div className="mb-3 flex items-center justify-between"><div className="flex flex-wrap items-end gap-2">
+      <Dropdown value={kind} ariaLabel="类型筛选" placeholder="全部类型" options={[{ value: 'ROW', label: 'ROW 路权' }, { value: 'PECE', label: 'PECE 许可' }]} onChange={(v) => { setKind(v); setStatus('') }} />
+      {statusOptions.length > 0 && <Dropdown value={status} ariaLabel="状态筛选" placeholder="全部状态" options={statusOptions.map((s) => ({ value: s, label: PERMIT_STATUS_TEXT[s] }))} onChange={setStatus} />}
+      <label className="flex flex-col gap-1"><span className="text-xs text-[var(--shell-content-text)]">项目 ID</span><SimplePicker value={projectId} onChange={setProjectId} options={projectOpts} ariaLabel={o.pickProject} searchPlaceholder={o.pickProjectSearch} clearable clearLabel={t.pages.pickers.common.clear} minWidth={240} /></label>
     </div>
-    <div className='flex items-center gap-2'><ToolbarButton primary onClick={() => setShowCreate(!showCreate)}>{showCreate ? '取消' : '新建许可单'}</ToolbarButton><ToolbarButton onClick={() => void load()}>刷新</ToolbarButton></div></div>
-    {showCreate && <div className={CARD + ' mb-3 p-4'}><div className='grid grid-cols-2 gap-3 md:grid-cols-4'>
-      <label className={FIELD}><span className={LABEL}>类型</span><Dropdown value={form.kind} ariaLabel='许可类型' options={[{ value: 'ROW', label: 'ROW 路权' }, { value: 'PECE', label: 'PECE 许可' }]} onChange={(v) => set('kind', v)} /></label>
+    <div className="flex items-center gap-2"><ToolbarButton primary onClick={() => setShowCreate(!showCreate)}>{showCreate ? '取消' : '新建许可单'}</ToolbarButton><ToolbarButton onClick={() => void load()}>刷新</ToolbarButton></div></div>
+    {showCreate && <Card className="mb-3"><div className="p-4"><div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      <label className="flex flex-col gap-1"><span className="text-xs text-[var(--shell-content-text)]">类型</span><Dropdown value={form.kind} ariaLabel="许可类型" options={[{ value: 'ROW', label: 'ROW 路权' }, { value: 'PECE', label: 'PECE 许可' }]} onChange={(v) => set('kind', v)} /></label>
       {field('title', '名称', '如 人民路架空段路权')}
       {field('approvalNo', '批复号', '批准前可留空')}
       {field('authority', '管辖机构', '如 市政公用局')}
       {field('validFrom', '有效期起', 'YYYY-MM-DD')}
       {field('validUntil', '有效期止', 'YYYY-MM-DD')}
-      <label className={FIELD}><span className={LABEL}>关联设施</span><SimplePicker value={form.facilityCode} onChange={(v) => set('facilityCode', v)} options={facOpts} ariaLabel={o.pickFacility} searchPlaceholder={o.pickFacilitySearch} clearable clearLabel={t.pages.pickers.common.clear} minWidth={200} /></label>
+      <label className="flex flex-col gap-1"><span className="text-xs text-[var(--shell-content-text)]">关联设施</span><SimplePicker value={form.facilityCode} onChange={(v) => set('facilityCode', v)} options={facOpts} ariaLabel={o.pickFacility} searchPlaceholder={o.pickFacilitySearch} clearable clearLabel={t.pages.pickers.common.clear} minWidth={200} /></label>
       {field('note', '备注')}
-    </div><div className='mt-3 flex justify-end'><ToolbarButton primary disabled={busy} onClick={() => void create()}>{busy ? '保存中…' : '保存'}</ToolbarButton></div></div>}
-    {error && <ErrorBanner message={error} className='mb-3' />}
-    <section className={CARD + ' overflow-hidden'}>
+    </div><div className="mt-3 flex justify-end"><ToolbarButton primary disabled={busy} onClick={() => void create()}>{busy ? '保存中…' : '保存'}</ToolbarButton></div></div></Card>}
+    {error && <ErrorBanner message={error} className="mb-3" />}
+    <Card className="overflow-hidden">
       {rows.length === 0 ? <EmptyState text='暂无许可单' /> : <div className='overflow-x-auto'><Table>
         <TableHeader><TableRow><TableHead>许可单号</TableHead><TableHead>类型</TableHead><TableHead>名称</TableHead><TableHead>批复号</TableHead><TableHead>管辖机构</TableHead><TableHead>有效期止</TableHead><TableHead>状态</TableHead><TableHead>关联项目</TableHead><TableHead>操作</TableHead></TableRow></TableHeader>
         <TableBody>
@@ -144,8 +145,8 @@ export default function PermitsPage() {
             <TableCell><button className='text-[var(--color-text-link)]' onClick={() => setOpenId(openId === r.id ? null : r.id)}>{openId === r.id ? '收起' : '详情'}</button></TableCell>
           </TableRow>)}
         </TableBody>
-      </Table></div>}
-    </section>
+      </Table>
+    </Card>
     {openId != null && <PermitDetail permitId={openId} onChanged={() => void load()} />}
   </div>
 }
