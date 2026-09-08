@@ -105,21 +105,22 @@ def sql(query):
            "docker exec -i boss-infra-postgres-1 psql -U boss -d boss -v ON_ERROR_STOP=1 -q -tA"]
     return subprocess.run(cmd, input=query, capture_output=True, text=True, timeout=60)
 def cleanup():
-    ids = ",".join(str(i) for i in TRACK["surveys"]) or "0"
-    pid = str(TRACK["project"])
-    fac = TRACK["facility"]
+    # 模式化大扫除:按验收特征(title/proj_no/设施名/staff_no)清除全部历史与当轮造数,
+    # 不依赖 TRACK 逐 id;ssh 中断回滚时下一轮启动兜底与 cleanup 均可重入。
     lines = [
         "BEGIN;",
-        "DELETE FROM survey_task_reports WHERE task_id IN (" + ids + ");",
-        "DELETE FROM survey_tasks WHERE id IN (" + ids + ");",
+        "DELETE FROM survey_task_reports WHERE task_id IN (SELECT id FROM survey_tasks WHERE title LIKE 'W7验收%' OR title LIKE '手动复现%');",
+        "DELETE FROM survey_tasks WHERE title LIKE 'W7验收%' OR title LIKE '手动复现%';",
+        "DELETE FROM construction_progress WHERE project_id IN (SELECT id FROM construction_projects WHERE proj_no LIKE 'ACC-W7-%');",
+        "DELETE FROM construction_items WHERE project_id IN (SELECT id FROM construction_projects WHERE proj_no LIKE 'ACC-W7-%');",
+        "DELETE FROM construction_settlements WHERE project_id IN (SELECT id FROM construction_projects WHERE proj_no LIKE 'ACC-W7-%');",
+        "DELETE FROM construction_projects WHERE proj_no LIKE 'ACC-W7-%';",
+        "DELETE FROM construction_progress WHERE facility_code IN (SELECT code FROM odn_facility WHERE name='W7验收杆');",
+        "DELETE FROM construction_items WHERE facility_code IN (SELECT code FROM odn_facility WHERE name='W7验收杆');",
+        "DELETE FROM odn_facility WHERE name='W7验收杆';",
+        "DELETE FROM workers WHERE staff_no='WK-ACC-W7';",
+        "COMMIT;",
     ]
-    if TRACK["project"] > 0:
-        lines.append("DELETE FROM construction_progress WHERE project_id = " + pid + ";")
-        lines.append("DELETE FROM construction_items WHERE project_id = " + pid + ";")
-        lines.append("DELETE FROM construction_projects WHERE id = " + pid + ";")
-    if fac:
-        lines.append("DELETE FROM construction_items WHERE facility_code = '" + fac + "';")
-    lines.append("COMMIT;")
     try:
         cmd = ["ssh", "-o", "ConnectTimeout=10", "-o", "BatchMode=yes", SSH_HOST,
                "docker exec -i boss-infra-postgres-1 psql -U boss -d boss -v ON_ERROR_STOP=1 -q -tA"]
@@ -127,12 +128,27 @@ def cleanup():
         if r.returncode != 0:
             print("[cleanup] FAILED: " + r.stderr.strip()[:300])
             return False
-        print("[cleanup] PASS 造数已清 surveys=" + ids + " project=" + pid + " facility=" + fac)
-        return True
     except Exception as e:
         print("[cleanup] FAILED: " + str(e))
         return False
-
+    vsql = (
+        "SELECT 'svy', count(*) FROM survey_tasks WHERE title LIKE 'W7验收%' OR title LIKE '手动复现%';"
+        "SELECT 'fac', count(*) FROM odn_facility WHERE name='W7验收杆';"
+        "SELECT 'proj', count(*) FROM construction_projects WHERE proj_no LIKE 'ACC-W7-%';"
+        "SELECT 'wk', count(*) FROM workers WHERE staff_no='WK-ACC-W7';"
+    )
+    try:
+        vr = sql(vsql)
+    except Exception as e:
+        print("[cleanup] VERIFY FAILED: " + str(e))
+        return False
+    vlines = [l for l in vr.stdout.strip().splitlines() if l]
+    vok = vr.returncode == 0 and len(vlines) == 4 and all(l.endswith("|0") for l in vlines)
+    if not vok:
+        print("[cleanup] VERIFY FAILED: " + vr.stdout.strip() + vr.stderr.strip()[:200])
+        return False
+    print("[cleanup] PASS 模式化大扫除:勘测/项目/设施/师傅全清")
+    return True
 
 def wait_ready(wait):
     a, w = probe_ready()
