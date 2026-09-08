@@ -8,10 +8,14 @@ import { Pagination } from '../../../components/Pagination'
 import { ResourcePicker } from '../../../components/ResourcePicker'
 import { searchCustomers } from '../../../api/pickers'
 import { pageSlice, type BillRow } from '../types'
+import { useCustomerPin } from '../useCustomerPin'
 import { InvoicePanel } from './invoices'
 import { BillingRunModal, INVOICES_REFRESH } from './run-modal'
 import { fmtFee } from '../../../lib/format'
-import { TableStateRow } from '../../../components/business'
+import { TableStateRow, ErrorBanner, ActionLink } from '../../../components/business'
+import { Card, CardFooter } from '../../../components/ui/card'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../../components/ui/table'
+import { ToolbarButton } from '../../../components/business/page-head'
 
 export default function BillPage() {
   const t = useT()
@@ -38,11 +42,14 @@ export default function BillPage() {
   useEffect(load, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const slice = pageSlice(rows, page, pageSize)
+  const statusText = (s: string) => t.common.statusTags['bill.' + s] ?? s
+  // 钉选回显(W0 基线交接项):已选客户名经详情接口取,保证触发器不回显裸编号。
+  const pinnedCustomer = useCustomerPin(customerId)
 
   return (
     <div>
       <PageHead title={b.title} desc={b.desc} />
-      <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
+      <Card>
         <div className="flex flex-wrap items-center gap-2 p-4">
           <ResourcePicker
             value={customerId}
@@ -53,40 +60,39 @@ export default function BillPage() {
             emptyLabel={t.pages.pickers.common.all}
             searchPlaceholder={t.pages.pickers.common.placeholder}
             errorText={b.loadFail}
+            pinnedOptions={pinnedCustomer}
           />
           <span className="spacer" />
-          <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" onClick={() => setRunOpen(true)}>{b.run.btn}</button>
-          <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
+          <ToolbarButton primary onClick={() => setRunOpen(true)}>{b.run.btn}</ToolbarButton>
+          <ToolbarButton disabled={busy} onClick={load}>{t.pages.audit.refresh}</ToolbarButton>
         </div>
-        {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : (
-          <div className="overflow-x-auto px-4 pb-4">
-            <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
-              <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{b.columns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
-              <tbody>
+        {error ? <ErrorBanner message={error} /> : (
+          <div className="px-4 pb-4">
+            <Table>
+              <TableHeader><TableRow>{b.columns.map((x) => <TableHead key={x}>{x}</TableHead>)}</TableRow></TableHeader>
+              <TableBody>
                 {slice.map((r) => (
-                  <tr key={r.billId}>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.billNo}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.customerName || `#${r.customerId}`}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.period}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{fmtFee(r.amount)}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><StatusTag domain="bill" value={r.status} /></td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">
-                      <span className="inline-flex items-center">
-                        <button onClick={() => setDetail(r)}>{b.detail}</button>
-                      </span>
-                    </td>
-                  </tr>
+                  <TableRow key={r.billId}>
+                    <TableCell className="font-mono">{r.billNo}</TableCell>
+                    <TableCell>{r.customerName || `#${r.customerId}`}</TableCell>
+                    <TableCell>{r.period}</TableCell>
+                    <TableCell>{fmtFee(r.amount)}</TableCell>
+                    <TableCell><StatusTag domain="bill" value={r.status} /></TableCell>
+                    <TableCell>
+                      <ActionLink onClick={() => setDetail(r)} label={b.detail} />
+                    </TableCell>
+                  </TableRow>
                 ))}
                 {!slice.length && <TableStateRow colSpan={6} loading={busy} text={b.empty} />}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         )}
-        <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
+        <CardFooter>
           <Pagination total={rows.length} page={page} pageSize={pageSize}
             onPage={setPage} onSize={setPageSize} {...pagerTexts(b)} />
-        </div>
-      </div>
+        </CardFooter>
+      </Card>
       <InvoicePanel />
       <BillingRunModal open={runOpen} onClose={() => setRunOpen(false)} onDone={() => { load(); window.dispatchEvent(new CustomEvent(INVOICES_REFRESH)) }} />
       {detail && (
@@ -99,7 +105,7 @@ export default function BillPage() {
             { k: b.columns[1], v: detail.customerName || `#${detail.customerId}` },
             { k: b.columns[2], v: detail.period },
             { k: b.columns[3], v: fmtFee(detail.amount) },
-            { k: b.columns[4], v: detail.status },
+            { k: b.columns[4], v: statusText(detail.status) },
             { k: 'legalEntity', v: detail.legalEntityName || `#${detail.legalEntityId}` },
             { k: 'region', v: detail.regionName || `#${detail.regionId}` },
           ]}

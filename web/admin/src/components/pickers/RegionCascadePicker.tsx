@@ -42,9 +42,13 @@ export function RegionCascadePicker({ value, countryCode, onChange, disabled, fe
   const [directRows, setDirectRows] = useState<SubdivRow[]>([])
   const [directBusy, setDirectBusy] = useState(false)
   const [reloadTick, setReloadTick] = useState(0)
-  const booted = useRef(false)
+  // boot 完成必须可观测(state):若用 ref,countryCode 显式传参时 country 初值即命中,
+  // setCountry 同值 bailout,N4 编辑回显效应永不重放(2026-09-08 地址页实证)。
+  const [booted, setBooted] = useState(false)
   const colParent = useRef<(string | null | undefined)[]>([])
-  const [expandedFor, setExpandedFor] = useState<string | null>(null)
+  // 已展开标记用 ref:state 写入会同步重放回显效应,alive 清理把在途 resolvePath 自杀
+  // (同因:效应先 set 标记再异步反查,cleanup 先于 promise 兑现,回显必然落空)。
+  const expandedForRef = useRef<string | null>(null)
 
   // 国家列表（地址页既有端点，menu:geo 门禁由页面持有）。
   useEffect(() => {
@@ -57,20 +61,20 @@ export function RegionCascadePicker({ value, countryCode, onChange, disabled, fe
 
   // 默认国家 boot：未显式传 countryCode 时读端点，空值/失败兜底 PH（契约 N3）。
   useEffect(() => {
-    if (booted.current) return
+    if (booted) return
     let alive = true
     const boot = async () => {
       const cc = countryCode && countryCode.trim() ? countryCode : await source.defaultCountry()
-      if (alive) { setCountry(cc || DEFAULT_COUNTRY_FALLBACK); booted.current = true }
+      if (alive) { setCountry(cc || DEFAULT_COUNTRY_FALLBACK); setBooted(true) }
     }
     boot().catch((err) => {
       if (!alive) return
       console.warn('[region-picker] default country boot failed:', err)
       setCountry(DEFAULT_COUNTRY_FALLBACK)
-      booted.current = true
+      setBooted(true)
     })
     return () => { alive = false }
-  }, [countryCode, source])
+  }, [booted, countryCode, source])
 
   // 国家确定/切换：重置路径与列缓存，并懒加载一级区划（rows[0]）。
   useEffect(() => {
@@ -95,8 +99,8 @@ export function RegionCascadePicker({ value, countryCode, onChange, disabled, fe
 
   // 编辑回显：value 变化且未展开过 → resolvePath 反查链并铺开路径（契约 N4）。
   useEffect(() => {
-    if (!value || !booted.current || expandedFor === value) return
-    setExpandedFor(value)
+    if (!value || !booted || expandedForRef.current === value) return
+    expandedForRef.current = value
     const cc = country || countryCode || DEFAULT_COUNTRY_FALLBACK
     let alive = true
     source.resolvePath(cc, value)
@@ -112,7 +116,7 @@ export function RegionCascadePicker({ value, countryCode, onChange, disabled, fe
       })
       .catch((err) => { if (alive) { console.warn('[region-picker] edit expansion failed:', err); setError(rc.loadFail) } })
     return () => { alive = false }
-  }, [value, booted, country, countryCode, source, expandedFor, rc.loadFail])
+  }, [value, booted, country, countryCode, source, rc.loadFail])
 
   // 懒加载下钻：按 path 逐层补齐子级列（colParent 记父码，同父不重复拉取）。
   useEffect(() => {
@@ -160,7 +164,7 @@ export function RegionCascadePicker({ value, countryCode, onChange, disabled, fe
   const selectCountry = useCallback((code: string) => {
     if (code === country) return
     setCountry(code)
-    setExpandedFor(value ?? '')
+    expandedForRef.current = value ?? ''
     setSel(null)
     onChange?.({ countryCode: code, code: '', names: [] })
   }, [country, value, onChange])
@@ -172,20 +176,20 @@ export function RegionCascadePicker({ value, countryCode, onChange, disabled, fe
     setRows((prev) => prev.slice(0, i + 1))
     setKwOf((prev) => prev.slice(0, i + 1))
     colParent.current = colParent.current.slice(0, i + 1)
-    setExpandedFor(node.code)
+    expandedForRef.current = node.code
     emit({ countryCode: country, code: node.code, names })
   }, [country, path, countryName, emit])
 
   const clear = useCallback(() => {
     setSel(null)
-    setExpandedFor(value ?? '')
+    expandedForRef.current = value ?? ''
     onChange?.({ countryCode: country, code: '', names: [] })
   }, [country, onChange, value])
 
   // 直搜点选：反查完整链（回显各级名称），并按链铺开列。
   const pickDirect = useCallback((node: SubdivRow) => {
     const cc = country
-    setExpandedFor(node.code)
+    expandedForRef.current = node.code
     setDirectKw('')
     setDirectRows([])
     source.resolvePath(cc, node.code)

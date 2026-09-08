@@ -808,7 +808,7 @@ export interface Translations {
     }
     billPage: {
     run: { btn: string; title: string; periodPh: string; periodInvalid: string; result: string; fail: string }
-    invoice: { title: string; desc: string; loadFail: string; actFail: string; filterCustomer: string; empty: string; columns: string[]; voidBtn: string; reissueBtn: string; backfillBtn: string; voidConfirm: string; reissueConfirm: string; backfillTip: string; voidReasonPh: string; taxNoPh: string; confirm: string; voidOk: string; reissueOk: string; backfillOk: string; taxSubmitBtn: string; taxRetryBtn: string; taxReplayBtn: string; eventsBtn: string; taxSubmitOk: string; taxRetryOk: string; taxReplayOk: string; taxEventsTitle: string; taxEventsEmpty: string }
+    invoice: { title: string; desc: string; loadFail: string; actFail: string; filterCustomer: string; empty: string; columns: string[]; voidBtn: string; reissueBtn: string; backfillBtn: string; voidConfirm: string; reissueConfirm: string; backfillTip: string; voidReasonLabel: string; taxNoLabel: string; voidReasonPh: string; taxNoPh: string; confirm: string; voidOk: string; reissueOk: string; backfillOk: string; taxSubmitBtn: string; taxRetryBtn: string; taxReplayBtn: string; eventsBtn: string; taxSubmitOk: string; taxRetryOk: string; taxReplayOk: string; taxEventsTitle: string; taxEventsEmpty: string; statusTexts: Record<string, string>; taxStatusTexts: Record<string, string>; jurisdictionTexts: Record<string, string> }
       title: string
       desc: string
       filterCustomer: string
@@ -861,6 +861,13 @@ export interface Translations {
       refundConfirm: string
       refundOk: string
       confirmText: string
+      /** 全额退款弹层(000112;后端 reason 必填)。 */
+      refundTitle: string
+      refundReason: string
+      refundReasonPh: string
+      refundReasonRequired: string
+      refundReasonHint: string
+      refundSubmit: string
     }
     /** 柜台日结(纪要 2026-08-28:T+0 只读汇总+实点回填)。 */
     dailyClose: {
@@ -886,6 +893,9 @@ export interface Translations {
       detailTitle: string
       detailColumns: string[]
       noCounted: string
+      /** 明细合计行 + 实点校验提示。 */
+      total: string
+      countedInvalid: string
     }
     arrearsPage: {
       title: string
@@ -901,6 +911,11 @@ export interface Translations {
       total: string
       empty: string
       loadFail: string
+      pendingTasksTitle: string
+      mTotalAmount: string
+      mCustomers: string
+      mStopped: string
+      mOverdueBills: string
       prev: string
       next: string
       perPage: string
@@ -913,6 +928,8 @@ export interface Translations {
       desc: string
       /** 状态过滤按钮文案;key = CollectionTaskRow.status(PENDING/DOING/DONE/FAILED)。 */
       statuses: Record<string, string>
+      /** 优先级文案;key = ar_collection_tasks.priority(URGENT/HIGH/其他=普通)。 */
+      priorityTexts: Record<string, string>
       columns: string[]
       actionStart: string
       actionDone: string
@@ -967,6 +984,7 @@ export interface Translations {
       statementRef: string
       statementAmount: string
       statementOk: string
+      statementRefPh: string
       actionFail: string
       ledgerPeriod: string
       ledgerQuery: string
@@ -979,6 +997,74 @@ export interface Translations {
       total: string
       empty: string
       loadFail: string
+      prev: string
+      next: string
+      perPage: string
+      rangeText: string
+      jumpText: string
+      pageUnit: string
+    }
+    /** 工程应付台账(000219;挂 billing 分组,domain-map §2.1)。 */
+    payablesPage: {
+      title: string
+      desc: string
+      filterStatus: string
+      filterAllStatus: string
+      filterProject: string
+      filterAllProject: string
+      columns: string[]
+      statusTexts: Record<string, string>
+      methodTexts: Record<string, string>
+      empty: string
+      loadFail: string
+      detail: string
+      detailRefresh: string
+      detailTitle: string
+      settlement: string
+      project: string
+      contractor: string
+      createdAt: string
+      payableAmount: string
+      deducted: string
+      paid: string
+      balance: string
+      voidedNote: string
+      voidReason: string
+      payTitle: string
+      payAmount: string
+      payAmountHint: string
+      payMethod: string
+      payAt: string
+      payAtHint: string
+      payReference: string
+      payNote: string
+      optional: string
+      paySubmit: string
+      payOk: string
+      deductTitle: string
+      deductReason: string
+      deductReasonPh: string
+      deductReasonRequired: string
+      deductSubmit: string
+      deductOk: string
+      invoiceTitle: string
+      invoiceNo: string
+      invoiceNoRequired: string
+      invoicedAt: string
+      invoicedAtHint: string
+      invoiceSubmit: string
+      invoiceOk: string
+      amountInvalid: string
+      actionFail: string
+      paymentsTitle: string
+      paymentsEmpty: string
+      paymentCols: string[]
+      deductionsTitle: string
+      deductionsEmpty: string
+      deductionCols: string[]
+      invoicesLogTitle: string
+      invoicesLogEmpty: string
+      invoiceCols: string[]
       prev: string
       next: string
       perPage: string

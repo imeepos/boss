@@ -1,14 +1,16 @@
 // 催收任务队列页(`/billing/collection-tasks`):契约 GET /collection-tasks?status=...
 // + POST /collection-tasks/{id}/status(AR 域 ar_collection_tasks,PENDING/DOING/DONE/FAILED,
 // 人工接管)。字段口径对齐 docs/contract/fields.md §8B 与 internal/domain/billing。
-// 文案/颜色走 i18n + 主题令牌;状态过滤/动作按钮全部 i18n 化。
+// 文案/颜色走 i18n + 主题令牌;状态过滤/动作按钮全部 i18n 化;优先级 URGENT/HIGH/NORMAL 走映射。
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
-import { PageHead, pagerTexts, ErrorBanner, ToolbarButton, TableStateRow, IdRef } from '../../../components/business'
+import { PageHead, pagerTexts, ErrorBanner, ToolbarButton, TableStateRow } from '../../../components/business'
 import { Pagination } from '../../../components/Pagination'
 import { useConfirm } from '../../../components/ConfirmDialog'
+import { Card, CardFooter } from '../../../components/ui/card'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../../components/ui/table'
 import { pageSlice, type CollectionTaskRow } from '../types'
 import { fmtFee } from '../../../lib/format'
 
@@ -46,17 +48,21 @@ export default function CollectionTasksPage() {
       toast.success(c.updateOk.replace('{status}', c.statuses[next] ?? next))
       load()
     } catch (e) {
-      setError(e instanceof Error ? e.message : c.actionFailMsg)
+      // 行内接管动作失败:toast 完整透出接口原因(原仅顶部 banner,行内语境弱)。
+      toast.error(e instanceof Error ? e.message : c.actionFailMsg)
+    } finally {
       setBusy(false)
     }
   }
 
   const slice = pageSlice(rows, page, pageSize)
+  const priorityText = (v: string) => c.priorityTexts[v] ?? v
+  const dueText = (v: string) => (v.length > 10 ? v.slice(0, 10) : v || '—')
 
   return (
     <div>
       <PageHead title={c.title} desc={c.desc} />
-      <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
+      <Card>
         <div className="flex flex-wrap items-center gap-2 p-4">
           {STATUSES.map((x) => (
             <button
@@ -74,25 +80,25 @@ export default function CollectionTasksPage() {
           <ToolbarButton disabled={busy} onClick={load}>{t.pages.audit.refresh}</ToolbarButton>
         </div>
         {error ? <ErrorBanner message={error} /> : (
-          <div className="overflow-x-auto px-4 pb-4">
-            <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
-              <thead className="border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">
-                <tr>
-                  {c.columns.map((label, i) => (
-                    <th key={`${i}-${label}`} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap">{label}</th>
+          <div className="px-4 pb-4">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  {c.columns.map((label) => (
+                    <TableHead key={label}>{label}</TableHead>
                   ))}
-                </tr>
-              </thead>
-              <tbody>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {slice.map((x) => (
-                  <tr key={x.id} className="border-b border-[var(--shell-side-border)] hover:bg-[var(--shell-menu-hover-bg)]">
-                    <td className="h-11 px-3 whitespace-nowrap"><IdRef value={x.id} /></td>
-                    <td className="h-11 px-3 whitespace-nowrap">{x.customer || `#${x.customerId}`}</td>
-                    <td className="h-11 px-3 whitespace-nowrap">{fmtFee(x.amount)} / {x.days}d</td>
-                    <td className="h-11 px-3 whitespace-nowrap">{x.priority}</td>
-                    <td className="h-11 px-3 whitespace-nowrap">{c.statuses[x.status] ?? x.status}</td>
-                    <td className="h-11 px-3 whitespace-nowrap">{x.dueAt || '—'}</td>
-                    <td className="h-11 px-3 whitespace-nowrap">
+                  <TableRow key={x.id}>
+                    <TableCell className="font-mono text-[var(--shell-group-title)]">#{x.id}</TableCell>
+                    <TableCell>{x.customer || `#${x.customerId}`}</TableCell>
+                    <TableCell>{fmtFee(x.amount)} / {x.days}d</TableCell>
+                    <TableCell>{priorityText(x.priority)}</TableCell>
+                    <TableCell>{c.statuses[x.status] ?? x.status}</TableCell>
+                    <TableCell>{dueText(x.dueAt)}</TableCell>
+                    <TableCell>
                       <span className="inline-flex items-center gap-2">
                         {x.status === 'PENDING' && (
                           <button
@@ -116,18 +122,18 @@ export default function CollectionTasksPage() {
                           </>
                         )}
                       </span>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
                 {!slice.length && <TableStateRow colSpan={c.columns.length} loading={busy} text={c.empty} />}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         )}
-        <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
+        <CardFooter>
           <Pagination total={rows.length} page={page} pageSize={pageSize} onPage={setPage} onSize={setPageSize} {...pagerTexts(c)} />
-        </div>
-      </div>
+        </CardFooter>
+      </Card>
     </div>
   )
 }

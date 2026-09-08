@@ -1,17 +1,20 @@
 // 柜面收款登记表单(纪要 2026-08-28-柜面现金收款;关联字段全下拉——用户裁定)。
 // 客户:复用 components/pickers/CustomerPicker(服务端检索+详情+跳转客户管理页);
-// 账单:选客户后联动该客户未结账单,含"无账单·预存"选项;
+// 账单:选客户后联动该客户未结账单,含"无账单·预存"选项,状态文案复用 common.statusTags;
 // 网点:主数据下拉(biz_params counter.sites);柜台/班次为描述字段保留文本。
 // 方式按资金通道归类:现金 cash/扫码 wechat|alipay/POS card;offline 专属师傅代收,柜面不开。
-// 操作员由服务端取登录态归因,前端不传。
+// 操作员由服务端取登录态归因,前端不传。弹层统一 ui/dialog(对齐 run-modal 先例)。
 import { useEffect, useState } from 'react'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { Dropdown, type DropdownOption } from '../../../components/Dropdown'
-import { useConfirm } from '../../../components/ConfirmDialog'
 import { CustomerPicker } from '../../../components/pickers/CustomerPicker'
-import { FormField, SubmitButton, ToolbarButton } from '../../../components/business'
+import { FormField, SubmitButton } from '../../../components/business'
 import { Input } from '../../../components/ui/input'
+import {
+  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
+} from '../../../components/ui/dialog'
+import { ToolbarButton } from '../../../components/business/page-head'
 import { fmtFee } from '../../../lib/format'
 
 interface Props {
@@ -24,7 +27,6 @@ interface BillOption { billId: number; billNo: string; period: string; amount: n
 export function CounterPaymentForm({ onDone, onClose }: Props) {
   const t = useT()
   const f = t.pages.payment
-  const confirm = useConfirm()
   const [customer, setCustomer] = useState('')
   const [bill, setBill] = useState('')
   const [billOptions, setBillOptions] = useState<DropdownOption[]>([])
@@ -55,7 +57,8 @@ export function CounterPaymentForm({ onDone, onClose }: Props) {
       .then((d) => { setBillOptions([
         { value: '0', label: f.noBill },
         ...(d?.items ?? []).filter((b) => b.status !== 'PAID').map((b) => ({
-          value: String(b.billId), label: b.billNo + ' ' + b.period + ' ' + fmtFee(b.amount) + ' ' + b.status,
+          value: String(b.billId),
+          label: [b.billNo, b.period, fmtFee(b.amount), t.common.statusTags['bill.' + b.status] ?? b.status].join(' '),
         })),
       ]); setLoadFail((cur) => (cur === f.billLoadFail ? '' : cur)) })
       .catch(() => { setBillOptions([]); setLoadFail(f.billLoadFail) })
@@ -66,7 +69,6 @@ export function CounterPaymentForm({ onDone, onClose }: Props) {
     if (customer === '') { setError(f.customerOrBill); return }
     const amt = Number(amount)
     if (!Number.isFinite(amt) || amt <= 0) { setError(f.amount); return }
-    if (!(await confirm(f.confirmText, { title: f.formTitle }))) return
     setBusy(true)
     setError('')
     try {
@@ -80,18 +82,23 @@ export function CounterPaymentForm({ onDone, onClose }: Props) {
       onDone(d?.payNo ?? '')
     } catch (e) {
       setError(e instanceof Error ? e.message : f.fail)
-    } finally {
       setBusy(false)
     }
   }
 
   return (
-    <div className="fixed inset-0 z-page-modal flex items-center justify-center bg-black/40" onClick={onClose}>
-      <div className="w-[440px] rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] p-5 shadow-[var(--shell-card-shadow)]" onClick={(e) => e.stopPropagation()}>
-        <div className="mb-4 text-center text-[15px] font-medium text-[var(--shell-heading)]">{f.formTitle}</div>
-        {error && <div className="mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div>}
+    <Dialog open onOpenChange={(v) => { if (!v && !busy) onClose() }}>
+      <DialogContent className="max-w-[460px]">
+        <DialogHeader>
+          <DialogTitle className="text-[15px]">{f.formTitle}</DialogTitle>
+        </DialogHeader>
+        {error && (
+          <div className="rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">
+            <span className="break-all">{error}</span>
+          </div>
+        )}
         {loadFail && (
-          <div className="mb-3 flex items-center justify-between gap-2 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">
+          <div className="flex items-center justify-between gap-2 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">
             <span className="break-all">{loadFail}</span>
             <button
               className="shrink-0 cursor-pointer border-none bg-none text-[12px] text-[var(--color-text-link)] underline"
@@ -117,7 +124,7 @@ export function CounterPaymentForm({ onDone, onClose }: Props) {
             </FormField>
           </div>
           <FormField label={f.amount}>
-            <Input inputMode="decimal" value={amount}
+            <Input inputMode="decimal" value={amount} placeholder="0.00"
               onChange={(e) => setAmount(e.target.value)} />
           </FormField>
           <FormField label={f.method}>
@@ -135,12 +142,12 @@ export function CounterPaymentForm({ onDone, onClose }: Props) {
             <Input value={counter} onChange={(e) => setCounter(e.target.value)} />
           </FormField>
         </div>
-        <div className="mt-5 flex justify-center gap-3">
+        <DialogFooter>
           <ToolbarButton onClick={onClose}>{t.common.confirmDialog.cancel}</ToolbarButton>
           <SubmitButton state={busy ? 'loading' : 'idle'} onClick={submit}
             labels={{ idle: f.submit, loading: f.submitting, success: f.submit, failed: f.submit }} />
-        </div>
-      </div>
-    </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }
