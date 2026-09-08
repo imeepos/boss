@@ -7,6 +7,10 @@ import { DetailDrawer, PageHead, pagerTexts } from '../shared'
 import { filterDataScopes, pageSlice, type ScopeRow } from './filter'
 import { Pagination } from '../../../components/Pagination'
 import { TableStateRow } from '../../../components/business'
+import { ErrorBanner } from '../../../components/business/page-head'
+import { Card } from '../../../components/ui/card'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/table'
+import { Input } from '../../../components/ui/input'
 
 export default function DataScopePage() {
   const t = useT()
@@ -39,43 +43,47 @@ export default function DataScopePage() {
   return (
     <div>
       <PageHead title={t.pages.datascope.title} desc={t.pages.datascope.desc} />
-      <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
+      <Card>
         <div className="flex flex-wrap items-center gap-2 p-4">
-          <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" placeholder={t.pages.datascope.searchPlaceholder}
+          <Input className="w-56" placeholder={t.pages.datascope.searchPlaceholder}
             value={keyword} onChange={(e) => { setKeyword(e.target.value); setPage(1) }} />
           <span className="spacer" />
           <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={load}>{t.pages.audit.refresh}</button>
         </div>
-        {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : (
-          <div className="overflow-x-auto px-4 pb-4">
-            <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
-              <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{t.pages.datascope.columns.map((c) => <th key={c} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{c}</th>)}</tr></thead>
-              <tbody>
-                {slice.map((r) => (
-                  <tr key={r.id}>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.username}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.roleName}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.legalEntityName || '—'}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.deptName || '—'}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.postName || '—'}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{scopeText(r)}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">
-                      <span className="inline-flex items-center">
-                        <button onClick={() => setDetail(r)}>{t.pages.datascope.detail}</button>
-                      </span>
-                    </td>
-                  </tr>
+        {error ? <div className="mx-4 mb-3"><ErrorBanner message={error} /></div> : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                {t.pages.datascope.columns.map((c) => (
+                  <TableHead key={c}>{c}</TableHead>
                 ))}
-                {!slice.length && <TableStateRow colSpan={7} text={t.pages.datascope.empty} />}
-              </tbody>
-            </table>
-          </div>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {slice.map((r) => (
+                <TableRow key={r.id}>
+                  <TableCell>{r.username}</TableCell>
+                  <TableCell>{r.roleName}</TableCell>
+                  <TableCell>{r.legalEntityName || '—'}</TableCell>
+                  <TableCell>{r.deptName || '—'}</TableCell>
+                  <TableCell>{r.postName || '—'}</TableCell>
+                  <TableCell>{scopeText(r)}</TableCell>
+                  <TableCell>
+                    <span className="inline-flex items-center">
+                      <button className="cursor-pointer border-none bg-none p-0 text-[13px] text-[var(--shell-content-text)] underline-offset-2 hover:text-[var(--shell-heading)] hover:underline" onClick={() => setDetail(r)}>{t.pages.datascope.detail}</button>
+                    </span>
+                  </TableCell>
+                </TableRow>
+              ))}
+              {!slice.length && <TableStateRow colSpan={7} text={t.pages.datascope.empty} />}
+            </TableBody>
+          </Table>
         )}
         <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
           <Pagination total={filtered.length} page={page} pageSize={pageSize}
             onPage={setPage} onSize={setPageSize} {...pagerTexts(t.pages.datascope)} />
         </div>
-      </div>
+      </Card>
       {detail && (
         <DetailDrawer
           title={t.pages.datascope.detail}
