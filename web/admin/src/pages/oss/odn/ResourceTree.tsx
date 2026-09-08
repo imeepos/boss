@@ -4,6 +4,7 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { Building2, ChevronRight, Folder, HardHat, LayoutGrid, MapPin, Search, Server } from 'lucide-react'
 import { Input } from '../../../components/ui/input'
+import { Card } from '../../../components/ui/card'
 import type { Grid, Facility, Site, Region, City } from './forms'
 import type { ResourceRow } from '../types'
 
@@ -150,7 +151,7 @@ export function ResourceTree({ regions, cities, prv, city, data, focus, g, onPrv
   const region = regions.find((r) => r.prvCode === prv)
 
   return (
-    <div className="rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
+    <Card>
       <h3 className="m-0 px-3 pt-3 text-[13px] font-semibold text-[var(--shell-heading)]">{g.title}</h3>
       <div className="relative p-3">
         <Search className="pointer-events-none absolute left-5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--color-text-tertiary)]" />
@@ -191,6 +192,6 @@ export function ResourceTree({ regions, cities, prv, city, data, focus, g, onPrv
           )
         })}
       </div>
-    </div>
+    </Card>
   )
 }
