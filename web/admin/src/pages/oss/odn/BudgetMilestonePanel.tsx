@@ -6,12 +6,9 @@ import { apiFetch } from '../../../api/client'
 import { Input } from '../../../components/ui/input'
 import { Badge } from '../../../components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../../components/ui/table'
-import { EmptyState, ToolbarButton } from '../../../components/business/page-head'
+import { Card } from '../../../components/ui/card'
+import { EmptyState, ErrorBanner, ToolbarButton } from '../../../components/business/page-head'
 import { fmtMoney } from './constructions'
-
-const CARD = 'rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]'
-const FIELD = 'flex flex-col gap-1'
-const LABEL = 'text-xs text-[var(--shell-content-text)]'
 
 interface Milestone {
   id: number
@@ -43,7 +40,11 @@ export function BudgetMilestonePanel({ project, onChanged }: {
   const load = useCallback(async () => {
     if (!pid) return
     try { setRows((await apiFetch<Milestone[]>('/odn/constructions/' + pid + '/milestones')) ?? []) }
-    catch (e) { setError(e instanceof Error ? e.message : '加载失败') }
+    catch (e) {
+      const msg = e instanceof Error ? e.message : '加载失败'
+      setError(msg)
+      toast.error('里程碑加载失败', { description: msg })
+    }
   }, [pid])
   useEffect(() => { void load() }, [load])
   useEffect(() => { setBudget(project?.budgetAmount != null ? String(project.budgetAmount) : '') }, [project?.budgetAmount])
@@ -51,7 +52,11 @@ export function BudgetMilestonePanel({ project, onChanged }: {
   const act = async (fn: () => Promise<unknown>, okMsg: string) => {
     setBusy(true); setError('')
     try { await fn(); toast.success(okMsg); await load(); onChanged() }
-    catch (e) { setError(e instanceof Error ? e.message : '操作失败') } finally { setBusy(false) }
+    catch (e) {
+      const msg = e instanceof Error ? e.message : '操作失败'
+      setError(msg)
+      toast.error(okMsg + ' 失败', { description: msg })
+    } finally { setBusy(false) }
   }
 
   const saveBudget = () => {
@@ -80,25 +85,25 @@ export function BudgetMilestonePanel({ project, onChanged }: {
   const settled = project?.settledAmount ?? 0
   const pct = budgetAmt != null && budgetAmt > 0 ? Math.round((settled / budgetAmt) * 100) : null
 
-  return <div className='space-y-3'>
-    <div className={CARD + ' p-4'}>
-      <div className='mb-2 text-sm font-semibold'>工程预算<span className='ml-2 text-xs font-normal opacity-60'>预算与里程碑清单仅待开工期可改;执行进度=已结算金额/预算(只读派生,已结算=SETTLED 结算单合计)</span></div>
-      <div className='flex flex-wrap items-end gap-2'>
-        {editable && <><label className={FIELD}><span className={LABEL}>预算金额</span><Input className='w-40' value={budget} onChange={(e) => setBudget(e.target.value.replace(/[^0-9.]/g, ''))} inputMode='decimal' placeholder='留空=清除' /></label>
+  return <div className="space-y-3">
+    <Card className="p-4">
+      <div className="mb-2 text-sm font-semibold">工程预算<span className="ml-2 text-xs font-normal opacity-60">预算与里程碑清单仅待开工期可改;执行进度=已结算金额/预算(只读派生,已结算=SETTLED 结算单合计)</span></div>
+      <div className="flex flex-wrap items-end gap-2">
+        {editable && <><label className="flex flex-col gap-1"><span className="text-xs text-[var(--shell-content-text)]">预算金额</span><Input className="w-40" value={budget} onChange={(e) => setBudget(e.target.value.replace(/[^0-9.]/g, ''))} inputMode="decimal" placeholder="留空=清除" /></label>
         <ToolbarButton primary disabled={busy} onClick={saveBudget}>保存预算</ToolbarButton></>}
-        {!editable && <span className='text-xs opacity-60'>预算金额:{budgetAmt != null ? fmtMoney(budgetAmt) : '未登记'}{!markable && '(已竣工锁定)'}</span>}
-        {budgetAmt != null && <span className='text-xs'>执行进度:{fmtMoney(settled)} / {fmtMoney(budgetAmt)}{pct != null ? '（' + pct + '%）' : ''}</span>}
+        {!editable && <span className="text-xs opacity-60">预算金额:{budgetAmt != null ? fmtMoney(budgetAmt) : '未登记'}{!markable && '(已竣工锁定)'}</span>}
+        {budgetAmt != null && <span className="text-xs">执行进度:{fmtMoney(settled)} / {fmtMoney(budgetAmt)}{pct != null ? '（' + pct + '%）' : ''}</span>}
       </div>
-    </div>
-    <div className={CARD + ' p-4'}>
-      <div className='mb-2 text-sm font-semibold'>里程碑</div>
-      {editable && <div className='mb-3 grid grid-cols-2 gap-3 md:grid-cols-4'>
-        <label className={FIELD}><span className={LABEL}>名称</span><Input value={name} onChange={(e) => setName(e.target.value)} placeholder='如 主干光缆敷设完成' /></label>
-        <label className={FIELD}><span className={LABEL}>计划完成日</span><Input value={planned} onChange={(e) => setPlanned(e.target.value)} placeholder='YYYY-MM-DD(可空)' /></label>
-        <div className='flex items-end'><ToolbarButton primary disabled={busy} onClick={add}>追加里程碑</ToolbarButton></div>
+    </Card>
+    <Card className="p-4">
+      <div className="mb-2 text-sm font-semibold">里程碑</div>
+      {editable && <div className="mb-3 grid grid-cols-2 gap-3 md:grid-cols-4">
+        <label className="flex flex-col gap-1"><span className="text-xs text-[var(--shell-content-text)]">名称</span><Input value={name} onChange={(e) => setName(e.target.value)} placeholder="如 主干光缆敷设完成" /></label>
+        <label className="flex flex-col gap-1"><span className="text-xs text-[var(--shell-content-text)]">计划完成日</span><Input value={planned} onChange={(e) => setPlanned(e.target.value)} placeholder="YYYY-MM-DD(可空)" /></label>
+        <div className="flex items-end"><ToolbarButton primary disabled={busy} onClick={add}>追加里程碑</ToolbarButton></div>
       </div>}
-      {error && <div className='mb-2 text-xs text-[var(--color-danger)]'>{error}</div>}
-      {rows.length === 0 ? <EmptyState text='暂无里程碑' /> : <div className='overflow-x-auto'><Table>
+      {error && <ErrorBanner message={error} className="mb-2" />}
+      {rows.length === 0 ? <EmptyState text="暂无里程碑" /> : <div className="overflow-x-auto"><Table>
         <TableHeader><TableRow><TableHead>名称</TableHead><TableHead>计划完成日</TableHead><TableHead>状态</TableHead><TableHead>完成时间</TableHead><TableHead>操作</TableHead></TableRow></TableHeader>
         <TableBody>
           {rows.map((m) => {
@@ -130,7 +135,7 @@ export function BudgetMilestonePanel({ project, onChanged }: {
             </TableRow>
           })}
         </TableBody>
-      </Table></div>}
-    </div>
+      </Table>
+    </Card>
   </div>
 }
