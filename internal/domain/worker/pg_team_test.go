@@ -95,10 +95,10 @@ func TestPGStore_TransferWorker_SameGroup(t *testing.T) {
 	mock.ExpectQuery(`SELECT EXISTS\(SELECT 1 FROM worker_groups WHERE id`).
 		WithArgs(int64(2)).
 		WillReturnRows(mock.NewRows([]string{"exists"}).AddRow(true))
-	mock.ExpectQuery(`SELECT ` + workerCols + ` FROM workers WHERE id = \$1`).
+	mock.ExpectQuery(`SELECT workers\.id, workers\.staff_no, workers\.name, workers\.group_id, COALESCE\(wg\.name, ''\) AS group_name, workers\.region_id, COALESCE\(r\.name, ''\) AS region_name, workers\.phone, workers\.status, workers\.joined_at, workers\.left_at FROM workers LEFT JOIN`).
 		WithArgs(int64(9)).
-		WillReturnRows(mock.NewRows(cols("id", "staff_no", "name", "group_id", "region_id", "phone", "status", "joined_at", "left_at")).
-			AddRow(int64(9), "WK-9", "张师傅", int64(2), 1, "13800000000", 1, ts, nil))
+		WillReturnRows(mock.NewRows(cols("id", "staff_no", "name", "group_id", "group_name", "region_id", "region_name", "phone", "status", "joined_at", "left_at")).
+			AddRow(int64(9), "WK-9", "张师傅", int64(2), "二号装维队", 1, "宿务", "13800000000", 1, ts, nil))
 	mock.ExpectQuery(`FROM worker_regions WHERE worker_id = ANY`).
 		WithArgs([]int64{int64(9)}).
 		WillReturnRows(mock.NewRows([]string{"worker_id", "region_id"}))

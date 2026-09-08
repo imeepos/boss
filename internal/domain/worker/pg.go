@@ -98,16 +98,19 @@ func (s *PGStore) CreateGroup(ctx context.Context, g Group) (int64, error) {
 	return id, nil
 }
 
-const workerCols = `id, staff_no, name, group_id, region_id, phone, status, joined_at, left_at`
+// workerFrom 读路径统一 FROM:LEFT JOIN 班组/区域取人读名现值(§6.2,列名随 JOIN 全限定)。
+const workerFrom = `workers LEFT JOIN worker_groups wg ON wg.id = workers.group_id LEFT JOIN regions r ON r.id = workers.region_id`
+
+const workerCols = `workers.id, workers.staff_no, workers.name, workers.group_id, COALESCE(wg.name, '') AS group_name, workers.region_id, COALESCE(r.name, '') AS region_name, workers.phone, workers.status, workers.joined_at, workers.left_at`
 
 // ListWorkers 列出师傅;groupID=0 返回全部,否则按班组过滤;keyword 命中姓名/工号/手机号。
 // 附带负责区域集合(迁移 000175;批量一查询回填,避免 N+1)。
 func (s *PGStore) ListWorkers(ctx context.Context, groupID int64, keyword string) ([]Worker, error) {
 	rows, err := s.db.Query(ctx,
-		`SELECT `+workerCols+` FROM workers
-		WHERE ($1 = 0 OR group_id = $1)
-		  AND ($2 = '' OR name ILIKE '%' || $2 || '%' OR staff_no ILIKE '%' || $2 || '%' OR phone ILIKE '%' || $2 || '%')
-		ORDER BY id`, groupID, keyword)
+		`SELECT `+workerCols+` FROM `+workerFrom+`
+		WHERE ($1 = 0 OR workers.group_id = $1)
+		  AND ($2 = '' OR workers.name ILIKE '%' || $2 || '%' OR workers.staff_no ILIKE '%' || $2 || '%' OR workers.phone ILIKE '%' || $2 || '%')
+		ORDER BY workers.id`, groupID, keyword)
 	if err != nil {
 		return nil, fmt.Errorf("worker: list workers: %w", err)
 	}
@@ -141,7 +144,7 @@ func (s *PGStore) CreateWorker(ctx context.Context, w Worker) (int64, error) {
 
 // GetWorker 按 id 查师傅;未命中返回 ErrNotFound。附带负责区域集合(迁移 000175)。
 func (s *PGStore) GetWorker(ctx context.Context, id int64) (*Worker, error) {
-	w, err := scanWorker(s.db.QueryRow(ctx, `SELECT `+workerCols+` FROM workers WHERE id = $1`, id))
+	w, err := scanWorker(s.db.QueryRow(ctx, `SELECT `+workerCols+` FROM `+workerFrom+` WHERE workers.id = $1`, id))
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, ErrNotFound
 	}
@@ -162,7 +165,7 @@ type rowScanner interface {
 func scanWorker(r rowScanner) (*Worker, error) {
 	var w Worker
 	var leftAt pgtype.Timestamptz
-	if err := r.Scan(&w.ID, &w.StaffNo, &w.Name, &w.GroupID, &w.RegionID, &w.Phone, &w.Status, &w.JoinedAt, &leftAt); err != nil {
+	if err := r.Scan(&w.ID, &w.StaffNo, &w.Name, &w.GroupID, &w.GroupName, &w.RegionID, &w.RegionName, &w.Phone, &w.Status, &w.JoinedAt, &leftAt); err != nil {
 		return nil, err
 	}
 	if leftAt.Valid {

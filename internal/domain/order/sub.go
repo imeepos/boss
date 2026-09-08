@@ -35,7 +35,8 @@ type Complaint struct {
 	ID              int64      `json:"id"`
 	TicketNo        string     `json:"ticketNo"`
 	CustomerID      int64      `json:"customerId"`
-	OrderID         int64      `json:"orderId"` // 0=无关联订单
+	CustomerName    string     `json:"customerName"` // 客户名(读取时 JOIN 现值,data-relations §6 扩展)
+	OrderID         int64      `json:"orderId"`      // 0=无关联订单
 	LegalEntityID   int64      `json:"legalEntityId"`
 	LegalEntityName string     `json:"legalEntityName"`
 	Type            string     `json:"type"`

@@ -69,10 +69,10 @@ func TestPGStore_ListComplaints(t *testing.T) {
 	}
 	defer mock.Close()
 
-	cols := []string{"id", "ticket_no", "customer_id", "order_id", "legal_entity_id", "legal_entity_name", "type", "status", "description", "contact", "rel_order_no", "created_at", "remote_diagnosis", "sla_deadline", "closed_at", "closed_by", "resolution"}
-	mock.ExpectQuery(`SELECT id, ticket_no, customer_id, COALESCE\(order_id, 0\)`).
+	cols := []string{"id", "ticket_no", "customer_id", "customer_name", "order_id", "legal_entity_id", "legal_entity_name", "type", "status", "description", "contact", "rel_order_no", "created_at", "remote_diagnosis", "sla_deadline", "closed_at", "closed_by", "resolution"}
+	mock.ExpectQuery(`SELECT complaints.id, complaints.ticket_no, complaints.customer_id, COALESCE\(cu\.name, ''\) AS customer_name`).
 		WillReturnRows(mock.NewRows(cols).
-			AddRow(int64(1), "TKT-20250817-012", int64(8), int64(0), int64(1), "主品牌·企业", "SINGLE_OUTAGE", "PROCESSING", "光功率过低", "13800001234", "ORD-20250817-001", "2025-08-17 10:00", "", "", nil, int64(0), ""))
+			AddRow(int64(1), "TKT-20250817-012", int64(8), "客户 213", int64(0), int64(1), "主品牌·企业", "SINGLE_OUTAGE", "PROCESSING", "光功率过低", "13800001234", "ORD-20250817-001", "2025-08-17 10:00", "", "", nil, int64(0), ""))
 
 	s := NewPGStore(mock, stubExists{})
 	got, err := s.ListComplaints(context.Background())
@@ -99,13 +99,13 @@ func TestPGStore_ListComplaintsByCustomerPaged(t *testing.T) {
 	}
 	defer mock.Close()
 
-	cols := []string{"id", "ticket_no", "customer_id", "order_id", "legal_entity_id", "legal_entity_name", "type", "status", "description", "contact", "rel_order_no", "created_at", "remote_diagnosis", "sla_deadline", "closed_at", "closed_by", "resolution"}
+	cols := []string{"id", "ticket_no", "customer_id", "customer_name", "order_id", "legal_entity_id", "legal_entity_name", "type", "status", "description", "contact", "rel_order_no", "created_at", "remote_diagnosis", "sla_deadline", "closed_at", "closed_by", "resolution"}
 	// page=1 size=10 服务端取 LIMIT 11;我们模拟 5 行 → hasMore=false。
-	mock.ExpectQuery(`SELECT id, ticket_no, customer_id, COALESCE\(order_id, 0\)`).
+	mock.ExpectQuery(`SELECT complaints.id, complaints.ticket_no, complaints.customer_id, COALESCE\(cu\.name, ''\) AS customer_name`).
 		WithArgs(int64(8), 11, 0).
 		WillReturnRows(mock.NewRows(cols).
-			AddRow(int64(5), "TKT-5", int64(8), int64(0), int64(1), "主品牌·企业", "SLOW_NET", "OPEN", "网速慢", "13800001234", "", "2025-08-20 09:00", "", "", nil, int64(0), "").
-			AddRow(int64(4), "TKT-4", int64(8), int64(0), int64(1), "主品牌·企业", "OTHER", "CLOSED", "其他", "", "", "2025-08-19 09:00", "", "", nil, int64(0), ""))
+			AddRow(int64(5), "TKT-5", int64(8), "客户 213", int64(0), int64(1), "主品牌·企业", "SLOW_NET", "OPEN", "网速慢", "13800001234", "", "2025-08-20 09:00", "", "", nil, int64(0), "").
+			AddRow(int64(4), "TKT-4", int64(8), "客户 213", int64(0), int64(1), "主品牌·企业", "OTHER", "CLOSED", "其他", "", "", "2025-08-19 09:00", "", "", nil, int64(0), ""))
 
 	s := NewPGStore(mock, stubExists{})
 	got, hasMore, err := s.ListComplaintsByCustomerPaged(context.Background(), 8, 1, 10)
@@ -129,11 +129,11 @@ func TestPGStore_GetComplaintByNoAndCustomer(t *testing.T) {
 	}
 	defer mock.Close()
 
-	cols := []string{"id", "ticket_no", "customer_id", "order_id", "legal_entity_id", "legal_entity_name", "type", "status", "description", "contact", "rel_order_no", "created_at", "remote_diagnosis", "sla_deadline", "closed_at", "closed_by", "resolution"}
-	mock.ExpectQuery(`SELECT id, ticket_no, customer_id, COALESCE\(order_id, 0\)`).
+	cols := []string{"id", "ticket_no", "customer_id", "customer_name", "order_id", "legal_entity_id", "legal_entity_name", "type", "status", "description", "contact", "rel_order_no", "created_at", "remote_diagnosis", "sla_deadline", "closed_at", "closed_by", "resolution"}
+	mock.ExpectQuery(`SELECT complaints.id, complaints.ticket_no, complaints.customer_id, COALESCE\(cu\.name, ''\) AS customer_name`).
 		WithArgs("TKT-9", int64(8)).
 		WillReturnRows(mock.NewRows(cols).
-			AddRow(int64(9), "TKT-9", int64(8), int64(0), int64(1), "主品牌·企业", "BILLING", "PROCESSING", "计费问题", "13800001234", "ORD-20250817-001", "2025-08-21 10:00", "", "", nil, int64(0), ""))
+			AddRow(int64(9), "TKT-9", int64(8), "客户 213", int64(0), int64(1), "主品牌·企业", "BILLING", "PROCESSING", "计费问题", "13800001234", "ORD-20250817-001", "2025-08-21 10:00", "", "", nil, int64(0), ""))
 
 	s := NewPGStore(mock, stubExists{})
 	got, err := s.GetComplaintByNoAndCustomer(context.Background(), "TKT-9", 8)
@@ -156,7 +156,7 @@ func TestPGStore_GetComplaintByNoAndCustomer_NotFound(t *testing.T) {
 	}
 	defer mock.Close()
 
-	mock.ExpectQuery(`SELECT id, ticket_no, customer_id, COALESCE\(order_id, 0\)`).
+	mock.ExpectQuery(`SELECT complaints.id, complaints.ticket_no, complaints.customer_id, COALESCE\(cu\.name, ''\) AS customer_name`).
 		WithArgs("TKT-X", int64(8)).
 		WillReturnRows(pgxmock.NewRows([]string{"id"}))
 

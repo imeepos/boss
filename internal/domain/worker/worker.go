@@ -35,16 +35,18 @@ type Group struct {
 // Worker 装维师傅(归属班组,服务区域须落班组公司经营区域)。
 // RegionIDs 全部负责区域(主区域首位;迁移 000175 起一师傅可配置多区域)。
 type Worker struct {
-	ID        int64      `json:"id"`
-	StaffNo   string     `json:"staffNo"`
-	Name      string     `json:"name"`
-	GroupID   int64      `json:"groupId"`
-	RegionID  int64      `json:"regionId"`
-	RegionIDs []int64    `json:"regionIds"`
-	Phone     string     `json:"phone"`
-	Status    int16      `json:"status"` // 1在职 0离职
-	JoinedAt  time.Time  `json:"joinedAt"`
-	LeftAt    *time.Time `json:"leftAt,omitempty"` // nil=在职
+	ID         int64      `json:"id"`
+	StaffNo    string     `json:"staffNo"`
+	Name       string     `json:"name"`
+	GroupID    int64      `json:"groupId"`
+	GroupName  string     `json:"groupName"` // 班组名(读取时 JOIN 现值,data-relations §6.2)
+	RegionID   int64      `json:"regionId"`
+	RegionName string     `json:"regionName"` // 主区域名(读取时 JOIN 现值,data-relations §6.2)
+	RegionIDs  []int64    `json:"regionIds"`
+	Phone      string     `json:"phone"`
+	Status     int16      `json:"status"` // 1在职 0离职
+	JoinedAt   time.Time  `json:"joinedAt"`
+	LeftAt     *time.Time `json:"leftAt,omitempty"` // nil=在职
 }
 
 // MatchesRegion 工单区域是否落在师傅负责区域内(主区域 ∪ 扩展区域,000175):

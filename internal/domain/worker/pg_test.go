@@ -72,12 +72,12 @@ func TestPGStore_ListWorkers(t *testing.T) {
 	}
 	defer mock.Close()
 
-	cols := []string{"id", "staff_no", "name", "group_id", "region_id", "phone", "status", "joined_at", "left_at"}
-	mock.ExpectQuery(`SELECT id, staff_no, name, group_id, region_id, phone, status, joined_at, left_at FROM workers`).
+	cols := []string{"id", "staff_no", "name", "group_id", "group_name", "region_id", "region_name", "phone", "status", "joined_at", "left_at"}
+	mock.ExpectQuery(`SELECT workers.id, workers.staff_no, workers.name, workers.group_id, COALESCE\(wg.name, ''\) AS group_name, workers.region_id, COALESCE\(r.name, ''\) AS region_name, workers.phone, workers.status, workers.joined_at, workers.left_at FROM workers LEFT JOIN`).
 		WithArgs(int64(1), "").
 		WillReturnRows(mock.NewRows(cols).
-			AddRow(int64(1), "WK-1024", "张师傅", int64(1), int64(11), "138****8899", int16(1), ts, nil).
-			AddRow(int64(2), "WK-1025", "李师傅", int64(1), int64(11), "136****1177", int16(0), ts, ts))
+			AddRow(int64(1), "WK-1024", "张师傅", int64(1), "一号装维队", int64(11), "马尼拉", "138****8899", int16(1), ts, nil).
+			AddRow(int64(2), "WK-1025", "李师傅", int64(1), "一号装维队", int64(11), "马尼拉", "136****1177", int16(0), ts, ts))
 	// 负责区域批量回填(000175):师傅 2 单区域 11。
 	mock.ExpectQuery(`FROM worker_regions WHERE worker_id = ANY`).
 		WithArgs([]int64{int64(1), int64(2)}).
@@ -91,6 +91,10 @@ func TestPGStore_ListWorkers(t *testing.T) {
 	}
 	if len(got) != 2 || got[0].StaffNo != "WK-1024" || got[0].LeftAt != nil || got[1].LeftAt == nil {
 		t.Fatalf("got=%+v", got)
+	}
+	// 班组/主区域人读名(§6.2)。
+	if got[0].GroupName != "一号装维队" || got[0].RegionName != "马尼拉" {
+		t.Fatalf("group=%q region=%q", got[0].GroupName, got[0].RegionName)
 	}
 	// 多负责区域回填:主区域首位(000175)。
 	if len(got[0].RegionIDs) != 1 || got[0].RegionIDs[0] != 11 {
@@ -150,11 +154,11 @@ func TestPGStore_GetWorker(t *testing.T) {
 		}
 		defer mock.Close()
 
-		cols := []string{"id", "staff_no", "name", "group_id", "region_id", "phone", "status", "joined_at", "left_at"}
-		mock.ExpectQuery(`SELECT id, staff_no, name, group_id, region_id, phone, status, joined_at, left_at FROM workers WHERE id`).
+		cols := []string{"id", "staff_no", "name", "group_id", "group_name", "region_id", "region_name", "phone", "status", "joined_at", "left_at"}
+		mock.ExpectQuery(`SELECT workers.id, workers.staff_no, workers.name, workers.group_id, COALESCE\(wg.name, ''\) AS group_name, workers.region_id, COALESCE\(r.name, ''\) AS region_name, workers.phone, workers.status, workers.joined_at, workers.left_at FROM workers LEFT JOIN worker_groups.*WHERE workers\.id`).
 			WithArgs(int64(1)).
 			WillReturnRows(mock.NewRows(cols).
-				AddRow(int64(1), "WK-1024", "张师傅", int64(1), int64(11), "138****8899", int16(1), ts, nil))
+				AddRow(int64(1), "WK-1024", "张师傅", int64(1), "一号装维队", int64(11), "马尼拉", "138****8899", int16(1), ts, nil))
 		mock.ExpectQuery(`FROM worker_regions WHERE worker_id = ANY`).
 			WithArgs([]int64{int64(1)}).
 			WillReturnRows(mock.NewRows([]string{"worker_id", "region_id"}).
@@ -167,6 +171,9 @@ func TestPGStore_GetWorker(t *testing.T) {
 		}
 		if w.Name != "张师傅" || w.LeftAt != nil {
 			t.Fatalf("w=%+v", w)
+		}
+		if w.GroupName != "一号装维队" || w.RegionName != "马尼拉" {
+			t.Fatalf("group=%q region=%q", w.GroupName, w.RegionName)
 		}
 		// 多负责区域:主区域 11 首位,扩展 12(000175)。
 		if len(w.RegionIDs) != 2 || w.RegionIDs[0] != 11 || w.RegionIDs[1] != 12 {
@@ -183,7 +190,7 @@ func TestPGStore_GetWorker(t *testing.T) {
 		}
 		defer mock.Close()
 
-		mock.ExpectQuery(`SELECT id, staff_no`).
+		mock.ExpectQuery(`SELECT workers.id, workers.staff_no`).
 			WithArgs(int64(99)).
 			WillReturnError(pgx.ErrNoRows)
 

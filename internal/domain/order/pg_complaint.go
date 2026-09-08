@@ -10,22 +10,25 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
+// complaintFrom 读路径统一 FROM:LEFT JOIN customers 取客户名现值(§6 扩展项)。
+const complaintFrom = `complaints LEFT JOIN customers cu ON cu.id = complaints.customer_id`
+
 // complaintColumns SELECT 子句与 Scan 顺序的单一事实源,被 ListComplaints /
 // ListComplaintsByCustomerPaged / GetComplaintByNoAndCustomer 三处共用,避免
-// 列序错位。加列时只需改这里一处。
-const complaintColumns = `id, ticket_no, customer_id, COALESCE(order_id, 0), legal_entity_id, legal_entity_name,
-		type, status,
-		COALESCE(description, ''),
-		COALESCE(contact, ''),
-		COALESCE(rel_order_no, ''),
-		COALESCE(TO_CHAR(created_at, 'YYYY-MM-DD HH24:MI'), ''),
-		COALESCE(remote_diagnosis, ''),
-		COALESCE(TO_CHAR(sla_deadline, 'YYYY-MM-DD HH24:MI'), ''), closed_at, COALESCE(closed_by, 0), resolution`
+// 列序错位。加列时只需改这里一处;列名随 JOIN 全限定。
+const complaintColumns = `complaints.id, complaints.ticket_no, complaints.customer_id, COALESCE(cu.name, '') AS customer_name, COALESCE(complaints.order_id, 0), complaints.legal_entity_id, complaints.legal_entity_name,
+		complaints.type, complaints.status,
+		COALESCE(complaints.description, ''),
+		COALESCE(complaints.contact, ''),
+		COALESCE(complaints.rel_order_no, ''),
+		COALESCE(TO_CHAR(complaints.created_at, 'YYYY-MM-DD HH24:MI'), ''),
+		COALESCE(complaints.remote_diagnosis, ''),
+		COALESCE(TO_CHAR(complaints.sla_deadline, 'YYYY-MM-DD HH24:MI'), ''), complaints.closed_at, COALESCE(complaints.closed_by, 0), complaints.resolution`
 
 // scanComplaintRow 从 rows 中按 complaintColumns 顺序填充一行。
 func scanComplaintRow(rows pgx.Row, c *Complaint) error {
 	return rows.Scan(
-		&c.ID, &c.TicketNo, &c.CustomerID, &c.OrderID,
+		&c.ID, &c.TicketNo, &c.CustomerID, &c.CustomerName, &c.OrderID,
 		&c.LegalEntityID, &c.LegalEntityName, &c.Type, &c.Status,
 		&c.Description, &c.Contact, &c.RelOrderNo,
 		&c.CreatedAt, &c.RemoteDiagnosis, &c.SlaDeadline, &c.ClosedAt, &c.ClosedBy, &c.Resolution,
@@ -34,7 +37,7 @@ func scanComplaintRow(rows pgx.Row, c *Complaint) error {
 
 // ListComplaints 列出全部报障工单(管理后台/巡检用)。
 func (s *PGStore) ListComplaints(ctx context.Context) ([]Complaint, error) {
-	rows, err := s.db.Query(ctx, `SELECT `+complaintColumns+` FROM complaints ORDER BY id`)
+	rows, err := s.db.Query(ctx, `SELECT `+complaintColumns+` FROM `+complaintFrom+` ORDER BY complaints.id`)
 	if err != nil {
 		return nil, fmt.Errorf("order: list complaints: %w", err)
 	}
@@ -63,8 +66,8 @@ func (s *PGStore) ListComplaintsByCustomerPaged(ctx context.Context, customerID 
 		pageSize = 50
 	}
 	rows, err := s.db.Query(ctx, `SELECT `+complaintColumns+`
-		FROM complaints WHERE customer_id = $1
-		ORDER BY created_at DESC, id DESC
+		FROM `+complaintFrom+` WHERE complaints.customer_id = $1
+		ORDER BY complaints.created_at DESC, complaints.id DESC
 		LIMIT $2 OFFSET $3`, customerID, pageSize+1, (page-1)*pageSize)
 	if err != nil {
 		return nil, false, fmt.Errorf("order: list complaints paged: %w", err)
@@ -92,7 +95,7 @@ func (s *PGStore) ListComplaintsByCustomerPaged(ctx context.Context, customerID 
 // 详情页天然防越权。未命中返回 ErrOrderNotFound。
 func (s *PGStore) GetComplaintByNoAndCustomer(ctx context.Context, ticketNo string, customerID int64) (*Complaint, error) {
 	row := s.db.QueryRow(ctx, `SELECT `+complaintColumns+`
-		FROM complaints WHERE ticket_no = $1 AND customer_id = $2`, ticketNo, customerID)
+		FROM `+complaintFrom+` WHERE complaints.ticket_no = $1 AND complaints.customer_id = $2`, ticketNo, customerID)
 	var c Complaint
 	if err := scanComplaintRow(row, &c); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

@@ -1421,7 +1421,9 @@ stocktake_items（盘点差异明细，建单冻结快照 + 扫码回填 + 逐�
 | `passwordHash` | password_hash | 师傅端密码哈希，仅存哈希，不存明文，可空（首次设置前不可密码登录） |
 | `name` | name | 师傅姓名 |
 | `group` | group_id | BIGINT → worker_groups（当前归属，可变更） |
+| `groupName` | —（读路径 JOIN） | 班组名现值：列表/详情读路径 LEFT JOIN worker_groups（2026-09-08，data-relations §6.2 销账） |
 | `regionId` | region_id | 主区域（第一负责区域；000175 起为 regionIds 首位镜像，兼容派单快照/月度统计链路），须落班组公司经营区域 |
+| `regionName` | —（读路径 JOIN） | 主区域名现值：读路径 LEFT JOIN regions（2026-09-08，data-relations §6.2 销账） |
 | `regionIds` | worker_regions（§7.1a） | 全部负责区域（000175 多区域；列表/详情回填，主区域首位；未配置时回退 [regionId]） |
 | `phone` | phone | 联系电话（列表/详情脱敏展示；师傅端登录名） |
 | `status` | status | 1在职 / 0离职（terms.md §4 登记；师傅详情/列表同口径） |
