@@ -10,12 +10,10 @@ import { useConfirm } from '../../../components/ConfirmDialog'
 import { pageSlice, type ProvisionTemplateRow } from '../types'
 import type { LegalEntityRow } from '../../org/company/filter'
 import { TemplateForm } from './TemplateForm'
-import { TableStateRow } from '../../../components/business'
-
-const TD = 'h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]'
-const TH = 'h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]'
-const ACT = 'mr-2.5 cursor-pointer border-none bg-none px-0 text-xs text-[var(--color-text-link)] hover:underline'
-const DANGER = ACT + ' text-[var(--color-danger)]'
+import { ActionLink, ActionLinks, ActionSep, IdRef, TableStateRow, ToolbarButton } from '../../../components/business'
+import { ErrorBanner } from '../../../components/business/page-head'
+import { Card, CardContent, CardFooter } from '../../../components/ui/card'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../../components/ui/table'
 
 export default function ProvisionTemplatePage() {
   const t = useT()
@@ -87,49 +85,57 @@ export default function ProvisionTemplatePage() {
   return (
     <div>
       <PageHead title={p.title} desc={p.desc} />
-      <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
-        <div className="flex flex-wrap items-center gap-2 p-4">
-          <div className="w-36">
-            <Dropdown value={statusFilter} options={statusOptions}
-              onChange={(v) => { setStatusFilter(v); setPage(1) }} ariaLabel={p.allStatus} />
+      <Card>
+        <CardContent>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="w-36">
+              <Dropdown value={statusFilter} options={statusOptions}
+                onChange={(v) => { setStatusFilter(v); setPage(1) }} ariaLabel={p.allStatus} />
+            </div>
+            <span className="spacer" />
+            <ToolbarButton disabled={busy} onClick={load}>{t.pages.audit.refresh}</ToolbarButton>
+            <ToolbarButton primary onClick={() => setCreating(true)}>{p.create}</ToolbarButton>
           </div>
-          <span className="spacer" />
-          <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
-          <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" onClick={() => setCreating(true)}>{p.create}</button>
-        </div>
-        {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : (
-          <div className="overflow-x-auto px-4 pb-4">
-            <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
-              <thead><tr>{p.columns.map((x) => <th key={x} className={TH}>{x}</th>)}</tr></thead>
-              <tbody>
+        </CardContent>
+        {error ? <ErrorBanner message={error} /> : (
+          <div className="px-4 pb-4">
+            <Table>
+              <TableHeader>
+                <TableRow>{p.columns.map((x) => <TableHead key={x}>{x}</TableHead>)}</TableRow>
+              </TableHeader>
+              <TableBody>
                 {slice.map((x) => (
-                  <tr key={x.id}>
-                    <td className={TD}>#{x.id}</td>
-                    <td className={TD}>{entityName(x.legalEntityId)}</td>
-                    <td className={TD}>{x.code}</td>
-                    <td className={TD}>{x.name}</td>
-                    <td className={TD}>
+                  <TableRow key={x.id}>
+                    <TableCell><IdRef value={x.id} /></TableCell>
+                    <TableCell>{entityName(x.legalEntityId)}</TableCell>
+                    <TableCell className="font-mono">{x.code}</TableCell>
+                    <TableCell>{x.name}</TableCell>
+                    <TableCell>
                       <span className={x.status === 'ENABLED' ? 'text-[var(--color-success)]' : 'text-[var(--shell-group-title)]'}>{x.status}</span>
-                    </td>
-                    <td className={TD}>v{x.version}</td>
-                    <td className={TD}>{x.boundOffers > 0 ? x.boundOffers : <span className="text-[var(--shell-group-title)]">0</span>}</td>
-                    <td className={TD}>
-                      <button className={ACT} disabled={busy} onClick={() => setEditing(x)}>{p.edit}</button>
-                      <button className={ACT} disabled={busy} onClick={() => toggleStatus(x)}>{x.status === 'ENABLED' ? 'DISABLE' : 'ENABLE'}</button>
-                      <button className={DANGER} disabled={busy} onClick={() => del(x)}>{p.delete}</button>
-                    </td>
-                  </tr>
+                    </TableCell>
+                    <TableCell>v{x.version}</TableCell>
+                    <TableCell>{x.boundOffers > 0 ? x.boundOffers : <span className="text-[var(--shell-group-title)]">0</span>}</TableCell>
+                    <TableCell>
+                      <ActionLinks>
+                        <ActionLink onClick={() => setEditing(x)} label={p.edit} testId={`tpl-edit-${x.id}`} />
+                        <ActionSep />
+                        <ActionLink onClick={() => toggleStatus(x)} label={x.status === 'ENABLED' ? 'DISABLE' : 'ENABLE'} testId={`tpl-status-${x.id}`} />
+                        <ActionSep />
+                        <ActionLink onClick={() => del(x)} label={p.delete} testId={`tpl-del-${x.id}`} />
+                      </ActionLinks>
+                    </TableCell>
+                  </TableRow>
                 ))}
                 {!slice.length && <TableStateRow colSpan={p.columns.length} loading={busy} text={p.empty} />}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         )}
-        <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
+        <CardFooter>
           <Pagination total={filtered.length} page={page} pageSize={pageSize}
             onPage={setPage} onSize={setPageSize} {...pagerTexts(p)} />
-        </div>
-      </div>
+        </CardFooter>
+      </Card>
       {creating && (
         <TemplateForm entities={entities}
           onDone={() => { setCreating(false); load() }}
