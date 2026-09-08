@@ -1,5 +1,5 @@
 {
-  "capturedAt": "2026-09-07T10:03:16.179Z",
+  "capturedAt": "2026-09-08T16:48:50.120Z",
   "base": "http://192.168.0.102:28080",
   "roles": {
     "technician": {
@@ -36,6 +36,7 @@
         "menu:expand",
         "menu:loaccount",
         "menu:odn",
+        "menu:permits",
         "menu:provision",
         "menu:reserve",
         "menu:resource",
@@ -59,6 +60,7 @@
         "menu:install-board",
         "menu:onboarding",
         "menu:order",
+        "menu:payables",
         "menu:paycheck",
         "menu:payment",
         "menu:product",
@@ -136,9 +138,11 @@
         "menu:partner-home",
         "menu:partner-orders",
         "menu:partner-staff",
+        "menu:payables",
         "menu:paycheck",
         "menu:payment",
         "menu:payment:cash",
+        "menu:permits",
         "menu:post",
         "menu:product",
         "menu:product-write",
