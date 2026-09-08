@@ -103,7 +103,7 @@ export default function ConstructionsPanel() {
             <TableCell><button className='text-[var(--color-text-link)]' onClick={() => setOpenId(openId === r.id ? null : r.id)}>{openId === r.id ? '收起' : '详情'}</button></TableCell>
           </TableRow>)}
         </TableBody>
-      </Table>
+      </Table></div>}
     </Card>
     {openId != null && <ConstructionDetail projectId={openId} onChanged={() => void load()} />}
   </div>

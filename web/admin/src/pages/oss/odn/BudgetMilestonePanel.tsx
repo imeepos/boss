@@ -135,7 +135,7 @@ export function BudgetMilestonePanel({ project, onChanged }: {
             </TableRow>
           })}
         </TableBody>
-      </Table>
+      </Table></div>}
     </Card>
   </div>
 }

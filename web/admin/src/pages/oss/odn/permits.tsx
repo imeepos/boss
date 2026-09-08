@@ -109,7 +109,7 @@ export default function PermitsPage() {
 
   const statusOptions = kind === 'PECE' ? PECE_STATUS_OPTIONS : kind === 'ROW' ? ROW_STATUS_OPTIONS : []
   const set = (k: string, v: string) => setForm((m) => ({ ...m, [k]: v }))
-  const field = (k: string, label: string, placeholder = '') => <label className={FIELD}><span className={LABEL}>{label}</span><Input value={form[k as keyof typeof form] ?? ''} placeholder={placeholder} onChange={(e) => set(k, e.target.value)} /></label>
+  const field = (k: string, label: string, placeholder = '') => <label className="flex flex-col gap-1"><span className="text-xs text-[var(--shell-content-text)]">{label}</span><Input value={form[k as keyof typeof form] ?? ''} placeholder={placeholder} onChange={(e) => set(k, e.target.value)} /></label>
 
   return <div>
     <div className="mb-3 flex items-center justify-between"><div className="flex flex-wrap items-end gap-2">
@@ -145,7 +145,7 @@ export default function PermitsPage() {
             <TableCell><button className='text-[var(--color-text-link)]' onClick={() => setOpenId(openId === r.id ? null : r.id)}>{openId === r.id ? '收起' : '详情'}</button></TableCell>
           </TableRow>)}
         </TableBody>
-      </Table>
+      </Table></div>}
     </Card>
     {openId != null && <PermitDetail permitId={openId} onChanged={() => void load()} />}
   </div>
