@@ -563,3 +563,4 @@ pgx 参数类型必须与 SQL 推断类型严格匹配:int 喂 text 位($1||str)
 - 【已犯 1 次】docker build 经管道 tail 判成败再犯(SERVER_BUILD_OK 假阳性):远程构建一律显式 rc + 日志落盘后 tail。
 - 【已犯 1 次】共享主树目录下长文件多次 edit 内容/行号漂移(read 视图与磁盘不一致):重构类修改改用「python fixer 文件 + bash 执行 + grep 验证」三段式,锚定内容而非行号。
 - 经验:CI runner 宿主故障时的手动等价部署链:git archive/rsync 源码→构建机;上下文必须最小化(全仓 5-9G 上下文会令 buildkit grpc Canceled);DOCKER_BUILDKIT=0 legacy builder 免联网核对基础镜像;缺的基镜像走 daocloud 镜像源 pull 后打 tag。
+- 当「一个页面」实际包含多条路由(如 /bss/marketing 与 /bss/marketing-recon 共用一目录)时,逐路由 DOM 走查缺一即证据链有洞——负责人问「是否全部走查完毕」时靠复核证据表才发现 marketing-recon 未单独断言(2026-09-08 bss 批)。
