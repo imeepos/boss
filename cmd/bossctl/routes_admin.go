@@ -548,6 +548,7 @@ var adminRoutes = []routeEntry{
 	{"DELETE", "/api-keys/:id", "吊销 API key(软删,status=0;permCode menu:apikey)"},
 	{"GET", "/api-key-templates", "受限权限模板清单(签发 API key 时可选;permCode menu:apikey)"},
 	{"POST", "/storage-config/rotate-secret", "轮换对象存储密钥(hostctl sidecar 新密钥落 secret 文件;permCode menu:params)"},
+	{"POST", "/storage-config/test", "存储连通性自检(零副作用:用生效配置做 BucketExists 探测;permCode menu:params)"},
 	{"POST", "/ops/notify-emit", "运维脚本上报提醒(cron/巡检/隧道;permCode menu:dispatch,仅 account 主体)"},
 	{"GET", "/push-config", "推送配置全量(secret 字段掩码:仅返回 hasValue,值不回显)"},
 	{"PUT", "/push-config/:group", "分组部分更新(secret 空串=不修改;越组 key 拒绝)"},

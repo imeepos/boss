@@ -830,6 +830,31 @@ paths:
       responses:
         '200': { $ref: './schemas.yaml#/components/responses/Ok' }
 
+  /storage-config/test:
+    post:
+      tags: [Sys]
+      summary: 存储连通性自检(零副作用:用生效配置做 BucketExists 探测;permCode menu:params)
+      description: |
+        解析 biz_params 现配置(secret 解密)后对 MinIO 做 5s 超时探测,不创建不写入。
+        返回 {ok, latencyMs, message},message 为可直接展示给人的失败原因(不含密钥)。
+        data-relations §6.3 销账项。
+      operationId: testStorageConfig
+      responses:
+        '200':
+          description: "envelope;data={ok,latencyMs,message}"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer, example: 0 }
+                  data:
+                    type: object
+                    properties:
+                      ok: { type: boolean }
+                      latencyMs: { type: integer }
+                      message: { type: string }
+
   /ops/notify-emit:
     post:
       tags: [Sys]

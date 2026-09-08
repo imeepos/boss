@@ -1,12 +1,15 @@
 package adminapi
 
 import (
+	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
 	"github.com/ymm-001/boss/internal/app"
+	"github.com/ymm-001/boss/internal/domain/attachment"
 	"github.com/ymm-001/boss/internal/pkg/httpx"
 	"github.com/ymm-001/boss/internal/pkg/secretbox"
 	"github.com/ymm-001/boss/pkg/apitypes"
@@ -52,6 +55,36 @@ func adminStorageConfigPut(a *app.Application) gin.HandlerFunc {
 		}
 		httpx.RecordAudit(a, c, "数据变更", "storage_config", "minio", gin.H{"keys": len(req.Values)})
 		respond(c, apitypes.CodeOK, gin.H{"ok": true})
+	}
+}
+
+// adminStorageConfigTest 存储连通性自检(data-relations §6.3):解析生效配置
+// (biz_params 覆盖 env,secret 解密)后零副作用探测——endpoint 可达→凭据有效→
+// bucket 存在;5s 超时,不创建不写入;结果 {ok,latencyMs,message} 与 auth 自检同形。
+func adminStorageConfigTest(a *app.Application) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if a.Attachment == nil || a.Attachment.Resolve == nil {
+			respond(c, apitypes.CodeInternal, nil)
+			return
+		}
+		cfg, err := a.Attachment.Resolve(c.Request.Context())
+		if err != nil {
+			respondErr(c, err)
+			return
+		}
+		ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+		defer cancel()
+		start := time.Now()
+		probeErr := attachment.Probe(ctx, cfg)
+		latency := time.Since(start).Milliseconds()
+		result := gin.H{"ok": probeErr == nil, "latencyMs": latency}
+		if probeErr != nil {
+			result["message"] = probeErr.Error()
+		}
+		// 审计留痕不带密钥;失败原因走响应 message(用户可复制)。
+		httpx.RecordAudit(a, c, "连通性自检", "storage_config", "minio",
+			gin.H{"ok": probeErr == nil, "latencyMs": latency})
+		respond(c, apitypes.CodeOK, result)
 	}
 }
 

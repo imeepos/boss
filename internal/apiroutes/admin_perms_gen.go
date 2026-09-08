@@ -548,6 +548,7 @@ var AdminRoutePerms = map[string][]string{
 	"POST /api/admin/v1/stocktakes/{taskId}/scans":                                {"menu:stock"},
 	"POST /api/admin/v1/stop-resume-tasks/{taskId}/retry":                         {"menu:stopsrv"},
 	"POST /api/admin/v1/storage-config/rotate-secret":                             {"menu:params"},
+	"POST /api/admin/v1/storage-config/test":                                      {"menu:params"},
 	"POST /api/admin/v1/stripe-config/channel/test":                               {"menu:stripeconfig"},
 	"POST /api/admin/v1/tags":                                                     {"menu:tag"},
 	"POST /api/admin/v1/tags/{tagId}/disable":                                     {"menu:tag"},

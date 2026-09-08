@@ -27,6 +27,7 @@ func registerSysRoutes(g *gin.RouterGroup, a *app.Application) {
 
 	g.GET("/storage-config", requirePerm(a.User, "menu:params"), adminStorageConfigGet(a))
 	g.PUT("/storage-config", requirePerm(a.User, "menu:params"), adminStorageConfigPut(a))
+	g.POST("/storage-config/test", requirePerm(a.User, "menu:params"), adminStorageConfigTest(a))
 	g.POST("/storage-config/rotate-secret", requirePerm(a.User, "menu:params"), adminStorageConfigRotateSecret(a))
 
 	// 运维脚本上报通道(cron/巡检/隧道自愈):account 主体 API key 调用,
