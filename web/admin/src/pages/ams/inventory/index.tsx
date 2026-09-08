@@ -6,9 +6,11 @@ import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { PageHead, pagerTexts } from '../../org/shared'
 import { Pagination } from '../../../components/Pagination'
-import { TableStateRow } from '../../../components/business'
+import { TableStateRow, ToolbarButton } from '../../../components/business'
 import { ErrorBanner } from '../../../components/business/page-head'
 import { StatCard } from '../../../components/business/charts'
+import { Card, CardContent, CardFooter } from '../../../components/ui/card'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../../components/ui/table'
 import { type InventoryRow } from '../types'
 
 export default function InventoryPage() {
@@ -64,48 +66,43 @@ export default function InventoryPage() {
         <StatCard label={d.metricInStock} value={totalInStock} />
       </div>
 
-      <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
-        <div className="flex flex-wrap items-center gap-2 p-4">
-          <input
-            type="text"
-            value={materialCode}
-            onChange={(e) => setMaterialCode(e.target.value)}
-            placeholder={d.filterPlaceholder}
-            className="h-8 w-64 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]"
-          />
-          <span className="spacer" />
-          <button
-            type="button"
-            onClick={load}
-            disabled={busy}
-            className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)] disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {t.pages.audit.refresh}
-          </button>
-        </div>
-        {error && <ErrorBanner message={error} />}
-        <div className="overflow-x-auto px-4 pb-4">
-            <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
-              <thead>
-                <tr className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">
-                  <th className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{d.colBatch}</th>
-                  <th className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{d.colBatchId}</th>
-                  <th className="h-11 px-3 text-right text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{d.colQty}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {slice.map((r, idx) => (
-                  <tr key={idx} className="hover:bg-[var(--shell-menu-hover-bg)]">
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] font-mono">{r.materialCode}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] font-mono">{batchLabel(r.batchId)}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-right">{r.inStockQty}</td>
-                  </tr>
-                ))}
-                {!slice.length && <TableStateRow colSpan={3} loading={busy} text={d.empty} />}
-              </tbody>
-            </table>
+      <Card>
+        <CardContent>
+          <div className="flex flex-wrap items-center gap-2">
+            <input
+              type="text"
+              value={materialCode}
+              onChange={(e) => setMaterialCode(e.target.value)}
+              placeholder={d.filterPlaceholder}
+              className="h-8 w-64 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]"
+            />
+            <span className="spacer" />
+            <ToolbarButton disabled={busy} onClick={load}>{t.pages.audit.refresh}</ToolbarButton>
           </div>
-        <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
+        </CardContent>
+        {error && <ErrorBanner message={error} />}
+        <div className="px-4 pb-4">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{d.colBatch}</TableHead>
+                <TableHead>{d.colBatchId}</TableHead>
+                <TableHead className="text-right">{d.colQty}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {slice.map((r, idx) => (
+                <TableRow key={idx}>
+                  <TableCell className="font-mono">{r.materialCode}</TableCell>
+                  <TableCell className="font-mono">{batchLabel(r.batchId)}</TableCell>
+                  <TableCell className="text-right">{r.inStockQty}</TableCell>
+                </TableRow>
+              ))}
+              {!slice.length && <TableStateRow colSpan={3} loading={busy} text={d.empty} />}
+            </TableBody>
+          </Table>
+        </div>
+        <CardFooter>
           <Pagination
             total={rows.length}
             page={page}
@@ -114,8 +111,8 @@ export default function InventoryPage() {
             onSize={setPageSize}
             {...pagerTexts(t.pages.company)}
           />
-        </div>
-      </div>
+        </CardFooter>
+      </Card>
     </div>
   )
 }
