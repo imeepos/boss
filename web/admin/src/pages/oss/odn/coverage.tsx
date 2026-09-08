@@ -1,6 +1,7 @@
 import { toast } from 'sonner'
 import { useCallback, useEffect, useState } from 'react'
 import { apiFetch } from '../../../api/client'
+import { useT } from '../../../i18n'
 import { Input } from '../../../components/ui/input'
 import { Badge } from '../../../components/ui/badge'
 import { Dropdown } from '../../../components/Dropdown'
@@ -23,6 +24,7 @@ function StatusBadge({ status, labels }: { status: string; labels: Record<string
 // CoveragePanel 覆盖关联页签(可查可判;后端 /odn/coverage*)。
 // 关联对象一律选择器:地址=服务端检索,设施/设备=本城市主数据静态源(路线图规则 3)。
 export function CoveragePanel({ g, prv, city }: { g: any; prv: string; city: string }) {
+  const t = useT()
   const [rows, setRows] = useState<Cov[]>([])
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
@@ -100,8 +102,8 @@ export function CoveragePanel({ g, prv, city }: { g: any; prv: string; city: str
     <Card className="p-4">
       <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
         <label className="flex flex-col gap-1"><span className="text-xs text-[var(--shell-content-text)]">{g.addressId}</span><SimplePicker value={form.addressId} onChange={(v) => set('addressId', v)} search={searchAddresses} ariaLabel={g.addressId} placeholder={g.addressId} searchPlaceholder={g.addressId} minWidth={180} /></label>
-        <label className="flex flex-col gap-1"><span className="text-xs text-[var(--shell-content-text)]">{g.covFacility}</span><SimplePicker value={form.facilityCode} onChange={(v) => set('facilityCode', v)} options={facOpts} ariaLabel={g.covFacility} placeholder={g.covFacility} clearable clearLabel="×" minWidth={180} /></label>
-        <label className="flex flex-col gap-1"><span className="text-xs text-[var(--shell-content-text)]">{g.covDevice}</span><SimplePicker value={form.deviceId} onChange={(v) => set('deviceId', v)} options={devOpts} ariaLabel={g.covDevice} placeholder={g.covDevice} clearable clearLabel="×" minWidth={180} /></label>
+        <label className="flex flex-col gap-1"><span className="text-xs text-[var(--shell-content-text)]">{g.covFacility}</span><SimplePicker value={form.facilityCode} onChange={(v) => set('facilityCode', v)} options={facOpts} ariaLabel={g.covFacility} placeholder={g.covFacility} clearable clearLabel={t.pages.pickers.common.clear} minWidth={180} /></label>
+        <label className="flex flex-col gap-1"><span className="text-xs text-[var(--shell-content-text)]">{g.covDevice}</span><SimplePicker value={form.deviceId} onChange={(v) => set('deviceId', v)} options={devOpts} ariaLabel={g.covDevice} placeholder={g.covDevice} clearable clearLabel={t.pages.pickers.common.clear} minWidth={180} /></label>
         <label className="flex flex-col gap-1"><span className="text-xs text-[var(--shell-content-text)]">{g.covStatus}</span><Dropdown value={form.status} options={statusOptions} ariaLabel={g.covStatus} onChange={(v) => set('status', v)} /></label>
         <label className="flex flex-col gap-1"><span className="text-xs text-[var(--shell-content-text)]">{g.covNote}</span><Input value={form.note} onChange={(e) => set('note', e.target.value)} /></label>
       </div>
