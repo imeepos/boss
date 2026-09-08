@@ -6,15 +6,12 @@ import { apiFetch } from '../../../api/client'
 import { Input } from '../../../components/ui/input'
 import { Badge } from '../../../components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../../components/ui/table'
+import { Card } from '../../../components/ui/card'
 import { EmptyState, ErrorBanner, ToolbarButton } from '../../../components/business/page-head'
 import { useConfirm } from '../../../components/ConfirmDialog'
 import { DialogPicker, type DialogPickerQuery, type DialogPickerPage } from '../../../components/pickers/DialogPicker'
 import { PickerChips } from '../../../components/pickers/DialogPickerParts'
 import { useT } from '../../../i18n'
-
-const CARD = 'rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]'
-const FIELD = 'flex flex-col gap-1'
-const LABEL = 'text-xs text-[var(--shell-content-text)]'
 
 interface MaterialIssue {
   id: number; issueNo: string; projectId: number; projectNo: string; status: string
@@ -42,14 +39,22 @@ export function MaterialIssuesCard({ projectId, locked }: { projectId: number; l
 
   const load = useCallback(async () => {
     try { setIssues((await apiFetch<MaterialIssue[]>('/odn/material-issues', { query: { projectId } })) ?? []) }
-    catch (e) { setError(e instanceof Error ? e.message : '加载失败') }
+    catch (e) {
+      const msg = e instanceof Error ? e.message : '加载失败'
+      setError(msg)
+      toast.error('出库单加载失败', { description: msg })
+    }
   }, [projectId])
   useEffect(() => { void load() }, [load])
 
   const act = async (fn: () => Promise<unknown>, okMsg: string) => {
     setBusy(true); setError('')
     try { await fn(); toast.success(okMsg); await load() }
-    catch (e) { setError(e instanceof Error ? e.message : '操作失败') } finally { setBusy(false) }
+    catch (e) {
+      const msg = e instanceof Error ? e.message : '操作失败'
+      setError(msg)
+      toast.error(okMsg + ' 失败', { description: msg })
+    } finally { setBusy(false) }
   }
 
   const createIssue = () => {
@@ -74,16 +79,16 @@ export function MaterialIssuesCard({ projectId, locked }: { projectId: number; l
   const assetLabel = (a: AssetPick) => a.assetCode + ' #' + a.assetId
   const chips = picked.map((a) => ({ key: String(a.assetId), label: assetLabel(a) }))
 
-  return <div className={CARD + ' p-4'}>
-    <div className='mb-2 text-sm font-semibold'>材料出库<span className='ml-2 text-xs font-normal opacity-60'>出库至本项目工地的资产台账连续可查(在途 IN_TRANSIT,转固后 DEPLOYED);材料成本归集归 W9 项目领料</span></div>
-    {!locked && <div className='mb-3 flex flex-wrap items-end gap-3'>
-      <div className={FIELD}><span className={LABEL}>{o.issueField}</span>
+  return <Card className="p-4">
+    <div className="mb-2 text-sm font-semibold">材料出库<span className="ml-2 text-xs font-normal opacity-60">出库至本项目工地的资产台账连续可查(在途 IN_TRANSIT,转固后 DEPLOYED);材料成本归集归 W9 项目领料</span></div>
+    {!locked && <div className="mb-3 flex flex-wrap items-end gap-3">
+      <div className="flex flex-col gap-1"><span className="text-xs text-[var(--shell-content-text)]">{o.issueField}</span>
         <ToolbarButton disabled={busy} onClick={() => setPickOpen(true)}>{o.issuePickBtn}</ToolbarButton>
       </div>
       <PickerChips chips={chips} selectedCount={dlg.selectedCount} removeLabel={dlg.remove} clearAllLabel={dlg.clearAll}
         onRemove={(k) => setPicked((p) => p.filter((x) => String(x.assetId) !== k))} onClearAll={() => setPicked([])} />
-      <label className={FIELD}><span className={LABEL}>备注</span><Input value={issueRemark} onChange={(e) => setIssueRemark(e.target.value)} placeholder='可空' /></label>
-      <div className='flex items-end'><ToolbarButton primary disabled={busy || picked.length === 0} onClick={createIssue}>创建出库单</ToolbarButton></div>
+      <label className="flex flex-col gap-1"><span className="text-xs text-[var(--shell-content-text)]">备注</span><Input value={issueRemark} onChange={(e) => setIssueRemark(e.target.value)} placeholder="可空" /></label>
+      <div className="flex items-end"><ToolbarButton primary disabled={busy || picked.length === 0} onClick={createIssue}>创建出库单</ToolbarButton></div>
     </div>}
     {error && <ErrorBanner message={error} className='mb-2' />}
     {issues.length === 0 ? <EmptyState text='暂无出库单' /> : <div className='overflow-x-auto'><Table>
@@ -107,5 +112,5 @@ export function MaterialIssuesCard({ projectId, locked }: { projectId: number; l
       onClose={() => setPickOpen(false)} onPick={(items) => setPicked(items)}
       columns={[{ key: 'assetCode', title: o.issueColCode }, { key: 'type', title: o.issueColType }, { key: 'status', title: o.issueColStatus }]}
       query={queryAssets} rowKey={(a) => String(a.assetId)} rowLabel={assetLabel} texts={dlg} />
-  </div>
+  </Card>
 }
