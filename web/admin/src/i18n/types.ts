@@ -801,7 +801,7 @@ export interface Translations {
     }
     billPage: {
     run: { btn: string; title: string; periodPh: string; periodInvalid: string; result: string; fail: string }
-    invoice: { title: string; desc: string; loadFail: string; actFail: string; filterCustomer: string; empty: string; columns: string[]; voidBtn: string; reissueBtn: string; backfillBtn: string; voidConfirm: string; reissueConfirm: string; backfillTip: string; voidReasonPh: string; taxNoPh: string; confirm: string; voidOk: string; reissueOk: string; backfillOk: string; taxSubmitBtn: string; taxRetryBtn: string; taxReplayBtn: string; eventsBtn: string; taxSubmitOk: string; taxRetryOk: string; taxReplayOk: string; taxEventsTitle: string; taxEventsEmpty: string }
+    invoice: { title: string; desc: string; loadFail: string; actFail: string; filterCustomer: string; empty: string; columns: string[]; voidBtn: string; reissueBtn: string; backfillBtn: string; voidConfirm: string; reissueConfirm: string; backfillTip: string; voidReasonLabel: string; taxNoLabel: string; voidReasonPh: string; taxNoPh: string; confirm: string; voidOk: string; reissueOk: string; backfillOk: string; taxSubmitBtn: string; taxRetryBtn: string; taxReplayBtn: string; eventsBtn: string; taxSubmitOk: string; taxRetryOk: string; taxReplayOk: string; taxEventsTitle: string; taxEventsEmpty: string; statusTexts: Record<string, string>; taxStatusTexts: Record<string, string>; jurisdictionTexts: Record<string, string> }
       title: string
       desc: string
       filterCustomer: string
