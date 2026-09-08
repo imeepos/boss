@@ -2,13 +2,15 @@
 // 顶部 KPI 汇总卡(分母 0 时后端返 null,渲染判空);筛选=月份(YYYY-MM)+区域(白名单下拉);
 // 派生列只读;CSV 导入/导出。
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { toast } from 'sonner'
 import { useT } from '../../../i18n'
 import { useQueryInt, useQueryState } from '../../../lib/useQueryState'
 import { PageHead, pagerTexts } from '../../org/shared'
+import { ErrorBanner, ToolbarButton } from '../../../components/business/page-head'
 import { Pagination } from '../../../components/Pagination'
 import { Dropdown } from '../../../components/Dropdown'
 import { Input } from '../../../components/ui/input'
-import { CardShell } from '../../../components/business/charts'
+import { Card, CardFooter } from '../../../components/ui/card'
 import { fetchRegions, fetchRows, fetchSummary } from './api'
 import { KpiCards } from './KpiCards'
 import { DataTable } from './DataTable'
@@ -49,6 +51,7 @@ export default function MonthlyPage() {
   }, [month, ver])
 
   const loadFailText = m.loadFail
+  const reload = useCallback(() => setVer((v) => v + 1), [])
   const load = useCallback(() => {
     let alive = true
     setBusy(true)
@@ -59,7 +62,12 @@ export default function MonthlyPage() {
         setRows(d?.items ?? [])
         setTotal(d?.total ?? 0)
       })
-      .catch((e) => { if (alive) setError(e instanceof Error ? e.message : loadFailText) })
+      .catch((e) => {
+        if (!alive) return
+        const msg = e instanceof Error ? e.message : loadFailText
+        setError(msg)
+        toast.error(loadFailText, { description: msg })
+      })
       .finally(() => { if (alive) setBusy(false) })
     return () => { alive = false }
   }, [meta.key, month, region, page, pageSize, loadFailText])
@@ -81,8 +89,8 @@ export default function MonthlyPage() {
     <div>
       <PageHead title={m.title} desc={m.desc} />
       <KpiCards summary={summary} />
-      <CardShell>
-        <nav className="mb-4 flex gap-1" aria-label={m.title}>
+      <Card>
+        <nav className="mb-4 flex items-center gap-1" aria-label={m.title}>
           {MONTHLY_TABLES.map((x, i) => (
             <button
               key={x.key}
@@ -94,6 +102,8 @@ export default function MonthlyPage() {
               {m.tabs[i]}
             </button>
           ))}
+          <span className="flex-1" />
+          <ToolbarButton onClick={reload} disabled={busy}>{t.pages.audit.refresh}</ToolbarButton>
         </nav>
         <div className="mb-3 flex flex-wrap items-center gap-3">
           <label className="flex items-center gap-2 text-[13px] text-[var(--shell-content-text)]">
@@ -126,7 +136,7 @@ export default function MonthlyPage() {
           <ImportExport table={meta.key} month={month} onImported={() => setVer((v) => v + 1)} />
         </div>
         {error ? (
-          <div className="mx-2 mb-2 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div>
+          <ErrorBanner message={error} />
         ) : (
           <DataTable
             meta={meta}
@@ -137,7 +147,7 @@ export default function MonthlyPage() {
             onEdit={setEditRow}
           />
         )}
-        <div className="flex justify-end pt-3 text-xs text-[var(--shell-group-title)]">
+        <CardFooter>
           <Pagination
             total={total}
             page={page}
@@ -146,8 +156,8 @@ export default function MonthlyPage() {
             onSize={(s) => { setPageSize(s); setPage(1) }}
             {...pagerTexts(m)}
           />
-        </div>
-      </CardShell>
+        </CardFooter>
+      </Card>
       {editRow && (
         <EditDrawer
           key={editRow.month + '/' + editRow.region}
