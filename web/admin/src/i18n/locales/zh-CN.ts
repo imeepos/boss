@@ -177,6 +177,8 @@ const zhCN: Translations = {
     confirmDialog: { title: '操作确认', ok: '确认', cancel: '取消' },
     copy: '复制',
     copied: '已复制',
+    saveOk: '已保存',
+    saveFail: '保存失败',
   },
   auth: {
     login: {

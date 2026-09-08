@@ -177,6 +177,8 @@ const enUS: Translations = {
     confirmDialog: { title: 'Confirm', ok: 'OK', cancel: 'Cancel' },
     copy: 'Copy',
     copied: 'Copied',
+    saveOk: 'Saved',
+    saveFail: 'Save failed',
   },
   auth: {
     login: {

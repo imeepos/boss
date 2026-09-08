@@ -17,6 +17,8 @@ export interface Translations {
     confirmDialog: { title: string; ok: string; cancel: string }
     copy: string
     copied: string
+    saveOk: string
+    saveFail: string
   }
   auth: {
     login: {

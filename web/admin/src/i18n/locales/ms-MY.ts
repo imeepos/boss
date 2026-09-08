@@ -177,6 +177,8 @@ const msMY: Translations = {
     confirmDialog: { title: 'Sahkan', ok: 'Sahkan', cancel: 'Batal' },
     copy: 'Salin',
     copied: 'Disalin',
+    saveOk: 'Telah disimpan',
+    saveFail: 'Gagal menyimpan',
   },
   auth: {
     login: {
