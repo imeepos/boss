@@ -1,13 +1,16 @@
 // 容量视图页:列名以 fields.md §4.2.2 为准;契约 GET /resources/capacity + POST /resources/capacity/alert-scan。
 // 使用率 >=80% 行预警高亮(与后端告警阈值 resource.CapacityWarnThresholdPct 对齐)。
 import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { PageHead, pagerTexts } from '../../org/shared'
 import { Dropdown } from '../../../components/Dropdown'
 import { Pagination } from '../../../components/Pagination'
+import { Card, CardFooter } from '../../../components/ui/card'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/table'
 import { pageSlice, type CapacityRow } from '../types'
-import { TableStateRow } from '../../../components/business'
+import { TableStateRow, ErrorBanner, ToolbarButton } from '../../../components/business'
 
 const ALERT_THRESHOLD_PCT = 80 // fields.md §4.2.2 预警阈值
 
@@ -17,7 +20,6 @@ export default function CapacityPage() {
   const [rows, setRows] = useState<CapacityRow[]>([])
   const [dim, setDim] = useState('')
   const [error, setError] = useState('')
-  const [scanMsg, setScanMsg] = useState('')
   const [busy, setBusy] = useState(false)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
@@ -27,21 +29,28 @@ export default function CapacityPage() {
     setBusy(true)
     apiFetch<{ items: CapacityRow[] }>('/resources/capacity', { query: { dim: d || undefined, order: 'usageDesc' } })
       .then((x) => setRows(x?.items ?? []))
-      .catch((e) => setError(e instanceof Error ? e.message : r.loadFail))
+      .catch((e) => {
+        const msg = e instanceof Error ? e.message : r.loadFail
+        setError(msg)
+        toast.error(r.loadFail, { description: msg })
+      })
       .finally(() => setBusy(false))
   }
 
   const runScan = () => {
-    setScanMsg('')
     setBusy(true)
     apiFetch<{ scanned: number; created: number; resolved: number }>('/resources/capacity/alert-scan', { method: 'POST' })
       .then((x) => {
-        setScanMsg(r.scanDone.replace(
+        const msg = r.scanDone.replace(
           '{scanned}', String(x?.scanned ?? 0),
-        ).replace('{created}', String(x?.created ?? 0)).replace('{resolved}', String(x?.resolved ?? 0)))
+        ).replace('{created}', String(x?.created ?? 0)).replace('{resolved}', String(x?.resolved ?? 0))
+        toast.success(msg)
         load(dim)
       })
-      .catch((e) => setScanMsg(e instanceof Error ? e.message : r.scanFail))
+      .catch((e) => {
+        const msg = e instanceof Error ? e.message : r.scanFail
+        toast.error(r.scanFail, { description: msg })
+      })
       .finally(() => setBusy(false))
   }
 
@@ -54,13 +63,11 @@ export default function CapacityPage() {
     { value: 'SPLITTER', label: r.dimSplitter },
   ]
   const slice = pageSlice(rows, page, pageSize)
-  const th = "h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"
-  const td = "h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"
 
   return (
     <div>
       <PageHead title={r.title} desc={r.desc} />
-      <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
+      <Card className="mb-4">
         <div className="flex flex-wrap items-center gap-2 p-4">
           <Dropdown
             value={dim}
@@ -69,46 +76,49 @@ export default function CapacityPage() {
             ariaLabel={r.dimAll}
             triggerStyle={{ minWidth: 160 }}
           />
-          <span className="spacer" />
-          <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={() => load(dim)}>
+          <span className="flex-1" />
+          <ToolbarButton onClick={() => load(dim)} disabled={busy}>
             {t.pages.audit.refresh}
-          </button>
-          <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" disabled={busy} onClick={runScan}>
+          </ToolbarButton>
+          <ToolbarButton primary onClick={runScan} disabled={busy}>
             {r.scan}
-          </button>
+          </ToolbarButton>
         </div>
-        {scanMsg ? <div className="mx-4 mb-3 rounded-sm border border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] px-3 py-2 text-[13px] text-[var(--shell-content-text)]">{scanMsg}</div> : null}
-        {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : (
-          <div className="overflow-x-auto px-4 pb-4">
-            <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
-              <thead><tr>{[r.colObject, r.colType, r.colTotal, r.colUsed, r.colUsage].map((x) => <th key={x} className={th}>{x}</th>)}</tr></thead>
-              <tbody>
+        {error ? <div className="px-4 pb-3"><ErrorBanner message={error} /></div> : (
+          <div className="px-4 pb-4">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  {[r.colObject, r.colType, r.colTotal, r.colUsed, r.colUsage].map((x) => <TableHead key={x}>{x}</TableHead>)}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {slice.map((row) => (
-                  <tr key={row.resourceId} className={row.usageRate >= ALERT_THRESHOLD_PCT ? "bg-[color-mix(in_srgb,var(--color-warning)_12%,transparent)]" : undefined}>
-                    <td className={td}>{row.name} ({row.code})</td>
-                    <td className={td}>{dimLabel(row.type)}</td>
-                    <td className={td}>{row.totalPorts}</td>
-                    <td className={td}>{row.usedPorts}</td>
-                    <td className={td}>
+                  <TableRow key={row.resourceId} className={row.usageRate >= ALERT_THRESHOLD_PCT ? "bg-[color-mix(in_srgb,var(--color-warning)_12%,transparent)]" : undefined}>
+                    <TableCell>{row.name} ({row.code})</TableCell>
+                    <TableCell>{dimLabel(row.type)}</TableCell>
+                    <TableCell>{row.totalPorts}</TableCell>
+                    <TableCell>{row.usedPorts}</TableCell>
+                    <TableCell>
                       <span className="inline-flex items-center gap-2">
                         <span>{row.usageRate.toFixed(2)}%</span>
                         {row.usageRate >= ALERT_THRESHOLD_PCT && (
                           <span title={r.alertHint} className="rounded-sm bg-[color-mix(in_srgb,var(--color-warning)_16%,transparent)] px-1.5 py-0.5 text-[11px] font-medium text-[var(--color-warning)]">{r.alertMark}</span>
                         )}
                       </span>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
                 {!slice.length && <TableStateRow colSpan={5} loading={busy} text={r.empty} />}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         )}
-        <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
+        <CardFooter>
           <Pagination total={rows.length} page={page} pageSize={pageSize}
             onPage={setPage} onSize={setPageSize} {...pagerTexts(r)} />
-        </div>
-      </div>
+        </CardFooter>
+      </Card>
     </div>
   )
 }
