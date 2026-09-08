@@ -67,8 +67,17 @@ W1 域审计发现至少 9 处调用点把显示文案当 value 传给 Dropdown(
 | rowKey / rowLabel | 是 | 行键;已选回显文案 |
 | filters | 是* | 多维搜索:至少一个可配置筛选项(key/label/options);options 需自带 value='' 的「全部」项 |
 | initialPageSize | 否 | 默认 10 |
+| initialItems | 否 | 重开定位(W0-R4):上次 onPick 的实体数组,重开时预勾选并回显 chips,单选取首项;不传保持打开即空选 |
 
 关键字检索防抖 300ms(与 SimplePicker 同常量);失败就地 role=alert + 重试;空态/加载态齐备;候选表行支持 Enter/Space 选中。已选回显:底部 chips(单个移除 + 清空已选);确认按钮按选中数控制可用性。
+
+## EntityPicker(实体选择器,客户/师傅/用户)
+
+文件:components/pickers/EntityPicker.tsx;实体三选择器(CustomerPicker/WorkerPicker/UserPicker)即注入各自域接口的实例。
+
+- 服务端 keyword 检索 + 详情抽屉 + 前往管理页入口;SimplePicker 全部体验契约自动继承。
+- **已选人类可读回显(W0-R3)**:检索结果 label 增量缓存,重hydrate/缓存漏项时自动走详情接口兜底钉选;页面无需再传 pinnedOptions,触发器恒为「姓名 · 手机号/工号」而非裸 ID。
+- **清空(W0-R4)**:三选择器内置 clearable,clearLabel=pages.pickers.common.clear;清空即 onChange('')。
 
 ## ResourcePicker(兼容层,勿新增直用)
 
@@ -76,7 +85,9 @@ W1 域审计发现至少 9 处调用点把显示文案当 value 传给 Dropdown(
 
 - search 模式 → SimplePicker 服务端模式(toOption 映射后透传),防抖/loading/重试/回显全继承;
 - load 模式 → 一次性拉取 + 静态源本地过滤,失败就地 errorText + 重试;
+- **clearable(W0-R4)默认开启**,clearLabel 缺省取 pages.pickers.common.clear;传 clearable={false} 可退出;
 - 新旧边界:新页面禁止再直用 ResourcePicker——小数据量 SimplePicker,大数据量 DialogPicker;存量直用页在 W1-W3 波次触及时顺势迁移,不迁移也不阻碍契约继承(props 不变,行为升级);
+- 回显提示:检索结果内选中的值由基座回显 label;从 URL/localStorage 重hydrate 的值若不在结果集内,仍按基座兜底回显裸 value——页面应经 pinnedOptions 提供人类可读文案(页面自身持有 label 来源)。
 - 实体三选择器(UserPicker/WorkerPicker/CustomerPicker)基于 EntityPicker→SimplePicker,props 未变,另带「详情/前往管理页」入口。
 
 ## 接入指引
@@ -88,5 +99,6 @@ W1 域审计发现至少 9 处调用点把显示文案当 value 传给 Dropdown(
 
 ## 关键词回归锚点
 
-- pickers/pickerCore.test.ts:双数据源合并、单/多选边界、键盘 moveActive、钉选回显、清空口径、服务端检索状态机(seq 防竞态/失败重试)。
+- pickers/pickerCore.test.ts:双数据源合并、单/多选边界、键盘 moveActive、钉选回显、清空口径、服务端检索状态机(seq 防竞态/失败重试)、已选人类可读回显缓存(echoPinFromCache/rememberOptionLabels)、重开预选序列(pickKeysFromItems)。
 - i18n/locales/keys.test.ts:三语键集一致性(pickers.common.loading/empty/retry 等)。
+- 选择器族全景审计(现状/修复/遗留矩阵 + 页面侧问题清单):docs/admin/selector-audit.md。
