@@ -3,6 +3,8 @@ import { useMemo, useState } from 'react'
 import { useT } from '../../../i18n'
 import { Pagination } from '../../../components/Pagination'
 import { TableStateRow } from '../../../components/business'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/table'
+import { CardFooter } from '../../../components/ui/card'
 import { pagerTexts } from '../../org/shared'
 import { pageSlice } from '../types'
 import type { SplitCapacityReport, SplitCapacityRow } from '../types'
@@ -28,7 +30,7 @@ export default function CapacityView({ report, busy }: { report: SplitCapacityRe
   const onSort = (k: CapSortKey) =>
     setSort((s) => (s?.key === k ? { key: k, dir: s.dir === 1 ? -1 : 1 } : { key: k, dir: -1 }))
   const head = (label: string, k?: CapSortKey) => (
-    <th className={TH_CLS}>
+    <TableHead>
       {k ? (
         <button type="button" onClick={() => onSort(k)}
           className="flex cursor-pointer items-center gap-1 text-xs font-medium hover:text-[var(--shell-heading)]">
@@ -36,7 +38,7 @@ export default function CapacityView({ report, busy }: { report: SplitCapacityRe
           {sort?.key === k && <span aria-hidden>{sort.dir === 1 ? '↑' : '↓'}</span>}
         </button>
       ) : label}
-    </th>
+    </TableHead>
   )
   const s = report?.summary
   const chips: { label: string; value: number }[] = s
@@ -58,39 +60,35 @@ export default function CapacityView({ report, busy }: { report: SplitCapacityRe
           </div>
         ))}
       </div>
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
-          <thead>
-            <tr>
-              {head(a.colDevice)}
-              {head(a.colKind)}
-              {head(a.colLevel)}
-              {head(a.colRatio, 'ratio')}
-              {head(a.colChainRows, 'chainRows')}
-              {head(a.colUsedPorts, 'usedPorts')}
-              {head(a.colExpandable, 'expandable')}
-              {head(a.colSecondary)}
-              {head(a.colScope)}
-              {head(a.colLifecycle)}
-            </tr>
-          </thead>
-          <tbody>
-            {slice.map((r) => (
-              <CapRow key={r.deviceId} r={r} />
-            ))}
-            {!slice.length && <TableStateRow colSpan={10} loading={busy} text={a.emptyCapacity} />}
-          </tbody>
-        </table>
-      </div>
-      <div className="flex justify-end pt-3 text-xs text-[var(--shell-group-title)]">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            {head(a.colDevice)}
+            {head(a.colKind)}
+            {head(a.colLevel)}
+            {head(a.colRatio, 'ratio')}
+            {head(a.colChainRows, 'chainRows')}
+            {head(a.colUsedPorts, 'usedPorts')}
+            {head(a.colExpandable, 'expandable')}
+            {head(a.colSecondary)}
+            {head(a.colScope)}
+            {head(a.colLifecycle)}
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {slice.map((r) => (
+            <CapRow key={r.deviceId} r={r} />
+          ))}
+          {!slice.length && <TableStateRow colSpan={10} loading={busy} text={a.emptyCapacity} />}
+        </TableBody>
+      </Table>
+      <CardFooter>
         <Pagination total={sorted.length} page={page} pageSize={pageSize}
           onPage={setPage} onSize={setPageSize} {...pagerTexts(a)} />
-      </div>
+      </CardFooter>
     </>
   )
 }
-
-const TH_CLS = 'h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]'
 
 function CapRow({ r }: { r: SplitCapacityRow }) {
   const t = useT()
@@ -99,17 +97,17 @@ function CapRow({ r }: { r: SplitCapacityRow }) {
     ? `${r.prvCode}-${r.cityPrefix}`
     : a.scopeImport
   return (
-    <tr>
-      <td className={TD_CLS}>{r.code}</td>
-      <td className={TD_CLS}>{r.kind}</td>
-      <td className={TD_CLS}>{r.splitLevel === 1 ? a.level1 : a.level2}</td>
-      <td className={TD_CLS}>{r.ratio}</td>
-      <td className={TD_CLS}>{r.chainRows}</td>
-      <td className={TD_CLS}>{r.usedPorts}</td>
-      <td className={TD_CLS}>{r.expandable}</td>
-      <td className={TD_CLS}>{r.hasSecondary ? a.yes : a.no}</td>
-      <td className={TD_CLS}>{scope}</td>
-      <td className={TD_CLS}>{r.lifecycleStatus}</td>
-    </tr>
+    <TableRow>
+      <TableCell className={TD_CLS}>{r.code}</TableCell>
+      <TableCell className={TD_CLS}>{r.kind}</TableCell>
+      <TableCell className={TD_CLS}>{r.splitLevel === 1 ? a.level1 : a.level2}</TableCell>
+      <TableCell className={TD_CLS}>{r.ratio}</TableCell>
+      <TableCell className={TD_CLS}>{r.chainRows}</TableCell>
+      <TableCell className={TD_CLS}>{r.usedPorts}</TableCell>
+      <TableCell className={TD_CLS}>{r.expandable}</TableCell>
+      <TableCell className={TD_CLS}>{r.hasSecondary ? a.yes : a.no}</TableCell>
+      <TableCell className={TD_CLS}>{scope}</TableCell>
+      <TableCell className={TD_CLS}>{r.lifecycleStatus}</TableCell>
+    </TableRow>
   )
 }
