@@ -4,6 +4,7 @@
 // /odn/coverage/list 按 facilityCode/deviceId 归 chain。节点可点击切换候选。
 import { useState } from 'react'
 import { ChevronRight, HardHat, Server, Building2, GitBranch, Box, Radio } from 'lucide-react'
+import { Card } from '../../../components/ui/card'
 import type { ResourceRow } from '../types'
 import type { Facility, Site, Device } from './forms'
 
@@ -30,7 +31,6 @@ interface ChainProps {
   g: ChainTexts
 }
 
-const CARD = 'rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] p-4 shadow-[var(--shell-card-shadow)]'
 const NODE = 'flex w-[128px] shrink-0 cursor-pointer flex-col items-center gap-1.5 rounded-md border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2 py-3 text-center hover:border-[var(--shell-input-border-hover)]'
 const NODE_ACTIVE = ' border-[var(--color-info)] ring-1 ring-[color-mix(in_srgb,var(--color-info)_35%,transparent)]'
 
@@ -78,7 +78,7 @@ export function RelationChain({ olts, sites, devices, facilities, coverages, cit
   const servedOn = served.filter((c) => c.status === 'SERVED').length
 
   const isEmpty = !olt && !site && !sp && !cl && !tb
-  if (isEmpty) return <div className={CARD}><div className="text-[13px] font-semibold text-[var(--shell-heading)]">{g.title}</div><div className="mt-2 text-xs text-[var(--color-text-tertiary)]">{g.empty}</div></div>
+  if (isEmpty) return <Card className="p-4"><div className="text-[13px] font-semibold text-[var(--shell-heading)]">{g.title}</div><div className="mt-2 text-xs text-[var(--color-text-tertiary)]">{g.empty}</div></Card>
 
   const covLine = g.servedCount.replace('{served}', String(servedOn)).replace('{total}', String(served.length))
   const tones = {
@@ -89,7 +89,7 @@ export function RelationChain({ olts, sites, devices, facilities, coverages, cit
     tb: 'color-mix(in srgb, var(--color-success) 14%, transparent)',
     cov: 'color-mix(in srgb, var(--color-success) 14%, transparent)',
   }
-  return <div className={CARD}>
+  return <Card className="p-4">
     <div className="mb-3 text-[13px] font-semibold text-[var(--shell-heading)]">{g.title}</div>
     <div className="flex items-stretch gap-2 overflow-x-auto pb-1">
       {olt && <Node cand={{ key: 'o' + olt.id, code: olt.code, line2: olt.status }} stage={g.olt} icon={Server} tone={tones.olt} active={cityOlts.length > 1} onClick={() => cycle(cityOlts.length, oltIdx, setOltIdx)} />}
@@ -104,5 +104,5 @@ export function RelationChain({ olts, sites, devices, facilities, coverages, cit
       {tb && <Arrow />}
       <Node cand={{ key: 'cov', code: g.coverage, line2: covLine }} stage={g.coverage} icon={HardHat} tone={tones.cov} active={false} onClick={() => undefined} />
     </div>
-  </div>
+  </Card>
 }
