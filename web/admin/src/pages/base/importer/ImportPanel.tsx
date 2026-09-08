@@ -35,6 +35,8 @@ export function ImportPanel({ kind, title, hint, endpoint, noPerm, text, onImpor
   onImported: () => void
 }) {
   const [payload, setPayload] = useState('')
+  /** blur 时解析的快照:粘贴过程中不报错,失焦才校验并给行:列定位。 */
+  const [checked, setChecked] = useState('')
   const [advanced, setAdvanced] = useState(false)
   const [busy, setBusy] = useState(false)
   const [result, setResult] = useState('')
@@ -42,7 +44,7 @@ export function ImportPanel({ kind, title, hint, endpoint, noPerm, text, onImpor
   const [pickerOpen, setPickerOpen] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
-  const parsed = useMemo(() => (payload.trim() ? parseJson(payload) : null), [payload])
+  const parsed = useMemo(() => (checked.trim() ? parseJson(checked) : null), [checked])
   const preview: PreviewResult | null = parsed?.ok ? buildPreview(kind, parsed.value) : null
 
   const readFile = (file: File) => {
@@ -59,7 +61,9 @@ export function ImportPanel({ kind, title, hint, endpoint, noPerm, text, onImpor
             setError(excelErrorText(r, text))
             return
           }
-          setPayload(JSON.stringify(r.value, null, 2))
+          const text2 = JSON.stringify(r.value, null, 2)
+          setPayload(text2)
+          setChecked(text2)
           setResult('')
           setError('')
         })
@@ -72,7 +76,9 @@ export function ImportPanel({ kind, title, hint, endpoint, noPerm, text, onImpor
     }
     const reader = new FileReader()
     reader.onload = () => {
-      setPayload(String(reader.result ?? ''))
+      const content = String(reader.result ?? '')
+      setPayload(content)
+      setChecked(content)
       setResult('')
       setError('')
     }
@@ -159,7 +165,7 @@ export function ImportPanel({ kind, title, hint, endpoint, noPerm, text, onImpor
         <ToolbarButton onClick={() => setAdvanced((v) => !v)}>{text.pasteToggle}</ToolbarButton>
         <ToolbarButton onClick={() => setPickerOpen(true)}>{text.pickFromAttachments}</ToolbarButton>
         {payload && (
-          <ToolbarButton onClick={() => { setPayload(''); setResult(''); setError('') }}>
+          <ToolbarButton onClick={() => { setPayload(''); setChecked(''); setResult(''); setError('') }}>
             {text.clear}
           </ToolbarButton>
         )}
@@ -175,12 +181,16 @@ export function ImportPanel({ kind, title, hint, endpoint, noPerm, text, onImpor
           value={payload}
           placeholder={text.pastePlaceholder}
           onChange={(e) => setPayload(e.target.value)}
+          onBlur={() => setChecked(payload)}
         />
       )}
       {parsed && !parsed.ok && (
-        <p className="m-0 text-xs text-[var(--color-danger)]">
-          {parsed.line !== undefined ? text.parseFailAt.replace('{line}', String(parsed.line)) : text.parseFail}
-        </p>
+        <ErrorBanner message={
+          parsed.col !== undefined ? text.parseFailAtCol
+            .replace('{line}', String(parsed.line ?? '?')).replace('{col}', String(parsed.col))
+            : parsed.line !== undefined ? text.parseFailAt.replace('{line}', String(parsed.line))
+              : text.parseFail
+        } />
       )}
       {parsed?.ok && preview && !preview.ok && (
         <p className="m-0 text-xs text-[var(--color-danger)]">

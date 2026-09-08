@@ -13,6 +13,7 @@ import { Card } from '../../../components/ui/card'
 import { Input } from '../../../components/ui/input'
 import { Badge } from '../../../components/ui/badge'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/table'
+import { parseJson } from '../importer/preview'
 import { filterParams, paramLabel, type BizParam } from './logic'
 
 interface PartialSaveReport { ok: number; fail: number; reason: string }
@@ -28,6 +29,26 @@ export default function ParamsPage() {
   const [saving, setSaving] = useState(false)
   const [saveState, setSaveState] = useState<SubmitState>('idle')
   const [saveReport, setSaveReport] = useState<PartialSaveReport | null>(null)
+  /** JSON 值校验反馈(key → 行:列错误):blur 时解析,仅对形似 JSON 的值生效。 */
+  const [jsonErrors, setJsonErrors] = useState<Record<string, string>>({})
+
+  const checkJsonOnBlur = (key: string, value: string) => {
+    const trimmed = value.trim()
+    if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) {
+      setJsonErrors((cur) => (key in cur ? { ...cur, [key]: '' } : cur))
+      return
+    }
+    const r = parseJson(trimmed)
+    const p = t.pages.params
+    if (!r.ok) {
+      const at = r.col !== undefined
+        ? p.jsonInvalidAt.replace('{line}', String(r.line ?? '?')).replace('{col}', String(r.col))
+        : p.jsonInvalid
+      setJsonErrors((cur) => ({ ...cur, [key]: `${key}: ${at}` }))
+    } else {
+      setJsonErrors((cur) => (key in cur ? { ...cur, [key]: '' } : cur))
+    }
+  }
 
   const load = () => {
     setError('')
@@ -129,6 +150,9 @@ export default function ParamsPage() {
             } />
           </div>
         )}
+        {Object.values(jsonErrors).filter(Boolean).map((msg) => (
+          <div key={msg} className="mb-3"><ErrorBanner message={msg} /></div>
+        ))}
         {error ? null : (
           <Table>
             <TableHeader>
@@ -149,6 +173,7 @@ export default function ParamsPage() {
                         className="w-35"
                         value={draft[r.key] ?? ''}
                         onChange={(e) => setDraft({ ...draft, [r.key]: e.target.value })}
+                        onBlur={(e) => checkJsonOnBlur(r.key, e.target.value)}
                       />
                       {draft[r.key] !== r.value && <Badge variant="warning">{t.pages.params.modified}</Badge>}
                     </span>

@@ -21,7 +21,8 @@ export function EntityImportPanel({ def, noPerm, text, onImported }: {
   onImported: () => void
 }) {
   const {
-    payload, setPayload, advanced, setAdvanced, busy, error, progress, summary,
+    payload, setPayload, setCheckedPayload, advanced, setAdvanced, busy, error,
+    progress, summary,
     failures, pickerOpen, setPickerOpen, fileRef, parsed, rows, dedupe, maxRows,
     maxRowsFallback, existingLoadFailed, pendingTask, run, readFile,
     downloadTemplate, exportFailed, retryRegister, setFailures, setProgress,
@@ -65,17 +66,22 @@ export function EntityImportPanel({ def, noPerm, text, onImported }: {
           value={payload}
           placeholder={text.pastePlaceholder}
           onChange={(e) => setPayload(e.target.value)}
+          onBlur={() => setCheckedPayload(payload)}
         />
       )}
       {parsed && !parsed.ok && (
-        <p className="m-0 text-xs text-[var(--color-danger)]">
-          {'reason' in parsed && parsed.reason === 'badRow'
-            ? text.reasonEntityBadRow.replace('{row}', String(parsed.row)).replace('{field}', parsed.field ?? '')
-            : 'reason' in parsed && parsed.reason === 'tooMany'
-              ? text.entityTooMany.replace('{count}', String(parsed.count ?? '')).replace('{max}', String(maxRows))
-              : text.reasonNotArray}
-          {'line' in parsed && parsed.line !== undefined ? ` (${text.parseFailAt.replace('{line}', String(parsed.line))})` : ''}
-        </p>
+        <ErrorBanner message={
+          'reason' in parsed ? (
+            parsed.reason === 'badRow'
+              ? text.reasonEntityBadRow.replace('{row}', String(parsed.row)).replace('{field}', parsed.field ?? '')
+              : parsed.reason === 'tooMany'
+                ? text.entityTooMany.replace('{count}', String(parsed.count ?? '')).replace('{max}', String(maxRows))
+                : text.reasonNotArray
+          ) : parsed.col !== undefined ? text.parseFailAtCol
+            .replace('{line}', String(parsed.line ?? '?')).replace('{col}', String(parsed.col))
+            : parsed.line !== undefined ? text.parseFailAt.replace('{line}', String(parsed.line))
+              : text.parseFail
+        } />
       )}
       {maxRowsFallback && (
         <p className="m-0 text-xs text-[var(--color-brand-gold-500)]">

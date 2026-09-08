@@ -4,26 +4,32 @@ export type ImportKind = 'addr' | 'geo'
 export const MAX_BYTES = 10 * 1024 * 1024
 export const PREVIEW_ROWS = 5
 
-export type ParseResult = { ok: true; value: unknown } | { ok: false; line?: number }
+export type ParseResult = { ok: true; value: unknown } | { ok: false; line?: number; col?: number }
 
-/** JSON.parse;失败时从 position 换算行号(供错误提示定位)。 */
+/** JSON.parse;失败时提取失败位置(行:列,供 ErrorBanner 定位)。 */
 export function parseJson(text: string): ParseResult {
   try {
     return { ok: true, value: JSON.parse(text) as unknown }
   } catch (e) {
-    return { ok: false, line: lineOf(e, text) }
+    return { ok: false, ...jsonErrorPosition(e, text) }
   }
 }
 
-/** 行号提取:Firefox 报 "line N",旧 V8 报 "position N"(需换算);新 V8 无行号返回 undefined。 */
-function lineOf(e: unknown, text: string): number | undefined {
+/** 失败位置提取:Firefox 报 "line N column M";V8 报 "position N"(需按文本换算行:列);
+ * 两者皆无(如旧 Safari/源码摘录型报文)返回空对象,由调用方降级为无定位提示。 */
+export function jsonErrorPosition(e: unknown, text: string): { line?: number; col?: number } {
   const msg = e instanceof Error ? e.message : ''
-  const lineMatch = /line (\d+)/.exec(msg)
-  if (lineMatch) return Number(lineMatch[1])
+  const lineCol = /line (\d+) column (\d+)/.exec(msg)
+  if (lineCol) return { line: Number(lineCol[1]), col: Number(lineCol[2]) }
   const posMatch = /position (\d+)/.exec(msg)
-  if (!posMatch) return undefined
+  if (!posMatch) {
+    const lineOnly = /line (\d+)/.exec(msg)
+    return lineOnly ? { line: Number(lineOnly[1]) } : {}
+  }
   const pos = Number(posMatch[1])
-  return pos <= text.length ? text.slice(0, pos).split('\n').length : undefined
+  if (pos > text.length) return {}
+  const lines = text.slice(0, pos).split('\n')
+  return { line: lines.length, col: lines[lines.length - 1].length + 1 }
 }
 
 export type PreviewReason = 'notArray' | 'notObject' | 'badRow'

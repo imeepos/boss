@@ -30,6 +30,8 @@ export function useEntityImport({ def, noPerm, text, onImported }: {
   onImported: () => void
 }) {
   const [payload, setPayload] = useState('')
+  /** blur 时解析的快照:粘贴过程中不报错,失焦才校验并给行:列定位。 */
+  const [checkedPayload, setCheckedPayload] = useState('')
   const [advanced, setAdvanced] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -61,10 +63,10 @@ export function useEntityImport({ def, noPerm, text, onImported }: {
   }, [])
 
   const parsed = useMemo(() => {
-    if (!payload.trim()) return null
-    const json = parseJson(payload)
+    if (!checkedPayload.trim()) return null
+    const json = parseJson(checkedPayload)
     return json.ok ? parseEntityRows(def, json.value, maxRows) : json
-  }, [payload, def, maxRows])
+  }, [checkedPayload, def, maxRows])
 
   const rows = parsed?.ok ? parsed.rows : null
   /** 原始行(未经矫正):失败行导出重试文件的数据源,与 rows 下标一一对齐。 */
@@ -109,7 +111,9 @@ export function useEntityImport({ def, noPerm, text, onImported }: {
         .then((buf) => {
           const r = parseEntityExcel(def, buf)
           if (!r.ok) { setError(excelErrorText(r, text)); return }
-          setPayload(JSON.stringify(r.value, null, 2))
+          const content = JSON.stringify(r.value, null, 2)
+          setPayload(content)
+          setCheckedPayload(content)
           setError('')
         })
         .catch(() => setError(text.readFail))
@@ -117,7 +121,12 @@ export function useEntityImport({ def, noPerm, text, onImported }: {
     }
     if (!/\.json$/i.test(file.name) && file.type !== 'application/json') { setError(text.onlyJson); return }
     const reader = new FileReader()
-    reader.onload = () => { setPayload(String(reader.result ?? '')); setError('') }
+    reader.onload = () => {
+      const content = String(reader.result ?? '')
+      setPayload(content)
+      setCheckedPayload(content)
+      setError('')
+    }
     reader.onerror = () => setError(text.readFail)
     reader.readAsText(file)
   }
@@ -203,7 +212,8 @@ export function useEntityImport({ def, noPerm, text, onImported }: {
     setBusy(false)
   }
   return {
-    payload, setPayload, advanced, setAdvanced, busy, error, progress, setProgress, summary,
+    payload, setPayload, checkedPayload, setCheckedPayload, advanced, setAdvanced, busy, error,
+    progress, setProgress, summary,
     failures, setFailures, pickerOpen, setPickerOpen, fileRef, parsed, rows, dedupe, maxRows,
     maxRowsFallback, existingLoadFailed, pendingTask, run, readFile,
     downloadTemplate, exportFailed, retryRegister, setError, setSummary,
