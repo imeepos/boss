@@ -203,7 +203,7 @@ def main():
         "prvCode": "PHL001", "cityPrefix": "MNL", "gridCode": 91,
         "name": "W7验收杆", "lat": 14.606, "lng": 120.991})
     check("B1 创建 PLANNED 验收设施 " + fac, r is not None, r)
-    pl2, _ = sql_check = sql("SELECT lifecycle_status FROM odn_facility WHERE code='" + fac + "'")
+    sql("UPDATE odn_facility SET lifecycle_status='PLANNED' WHERE code='" + fac + "'")
     fix = sql("UPDATE odn_facility SET lifecycle_status='PLANNED' WHERE code='" + fac + "'")
     TRACK["facility"] = fac
 
