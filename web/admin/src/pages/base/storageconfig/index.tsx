@@ -38,6 +38,38 @@ export default function StorageConfigPage() {
   const [saving, setSaving] = useState(false)
   const [saveState, setSaveState] = useState<SubmitState>('idle')
   const [rotateState, setRotateState] = useState<SubmitState>('idle')
+  // 连通性自检(POST /storage-config/test):对已保存配置做零副作用真实探测。
+  const [testing, setTesting] = useState(false)
+  const [testState, setTestState] = useState<SubmitState>('idle')
+  const [testError, setTestError] = useState('')
+
+  const doTest = async () => {
+    if (testing) return
+    setTesting(true)
+    setTestError('')
+    setTestState('loading')
+    try {
+      const d = await apiFetch<{ ok: boolean; latencyMs: number; message?: string }>('/storage-config/test', { method: 'POST' })
+      if (d?.ok) {
+        toast.success(`${a.testOk} (${d.latencyMs}ms)`)
+        setTestState('success')
+        setTimeout(() => setTestState((s) => (s === 'success' ? 'idle' : s)), 1500)
+      } else {
+        const msg = d?.message || a.testFail
+        setTestError(msg)
+        toast.error(msg)
+        setTestState('failed')
+        setTimeout(() => setTestState((s) => (s === 'failed' ? 'idle' : s)), 2500)
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : a.testFail
+      setTestError(msg)
+      toast.error(msg)
+      setTestState('failed')
+      setTimeout(() => setTestState((s) => (s === 'failed' ? 'idle' : s)), 2500)
+    }
+    finally { setTesting(false) }
+  }
 
   const load = () => {
     setError('')
@@ -117,6 +149,7 @@ export default function StorageConfigPage() {
           <Badge variant={fields['minio.endpoint']?.hasValue ? 'success' : 'warning'}>{fields['minio.endpoint']?.hasValue ? a.configured : a.notConfigured}</Badge>
         </div>
         {saveError && <div className="mb-3"><ErrorBanner message={saveError} /></div>}
+        {testError && <div className="mb-3"><ErrorBanner message={testError} /></div>}
         <div className="grid grid-cols-2 gap-4">
           <FormField label={a.endpoint} hint={a.endpointHint}><Input className="w-72" value={draft['minio.endpoint'] ?? ''} onChange={(e) => set('minio.endpoint', e.target.value)} placeholder="192.168.0.102:29000" /></FormField>
           <FormField label={a.bucket}><Input className="w-72" value={draft['minio.bucket'] ?? ''} onChange={(e) => set('minio.bucket', e.target.value)} placeholder="boss-attachments" /></FormField>
@@ -124,6 +157,7 @@ export default function StorageConfigPage() {
           <FormField label={a.secretKey}><SecretInput value={draft['minio.secretKey'] ?? ''} hasValue={!!fields['minio.secretKey']?.hasValue} onChange={(v) => set('minio.secretKey', v)} /></FormField>
           <FormField label={a.useSSL}><span className="flex items-center gap-2"><Switch checked={useSSL} onCheckedChange={(v) => set('minio.useSSL', String(v))} aria-label={a.useSSL} /><span className="text-sm">{useSSL ? a.enabled : a.disabled}</span></span></FormField>
         </div>
+        <div className="mt-1 text-xs text-[var(--shell-crumb-text)]">{a.testHint}</div>
         <div className="mt-5 flex items-center justify-between">
           <Dialog open={rotateOpen} onOpenChange={(o) => { setRotateOpen(o); if (!o) setRotateError('') }}>
             <DialogTrigger asChild>
@@ -156,12 +190,20 @@ export default function StorageConfigPage() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
-          <SubmitButton
-            state={saveState}
-            labels={{ idle: a.save, loading: a.saving, success: a.saved, failed: a.saveFail }}
-            disabled={saving}
-            onClick={save}
-          />
+          <div className="flex items-center gap-2">
+            <SubmitButton
+              state={testState}
+              labels={{ idle: a.testBtn, loading: a.testing, success: a.testOk, failed: a.testFail }}
+              disabled={testing}
+              onClick={doTest}
+            />
+            <SubmitButton
+              state={saveState}
+              labels={{ idle: a.save, loading: a.saving, success: a.saved, failed: a.saveFail }}
+              disabled={saving}
+              onClick={save}
+            />
+          </div>
         </div>
       </Card>
     </div>

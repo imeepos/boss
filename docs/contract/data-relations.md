@@ -293,7 +293,11 @@ ODN 层      geo_subdivision → odn_region_code → odn_city_code → grid/faci
 ## 6. 已知债务（后端侧,前端已 graceful 降级）
 
 > 体验打磨项目(Wave0-W3)走查中登记;前端一律降级+留痕(console.warn),不硬造数据。补齐后逐条销账。
+> **2026-09-08 复盘整改批次(Wave 复盘,Phase A 后端 + Phase B 前端)三条全部销账**,销账标记见各条目;原文保留。
 
 1. **归属链公司名**：GET /customers 行仅回 legalEntityId/regionName,不含法人名称;客户详情抽屉公司名前端靠 /legal-entities 全量查找兜底(失败降级 #id 且 console.warn,web/admin pages/bss/customer CustomerDetailDrawer)。需要:行内直接回 legalEntityName 或批量查询端点。(2026-09-08,bss 批次提请)
+   **【已销账 2026-09-08】**后端 d2d31e2e 行内回显 legalEntityName;前端 30fcc802 删除 /legal-entities 全量兜底改直显,空值降级 —。
 2. **详情接口名称字段缺失**：worker 详情缺班组名(groupName)/区域名(regionName)、customer 详情区域兜底仅有 regionId——detailItems 渲染 #id 裸编号。需要:详情响应补名称字段;前端 detailItems 消化见 docs/admin/selector-audit.md §二.4。(2026-09-08,W0 选择器审计提请)
+   **【已销账 2026-09-08】**后端 2329540a worker 行/详情回显 groupName/regionName、complaints 回显 customerName;前端 e99e9323(师傅列表/详情抽屉/装维队 WorkerPicker,删除 nameMap 兜底链)与 f81d45f2(报障列表)消费直显,空值降级 —。
 3. **存储配置缺测试连接端点**：GET/PUT /storage-config 与 POST /storage-config/rotate-secret 已有(permCode menu:params),但无 `/storage-config/test` 一类连通性自检(对比 auth/sms/push/realid/stripe 五组配置页均有 POST */test);MinIO 凭据填错只能等首次附件上传失败才暴露。需要:POST /storage-config/test(校验 endpoint/accessKey/secretKey/bucket/useSSL 可达,零副作用)。前端本轮已按现契约不动,页面在 fields.md §1.6.3 范围。(2026-09-08,base 批次提请)
+   **【已销账 2026-09-08】**后端 63086103 落地 POST /storage-config/test({ok,latencyMs,message},零副作用 BucketExists 探测);前端本提交 storageconfig 页加「测试连接」按钮,SubmitButton 状态机 + ErrorBanner 展示,对齐五组配置页交互。
