@@ -2200,3 +2200,16 @@
 - 最坑:无。本轮全程零返工;唯一小错是 recon-points.tsx 的 edit 把两行 import 挤成一行(typecheck 当场拦截,一轮修复)。
 - skill 预警生效:红线 4(edit 对称)让每个 edit 后立刻跑 typecheck;红线 5/6 让每页都有 DOM 断言与独立提交;红线 8a 新建 RuleStatus.tsx 前先 check-ignore。
 - 重来一次:提前把「新增 i18n key」的完整清单列好(占位符+回执+徽标)一次性加进键集提交,避免 savedOk 落在 product 页提交里需要人工登记例外。
+
+## 2026-09-08 负责人轮(体验打磨 W0-W1 协调)
+
+- 哪个坑浪费了最多时间?把「worktree dirty=0+已推送」误读为会话已完成,提前执行了收尾清理(worktree remove+branch -d),被仍在收尾的 W0 会话点名抗议。实际它是页间过渡态。
+- skill 有没有提前警告?AGENTS.md 红线 9 有「清理链必须等独立确认」的防丢码条款,但缺「会话资产清理必须以该会话明确『待合并』汇报为唯一信号」的协调层条款;归档后 send/talk 全拒,补救通道只剩可见输出。
+- 重来一次怎么做?完成判定只认会话明确汇报;清理前先向目标会话发确认且收到回复;归档动作放到「复核+合并+双方确认」三重之后。
+
+## 2026-09-08 Wave0 选择器专项(feat/ux-selector)
+- 最坑:并行负责人会话把我未推送的 worktree+分支当收尾清理(worktree remove+branch -d);靠历次 commit 输出里的 SHA 从共享对象库恢复 5 个提交并重建分支。对策固化:①每批 commit 后立即 push(远端 ref 才是保险);②commit 输出的短 SHA 是唯一可自证的恢复锚点。
+- 次坑:dev server 端口被并行会话占用,strictPort 失败被竖线 head 掩码,随后约 20 分钟的 DOM 断言跑在主树旧代码上,证据链差点全废。修法:起服务后必须 curl 一个本分支独有标记串验证「服务的是哪个树」,再看 lsof cwd;长驻服务禁止用管道截断输出。
+- 技术收获:React 18「effect 内 setState 标记 + alive 清理」自杀模式——effect 先写标记 state 再异步反查,写入触发重渲染,cleanup 先于 promise 兑现,回显必然落空;同类:booted 用 ref 时同值 bailout 不重放效应。jsdom+act+createRoot 组件回归(仓库已有 drawerDialogLayer 先例)可直接锁死此类缺陷。
+- 生产 bundle grep 陷阱:标识符被 minify、CJK 字符串被 esbuild 转义成 unicode 序列,grep 源码字面量恒 0——验证部署版本用行为断言或 ASCII 标记串。
+- skill 预警生效:红线 26(按组件源码事件绑定派发,Dropdown 选项 onMouseDown/触发器 onClick)一次命中;红线 10(worktree 是兄弟目录)规避;红线 13(两段式建 worktree)顺畅。
