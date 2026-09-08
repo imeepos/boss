@@ -130,10 +130,9 @@ def create_supplier():
 
 def create_facility(suffix):
     code = "CLS9" + str(random.randint(1000, 9999))
-    st, body = http("POST", "/odn/facilities", {"code": code, "kind": "CLS", "name": "W6ACC-" + suffix, "prvCode": "PHL001", "cityPrefix": "MNL"})
+    # T2 起 PLANNED 是创建 API 显式入参,不再 psql 直设;入施工单须 PLANNED(W8 同款)。
+    st, body = http("POST", "/odn/facilities", {"code": code, "kind": "CLS", "name": "W6ACC-" + suffix, "prvCode": "PHL001", "cityPrefix": "MNL", "lifecycleStatus": "PLANNED"})
     if st == 200 and code_of(body) == 0:
-        # 新建设施缺省非 PLANNED,入施工单须 PLANNED;验收造数经 psql 直设(W8 同款)。
-        psql("UPDATE odn_facility SET lifecycle_status = " + q("PLANNED") + " WHERE code = " + q(code))
         return code
     bad("create facility " + suffix, str((st, body))[:200])
     return None

@@ -1,14 +1,15 @@
 // W1 承包商与工程结算面板(挂 ODN 管理页施工项目页签;P-INFRA-1 W1)。
 // 文案为字面量:W1 约束禁触 i18n 中央登记文件(types/locales,W2 才放行)。
+// 新建走右侧抽屉 ConstructionCreateDrawer(2026-09-08):与全站表单口径统一,不再用页内内联卡片。
+// 详情走右侧抽屉 ConstructionDetailDrawer(2026-09-08):详情组件原样入壳,行内展开不存在。
 import { useCallback, useEffect, useState } from 'react'
-import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
-import { Input } from '../../../components/ui/input'
 import { Badge } from '../../../components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../../components/ui/table'
 import { Card } from '../../../components/ui/card'
 import { EmptyState, ErrorBanner, ToolbarButton } from '../../../components/business/page-head'
-import { ConstructionDetail } from './ConstructionDetail'
+import { ConstructionDetailDrawer } from './ConstructionDetailDrawer'
+import { ConstructionCreateDrawer } from './ConstructionCreateDrawer'
 
 export interface Project {
   id: number
@@ -45,9 +46,6 @@ export default function ConstructionsPanel() {
   const [rows, setRows] = useState<Project[]>([])
   const [error, setError] = useState('')
   const [showCreate, setShowCreate] = useState(false)
-  const [projNo, setProjNo] = useState('')
-  const [name, setName] = useState('')
-  const [busy, setBusy] = useState(false)
   const [openId, setOpenId] = useState<number | null>(null)
 
   const load = useCallback(async () => {
@@ -58,35 +56,14 @@ export default function ConstructionsPanel() {
 
   useEffect(() => { void load() }, [load])
 
-  const create = async () => {
-    if (!projNo.trim()) { setError('施工单号必填'); return }
-    setBusy(true); setError('')
-    try {
-      await apiFetch('/odn/constructions', { method: 'POST', body: { projNo: projNo.trim(), name: name.trim() } })
-      toast.success('施工单已创建')
-      setProjNo(''); setName(''); setShowCreate(false)
-      await load()
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : '保存失败'
-      setError(msg)
-      toast.error('施工单创建失败', { description: msg })
-    } finally { setBusy(false) }
-  }
+  // 详情抽屉标题(单号+名称):行对象随列表数据派生,不在行内维护展开态。
+  const openRow = openId != null ? rows.find((x) => x.id === openId) : undefined
 
   return <div>
     <div className='mb-3 flex items-center justify-between'>
-      <ToolbarButton primary onClick={() => setShowCreate(!showCreate)}>{showCreate ? '取消' : '新建施工单'}</ToolbarButton>
+      <ToolbarButton primary onClick={() => setShowCreate(true)}>新建施工单</ToolbarButton>
       <ToolbarButton onClick={() => void load()}>刷新</ToolbarButton>
     </div>
-    {showCreate && <Card className="mb-3">
-      <div className="p-4">
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          <label className="flex flex-col gap-1"><span className="text-xs text-[var(--shell-content-text)]">施工单号</span><Input value={projNo} onChange={(e) => setProjNo(e.target.value)} placeholder="C-20260907-001" /></label>
-          <label className="flex flex-col gap-1"><span className="text-xs text-[var(--shell-content-text)]">名称</span><Input value={name} onChange={(e) => setName(e.target.value)} /></label>
-        </div>
-        <div className="mt-3 flex justify-end"><ToolbarButton primary disabled={busy} onClick={() => void create()}>{busy ? '保存中…' : '保存'}</ToolbarButton></div>
-      </div>
-    </Card>}
     {error && <ErrorBanner message={error} className="mb-3" />}
     <Card className="overflow-hidden">
       {rows.length === 0 ? <EmptyState text='暂无施工单' /> : <div className='overflow-x-auto'><Table>
@@ -100,11 +77,14 @@ export default function ConstructionsPanel() {
             <TableCell>{r.itemCount}</TableCell>
             <TableCell>{fmtMoney(r.itemsAmount)}</TableCell>
             <TableCell className='whitespace-nowrap'>{fmtBudgetProgress(r)}</TableCell>
-            <TableCell><button className='text-[var(--color-text-link)]' onClick={() => setOpenId(openId === r.id ? null : r.id)}>{openId === r.id ? '收起' : '详情'}</button></TableCell>
+            <TableCell><button className='text-[var(--color-text-link)]' onClick={() => setOpenId(r.id)}>详情</button></TableCell>
           </TableRow>)}
         </TableBody>
       </Table></div>}
     </Card>
-    {openId != null && <ConstructionDetail projectId={openId} onChanged={() => void load()} />}
+    {openId != null && <ConstructionDetailDrawer projectId={openId}
+      title={openRow ? openRow.projNo + (openRow.name ? ' ' + openRow.name : '') : ''}
+      onClose={() => setOpenId(null)} onChanged={() => void load()} />}
+    {showCreate && <ConstructionCreateDrawer onClose={() => setShowCreate(false)} onCreated={() => void load()} />}
   </div>
 }

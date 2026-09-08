@@ -80,3 +80,20 @@ Phase 2（负责人排期，2026-09-07 按 docs/reviews/2026-09-07-invest-build-
 | W3 收口 导入链接通 | session-79b53804 | 已验收（F2 闭环，会话待用户 GUI 归档；机房/OLT 实体关联放弃项记未来任务池） | c2a75d69（000222） | 负责人复跑 18/18 PASS（测算/覆盖数据面接通硬杠断言+回补幂等） |
 | W7 勘测采集与施工进度 | session-c538c8b9 | 已验收（F5a/F5b 闭环，会话待用户 GUI 归档；Android 字面文案/next-code 缺陷/建设施生命周期语义列后续工单） | 73d89a38 链 + 000223-000225 + a1c5a3a5 自举修复 | 负责人复跑 21/21 PASS（自举夹具+全链+GIS 双图层+审计+清尾） |
 | 投建阶段审查 | session-c68a8c7d | 报告已归档（docs/reviews/2026-09-07，待用户 GUI 归档） | 6ceb844b | 只读审查（无验收概念） |
+
+## 7.1 P-INFRA-2 工单池收官（负责人维护，2026-09-09）
+
+| 票 | 会话 | 状态 | 合并提交 | 102 验收 |
+|---|---|---|---|---|
+| C1 部署通道治理（看门狗） | session-bc334367 | 告警模式已上线；重新触发模式待 watchdog-token 配置（gitea UI 建 repo 权限 token → /home/imeepos/gitea/runner/watchdog-token，0600，落盘即自动升级） | 609a7108 报批 + 2623cb3c 脚本 + bc7d9b8c 口径 | cron */5 活跃，负责人亲查 /tmp/deploy-watchdog.log 连续 OK 周期零误报 |
+| T1 取号缺陷（facility-next-code 恒 001） | session-7557af34 | 已验收 | f7fccc9f 修复 + 2b28784f ::int 定型 | 负责人亲测 P91013 基线 → 新建取号 → 删除回落基线 |
+| T2 建设施生命周期选择器 | session-1bb4a1d5 | 已验收 | c88c5087 + 4eea85a5 契约 + 90e2637b 菜单重采 + 057bc578 存量验收脚本切显式口径 | 负责人复跑 scripts/ops/t2-lifecycle-acceptance.py 8/8 PASS + cleanup PASS（2026-09-09） |
+
+后续工单池（非阻塞，按优先级）：
+1. watchdog-token 配置（用户在 gitea UI 操作，配置后 C1 完全闭环）。
+2. Android 师傅端字面文案 string 资源化（W7 遗留）。
+3. 机房/OLT 实体关联升级（等模板城市代码）。
+4. W7 范围 facility-next-code 服务端点缺陷票（web 未受影响）。
+5. F4b/F5c 设计优化。
+
+Phase 2 全部工作流（W4→W8→W6→W5→W3 收口→W7）与 P-INFRA-2 工单池均已验收收官；W9 维持砍掉裁定（§3 顺序六）。基础设施期转入运维态：patrol-cron 每日巡检 + deploy-watchdog 看门狗值守。
