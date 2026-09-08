@@ -6,6 +6,7 @@ import { Drawer } from '../../../components/Drawer'
 import { Dropdown } from '../../../components/Dropdown'
 import { FormField } from '../../../components/business/form-field'
 import { ErrorBanner } from '../../../components/business/page-head'
+import { Input } from '../../../components/ui/input'
 import type { DepartmentRow } from './filter'
 
 export interface DeptFormValues {
@@ -69,7 +70,7 @@ export function DeptFormDrawer({
         </FormField>
         <FormField label={t.pages.department.fName} required
           error={!nameOk && values.name !== '' ? t.pages.department.eName : undefined}>
-          <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" value={values.name} placeholder={t.pages.department.pName}
+          <Input value={values.name} placeholder={t.pages.department.pName}
             onChange={(e) => onChange({ ...values, name: e.target.value })} />
         </FormField>
         {submitError && <ErrorBanner message={submitError} />}

@@ -6,6 +6,7 @@ import { Drawer } from '../../../components/Drawer'
 import { Dropdown } from '../../../components/Dropdown'
 import { FormField } from '../../../components/business/form-field'
 import { ErrorBanner } from '../../../components/business/page-head'
+import { Input } from '../../../components/ui/input'
 import type { PostRow } from './filter'
 
 export interface PostFormValues {
@@ -82,12 +83,12 @@ export function PostFormDrawer({
           />
         </FormField>
         <FormField label={t.pages.post.fCode} required>
-          <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" value={values.code} placeholder={t.pages.post.pCode}
+          <Input value={values.code} placeholder={t.pages.post.pCode}
             onChange={(e) => onChange({ ...values, code: e.target.value })} />
           {!codeOk && values.code !== '' && <span className="text-[11px] text-[var(--color-danger)]">{t.pages.post.eCode}</span>}
         </FormField>
         <FormField label={t.pages.post.fName} required>
-          <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" value={values.name} placeholder={t.pages.post.pName}
+          <Input value={values.name} placeholder={t.pages.post.pName}
             onChange={(e) => onChange({ ...values, name: e.target.value })} />
           {!nameOk && values.name !== '' && <span className="text-[11px] text-[var(--color-danger)]">{t.pages.post.eName}</span>}
         </FormField>
