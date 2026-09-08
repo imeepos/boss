@@ -4,7 +4,9 @@ import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import type { Translations } from '../../../i18n/types'
 import { formatTime } from '../../base/audit/logic'
-import { EmptyState } from '../../../components/business'
+import { EmptyState, ErrorBanner, ToolbarButton } from '../../../components/business/page-head'
+import { Input } from '../../../components/ui/input'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/table'
 import { buildTaskQuery, type TaskQueryFilters } from './taskQuery'
 
 export interface ImportTaskRow {
@@ -60,34 +62,36 @@ export function ImportTaskList({ refreshKey = 0 }: { refreshKey?: number }) {
 
   return (
     <div className="overflow-x-auto px-4 pb-4">
-      <div className="flex items-center gap-2 pb-2.5">
+      <div className="flex flex-wrap items-center gap-2 pb-2.5">
         <h3 className="m-0 text-sm">{im.tasksTitle}</h3>
-        <input className="h-8 w-40 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-xs text-[var(--shell-input-text)] outline-none placeholder:text-[var(--shell-input-placeholder)]" placeholder={im.taskKindFilter} value={kind} onChange={(e) => setKind(e.target.value)} />
-        <input className="h-8 w-32 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-xs text-[var(--shell-input-text)] outline-none placeholder:text-[var(--shell-input-placeholder)]" placeholder={im.taskOperatorFilter} value={operator} onChange={(e) => setOperator(e.target.value)} />
-        <input type="date" className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-xs text-[var(--shell-input-text)]" value={from} onChange={(e) => setFrom(e.target.value)} />
-        <input type="date" className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-xs text-[var(--shell-input-text)]" value={to} onChange={(e) => setTo(e.target.value)} />
+        <Input className="w-40" placeholder={im.taskKindFilter} value={kind} onChange={(e) => setKind(e.target.value)} />
+        <Input className="w-32" placeholder={im.taskOperatorFilter} value={operator} onChange={(e) => setOperator(e.target.value)} />
+        <Input type="date" className="w-40" value={from} onChange={(e) => setFrom(e.target.value)} aria-label={im.taskFromFilter} />
+        <Input type="date" className="w-40" value={to} onChange={(e) => setTo(e.target.value)} aria-label={im.taskToFilter} />
         <div className="flex-1" />
-        <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={load}>{t.pages.audit.refresh}</button>
+        <ToolbarButton onClick={load}>{t.pages.audit.refresh}</ToolbarButton>
       </div>
-      <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
-        <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{im.taskColumns.map((c) => <th key={c} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{c}</th>)}</tr></thead>
-        <tbody>
+      {error && <div className="mb-3"><ErrorBanner message={error} /></div>}
+      <Table>
+        <TableHeader>
+          <TableRow>{im.taskColumns.map((c) => <TableHead key={c}>{c}</TableHead>)}</TableRow>
+        </TableHeader>
+        <TableBody>
           {rows.map((r) => (
-            <tr key={r.id}>
-              <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.id}</td>
-              <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{taskKindLabel(im, r.kind)}</td>
-              <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.operator || '—'}</td>
-              <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.total}</td>
-              <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.imported}</td>
-              <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.failed}</td>
-              <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{r.skipped}</td>
-              <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{formatTime(r.createdAt)}</td>
-            </tr>
+            <TableRow key={r.id}>
+              <TableCell>{r.id}</TableCell>
+              <TableCell>{taskKindLabel(im, r.kind)}</TableCell>
+              <TableCell>{r.operator || '—'}</TableCell>
+              <TableCell>{r.total}</TableCell>
+              <TableCell>{r.imported}</TableCell>
+              <TableCell>{r.failed}</TableCell>
+              <TableCell>{r.skipped}</TableCell>
+              <TableCell>{formatTime(r.createdAt)}</TableCell>
+            </TableRow>
           ))}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
       {rows.length === 0 && !error && <EmptyState text={t.pages.company.empty} />}
-      {error && <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div>}
     </div>
   )
 }

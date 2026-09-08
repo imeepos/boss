@@ -6,7 +6,10 @@ import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { Dropdown } from '../../../components/Dropdown'
 import { Drawer } from '../../../components/Drawer'
+import { Input } from '../../../components/ui/input'
 import { FormField } from '../../../components/business/form-field'
+import { ErrorBanner, ToolbarButton } from '../../../components/business/page-head'
+import { SubmitButton, type SubmitState } from '../../../components/business/submit-button'
 import { cascadeReset, validateAccount, type AccountFormValues } from './form'
 
 const GROUP_TITLE_CLS = 'my-1.5 -mb-1 text-xs font-semibold tracking-wide text-[var(--shell-group-title)]'
@@ -41,7 +44,6 @@ export function AccountForm({ values, onChange, errors }: AccountFormHandlers) {
           setRoles(d.map((c) => ({ value: c.code, label: c.name })))
           return
         }
-        // /roles 空兜底:借 menu-perms 角色列(同源 roles 表)。
         return apiFetch<{ matrix: { roleColumns: { roleCode: string; roleName: string }[] } }>('/menu-perms')
           .then((m) => setRoles((m?.matrix?.roleColumns ?? []).map((c) => ({ value: c.roleCode, label: c.roleName }))))
       })
@@ -69,23 +71,23 @@ export function AccountForm({ values, onChange, errors }: AccountFormHandlers) {
     <div className="flex flex-col gap-3.5">
       <div className={GROUP_TITLE_CLS}>{t.pages.account.gBasic}</div>
       <FormField label={t.pages.account.fUsername} required>
-        <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" value={values.username} placeholder={t.pages.account.pUsername}
+        <Input value={values.username} placeholder={t.pages.account.pUsername}
           onChange={(e) => set({ username: e.target.value })} />
         {err('invalidUsername') && <span className={ERR_CLS}>{t.pages.account.eUsername}</span>}
       </FormField>
       <FormField label={t.pages.account.fPassword} required>
-        <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" type="password" value={values.password}
+        <Input type="password" value={values.password}
           placeholder={values.id ? t.pages.account.pPasswordEdit : t.pages.account.pPassword}
           onChange={(e) => set({ password: e.target.value })} />
         {err('shortPassword') && <span className={ERR_CLS}>{t.pages.account.ePassword}</span>}
       </FormField>
       <FormField label={t.pages.account.fRealName} required>
-        <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" value={values.realName} placeholder={t.pages.account.pRealName}
+        <Input value={values.realName} placeholder={t.pages.account.pRealName}
           onChange={(e) => set({ realName: e.target.value })} />
         {err('invalidRealName') && <span className={ERR_CLS}>{t.pages.account.eRealName}</span>}
       </FormField>
       <FormField label={t.pages.account.fPhone}>
-        <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" value={values.phone} placeholder={t.pages.account.pPhone}
+        <Input value={values.phone} placeholder={t.pages.account.pPhone}
           onChange={(e) => set({ phone: e.target.value })} />
         {err('invalidPhone') && <span className={ERR_CLS}>{t.pages.account.ePhone}</span>}
       </FormField>
@@ -141,7 +143,7 @@ export function AccountForm({ values, onChange, errors }: AccountFormHandlers) {
 }
 
 export function AccountFormDrawer({
-  open, values, onChange, onClose, onSubmit, busy, submitError,
+  open, values, onChange, onClose, onSubmit, busy, submitError, submitState,
 }: {
   open: boolean
   values: AccountFormValues
@@ -150,6 +152,7 @@ export function AccountFormDrawer({
   onSubmit: () => void
   busy: boolean
   submitError: string
+  submitState: SubmitState
 }) {
   const t = useT()
   const isEdit = Boolean(values.id)
@@ -158,14 +161,22 @@ export function AccountFormDrawer({
     <Drawer title={isEdit ? t.pages.account.editTitle : t.pages.account.createTitle} onClose={onClose}
       footer={
         <>
-          <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={onClose}>{t.pages.company.cancel}</button>
-          <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" disabled={busy} onClick={onSubmit}>
-            {busy ? t.pages.account.submitting : t.pages.company.save}
-          </button>
+          <ToolbarButton onClick={onClose} disabled={busy}>{t.pages.company.cancel}</ToolbarButton>
+          <SubmitButton
+            state={submitState}
+            labels={{
+              idle: t.pages.company.save,
+              loading: t.common.loading,
+              success: t.common.saveOk,
+              failed: t.common.saveFail,
+            }}
+            disabled={busy}
+            onClick={onSubmit}
+          />
         </>
       }>
       <AccountForm values={values} onChange={onChange} errors={validateAccount(values, isEdit)} />
-      {submitError && <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)] !mt-3">{submitError}</div>}
+      {submitError && <div className="px-4 pb-4"><ErrorBanner message={submitError} /></div>}
     </Drawer>
   )
 }

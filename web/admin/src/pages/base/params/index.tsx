@@ -8,11 +8,14 @@ import { useT } from '../../../i18n'
 import { Dropdown } from '../../../components/Dropdown'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../../components/ui/dialog'
 import { PageHead, ErrorBanner, EmptyState, ToolbarButton } from '../../../components/business/page-head'
+import { SubmitButton, type SubmitState } from '../../../components/business/submit-button'
 import { Card } from '../../../components/ui/card'
 import { Input } from '../../../components/ui/input'
 import { Badge } from '../../../components/ui/badge'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/table'
 import { filterParams, paramLabel, type BizParam } from './logic'
+
+interface PartialSaveReport { ok: number; fail: number; reason: string }
 
 export default function ParamsPage() {
   const t = useT()
@@ -23,6 +26,8 @@ export default function ParamsPage() {
   const [status, setStatus] = useState('')
   const [detail, setDetail] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+  const [saveState, setSaveState] = useState<SubmitState>('idle')
+  const [saveReport, setSaveReport] = useState<PartialSaveReport | null>(null)
 
   const load = () => {
     setError('')
@@ -49,6 +54,8 @@ export default function ParamsPage() {
   const save = async () => {
     if (!dirty.length || saving) return
     setSaving(true)
+    setSaveReport(null)
+    setSaveState('loading')
     try {
       const results = await Promise.allSettled(dirty.map((p) => apiFetch(`/params/${encodeURIComponent(p.key)}`, {
         method: 'PUT',
@@ -57,14 +64,20 @@ export default function ParamsPage() {
       const failed = results.filter((r) => r.status === 'rejected')
       const ok = results.length - failed.length
       if (failed.length === 0) {
+        setSaveState('success')
         toast.success(t.pages.params.saved.replace('{count}', String(ok)))
+        setSaveReport(null)
+        setTimeout(() => setSaveState((s) => (s === 'success' ? 'idle' : s)), 1500)
       } else {
         const first = failed[0]
         const reason = first.reason instanceof Error ? first.reason.message : t.pages.params.saveFail
+        setSaveState('failed')
         toast.error(t.pages.params.savePartial
           .replace('{ok}', String(ok))
           .replace('{fail}', String(failed.length))
           .replace('{reason}', reason))
+        setSaveReport({ ok, fail: failed.length, reason })
+        setTimeout(() => setSaveState((s) => (s === 'failed' ? 'idle' : s)), 2500)
       }
       if (ok > 0) {
         const okKeys = new Set(dirty.filter((_, i) => results[i].status === 'fulfilled').map((p) => p.key))
@@ -100,12 +113,23 @@ export default function ParamsPage() {
         <div className="flex-1" />
         <ToolbarButton onClick={load}>{t.pages.params.refresh}</ToolbarButton>
       </div>
+      {error ? <ErrorBanner message={error} /> : null}
       <Card className="p-4">
         <div className="mb-3 font-semibold text-[var(--shell-heading)]">
           {t.pages.params.cardTitle}
           <span className="ml-2 text-xs font-normal text-[var(--shell-crumb-text)]">{t.pages.params.hotUpdate}</span>
         </div>
-        {error ? <ErrorBanner message={error} /> : (
+        {saveReport && (
+          <div className="mb-3">
+            <ErrorBanner message={
+              t.pages.params.savePartial
+                .replace('{ok}', String(saveReport.ok))
+                .replace('{fail}', String(saveReport.fail))
+                .replace('{reason}', saveReport.reason)
+            } />
+          </div>
+        )}
+        {error ? null : (
           <Table>
             <TableHeader>
               <TableRow>
@@ -142,9 +166,17 @@ export default function ParamsPage() {
           </Table>
         )}
         <div className="mt-3.5 flex items-center gap-2">
-          <ToolbarButton primary disabled={saving || !dirty.length} onClick={save}>
-            {saving ? t.pages.params.saving : t.pages.params.save}
-          </ToolbarButton>
+          <SubmitButton
+            state={saveState}
+            labels={{
+              idle: t.pages.params.save,
+              loading: t.pages.params.saving,
+              success: t.pages.params.saved.replace('{count}', String(dirty.length)),
+              failed: t.pages.params.saveFail,
+            }}
+            disabled={saving || !dirty.length}
+            onClick={save}
+          />
           <ToolbarButton onClick={load}>{t.pages.params.resetForm}</ToolbarButton>
         </div>
       </Card>
@@ -162,7 +194,7 @@ export default function ParamsPage() {
               <dt className="text-[var(--shell-crumb-text)]">{t.pages.params.colDesc}</dt><dd className="m-0">{detailRow.desc}</dd>
             </dl>
           )}
-          <ToolbarButton primary onClick={() => setDetail(null)}>{t.pages.params.close}</ToolbarButton>
+          <ToolbarButton onClick={() => setDetail(null)}>{t.pages.params.close}</ToolbarButton>
         </DialogContent>
       </Dialog>
     </div>

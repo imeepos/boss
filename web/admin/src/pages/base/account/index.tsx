@@ -11,7 +11,12 @@ import { StatusTag } from '../../../components/StatusTag'
 import { Pagination } from '../../../components/Pagination'
 import { useConfirm } from '../../../components/ConfirmDialog'
 import { DataTable } from '../../../components/business/data-table'
-import { ActionLinks, ActionLink, ActionSep } from '../../../components/business/page-head'
+import { type SubmitState } from '../../../components/business/submit-button'
+import {
+  ActionLinks, ActionLink, ActionSep, ErrorBanner, PageHead, ToolbarButton, pagerTexts,
+} from '../../../components/business/page-head'
+import { Card } from '../../../components/ui/card'
+import { Input } from '../../../components/ui/input'
 import { DetailDrawer } from '../../org/shared'
 import { filterAccounts, pageSlice, type AccountRow } from './list'
 import { buildAccountPayload, validateAccount, type AccountFormValues } from './form'
@@ -33,6 +38,7 @@ export default function AccountListPage() {
   const [form, setForm] = useState<AccountFormValues | null>(null)
   const [formError, setFormError] = useState('')
   const [busy, setBusy] = useState(false)
+  const [submitState, setSubmitState] = useState<SubmitState>('idle')
 
   const load = () => {
     setError('')
@@ -54,15 +60,20 @@ export default function AccountListPage() {
     if (errs.length) return
     setBusy(true)
     setFormError('')
+    setSubmitState('loading')
     try {
       const body = buildAccountPayload(form, Boolean(form.id))
       if (form.id) await apiFetch(`/accounts/${form.id}`, { method: 'PUT', body })
       else await apiFetch('/accounts', { method: 'POST', body })
       toast.success(t.pages.account.saved)
+      setSubmitState('success')
       setForm(null)
       load()
+      setTimeout(() => setSubmitState('idle'), 1500)
     } catch (e) {
+      setSubmitState('failed')
       setFormError(e instanceof Error ? e.message : t.pages.account.saveFail)
+      setTimeout(() => setSubmitState((s) => (s === 'failed' ? 'idle' : s)), 2500)
     } finally {
       setBusy(false)
     }
@@ -96,13 +107,10 @@ export default function AccountListPage() {
 
   return (
     <div>
-      <div className="mb-4">
-        <h2 className="m-0 text-xl font-bold text-[var(--shell-heading)]">{t.pages.account.title}</h2>
-        <p className="mt-1 text-xs text-[var(--shell-crumb-text)]">{t.pages.account.desc}</p>
-      </div>
-      <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
+      <PageHead title={t.pages.account.title} desc={t.pages.account.desc} />
+      <Card>
         <div className="flex flex-wrap items-center gap-2 p-4">
-          <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" placeholder={t.pages.account.searchPlaceholder}
+          <Input className="w-60" placeholder={t.pages.account.searchPlaceholder}
             value={keyword} onChange={(e) => { setKeyword(e.target.value); setPage(1) }} />
           <Dropdown
             value={role}
@@ -120,14 +128,12 @@ export default function AccountListPage() {
             onChange={(v) => { setStatus(v); setPage(1) }}
             ariaLabel={t.pages.account.allStatus}
           />
-          <span className="spacer" />
+          <span className="flex-1" />
           <BatchImportEntry kind="account" onImported={load} />
-          <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={load}>{t.pages.audit.refresh}</button>
-          <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" onClick={() => setForm(emptyForm())}>
-            {t.pages.account.create}
-          </button>
+          <ToolbarButton onClick={load}>{t.pages.audit.refresh}</ToolbarButton>
+          <ToolbarButton primary onClick={() => setForm(emptyForm())}>{t.pages.account.create}</ToolbarButton>
         </div>
-        {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : (
+        {error ? <ErrorBanner message={error} /> : (
           <div className="px-4 pb-4">
             <DataTable
               emptyText={t.pages.account.empty}
@@ -161,11 +167,9 @@ export default function AccountListPage() {
         <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
           <Pagination total={filtered.length} page={page} pageSize={pageSize}
             onPage={setPage} onSize={setPageSize}
-            rangeText={t.pages.company.rangeText} prevText={t.pages.company.prev}
-            nextText={t.pages.company.next} perPageText={t.pages.company.perPage}
-            jumpText={t.pages.company.jumpText} pageUnitText={t.pages.company.pageUnit} />
+            {...pagerTexts(t.pages.company)} />
         </div>
-      </div>
+      </Card>
 
       {detail && (
         <DetailDrawer title={t.pages.account.detailTitle} closeText={t.pages.company.cancel}
@@ -191,6 +195,7 @@ export default function AccountListPage() {
         onSubmit={submit}
         busy={busy}
         submitError={formError}
+        submitState={submitState}
       />
     </div>
   )

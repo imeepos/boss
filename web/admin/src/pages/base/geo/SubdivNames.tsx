@@ -1,9 +1,10 @@
 // SubdivNames 区划译名维护抽屉:列表 + locale/name 新增 + 删除确认。
 import { useCallback, useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { Drawer } from '../../../components/Drawer'
-import { ToolbarButton } from '../../../components/business/page-head'
+import { ToolbarButton, ErrorBanner } from '../../../components/business/page-head'
 import { Input } from '../../../components/ui/input'
 import { useConfirm } from '../../../components/ConfirmDialog'
 import { TAG_OFF, type NameRow } from './subdiv-shared'
@@ -15,6 +16,7 @@ export function SubdivNames({ code, onClose }: { code: string; onClose: () => vo
   const [names, setNames] = useState<NameRow[]>([])
   const [locale, setLocale] = useState('zh-Hans')
   const [name, setName] = useState('')
+  const [error, setError] = useState('')
 
   const load = useCallback(() => {
     apiFetch<NameRow[]>(`/geo/subdivisions/${code}/names`)
@@ -26,21 +28,35 @@ export function SubdivNames({ code, onClose }: { code: string; onClose: () => vo
 
   const add = async () => {
     if (!name.trim()) return
-    await apiFetch(`/geo/subdivisions/${code}/names`, {
-      method: 'POST', body: { locale, name, nameType: 'STANDARD' },
-    }).catch(() => undefined)
-    setName('')
-    load()
+    try {
+      await apiFetch(`/geo/subdivisions/${code}/names`, {
+        method: 'POST', body: { locale, name, nameType: 'STANDARD' },
+      })
+      setName('')
+      load()
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : g.saveFail
+      setError(msg)
+      toast.error(msg)
+    }
   }
 
   const remove = async (loc: string, nameType: string) => {
     if (!(await confirmDialog(g.deleteNameConfirm, { danger: true }))) return
-    await apiFetch(`/geo/subdivisions/${code}/names/${loc}/${nameType}`, { method: 'DELETE' })
+    try {
+      await apiFetch(`/geo/subdivisions/${code}/names/${loc}/${nameType}`, { method: 'DELETE' })
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : g.saveFail
+      setError(msg)
+      toast.error(msg)
+      return
+    }
     load()
   }
 
   return (
     <Drawer title={`${g.names} · ${code}`} onClose={onClose}>
+      {error && <div className="mb-3"><ErrorBanner message={error} /></div>}
       {names.map((n) => (
         <div key={n.locale + n.nameType} className={TAG_OFF}>
           <span>{n.locale} · {n.nameType} · {n.name}</span>

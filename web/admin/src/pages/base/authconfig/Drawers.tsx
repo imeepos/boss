@@ -5,6 +5,8 @@ import { Dropdown } from '../../../components/Dropdown'
 import { FormField } from '../../../components/business/form-field'
 import { Input } from '../../../components/ui/input'
 import { Switch } from '../../../components/ui/switch'
+import { ErrorBanner, ToolbarButton } from '../../../components/business/page-head'
+import { SubmitButton, type SubmitState } from '../../../components/business/submit-button'
 import type { Translations } from '../../../i18n/types'
 
 type Draft = Record<string, string>
@@ -40,49 +42,67 @@ function SecretInput({ value, onChange, placeholder, hasValue }: {
   )
 }
 
-/** 配置抽屉 footer:测试 / 取消 / 保存。 */
-function ConfigFooter({ busy, testing, testLabel, testingLabel, saveLabel, savingLabel, cancelLabel, onCancel, onTest, onSave }: {
+function InfoIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="shrink-0 text-[var(--shell-crumb-text)]">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 8h.01M11 12h1v5h1" />
+    </svg>
+  )
+}
+
+/** 配置抽屉 footer:测试 / 取消 / 保存(SubmitButton 状态机)。 */
+function ConfigFooter({ busy, testing, testLabel, testingLabel, saveLabel, savingLabel, savedLabel, saveFailLabel, cancelLabel, onCancel, onTest, onSave, saveState, testState }: {
   busy: boolean
   testing: boolean
   testLabel: string
   testingLabel: string
   saveLabel: string
   savingLabel: string
+  savedLabel: string
+  saveFailLabel: string
   cancelLabel: string
   onCancel: () => void
   onTest: () => void
   onSave: () => void
+  saveState: SubmitState
+  testState: SubmitState
 }) {
   return (
     <>
-      <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]"
-        disabled={testing} onClick={onTest}>
-        {testing ? testingLabel : testLabel}
-      </button>
+      <SubmitButton
+        state={testState}
+        labels={{ idle: testLabel, loading: testingLabel, success: testLabel, failed: testLabel }}
+        disabled={testing}
+        onClick={onTest}
+      />
       <span className="flex-1" />
-      <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={onCancel}>
-        {cancelLabel}
-      </button>
-      <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" disabled={busy} onClick={onSave}>
-        {busy ? savingLabel : saveLabel}
-      </button>
+      <ToolbarButton onClick={onCancel} disabled={busy}>{cancelLabel}</ToolbarButton>
+      <SubmitButton
+        state={saveState}
+        labels={{ idle: saveLabel, loading: savingLabel, success: savedLabel, failed: saveFailLabel }}
+        disabled={busy}
+        onClick={onSave}
+      />
     </>
   )
 }
 
 /** 按 editing 渲染对应配置抽屉;加载/保存/测试状态由页面持有。 */
-export function AuthConfigDrawers({ editing, draft, set, secretSet, saving, testing, a, t, setEditing, save, test }: {
+export function AuthConfigDrawers({ editing, draft, set, secretSet, a, t, setEditing, save, test, saveState, testState, saveError, testError }: {
   editing: Group | null
   draft: Draft
   set: (key: string, v: string) => void
   secretSet: Record<string, boolean>
-  saving: string
-  testing: string
   a: Texts
   t: Translations
   setEditing: (g: Group | null) => void
   save: (g: Group) => void
   test: (g: Group) => void
+  saveState: SubmitState
+  testState: SubmitState
+  saveError: string
+  testError: string
 }) {
   const cnOn = draft['auth.cn.enabled'] === 'true'
   const myOn = draft['auth.my.enabled'] === 'true'
@@ -90,9 +110,14 @@ export function AuthConfigDrawers({ editing, draft, set, secretSet, saving, test
     <>
       {editing === 'cn' && (
         <Drawer title={a.cnTitle} onClose={() => setEditing(null)}
-          footer={<ConfigFooter busy={saving === 'cn'} testing={testing === 'cn'} testLabel={a.testBtn} testingLabel={a.testing}
-            saveLabel={a.save} savingLabel={a.saving} cancelLabel={t.common.confirmDialog.cancel}
-            onCancel={() => setEditing(null)} onTest={() => test('cn')} onSave={() => save('cn')} />}>
+          footer={<ConfigFooter busy={saveState === 'loading'} testing={testState === 'loading'}
+            testLabel={a.testBtn} testingLabel={a.testing}
+            saveLabel={a.save} savingLabel={a.saving} savedLabel={a.saved} saveFailLabel={a.saveFail}
+            cancelLabel={t.common.confirmDialog.cancel}
+            onCancel={() => setEditing(null)} onTest={() => test('cn')} onSave={() => save('cn')}
+            saveState={saveState} testState={testState} />}>
+          {saveError && <div className="mb-3"><ErrorBanner message={saveError} /></div>}
+          {testError && <div className="mb-3"><ErrorBanner message={testError} /></div>}
           <div className="mb-4 flex items-center gap-2">
             <Switch checked={cnOn} onCheckedChange={(v) => set('auth.cn.enabled', String(v))} aria-label={a.cnTitle} />
             {cnOn ? a.enabled : a.disabled}
@@ -117,9 +142,14 @@ export function AuthConfigDrawers({ editing, draft, set, secretSet, saving, test
 
       {editing === 'my' && (
         <Drawer title={a.myTitle} onClose={() => setEditing(null)}
-          footer={<ConfigFooter busy={saving === 'my'} testing={testing === 'my'} testLabel={a.testBtn} testingLabel={a.testing}
-            saveLabel={a.save} savingLabel={a.saving} cancelLabel={t.common.confirmDialog.cancel}
-            onCancel={() => setEditing(null)} onTest={() => test('my')} onSave={() => save('my')} />}>
+          footer={<ConfigFooter busy={saveState === 'loading'} testing={testState === 'loading'}
+            testLabel={a.testBtn} testingLabel={a.testing}
+            saveLabel={a.save} savingLabel={a.saving} savedLabel={a.saved} saveFailLabel={a.saveFail}
+            cancelLabel={t.common.confirmDialog.cancel}
+            onCancel={() => setEditing(null)} onTest={() => test('my')} onSave={() => save('my')}
+            saveState={saveState} testState={testState} />}>
+          {saveError && <div className="mb-3"><ErrorBanner message={saveError} /></div>}
+          {testError && <div className="mb-3"><ErrorBanner message={testError} /></div>}
           <div className="mb-4 flex items-center gap-2">
             <Switch checked={myOn} onCheckedChange={(v) => set('auth.my.enabled', String(v))} aria-label={a.myTitle} />
             {myOn ? a.enabled : a.pending}
@@ -151,9 +181,14 @@ export function AuthConfigDrawers({ editing, draft, set, secretSet, saving, test
 
       {editing === 'fallback' && (
         <Drawer title={a.fbTitle} onClose={() => setEditing(null)}
-          footer={<ConfigFooter busy={saving === 'fallback'} testing={testing === 'fallback'} testLabel={a.testBtn} testingLabel={a.testing}
-            saveLabel={a.save} savingLabel={a.saving} cancelLabel={t.common.confirmDialog.cancel}
-            onCancel={() => setEditing(null)} onTest={() => test('fallback')} onSave={() => save('fallback')} />}>
+          footer={<ConfigFooter busy={saveState === 'loading'} testing={testState === 'loading'}
+            testLabel={a.testBtn} testingLabel={a.testing}
+            saveLabel={a.save} savingLabel={a.saving} savedLabel={a.saved} saveFailLabel={a.saveFail}
+            cancelLabel={t.common.confirmDialog.cancel}
+            onCancel={() => setEditing(null)} onTest={() => test('fallback')} onSave={() => save('fallback')}
+            saveState={saveState} testState={testState} />}>
+          {saveError && <div className="mb-3"><ErrorBanner message={saveError} /></div>}
+          {testError && <div className="mb-3"><ErrorBanner message={testError} /></div>}
           <div className="mb-4 flex items-center gap-8">
             {([
               ['auth.fallback.smsOnFail', a.fbSmsOnFail],
@@ -174,7 +209,7 @@ export function AuthConfigDrawers({ editing, draft, set, secretSet, saving, test
               <Input className="w-72" value={draft['auth.compliance.agreementUrl'] ?? ''} onChange={(e) => set('auth.compliance.agreementUrl', e.target.value)} />
             </FormField>
           </div>
-          <div className="mt-3 text-xs text-[var(--shell-crumb-text)]">ⓘ {a.complianceNote}</div>
+          <div className="mt-3 flex items-center gap-1 text-xs text-[var(--shell-crumb-text)]"><InfoIcon /><span>{a.complianceNote}</span></div>
         </Drawer>
       )}
     </>
