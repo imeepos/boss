@@ -8,8 +8,8 @@ import { Badge } from '../../../components/ui/badge'
 import { Dropdown } from '../../../components/Dropdown'
 import { Drawer } from '../../../components/Drawer'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../../components/ui/table'
+import { Card } from '../../../components/ui/card'
 import { EmptyState, ErrorBanner, ToolbarButton } from '../../../components/business/page-head'
-import { CARD, FIELD, LABEL } from './forms'
 
 interface SurveyTask {
   id: number
@@ -83,7 +83,11 @@ export default function SurveysPanel() {
       toast.success('勘测任务已创建')
       setTitle(''); setDesc(''); setGrid(''); setAssignee(''); setShowCreate(false)
       await load()
-    } catch (e) { setError(e instanceof Error ? e.message : '保存失败') } finally { setBusy(false) }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : '保存失败'
+      setError(msg)
+      toast.error('勘测任务创建失败', { description: msg })
+    } finally { setBusy(false) }
   }
 
   const assign = async (t: SurveyTask, workerId: number) => {
@@ -91,7 +95,11 @@ export default function SurveysPanel() {
       await apiFetch('/odn/surveys/' + t.id + '/assign', { method: 'POST', body: { workerId } })
       toast.success('已指派 ' + (workers.find((w) => w.id === workerId)?.name ?? workerId))
       await load()
-    } catch (e) { setError(e instanceof Error ? e.message : '指派失败') }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : '指派失败'
+      setError(msg)
+      toast.error('指派失败', { description: msg })
+    }
   }
 
   const cancel = async (t: SurveyTask) => {
@@ -99,7 +107,11 @@ export default function SurveysPanel() {
       await apiFetch('/odn/surveys/' + t.id + '/cancel', { method: 'POST' })
       toast.success('任务已取消')
       await load()
-    } catch (e) { setError(e instanceof Error ? e.message : '取消失败') }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : '取消失败'
+      setError(msg)
+      toast.error('取消失败', { description: msg })
+    }
   }
 
   const openDetail = async (t: SurveyTask) => {
@@ -117,18 +129,20 @@ export default function SurveysPanel() {
       <ToolbarButton primary onClick={() => setShowCreate(!showCreate)}>{showCreate ? '取消' : '新建勘测任务'}</ToolbarButton>
       <ToolbarButton onClick={() => void load()}>刷新</ToolbarButton>
     </div>
-    {showCreate && <div className={CARD + ' mb-3 p-4'}>
-      <div className='grid grid-cols-2 gap-3 md:grid-cols-4'>
-        <label className={FIELD}><span className={LABEL}>任务标题</span><Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder='主干光缆段现场勘测' /></label>
-        <label className={FIELD}><span className={LABEL}>任务说明</span><Input value={desc} onChange={(e) => setDesc(e.target.value)} placeholder='目标区域/网格、勘测要点' /></label>
-        <label className={FIELD}><span className={LABEL}>目标网格</span><Input value={grid} onChange={(e) => setGrid(e.target.value)} inputMode='numeric' placeholder='0=不限' /></label>
-        <label className={FIELD}><span className={LABEL}>指派师傅</span>
-          <Dropdown value={assignee} ariaLabel='选择指派师傅' placeholder='不指派(进抢单池)' searchable searchPlaceholder='搜索师傅'
-            options={workers.map((w) => ({ value: String(w.id), label: w.name + ' (#' + w.id + ')' }))}
-            onChange={(v) => setAssignee(v)} /></label>
+    {showCreate && <Card className="mb-3">
+      <div className="p-4">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <label className="flex flex-col gap-1"><span className="text-xs text-[var(--shell-content-text)]">任务标题</span><Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="主干光缆段现场勘测" /></label>
+          <label className="flex flex-col gap-1"><span className="text-xs text-[var(--shell-content-text)]">任务说明</span><Input value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="目标区域/网格、勘测要点" /></label>
+          <label className="flex flex-col gap-1"><span className="text-xs text-[var(--shell-content-text)]">目标网格</span><Input value={grid} onChange={(e) => setGrid(e.target.value)} inputMode="numeric" placeholder="0=不限" /></label>
+          <label className="flex flex-col gap-1"><span className="text-xs text-[var(--shell-content-text)]">指派师傅</span>
+            <Dropdown value={assignee} ariaLabel="选择指派师傅" placeholder="不指派(进抢单池)" searchable searchPlaceholder="搜索师傅"
+              options={workers.map((w) => ({ value: String(w.id), label: w.name + ' (#' + w.id + ')' }))}
+              onChange={(v) => setAssignee(v)} /></label>
+        </div>
+        <div className="mt-3 flex justify-end"><ToolbarButton primary disabled={busy} onClick={() => void create()}>{busy ? '保存中…' : '保存'}</ToolbarButton></div>
       </div>
-      <div className='mt-3 flex justify-end'><ToolbarButton primary disabled={busy} onClick={() => void create()}>{busy ? '保存中…' : '保存'}</ToolbarButton></div>
-    </div>}
+    </Card>}
     {error && <ErrorBanner message={error} className='mb-3' />}
     {rows.length === 0 ? <EmptyState text='暂无勘测任务' /> : <div className='overflow-x-auto'><Table>
       <TableHeader><TableRow><TableHead>任务号</TableHead><TableHead>标题</TableHead><TableHead>目标网格</TableHead><TableHead>指派师傅</TableHead><TableHead>状态</TableHead><TableHead>回填数</TableHead><TableHead>创建时间</TableHead><TableHead>操作</TableHead></TableRow></TableHeader>
