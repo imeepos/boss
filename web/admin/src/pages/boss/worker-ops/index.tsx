@@ -93,7 +93,7 @@ export default function WorkerOpsPage() {
                   <TableRow key={x.ticketId}>
                     <TableCell>{x.ticketNo}</TableCell>
                     <TableCell><IdRef value={x.orderId} /></TableCell>
-                    <TableCell>{x.regionName || `#${x.regionId}`}</TableCell>
+                    <TableCell>{x.regionName || '—'}</TableCell>
                     <TableCell>{x.legalEntityName || `#${x.legalEntityId}`}</TableCell>
                     <TableCell><StatusTag domain="ticket" value={x.status} /></TableCell>
                   </TableRow>

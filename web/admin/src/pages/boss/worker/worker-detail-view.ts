@@ -96,12 +96,12 @@ export const DRAWER_W_KEYS = [
   'dYes', 'dNo', 'dSeeAll', 'dCollapse', 'dLeftAt', 'dJoinedAt',
 ] as const
 
-/** 主档展示字段:值取 GET /workers/{workerId} 主档;groupId → 组名由列表行传入,
- * regionId → 区域名尽力经 /regions 映射(无权限时降级显示 id)。 */
+/** 主档展示字段:值取 GET /workers/{workerId} 主档;班组/区域名走行内
+ * groupName/regionName(服务端 JOIN 现值,data-relations §6.2),空值降级 —。 */
 export const WORKER_PROFILE_FIELDS = [
   { key: 'phone', labelKey: 'dPhone' },
-  { key: 'regionId', labelKey: 'dRegion' },
-  { key: 'groupId', labelKey: 'dGroup' },
+  { key: 'regionName', labelKey: 'dRegion' },
+  { key: 'groupName', labelKey: 'dGroup' },
   { key: 'joinedAt', labelKey: 'dJoinedAt' },
   { key: 'leftAt', labelKey: 'dLeftAt' },
 ] as const

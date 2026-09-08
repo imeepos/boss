@@ -86,25 +86,8 @@ function StatChip({ label, value }: { label: string; value: string | number }) {
   )
 }
 
-/** id → name 映射(尽力而为:regions 尚需 menu:region 权限,失败降级回退 id 展示)。 */
-async function nameMap(url: string): Promise<Record<number, string>> {
-  try {
-    const data = await apiFetch<{ items: Array<Record<string, unknown>> } | Array<Record<string, unknown>>>(url)
-    const list = Array.isArray(data) ? data : (data?.items ?? [])
-    const m: Record<number, string> = {}
-    list.forEach((x) => {
-      if (typeof x.id === 'number' && typeof x.name === 'string') m[x.id as number] = x.name
-    })
-    return m
-  } catch {
-    return {}
-  }
-}
-
-export function WorkerDetailDrawer({ id, groupName, onClose, onResetPwd }: {
+export function WorkerDetailDrawer({ id, onClose, onResetPwd }: {
   id: number
-  /** 列表行已知班组名,主档渲染前先展示。 */
-  groupName?: string
   onClose: () => void
   /** 提供即展示"重置密码"(师傅端登录密码,WorkerDialogs 承接)。 */
   onResetPwd?: (workerId: number, name: string) => void
@@ -114,8 +97,6 @@ export function WorkerDetailDrawer({ id, groupName, onClose, onResetPwd }: {
   const d = w.d
   const [detail, setDetail] = useState<WorkerDetail | null>(null)
   const [sub, setSub] = useState<Record<string, Record<string, unknown>[]>>({})
-  const [regionNames, setRegionNames] = useState<Record<number, string>>({})
-  const [groupNames, setGroupNames] = useState<Record<number, string>>({})
   const [error, setError] = useState('')
 
   useEffect(() => {
@@ -126,8 +107,6 @@ export function WorkerDetailDrawer({ id, groupName, onClose, onResetPwd }: {
     apiFetch<WorkerDetail>(`/workers/${id}`)
       .then((data) => { if (alive) setDetail(data) })
       .catch((e) => { if (alive) setError(e instanceof Error ? e.message : w.loadFail) })
-    void nameMap('/worker-groups').then((m) => { if (alive) setGroupNames(m) })
-    void nameMap('/regions').then((m) => { if (alive) setRegionNames(m) })
     Promise.allSettled(
       WORKER_DETAIL_SECTIONS.map((s) =>
         apiFetch<{ items: Record<string, unknown>[] }>(s.api, { query: { workerId: String(id) } })
@@ -153,10 +132,8 @@ export function WorkerDetailDrawer({ id, groupName, onClose, onResetPwd }: {
   const status = typeof detail?.status === 'number' ? (detail.status as number) : 1
   const fmt = (v: unknown) => (v === null || v === undefined || v === '' ? '—' : String(v))
 
-  // 主档展示值:region/group 尽力转名,失败降级回退 id;时间为格式化。
+  // 主档展示值:班组/区域名由详情行内 groupName/regionName 直供(§6.2),空值降级 —;时间为格式化。
   const fieldValue = (key: string, v: unknown) => {
-    if (key === 'regionId') return regionNames[Number(v)] ?? fmt(v)
-    if (key === 'groupId') return groupNames[Number(v)] ?? (groupName && Number(v) === Number(detail?.groupId) ? groupName : fmt(v))
     if (key === 'joinedAt' || key === 'leftAt') return v ? fmtTime(String(v)) : '—'
     return fmt(v)
   }

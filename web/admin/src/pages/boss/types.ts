@@ -79,7 +79,9 @@ export interface WorkerRow {
   staffNo: string
   name: string
   groupId: number
+  groupName: string // 班组名(读取时 JOIN 现值,data-relations §6.2)
   regionId: number
+  regionName: string // 主区域名(读取时 JOIN 现值,data-relations §6.2)
   regionIds: number[] // 全部负责区域(000175;主区域首位;未配置回退 [regionId])
   phone: string
   status: number // 1在职 0离职

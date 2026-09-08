@@ -57,9 +57,11 @@ export default function WorkerPage() {
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { load() }, [load])
 
-  const groupName = (id: number) => groups.find((g) => g.id === id)?.name ?? `#${id}`
+  const groupName = (id: number) => groups.find((g) => g.id === id)?.name ?? '—'
+  // 负责区域集合:主区域名走行内 regionName(JOIN 现值),其余经 /regions 映射;映射不到不再露 #id。
   const regionNames = (r: WorkerRow) =>
-    (r.regionIds ?? []).map((id) => regions.find((x) => x.id === id)?.name ?? `#${id}`).join('、') || '—'
+    (r.regionIds ?? []).map((id) => (id === r.regionId && r.regionName ? r.regionName : regions.find((x) => x.id === id)?.name ?? ''))
+      .filter(Boolean).join('、') || '—'
   const filtered = useMemo(() => {
     const k = keyword.trim().toLowerCase()
     return rows.filter((r) => (!selGroup || r.groupId === selGroup)
@@ -70,7 +72,7 @@ export default function WorkerPage() {
   // setCaptain 行内快捷:指定队长 = PUT 队伍(带当前名 + 新 leaderId)。
   const setCaptain = async (r: WorkerRow) => {
     try {
-      await apiFetch(`/worker-groups/${r.groupId}`, { method: 'PUT', body: { name: groupName(r.groupId), leaderId: r.id } })
+      await apiFetch(`/worker-groups/${r.groupId}`, { method: 'PUT', body: { name: r.groupName || groupName(r.groupId), leaderId: r.id } })
       toast.success(w.captainSet)
       load()
     } catch (e) {
@@ -190,7 +192,7 @@ export default function WorkerPage() {
                   <TableRow key={r.id}>
                     <TableCell>{r.staffNo}</TableCell>
                     <TableCell>{r.name}</TableCell>
-                    <TableCell>{groupName(r.groupId)}</TableCell>
+                    <TableCell>{r.groupName || '—'}</TableCell>
                     <TableCell className="whitespace-normal">{regionNames(r)}</TableCell>
                     <TableCell>{r.phone || '—'}</TableCell>
                     <TableCell><Badge variant={r.status === 1 ? 'success' : 'default'}>{r.status === 1 ? w.active : w.left}</Badge></TableCell>
@@ -226,7 +228,7 @@ export default function WorkerPage() {
         <WorkerRegionsDialog worker={regionsWorker} onClose={() => setRegionsWorker(null)} onDone={load} />
       )}
       {detailId !== null && (
-        <WorkerDetailDrawer id={detailId} groupName={detailId ? groupName(rows.find((r) => r.id === detailId)?.groupId ?? 0) : ''}
+        <WorkerDetailDrawer id={detailId}
           onResetPwd={(wid, wname) => { setDetailId(null); setWorkerDialog({ type: 'resetPwd', workerId: wid, name: wname }) }}
           onClose={() => setDetailId(null)} />
       )}

@@ -11,7 +11,9 @@ interface WorkerRow {
   staffNo: string
   name: string
   groupId: number
+  groupName: string // 班组名(服务端 JOIN 现值,data-relations §6.2)
   regionId: number
+  regionName: string // 主区域名(服务端 JOIN 现值,data-relations §6.2)
   phone: string
   status: number // 1 在职 0 离职
 }
@@ -53,14 +55,14 @@ export function WorkerPicker({ selectedId, onSelect }: {
       .catch((e) => setError(e instanceof Error ? e.message : p.loadFail))
     apiFetch<{ items: GroupRow[] }>('/worker-groups')
       .then((d) => setGroups(new Map((d?.items ?? []).map((g) => [g.id, g.name]))))
-      .catch(() => { /* 班组名降级为 #id */ })
+      .catch(() => { /* 行内 groupName 已直供,映射仅兜底 */ })
     // /regions 返回裸数组(无 items 包裹),兼容两种形态。
     apiFetch<RegionRow[]>('/regions')
       .then((d) => {
         const rows = Array.isArray(d) ? d : ((d as unknown as { items?: RegionRow[] })?.items ?? [])
         setRegions(new Map(rows.map((r) => [r.id, r.name])))
       })
-      .catch(() => { /* 区域名降级为 #id */ })
+      .catch(() => { /* 行内 regionName 已直供,映射仅兜底 */ })
     // 评分取每位师傅最新 period 一行;无数据/无权限(403)时静默降级为 '—'。
     apiFetch<{ items: PerfRow[] }>('/worker-performances')
       .then((d) => {
@@ -99,8 +101,9 @@ export function WorkerPicker({ selectedId, onSelect }: {
 
   const pick = (w: WorkerRow): PickedWorker => ({
     ...w,
-    groupName: groups.get(w.groupId) || `#${w.groupId}`,
-    regionName: regions.get(w.regionId) || `#${w.regionId}`,
+    // 行内 JOIN 名优先,列表映射兜底;都取不到降级 —,不再露 #id(§6.2)。
+    groupName: w.groupName || groups.get(w.groupId) || '—',
+    regionName: w.regionName || regions.get(w.regionId) || '—',
     score: perfs.get(w.id)?.score ?? null,
   })
 
@@ -130,8 +133,8 @@ export function WorkerPicker({ selectedId, onSelect }: {
                 </div>
                 <div className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5">
                   <span className={LABEL}>{p.phone}: <span className={VALUE}>{w.phone || '—'}</span></span>
-                  <span className={LABEL}>{p.group}: <span className={VALUE}>{groups.get(w.groupId) || `#${w.groupId}`}</span></span>
-                  <span className={LABEL}>{p.region}: <span className={VALUE}>{regions.get(w.regionId) || `#${w.regionId}`}</span></span>
+                  <span className={LABEL}>{p.group}: <span className={VALUE}>{w.groupName || groups.get(w.groupId) || '—'}</span></span>
+                  <span className={LABEL}>{p.region}: <span className={VALUE}>{w.regionName || regions.get(w.regionId) || '—'}</span></span>
                   <span className={LABEL}>{p.score}: <span className={VALUE}>{perf ? perf.score.toFixed(1) : '—'}</span></span>
                   <span className={LABEL}>{p.accepted}: <span className={VALUE}>{load ? `${load.total}(${p.doing} ${load.doing})` : '—'}</span></span>
                 </div>
