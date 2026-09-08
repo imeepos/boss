@@ -3412,6 +3412,7 @@ export interface Translations {
       columns: string[]
       detail: string
       detailTitle: string
+      detailJson: string
       logId: string
       empty: string
       close: string
