@@ -10,6 +10,7 @@ export interface CustomerRow {
   serviceStatus: string // ACTIVE / ARREARS / SUSPENDED
   addressId: number
   legalEntityId: number
+  legalEntityName: string // 归属运营主体名(读取时 JOIN 现值,data-relations §6.1)
   regionId: number
   regionName: string
   createdAt: string

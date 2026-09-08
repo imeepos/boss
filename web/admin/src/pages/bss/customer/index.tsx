@@ -145,27 +145,19 @@ export default function CustomerPage() {
 }
 
 /** 客户详情抽屉:归属链(运营主体→区域→客户)+ 档案字段 + 关联记录区块。
+ * 归属公司名直用行内 legalEntityName(服务端 JOIN 现值,data-relations §6.1 已销账);
  * 关联计数:订单/账单走 customerId 服务端过滤;缴费接口无 customerId 过滤(102 实测),
  * 取不到显示 —(data-relations §0 铁律 4,禁止臆造)。 */
-function CustomerDetailDrawer({ detail, onClose }: { detail: CustomerRow; onClose: () => void }) {
+export function CustomerDetailDrawer({ detail, onClose }: { detail: CustomerRow; onClose: () => void }) {
   const t = useT()
   const c = t.pages.customer
   const navigate = useNavigate()
-  const [entityName, setEntityName] = useState('')
   const [rel, setRel] = useState<{ orders: number | null; bills: number | null; fail: boolean }>({
     orders: null, bills: null, fail: false,
   })
 
   useEffect(() => {
     let alive = true
-    apiFetch<{ id: number; name: string }[]>('/legal-entities')
-      .then((d) => {
-        if (alive) setEntityName(d?.find((x) => x.id === detail.legalEntityId)?.name ?? '')
-      })
-      .catch(() => {
-        // 归属链公司名取不到仅降级为 ID 展示,不阻断详情;留 warn 便于发现接口异常
-        if (alive) { setEntityName(''); console.warn('[customer] legal-entities 拉取失败,归属链公司名降级为 ID') }
-      })
     Promise.all([
       apiFetch<{ items: unknown[] }>('/orders', { query: { customerId: detail.id } }),
       apiFetch<{ items: unknown[] }>('/bills', { query: { customerId: detail.id } }),
@@ -198,7 +190,7 @@ function CustomerDetailDrawer({ detail, onClose }: { detail: CustomerRow; onClos
         <h4 className="mb-2 mt-0 text-xs font-semibold text-[var(--shell-group-title)]">{c.chainTitle}</h4>
         <div className="flex flex-wrap items-center gap-2 text-[13px] text-[var(--shell-content-text)]">
           <span className="rounded-sm border border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] px-2 py-0.5">
-            {entityName || (detail.legalEntityId ? '#' + detail.legalEntityId : '—')}
+            {detail.legalEntityName || '—'}
           </span>
           <span className="text-[var(--shell-side-border)]">→</span>
           <span className="rounded-sm border border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] px-2 py-0.5">

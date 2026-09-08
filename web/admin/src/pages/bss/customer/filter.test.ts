@@ -5,7 +5,8 @@ import type { CustomerRow } from './types'
 const row = (over: Partial<CustomerRow>): CustomerRow => ({
   id: 1, name: 'Juan', phone: '09171234567', idType: '身份证', idNo: 'ID9001',
   realNameStatus: 'VERIFIED', serviceStatus: 'ACTIVE', addressId: 1, legalEntityId: 1,
-  regionId: 1, regionName: 'Metro Manila', createdAt: '2026-01-01T00:00:00Z', ...over,
+  legalEntityName: 'Sphere North', regionId: 1, regionName: 'Metro Manila',
+  createdAt: '2026-01-01T00:00:00Z', ...over,
 })
 
 describe('filterCustomers', () => {
