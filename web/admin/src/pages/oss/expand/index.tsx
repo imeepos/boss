@@ -1,6 +1,7 @@
 // 扩容申请页:契约 GET /expansions、POST /expansions、POST /expansions/:expansionNo/execute|reject。
 // 执行=PENDING 单选目标设备批量建端口(写侧补齐);驳回=终态;两者均 menu:transfer 权限组。
 import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import { apiFetch } from '../../../api/client'
 import { useT } from '../../../i18n'
 import { PageHead, pagerTexts } from '../../org/shared'
@@ -8,8 +9,11 @@ import { StatusTag } from '../../../components/StatusTag'
 import { Pagination } from '../../../components/Pagination'
 import { Drawer } from '../../../components/Drawer'
 import { Dropdown } from '../../../components/Dropdown'
+import { Card, CardFooter } from '../../../components/ui/card'
+import { Input } from '../../../components/ui/input'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/table'
 import { pageSlice, type ExpansionRow, type LegalEntityRow, type RegionRefRow, type ResourceRow } from '../types'
-import { TableStateRow, ErrorBanner } from '../../../components/business'
+import { TableStateRow, ErrorBanner, ToolbarButton } from '../../../components/business'
 import { useConfirm } from '../../../components/ConfirmDialog'
 
 export default function ExpandPage() {
@@ -21,7 +25,6 @@ export default function ExpandPage() {
   const [regions, setRegions] = useState<RegionRefRow[]>([])
   const [devices, setDevices] = useState<ResourceRow[]>([])
   const [error, setError] = useState('')
-  const [okMsg, setOkMsg] = useState('')
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
   const [busy, setBusy] = useState(false)
@@ -39,7 +42,11 @@ export default function ExpandPage() {
     setBusy(true)
     apiFetch<{ items: ExpansionRow[] }>('/expansions')
       .then((d) => setRows(d?.items ?? []))
-      .catch((x) => setError(x instanceof Error ? x.message : e.loadFail))
+      .catch((x) => {
+        const msg = x instanceof Error ? x.message : e.loadFail
+        setError(msg)
+        toast.error(e.loadFail, { description: msg })
+      })
       .finally(() => setBusy(false))
   }
   useEffect(load, []) // eslint-disable-line react-hooks/exhaustive-deps
@@ -73,9 +80,12 @@ export default function ExpandPage() {
       setLegalEntityId(0)
       setRegionId(0)
       setExpectedPorts('')
+      toast.success(e.create)
       load()
     } catch (x) {
-      setFormError(x instanceof Error ? x.message : e.saveFail)
+      const msg = x instanceof Error ? x.message : e.saveFail
+      setFormError(msg)
+      toast.error(e.saveFail, { description: msg })
     } finally {
       setBusy(false)
     }
@@ -89,9 +99,12 @@ export default function ExpandPage() {
     setBusy(true)
     try {
       await apiFetch('/expansions/' + encodeURIComponent(row.expansionNo) + '/reject', { method: 'POST' })
+      toast.success(e.reject)
       load()
     } catch (x) {
-      setError(x instanceof Error ? x.message : e.actionFail)
+      const msg = x instanceof Error ? x.message : e.actionFail
+      setError(msg)
+      toast.error(e.actionFail, { description: msg })
     } finally {
       setBusy(false)
     }
@@ -107,12 +120,15 @@ export default function ExpandPage() {
         method: 'POST',
         body: { resourceId: execDevice },
       })
+      const msg = e.execOk.replace('{n}', String(res?.created ?? 0))
+      toast.success(msg)
       setExecTarget(null)
       setExecDevice(0)
-      setOkMsg(e.execOk.replace('{n}', String(res?.created ?? 0)))
       load()
     } catch (x) {
-      setExecError(x instanceof Error ? x.message : e.actionFail)
+      const msg = x instanceof Error ? x.message : e.actionFail
+      setExecError(msg)
+      toast.error(e.actionFail, { description: msg })
     } finally {
       setBusy(false)
     }
@@ -128,55 +144,58 @@ export default function ExpandPage() {
   return (
     <div>
       <PageHead title={e.title} desc={e.desc} />
-      <div className="mb-4 rounded-md border border-[var(--shell-card-border)] bg-[var(--shell-card-bg)] shadow-[var(--shell-card-shadow)]">
+      <Card className="mb-4">
         <div className="flex flex-wrap items-center gap-2 p-4">
-          <span className="spacer" />
-          <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" disabled={busy} onClick={load}>{t.pages.audit.refresh}</button>
-          <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]" onClick={() => setOpen(true)}>{e.create}</button>
+          <span className="flex-1" />
+          <ToolbarButton onClick={load} disabled={busy}>{t.pages.audit.refresh}</ToolbarButton>
+          <ToolbarButton primary onClick={() => setOpen(true)}>{e.create}</ToolbarButton>
         </div>
-        {error ? <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-danger)]">{error}</div> : (
-          <div className="overflow-x-auto px-4 pb-4">
-            <table className="w-full border-collapse text-[13px] text-[var(--shell-content-text)]">
-              <thead className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]"><tr>{e.columns.map((x) => <th key={x} className="h-11 px-3 text-left text-xs font-medium whitespace-nowrap border-b border-[var(--shell-side-border)] bg-[var(--shell-menu-hover-bg)] text-[var(--shell-group-title)]">{x}</th>)}</tr></thead>
-              <tbody>
+        {error ? <div className="px-4 pb-3"><ErrorBanner message={error} /></div> : (
+          <div className="px-4 pb-4">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  {e.columns.map((x) => <TableHead key={x}>{x}</TableHead>)}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {slice.map((x) => (
-                  <tr key={x.id}>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.expansionNo || '#' + x.id}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{companyName(x.legalEntityId)}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{regionName(x.regionId)}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">{x.expectedPorts}</td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]"><StatusTag domain="task" value={x.status} /></td>
-                    <td className="h-11 px-3 whitespace-nowrap border-b border-[var(--shell-side-border)] text-[var(--shell-content-text)] hover:bg-[var(--shell-menu-hover-bg)]">
+                  <TableRow key={x.id}>
+                    <TableCell>{x.expansionNo || '#' + x.id}</TableCell>
+                    <TableCell>{companyName(x.legalEntityId)}</TableCell>
+                    <TableCell>{regionName(x.regionId)}</TableCell>
+                    <TableCell>{x.expectedPorts}</TableCell>
+                    <TableCell><StatusTag domain="task" value={x.status} /></TableCell>
+                    <TableCell>
                       {x.status === 'PENDING' ? (
-                        <span className="inline-flex items-center">
-                          <button disabled={busy} onClick={() => { setExecTarget(x); setExecDevice(0); setExecError(''); setOkMsg('') }}>{e.exec}</button>
+                        <span className="inline-flex items-center gap-2">
+                          <button type="button" disabled={busy} onClick={() => { setExecTarget(x); setExecDevice(0); setExecError('') }}>{e.exec}</button>
                           <span className="text-[var(--shell-side-border)]">|</span>
-                          <button disabled={busy} onClick={() => reject(x)}>{e.reject}</button>
+                          <button type="button" disabled={busy} onClick={() => reject(x)}>{e.reject}</button>
                         </span>
                       ) : '—'}
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
                 {!slice.length && <TableStateRow colSpan={6} loading={busy} text={e.empty} />}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         )}
-        {okMsg && !error && <div className="mx-4 mb-3 rounded-sm border border-[color-mix(in_srgb,var(--color-success)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-success)_8%,transparent)] px-3 py-2 text-[13px] text-[var(--color-success)]">{okMsg}</div>}
-        <div className="flex justify-end px-4 py-3 text-xs text-[var(--shell-group-title)]">
+        <CardFooter>
           <Pagination total={rows.length} page={page} pageSize={pageSize}
             onPage={setPage} onSize={setPageSize} {...pagerTexts(e)} />
-        </div>
-      </div>
+        </CardFooter>
+      </Card>
       {open && (
         <Drawer title={e.createTitle} onClose={() => setOpen(false)}
           footer={
             <>
-              <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={() => setOpen(false)}>{t.pages.company.cancel}</button>
-              <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]"
+              <ToolbarButton onClick={() => setOpen(false)}>{t.pages.company.cancel}</ToolbarButton>
+              <ToolbarButton primary
                 disabled={busy || !legalEntityId || !regionId || !portsOk} onClick={submit}>
                 {busy ? t.pages.account.submitting : t.pages.company.save}
-              </button>
+              </ToolbarButton>
             </>
           }>
           <div className="flex flex-col gap-3.5">
@@ -200,7 +219,7 @@ export default function ExpandPage() {
             </div>
             <div className="flex flex-col gap-1.5">
               <label><span className="mr-0.5 text-[var(--color-danger)]">*</span>{e.fPorts}</label>
-              <input className="h-8 rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-2.5 text-[13px] text-[var(--shell-content-text)] outline-none placeholder:text-[var(--shell-input-placeholder)] focus:border-[var(--color-border-focus)]" type="number" value={expectedPorts} placeholder="0"
+              <Input className="h-8" type="number" value={expectedPorts} placeholder="0"
                 onChange={(ev) => setExpectedPorts(ev.target.value)} />
               {!portsOk && expectedPorts !== '' && <span className="text-[11px] text-[var(--color-danger)]">{e.ePorts}</span>}
             </div>
@@ -212,11 +231,11 @@ export default function ExpandPage() {
         <Drawer title={e.execTitle + ' · ' + (execTarget.expansionNo || '#' + execTarget.id)} onClose={() => setExecTarget(null)}
           footer={
             <>
-              <button className="h-8 cursor-pointer rounded-sm border border-[var(--shell-input-border)] bg-[var(--shell-input-bg)] px-4 text-[13px] text-[var(--shell-content-text)] hover:border-[var(--color-border-hover)] hover:text-[var(--shell-heading)]" onClick={() => setExecTarget(null)}>{t.pages.company.cancel}</button>
-              <button className="h-8 cursor-pointer rounded-sm border-none bg-[var(--shell-fab-bg)] px-4 text-[13px] text-[var(--shell-fab-icon)] hover:bg-[var(--shell-fab-bg-hover)]"
+              <ToolbarButton onClick={() => setExecTarget(null)}>{t.pages.company.cancel}</ToolbarButton>
+              <ToolbarButton primary
                 disabled={busy || !execDevice} onClick={execute}>
                 {busy ? t.pages.account.submitting : e.exec}
-              </button>
+              </ToolbarButton>
             </>
           }>
           <div className="flex flex-col gap-3.5">
