@@ -5,7 +5,10 @@ name: boss-infra
 
 services:
   postgres:
-    image: 192.168.0.102:5000/boss/postgres:16
+    # 必须用内置 postgis 的镜像(发现 2.4,与 infra.yml 权威定义一致):
+    # 纯 postgres 镜像缺 postgis-3.so,任何空间函数调用即 58P01(0012 事故)。
+    # 镜像已预载于 102 宿主机;私有仓库种子治理记工单池。
+    image: postgis/postgis:16-3.4
     restart: unless-stopped
     environment:
       POSTGRES_USER: boss
